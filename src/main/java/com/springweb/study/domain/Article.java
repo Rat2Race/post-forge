@@ -1,5 +1,6 @@
 package com.springweb.study.domain;
 
+import com.springweb.study.domain.dto.ArticleRequest;
 import jakarta.persistence.*;
 import lombok.Builder;
 import lombok.Getter;
@@ -24,4 +25,9 @@ public class Article extends AuditingFields {
 	@Column(name = "author")
 	private String author;
 
+	public void update(ArticleRequest articleRequest) {
+		this.title = articleRequest.getTitle();
+		this.content = articleRequest.getContent();
+		this.author = articleRequest.getAuthor();
+	}
 }
