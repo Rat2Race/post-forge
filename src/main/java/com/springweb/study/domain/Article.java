@@ -1,6 +1,7 @@
 package com.springweb.study.domain;
 
 import jakarta.persistence.*;
+import lombok.Builder;
 import lombok.Getter;
 
 import java.time.LocalTime;
@@ -8,6 +9,7 @@ import java.time.LocalTime;
 @Entity
 @Table(name = "article")
 @Getter
+@Builder
 public class Article extends AuditingFields {
 
 	@Id @GeneratedValue(strategy = GenerationType.IDENTITY)
