@@ -6,4 +6,6 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface ArticleRepo extends JpaRepository<Article, Long> {
+	Boolean saveArticle(Article article);
+
 }
