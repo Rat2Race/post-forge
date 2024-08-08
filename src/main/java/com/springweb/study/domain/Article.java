@@ -8,7 +8,7 @@ import java.time.LocalTime;
 @Entity
 @Table(name = "article")
 @Getter
-public class Article {
+public class Article extends AuditingFields {
 
 	@Id @GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
