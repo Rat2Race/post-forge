@@ -26,7 +26,7 @@ public class ArticleService {
 				.author(articleRequest.getAuthor())
 				.build();
 
-		return articleRepo.saveArticle(article);
+		return articleRepo.save(article).getId();
 	}
 
 	//Read

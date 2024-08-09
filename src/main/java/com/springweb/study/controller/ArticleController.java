@@ -3,17 +3,14 @@ package com.springweb.study.controller;
 import com.springweb.study.domain.dto.ArticleRequest;
 import com.springweb.study.domain.dto.ArticleResponse;
 import com.springweb.study.service.ArticleService;
-import com.sun.net.httpserver.Authenticator;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-@Controller
+@RestController
 @RequestMapping("/api")
 @RequiredArgsConstructor
 public class ArticleController {
@@ -29,8 +26,8 @@ public class ArticleController {
 
 	//Read
 	// /read/article?id=1
-	@GetMapping("/read/article")
-	public ResponseEntity<ArticleResponse> readArticleById(@RequestParam Long id) {
+	@GetMapping("/read/article/{id}")
+	public ResponseEntity<ArticleResponse> readArticleById(@PathVariable Long id) {
 		return ResponseEntity.status(HttpStatus.OK).body(articleService.readArticleById(id));
 	}
 
