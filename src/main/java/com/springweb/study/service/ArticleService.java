@@ -6,12 +6,14 @@ import com.springweb.study.domain.dto.ArticleResponse;
 import com.springweb.study.repository.ArticleRepo;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
+@Transactional
 public class ArticleService {
 
 	private final ArticleRepo articleRepo;
@@ -28,6 +30,7 @@ public class ArticleService {
 	}
 
 	//Read
+	@Transactional(readOnly = true)
 	public List<ArticleResponse> readArticle() {
 		return articleRepo.findAll()
 				.stream()
@@ -35,6 +38,7 @@ public class ArticleService {
 				.toList();
 	}
 
+	@Transactional(readOnly = true)
 	public ArticleResponse readArticleById(Long id) {
 		return ArticleResponse.toEntity(articleRepo.findById(id).orElseThrow(
 				() -> new IllegalArgumentException("article doesn't exit")
