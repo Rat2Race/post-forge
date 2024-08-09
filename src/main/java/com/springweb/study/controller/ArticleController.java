@@ -11,6 +11,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @Controller
 @RequestMapping("/api")
 @RequiredArgsConstructor
@@ -20,14 +22,35 @@ public class ArticleController {
 
 	//Create
 	@PostMapping("/create")
-	public ResponseEntity<?> createArticle(@RequestBody ArticleRequest articleRequest) {
+	public ResponseEntity<ArticleRequest> createArticle(@RequestBody ArticleRequest articleRequest) {
 		Long articleId = articleService.createArticle(articleRequest);
 		return ResponseEntity.status(HttpStatus.CREATED).body(articleRequest);
 	}
 
 	//Read
-	@GetMapping("/read/{id}")
-	public ResponseEntity<ArticleResponse> readArticle(@PathVariable Long id) {
-		articleService.readArticle();
+	// /read/article?id=1
+	@GetMapping("/read/article")
+	public ResponseEntity<ArticleResponse> readArticleById(@RequestParam Long id) {
+		return ResponseEntity.status(HttpStatus.OK).body(articleService.readArticleById(id));
 	}
+
+	@GetMapping("/read/article")
+	public ResponseEntity<List<ArticleResponse>> readArticles() {
+		return ResponseEntity.status(HttpStatus.OK).body(articleService.readArticle());
+	}
+
+	//Update
+	// /update?id=1
+	@PutMapping("/update")
+	public ResponseEntity<ArticleResponse> updateArticle(@RequestBody ArticleRequest articleRequest, @RequestParam Long id) {
+		return ResponseEntity.status(HttpStatus.OK).body(articleService.updateArticleById(id, articleRequest));
+	}
+
+	//Delete
+	@DeleteMapping("/delete")
+	public ResponseEntity<String> deleteArticle(@RequestParam Long id) {
+		articleService.deleteArticleById(id);
+		return ResponseEntity.status(HttpStatus.OK).body("Delete Success");
+	}
+
 }
