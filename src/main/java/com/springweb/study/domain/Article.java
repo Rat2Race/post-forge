@@ -2,13 +2,17 @@ package com.springweb.study.domain;
 
 import com.springweb.study.domain.dto.ArticleRequest;
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 @Entity
 @Table(name = "article")
 @Getter
 @Builder
+@AllArgsConstructor
+@NoArgsConstructor
 public class Article extends AuditingFields {
 
 	@Id @GeneratedValue(strategy = GenerationType.IDENTITY)
