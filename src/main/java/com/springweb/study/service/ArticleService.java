@@ -43,10 +43,7 @@ public class ArticleService {
 
 	//Update
 	public ArticleResponse updateArticleById(Long id, ArticleRequest articleRequest) {
-		Article article = articleRepo.findById(id).orElseThrow(
-				() -> new IllegalArgumentException("article doesn't exit")
-		);
-
+		Article article = getArticleById(id);
 		article.update(articleRequest);
 
 		return ArticleResponse.toEntity(article);
@@ -54,11 +51,14 @@ public class ArticleService {
 
 	//Delete
 	public void deleteArticleById(Long id) {
-		Article article = articleRepo.findById(id).orElseThrow(
+		Article article = getArticleById(id);
+		articleRepo.deleteById(article.getId());
+	}
+
+	private Article getArticleById(Long id) {
+		return articleRepo.findById(id).orElseThrow(
 				() -> new IllegalArgumentException("article doesn't exit")
 		);
-
-		articleRepo.deleteById(article.getId());
 	}
 
 }
