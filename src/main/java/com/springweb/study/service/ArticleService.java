@@ -35,6 +35,12 @@ public class ArticleService {
 				.toList();
 	}
 
+	public ArticleResponse readArticleById(Long id) {
+		return ArticleResponse.toEntity(articleRepo.findById(id).orElseThrow(
+				() -> new IllegalArgumentException("article doesn't exit")
+		));
+	}
+
 	//Update
 	public ArticleResponse updateArticleById(Long id, ArticleRequest articleRequest) {
 		Article article = articleRepo.findById(id).orElseThrow(
