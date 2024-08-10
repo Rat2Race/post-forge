@@ -11,6 +11,7 @@ public class ArticleResponse {
 	private String title;
 	private String content;
 	private String author;
+	private Long views;
 
 	public static ArticleResponse toEntity(Article article) {
 		return ArticleResponse.builder()
@@ -18,6 +19,7 @@ public class ArticleResponse {
 				.title(article.getTitle())
 				.content(article.getContent())
 				.author(article.getAuthor())
+				.views(article.getViews())
 				.build();
 	}
 }
