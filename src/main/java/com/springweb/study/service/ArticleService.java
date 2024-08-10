@@ -5,6 +5,8 @@ import com.springweb.study.domain.dto.ArticleRequest;
 import com.springweb.study.domain.dto.ArticleResponse;
 import com.springweb.study.repository.ArticleRepo;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -70,5 +72,10 @@ public class ArticleService {
 		Article article = getArticleById(id);
 		Long views = article.getViews();
 		article.updateViews(++views);
+	}
+
+	//검색
+	public Page<Article> search(String title, Pageable pageable) {
+		return articleRepo.findByTitleContaining(title, pageable);
 	}
 }
