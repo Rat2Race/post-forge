@@ -9,7 +9,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -65,4 +64,10 @@ public class ArticleService {
 		);
 	}
 
+	//조회 카운팅
+	public void countViews(Long id) {
+		Article article = getArticleById(id);
+		Long views = article.getViews();
+		article.updateViews(++views);
+	}
 }
