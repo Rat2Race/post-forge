@@ -1,6 +1,7 @@
 package com.springweb.study.service;
 
 import com.springweb.study.domain.Article;
+import com.springweb.study.domain.dto.ArticleResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationListener;
 import org.springframework.stereotype.Service;
@@ -13,7 +14,7 @@ public class ClickViewListener implements ApplicationListener<ViewsEvent> {
 
 	@Override
 	public void onApplicationEvent(ViewsEvent event) {
-		Article article = event.getArticle();
-		articleService.countViews(article.getId());
+		ArticleResponse articleResponse = event.getArticleResponse();
+		articleService.countViews(articleResponse.getId());
 	}
 }

@@ -1,5 +1,6 @@
 package com.springweb.study.controller;
 
+import com.springweb.study.domain.Article;
 import com.springweb.study.domain.dto.ArticleRequest;
 import com.springweb.study.domain.dto.ArticleResponse;
 import com.springweb.study.service.ArticleService;
@@ -33,6 +34,7 @@ public class ArticleController {
 	@GetMapping("/read/article/{id}")
 	public ResponseEntity<ArticleResponse> readArticleById(@PathVariable Long id) {
 		ArticleResponse articleResponse = articleService.readArticleById(id);
+
 		//eventPublisher
 		applicationEventPublisher.publishEvent(new ViewsEvent(articleResponse));
 

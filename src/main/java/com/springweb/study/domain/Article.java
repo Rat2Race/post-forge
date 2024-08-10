@@ -1,6 +1,7 @@
 package com.springweb.study.domain;
 
 import com.springweb.study.domain.dto.ArticleRequest;
+import com.springweb.study.domain.dto.ArticleResponse;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
