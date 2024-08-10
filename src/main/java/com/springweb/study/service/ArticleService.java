@@ -23,6 +23,7 @@ public class ArticleService {
 				.title(articleRequest.getTitle())
 				.content(articleRequest.getContent())
 				.author(articleRequest.getAuthor())
+				.views(0L)
 				.build();
 
 		return articleRepo.save(article).getId();
