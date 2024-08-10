@@ -27,9 +27,16 @@ public class Article extends AuditingFields {
 	@Column(name = "author")
 	private String author;
 
+	@Column(name = "views")
+	private Long views;
+
 	public void update(ArticleRequest articleRequest) {
 		this.title = articleRequest.getTitle();
 		this.content = articleRequest.getContent();
 		this.author = articleRequest.getAuthor();
+	}
+
+	public void updateViews(Long count) {
+		this.views = count;
 	}
 }
