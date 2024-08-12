@@ -73,9 +73,4 @@ public class ArticleService {
 		Long views = article.getViews();
 		article.updateViews(++views);
 	}
-
-	//검색
-	public Page<Article> search(String title, Pageable pageable) {
-		return articleRepo.findByTitleContaining(title, pageable);
-	}
 }
