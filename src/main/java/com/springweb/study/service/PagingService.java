@@ -1,6 +1,7 @@
 package com.springweb.study.service;
 
 import com.springweb.study.domain.Article;
+import com.springweb.study.domain.dto.ArticleResponse;
 import com.springweb.study.repository.ArticleRepo;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -18,14 +19,14 @@ public class PagingService {
 
 	private final ArticleRepo articleRepo;
 
-	public Page<Article> getList(int page) {
+	public Page<ArticleResponse> getList(int page) {
 		List<Sort.Order> sorts = new ArrayList<>();
 		sorts.add(Sort.Order.desc("createDate"));
 		Pageable pageable = PageRequest.of(page, 10, Sort.by(sorts));
-		return articleRepo.findAll(pageable);
+		return articleRepo.findAllByPageable(pageable);
 	}
 
-	public Page<Article> searchByTitle(String title, Pageable pageable) {
+	public Page<ArticleResponse> searchByTitle(String title, Pageable pageable) {
 		return articleRepo.findByTitleContaining(title, pageable);
 	}
 }

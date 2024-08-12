@@ -1,11 +1,16 @@
 package com.springweb.study.controller;
 
+import com.springweb.study.domain.Article;
 import com.springweb.study.domain.dto.ArticleRequest;
 import com.springweb.study.domain.dto.ArticleResponse;
 import com.springweb.study.service.ArticleService;
+import com.springweb.study.service.PagingService;
 import com.springweb.study.service.ViewsEvent;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -20,6 +25,7 @@ public class ArticleController {
 
 	private final ArticleService articleService;
 	private final ApplicationEventPublisher applicationEventPublisher;
+	private final PagingService pagingService;
 
 	//Create
 	@PostMapping("/create")
@@ -41,8 +47,10 @@ public class ArticleController {
 	}
 
 	@GetMapping("/read/article")
-	public ResponseEntity<List<ArticleResponse>> readArticles() {
-		return ResponseEntity.status(HttpStatus.OK).body(articleService.readArticle());
+	public ResponseEntity<Page<ArticleResponse>> readArticles(@PageableDefault(size = 10) Pageable pageable) {
+		int page = pageable.getPageSize();
+		Page<ArticleResponse> paging = this.pagingService.getList(page);
+		return ResponseEntity.status(HttpStatus.OK).body(paging);
 	}
 
 	//Update
