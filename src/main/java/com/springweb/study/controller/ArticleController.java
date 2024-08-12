@@ -1,6 +1,5 @@
 package com.springweb.study.controller;
 
-import com.springweb.study.domain.Article;
 import com.springweb.study.domain.dto.ArticleRequest;
 import com.springweb.study.domain.dto.ArticleResponse;
 import com.springweb.study.service.ArticleService;
@@ -47,9 +46,9 @@ public class ArticleController {
 	}
 
 	@GetMapping("/read/article")
-	public ResponseEntity<Page<ArticleResponse>> readArticles(@PageableDefault(size = 10) Pageable pageable) {
-		int page = pageable.getPageSize();
-		Page<ArticleResponse> paging = this.pagingService.getList(page);
+	public ResponseEntity<Page<ArticleResponse>> readArticles(
+			@PageableDefault(size = 10) Pageable pageable) {
+		Page<ArticleResponse> paging = this.pagingService.getArticles(pageable);
 		return ResponseEntity.status(HttpStatus.OK).body(paging);
 	}
 
