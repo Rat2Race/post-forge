@@ -5,8 +5,6 @@ import com.springweb.study.domain.dto.ArticleRequest;
 import com.springweb.study.domain.dto.ArticleResponse;
 import com.springweb.study.repository.ArticleRepo;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 

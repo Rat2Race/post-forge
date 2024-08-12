@@ -7,7 +7,7 @@ import org.springframework.context.ApplicationEvent;
 @Getter
 public class ViewsEvent extends ApplicationEvent {
 
-	private ArticleResponse articleResponse;
+	private final ArticleResponse articleResponse;
 
 	public ViewsEvent(ArticleResponse articleResponse) {
 		super(articleResponse);
