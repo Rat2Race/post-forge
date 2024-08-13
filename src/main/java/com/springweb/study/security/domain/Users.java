@@ -1,4 +1,4 @@
-package com.springweb.study.security;
+package com.springweb.study.security.domain;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
