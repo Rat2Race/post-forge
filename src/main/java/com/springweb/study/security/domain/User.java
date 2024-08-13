@@ -1,6 +1,5 @@
 package com.springweb.study.security.domain;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -8,9 +7,9 @@ import lombok.*;
 @Getter
 @Builder
 @AllArgsConstructor
-@Table(name = "users")
+@Table(name = "user")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class Users {
+public class User {
 
 	@Id @GeneratedValue(strategy = GenerationType.IDENTITY)
 	@Column(name = "user_id")
@@ -27,4 +26,8 @@ public class Users {
 
 	@Column(nullable = false)
 	private String number;
+
+	@Column(nullable = false)
+	@Enumerated
+	private UserRoleEnum role;
 }

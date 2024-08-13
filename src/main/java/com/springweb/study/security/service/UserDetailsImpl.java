@@ -1,12 +1,14 @@
 package com.springweb.study.security.service;
 
 import com.springweb.study.security.domain.UserRoleEnum;
+import com.springweb.study.security.domain.User;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.userdetails.User;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
+import java.util.ArrayList;
 import java.util.Collection;
 
 @AllArgsConstructor
@@ -14,21 +16,23 @@ import java.util.Collection;
 public class UserDetailsImpl implements UserDetails {
 
 	private final User user;
-	private final String username;
+	private final String email;
 	private final String password;
 
 	@Override
 	public Collection<? extends GrantedAuthority> getAuthorities() {
-		return null;
-	}
+		UserRoleEnum role = user.getRole();
+		String authority = role.getAuthority();
 
-	@Override
-	public String getPassword() {
-		return null;
+		SimpleGrantedAuthority simpleGrantedAuthority = new SimpleGrantedAuthority(authority);
+		Collection<GrantedAuthority> authorities = new ArrayList<>();
+		authorities.add(simpleGrantedAuthority);
+
+		return authorities;
 	}
 
 	@Override
 	public String getUsername() {
-		return null;
+		return this.email;
 	}
 }
