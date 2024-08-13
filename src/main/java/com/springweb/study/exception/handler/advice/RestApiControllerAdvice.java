@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 @Slf4j
-@RestControllerAdvice(basePackages = "messageboard.controller")
+@RestControllerAdvice(basePackages = "study.controller")
 public class RestApiControllerAdvice {
 
 	@ExceptionHandler
@@ -19,3 +19,5 @@ public class RestApiControllerAdvice {
 		return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResult);
 	}
 }
+
+
