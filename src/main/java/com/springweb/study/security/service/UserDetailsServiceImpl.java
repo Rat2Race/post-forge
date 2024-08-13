@@ -1,6 +1,6 @@
 package com.springweb.study.security.service;
 
-import com.springweb.study.security.domain.Users;
+import com.springweb.study.security.domain.User;
 import com.springweb.study.security.repository.UserRepo;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -16,9 +16,12 @@ public class UserDetailsServiceImpl implements UserDetailsService {
 
 	@Override
 	public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
-		Users users = userRepo.findByEmail(email);
-		if(users == null) {
-			throw new IllegalArgumentException(email);
+		User user = userRepo.findByEmail(email);
+
+		if(user == null) {
+			throw new UsernameNotFoundException("not found user");
 		}
+
+		return new UserDetailsImpl(user, user.getEmail(), user.getPassword());
 	}
 }
