@@ -2,6 +2,8 @@ package com.springweb.study.security.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.springweb.study.security.filter.JsonUsernamePasswordAuthenticationFilter;
+import com.springweb.study.security.handler.LoginFailureHandler;
+import com.springweb.study.security.handler.LoginSuccessJWTProvideHandler;
 import com.springweb.study.security.service.UserDetailsServiceImpl;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
@@ -62,14 +64,25 @@ public class SecurityConfig {
 	@Bean
 	public AuthenticationManager authenticationManager() throws Exception {
 		DaoAuthenticationProvider provider = daoAuthenticationProvider();
-		provider.setPasswordEncoder(passwordEncoder());
 		return new ProviderManager(provider);
+	}
+
+	@Bean
+	public LoginSuccessJWTProvideHandler loginSuccessJWTProvideHandler() {
+		return new LoginSuccessJWTProvideHandler();
+	}
+
+	@Bean
+	public LoginFailureHandler loginFailureHandler() {
+		return new LoginFailureHandler();
 	}
 
 	@Bean
 	public JsonUsernamePasswordAuthenticationFilter jsonUsernamePasswordAuthenticationFilter() throws Exception {
 		JsonUsernamePasswordAuthenticationFilter jsonUsernamePasswordAuthenticationFilter = new JsonUsernamePasswordAuthenticationFilter(objectMapper);
 		jsonUsernamePasswordAuthenticationFilter.setAuthenticationManager(authenticationManager());
+		jsonUsernamePasswordAuthenticationFilter.setAuthenticationSuccessHandler(loginSuccessJWTProvideHandler());
+		jsonUsernamePasswordAuthenticationFilter.setAuthenticationFailureHandler(loginFailureHandler());
 		return jsonUsernamePasswordAuthenticationFilter;
 	}
 }
