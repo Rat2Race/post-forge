@@ -12,6 +12,8 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 @RestControllerAdvice(basePackages = "study.controller")
 public class RestApiControllerAdvice {
 
+
+
 	@ExceptionHandler
 	public ResponseEntity<ErrorResult> badRequest(BadRequestException e) {
 		log.error("[401 에러]", e);
