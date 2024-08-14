@@ -7,7 +7,7 @@ import lombok.*;
 @Getter
 @Builder
 @AllArgsConstructor
-@Table(name = "user")
+@Table(name = "users")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class User {
 
@@ -15,23 +15,23 @@ public class User {
 	@Column(name = "user_id")
 	private Long id;
 
-	@Column(nullable = false)
+	@Column(nullable = false, name = "username")
 	private String name;
 
-	@Column(nullable = false, unique = true, length = 30)
+	@Column(nullable = false, unique = true, length = 30, name = "email")
 	private String email;
 
-	@Column(nullable = false)
+	@Column(nullable = false, name = "password")
 	private String password;
 
-	@Column(nullable = false)
+	@Column(nullable = false, name = "number")
 	private String number;
 
-	@Column(nullable = false)
-	@Enumerated
+	@Enumerated(EnumType.STRING)
+	@Column(nullable = false, name = "role")
 	private UserRoleEnum role;
 
-	@Column(length = 1000)
+	@Column(length = 1000, name = "refreshToken")
 	private String refreshToken;
 
 	public void updateRefreshToken(String refreshToken) {
