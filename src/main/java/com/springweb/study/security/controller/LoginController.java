@@ -1,54 +1,43 @@
 package com.springweb.study.security.controller;
 
-import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.web.authentication.logout.SecurityContextLogoutHandler;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
-@Slf4j
-@RequiredArgsConstructor
 @Controller
 public class LoginController {
 
+	@GetMapping("/login")
+	public String loginPage(@RequestParam(value = "error", required = false) String error,
+	                        @RequestParam(value = "logout", required = false) String logout,
+	                        RedirectAttributes redirectAttributes) {
+		if (error != null) {
+			redirectAttributes.addFlashAttribute("error", "Invalid username or password.");
+		}
+		if (logout != null) {
+			redirectAttributes.addFlashAttribute("message", "You have been logged out successfully.");
+		}
+		return "login";  // login.html로 이동
+	}
+
 	@GetMapping("/rootPage")
 	public String rootPage() {
-
-		return "rootPage";
+		return "rootPage";  // rootPage.html로 이동
 	}
 
-	/**
-	 * [View] 로그인 페이지를 엽니다.
-	 */
-	@GetMapping("/login")
-	public String login() {
-		return "login";
+	@PostMapping("/logout")
+	public String logout(HttpServletRequest request, HttpServletResponse response) {
+		Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+		if (auth != null) {
+			new SecurityContextLogoutHandler().logout(request, response, auth);
+		}
+		return "redirect:/login?logout";  // 로그아웃 후 로그인 페이지로 이동
 	}
-
-	/**
-	 * [Action] 로그인 프로세스를 동작시킨다.
-	 */
-	@PostMapping("/user/login")
-	public ResponseEntity<?> authenticateUser() {
-		return ResponseEntity.ok().build();
-	}
-
-	/**
-	 * [Action] 로그아웃 프로세스를 동작시킨다.
-	 */
-	@GetMapping("/user/logout")
-	public String logout(HttpServletResponse response) {
-		// JWT 토큰을 저장하는 쿠키의 값을 삭제
-		Cookie jwtCookie = new Cookie("jwt", null);
-		jwtCookie.setMaxAge(0);  // 쿠키의 유효기간을 0으로 설정하여 즉시 삭제
-		jwtCookie.setPath("/");
-		response.addCookie(jwtCookie);
-
-		return "redirect:/login";  // 로그인 페이지로 리다이렉트
-	}
-
-
 }
