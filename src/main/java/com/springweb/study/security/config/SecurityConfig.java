@@ -4,6 +4,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.springweb.study.security.filter.JsonUsernamePasswordAuthenticationFilter;
 import com.springweb.study.security.handler.LoginFailureHandler;
 import com.springweb.study.security.handler.LoginSuccessJWTProvideHandler;
+import com.springweb.study.security.repository.UserRepo;
+import com.springweb.study.security.service.JwtService;
 import com.springweb.study.security.service.UserDetailsServiceImpl;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
@@ -18,6 +20,7 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.factory.PasswordEncoderFactories;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.logout.LogoutFilter;
 
 @Configuration
 @EnableWebSecurity
@@ -26,6 +29,8 @@ public class SecurityConfig {
 
 	private final UserDetailsServiceImpl userDetailsService;
 	private final ObjectMapper objectMapper;
+	private final UserRepo userRepo;
+	private final JwtService jwtService;
 
 	@Bean
 	public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
@@ -42,6 +47,10 @@ public class SecurityConfig {
 				.sessionManagement(session -> session
 						.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
 				);
+
+		http
+				.addFilterAfter(jsonUsernamePasswordAuthenticationFilter(), LogoutFilter.class)
+				.addFilterBefore(jwtAuthenticationProcessingFilter(), JsonUsernamePasswordAuthenticationFilter.class)
 
 		return http.build();
 	}
@@ -84,5 +93,10 @@ public class SecurityConfig {
 		jsonUsernamePasswordAuthenticationFilter.setAuthenticationSuccessHandler(loginSuccessJWTProvideHandler());
 		jsonUsernamePasswordAuthenticationFilter.setAuthenticationFailureHandler(loginFailureHandler());
 		return jsonUsernamePasswordAuthenticationFilter;
+	}
+
+	@Bean
+	public JwtAuthenticationProcessingFilter jwtAuthenticationProcessingFilter() {
+		return null;
 	}
 }
