@@ -28,7 +28,7 @@ public class User {
 	private String number;
 
 	@Enumerated(EnumType.STRING)
-	@Column(nullable = false, name = "role")
+	@Column(nullable = true, name = "role")
 	private UserRoleEnum role;
 
 	@Column(length = 1000, name = "refreshToken")
