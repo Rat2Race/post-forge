@@ -30,4 +30,15 @@ public class User {
 	@Column(nullable = false)
 	@Enumerated
 	private UserRoleEnum role;
+
+	@Column(length = 1000)
+	private String refreshToken;
+
+	public void updateRefreshToken(String refreshToken) {
+		this.refreshToken = refreshToken;
+	}
+
+	public void destroyRefreshToken() {
+		this.refreshToken = null;
+	}
 }
