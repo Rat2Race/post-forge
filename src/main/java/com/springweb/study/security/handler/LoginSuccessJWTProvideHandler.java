@@ -1,8 +1,11 @@
 package com.springweb.study.security.handler;
 
+import com.springweb.study.security.repository.UserRepo;
+import com.springweb.study.security.service.JwtService;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -11,12 +14,32 @@ import org.springframework.security.web.authentication.SimpleUrlAuthenticationSu
 import java.io.IOException;
 
 @Slf4j
+@RequiredArgsConstructor
 public class LoginSuccessJWTProvideHandler extends SimpleUrlAuthenticationSuccessHandler {
+
+	private final JwtService jwtService;
+	private final UserRepo userRepo;
 
 	@Override
 	public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException, ServletException {
-		UserDetails userDetails = (UserDetails) authentication.getPrincipal();
-		log.info( "로그인 성공. JWT 발급. username: {}" ,userDetails.getUsername());
+		String email = extractEmail(authentication);
+		String accessToken = jwtService.createAccessToken(email);
+		String refreshToken = jwtService.createRefreshToken();
+
+		jwtService.sendAccessAndRefreshToken(response, accessToken, refreshToken);
+		userRepo.findByEmail(email).ifPresent(
+				user -> user.updateRefreshToken(refreshToken)
+		);
+
+		log.info("로그인 성공. JWT 발급. username: {}", email);
+		log.info("AccessToken을 발급합니다. AccessToken: {}", accessToken);
+		log.info("RefreshToken을 발급합니다. RefreshToken: {}", refreshToken);
 
 		response.getWriter().write("success");
-	}}
+	}
+
+	private String extractEmail(Authentication authentication) {
+		UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+		return userDetails.getUsername();
+	}
+}
