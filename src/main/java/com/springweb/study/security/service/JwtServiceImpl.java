@@ -30,10 +30,10 @@ public class JwtServiceImpl implements JwtService {
 	private String secret;
 
 	@Value("${jwt.access.expiration}")
-	private long accessTokenValidityInSeconds;
+	private String accessTokenValidityInSeconds;
 
 	@Value("{jwt.refresh.expiration}")
-	private long refreshTokenValidityInSeconds;
+	private String refreshTokenValidityInSeconds;
 
 	@Value("${jwt.access.header}")
 	private String accessHeader;
@@ -53,7 +53,7 @@ public class JwtServiceImpl implements JwtService {
 	public String createAccessToken(String email) {
 		return JWT.create()
 				.withSubject(ACCESS_TOKEN_SUBJECT)
-				.withExpiresAt(new Date(System.currentTimeMillis() + accessTokenValidityInSeconds * 1000))
+				.withExpiresAt(new Date(System.currentTimeMillis() + Long.parseLong(accessTokenValidityInSeconds) * 1000))
 				.withClaim(USERNAME_CLAIM, email)
 				.sign(Algorithm.HMAC512(secret));
 	}
@@ -62,7 +62,7 @@ public class JwtServiceImpl implements JwtService {
 	public String createRefreshToken() {
 		return JWT.create()
 				.withSubject(REFRESH_TOKEN_SUBJECT)
-				.withExpiresAt(new Date(System.currentTimeMillis() + refreshTokenValidityInSeconds * 1000))
+				.withExpiresAt(new Date(System.currentTimeMillis() + Long.parseLong(refreshTokenValidityInSeconds) * 1000))
 				.sign(Algorithm.HMAC512(secret));
 	}
 
