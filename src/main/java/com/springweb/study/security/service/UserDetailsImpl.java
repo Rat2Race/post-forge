@@ -11,13 +11,19 @@ import org.springframework.security.core.userdetails.UserDetails;
 import java.util.ArrayList;
 import java.util.Collection;
 
-@AllArgsConstructor
+
 @Getter
 public class UserDetailsImpl implements UserDetails {
 
 	private final User user;
 	private final String email;
 	private final String password;
+
+	public UserDetailsImpl(User user) {
+		this.user = user;
+		this.email = user.getEmail();
+		this.password = user.getPassword();
+	}
 
 	@Override
 	public Collection<? extends GrantedAuthority> getAuthorities() {

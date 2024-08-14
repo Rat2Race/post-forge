@@ -79,7 +79,7 @@ public class SecurityConfig {
 
 	@Bean
 	public LoginSuccessJWTProvideHandler loginSuccessJWTProvideHandler() {
-		return new LoginSuccessJWTProvideHandler();
+		return new LoginSuccessJWTProvideHandler(jwtService, userRepo);
 	}
 
 	@Bean
