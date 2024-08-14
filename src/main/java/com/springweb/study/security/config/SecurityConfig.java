@@ -2,6 +2,7 @@ package com.springweb.study.security.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.springweb.study.security.filter.JsonUsernamePasswordAuthenticationFilter;
+import com.springweb.study.security.filter.JwtAuthenticationProcessingFilter;
 import com.springweb.study.security.handler.LoginFailureHandler;
 import com.springweb.study.security.handler.LoginSuccessJWTProvideHandler;
 import com.springweb.study.security.repository.UserRepo;
@@ -97,6 +98,8 @@ public class SecurityConfig {
 
 	@Bean
 	public JwtAuthenticationProcessingFilter jwtAuthenticationProcessingFilter() {
-		return null;
+		JwtAuthenticationProcessingFilter jsonUsernamePasswordLoginFilter = new JwtAuthenticationProcessingFilter(jwtService, userRepo);
+
+		return jsonUsernamePasswordLoginFilter;
 	}
 }
