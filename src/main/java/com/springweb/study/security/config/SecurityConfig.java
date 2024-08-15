@@ -40,7 +40,7 @@ public class SecurityConfig {
 				.httpBasic(AbstractHttpConfigurer::disable)
 				.formLogin(AbstractHttpConfigurer::disable)
 				.authorizeHttpRequests(authorize -> authorize
-						.requestMatchers("/login", "/resources/**", "/css/**", "/js/**", "**/favicon.ico", "/error").permitAll()
+						.requestMatchers("/login", "/resources/**", "/css/**", "/js/**", "**/favicon.ico", "/error", "/signup").permitAll()
 						.anyRequest().authenticated())
 				.logout(logout -> logout
 						.logoutSuccessUrl("/login")
