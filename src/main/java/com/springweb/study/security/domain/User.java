@@ -11,24 +11,22 @@ import lombok.*;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class User {
 
-	@Id @GeneratedValue(strategy = GenerationType.IDENTITY)
-	@Column(name = "user_id")
-	private Long id;
+	@Id
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	@Column(name = "MEMBER_ID")
+	private Long memberId;
 
-	@Column(nullable = false, name = "username")
-	private String name;
-
-	@Column(nullable = false, unique = true, length = 30, name = "email")
+	@Column(name = "email", nullable = false, unique = true)
 	private String email;
 
-	@Column(nullable = false, name = "password")
+	@Column(name = "NAME", nullable = false)
+	private String name;
+
+	@Column(name = "PASSWORD", nullable = false)
 	private String password;
 
-	@Column(nullable = false, name = "number")
-	private String number;
-
 	@Enumerated(EnumType.STRING)
-	@Column(nullable = true, name = "role")
+	@Column(name = "ROLE", nullable = false)
 	private UserRoleEnum role;
 
 	@Column(length = 1000, name = "refreshToken")
