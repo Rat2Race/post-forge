@@ -1,6 +1,6 @@
 package com.springweb.study.security.controller;
 
-import com.springweb.study.security.domain.dto.AddUserRequest;
+import com.springweb.study.security.domain.dto.LoginRequestDto;
 import com.springweb.study.security.service.AuthService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
@@ -19,7 +19,7 @@ public class RegistrationController {
 	}
 
 	@PostMapping("/user")
-	public String signup(AddUserRequest request){
+	public String signup(LoginRequestDto request){
 		userService.save(request); // 회원 가입 메소드 호출
 		return "redirect:/login"; // 회원 가입이 완료된 후 로그인 페이지로 이동
 	}
