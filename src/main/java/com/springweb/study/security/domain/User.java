@@ -4,6 +4,8 @@ import com.springweb.study.domain.AuditingFields;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.util.List;
+
 @Entity
 @Getter
 @Builder
@@ -31,7 +33,7 @@ public class User extends AuditingFields {
 
 	@Enumerated(EnumType.STRING)
 	@Column(name = "ROLE", nullable = false)
-	private RoleType role;
+	private List<RoleType> role;
 
 	@Enumerated(EnumType.STRING)
 	@Column(name = "status", nullable = false)
