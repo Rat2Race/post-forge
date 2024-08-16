@@ -1,37 +1,45 @@
 package com.springweb.study.security.filter;
 
 import com.springweb.study.security.domain.User;
-import com.springweb.study.security.repository.UserRepo;
-import com.springweb.study.security.service.JwtService;
 import com.springweb.study.security.service.UserDetailsImpl;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.authority.mapping.GrantedAuthoritiesMapper;
-import org.springframework.security.core.authority.mapping.NullAuthoritiesMapper;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.List;
 
 @RequiredArgsConstructor
-public class JwtAuthenticationProcessingFilter extends OncePerRequestFilter {
+public class JwtAuthFilter extends OncePerRequestFilter {
 
-	private final JwtService jwtService;
-	private final UserRepo userRepo;
-
-	private GrantedAuthoritiesMapper authoritiesMapper = new NullAuthoritiesMapper();
-
-	private final String NO_CHECK_URL = "/login";
+	private final UserDetailsService userDetailsService;
 
 	@Override
-	protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
-		if(request.getRequestURI().equals(NO_CHECK_URL)) {
+	protected void doFilterInternal(
+			HttpServletRequest request,
+			@NonNull HttpServletResponse response,
+			@NonNull FilterChain filterChain
+	) throws ServletException, IOException {
+
+		List<String> list = Arrays.asList(
+				"/user/login",
+				"/login",
+				"/css/**",
+				"/js/**",
+				"/images/**"
+		);
+
+		if (list.contains(request.getRequestURI())) {
 			filterChain.doFilter(request, response);
 			return;
 		}

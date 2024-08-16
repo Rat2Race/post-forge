@@ -1,6 +1,5 @@
 package com.springweb.study.security.controller;
 
-import com.springweb.study.security.domain.dto.LoginRequestDto;
 import com.springweb.study.security.service.AuthService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
