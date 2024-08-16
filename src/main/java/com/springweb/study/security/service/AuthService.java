@@ -1,7 +1,6 @@
 package com.springweb.study.security.service;
 
 import com.springweb.study.security.domain.User;
-import com.springweb.study.security.domain.dto.LoginRequestDto;
 import com.springweb.study.security.repository.UserRepo;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;

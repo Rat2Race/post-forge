@@ -1,7 +1,6 @@
 package com.springweb.study.security.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.springweb.study.security.filter.JsonUsernamePasswordAuthenticationFilter;
 import com.springweb.study.security.filter.JwtAuthenticationProcessingFilter;
 import com.springweb.study.security.handler.LoginFailureHandler;
 import com.springweb.study.security.handler.LoginSuccessJWTProvideHandler;
