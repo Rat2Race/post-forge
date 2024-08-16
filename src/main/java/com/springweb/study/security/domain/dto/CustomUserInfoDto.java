@@ -1,6 +1,5 @@
 package com.springweb.study.security.domain.dto;
 
-import com.springweb.study.security.domain.UserRoleEnum;
 import lombok.*;
 
 @Data
