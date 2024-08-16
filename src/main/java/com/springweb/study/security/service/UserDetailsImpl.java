@@ -1,8 +1,6 @@
 package com.springweb.study.security.service;
 
-import com.springweb.study.security.domain.UserRoleEnum;
 import com.springweb.study.security.domain.User;
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
