@@ -25,7 +25,8 @@ public class UserDetailsServiceImpl implements UserDetailsService {
 	}
 
 	public String addUser(User user) {
-
+		userRepo.save(user);
+		return "USER ADDED SUCCESS";
 	}
 
 }
