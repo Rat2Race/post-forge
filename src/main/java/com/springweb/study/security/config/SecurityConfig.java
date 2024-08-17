@@ -1,23 +1,29 @@
 package com.springweb.study.security.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.springweb.study.security.filter.JwtAuthFilter;
 import com.springweb.study.security.filter.JwtAuthenticationProcessingFilter;
 import com.springweb.study.security.handler.LoginFailureHandler;
-import com.springweb.study.security.handler.LoginSuccessJWTProvideHandler;
 import com.springweb.study.security.repository.UserRepo;
+import com.springweb.study.security.service.JwtService;
+import com.springweb.study.security.service.UserDetailsServiceImpl;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.ProviderManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
+import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.factory.PasswordEncoderFactories;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.authentication.logout.LogoutFilter;
 
 @Configuration
@@ -26,9 +32,7 @@ import org.springframework.security.web.authentication.logout.LogoutFilter;
 public class SecurityConfig {
 
 	private final UserDetailsServiceImpl userDetailsService;
-	private final ObjectMapper objectMapper;
-	private final UserRepo userRepo;
-	private final JwtService jwtService;
+	private final JwtAuthFilter authFilter;
 
 	@Bean
 	public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
@@ -36,68 +40,35 @@ public class SecurityConfig {
 				.csrf(AbstractHttpConfigurer::disable)
 				.httpBasic(AbstractHttpConfigurer::disable)
 				.formLogin(AbstractHttpConfigurer::disable)
-				.authorizeHttpRequests(authorize -> authorize
-						.requestMatchers("/login", "/resources/**", "/css/**", "/js/**",
-								"**/favicon.ico", "/error", "/signup", "/swagger-ui/**").permitAll()
-						.anyRequest().authenticated())
-				.logout(logout -> logout
-						.logoutSuccessUrl("/login")
-						.invalidateHttpSession(true))
+				.authorizeHttpRequests(auth -> auth
+						.requestMatchers("/auth/welcome", "/auth/addNewUser", "/auth/generateToken").permitAll()
+						.requestMatchers("/auth/user/**").hasAuthority("ROLE_USER")
+						.requestMatchers("/auth/admin/**").hasAuthority("ROLE_ADMIN")
+						.anyRequest().authenticated() // Protect all other endpoints
+				)
 				.sessionManagement(session -> session
 						.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-				);
-
-		http
-				.addFilterAfter(jsonUsernamePasswordAuthenticationFilter(), LogoutFilter.class)
-				.addFilterBefore(jwtAuthenticationProcessingFilter(), JsonUsernamePasswordAuthenticationFilter.class);
+				)
+				.authenticationProvider(authenticationProvider())
+				.addFilterAfter(authFilter, UsernamePasswordAuthenticationFilter.class);
 
 		return http.build();
 	}
 
 	@Bean
-	public DaoAuthenticationProvider daoAuthenticationProvider() throws Exception {
-		DaoAuthenticationProvider daoAuthenticationProvider = new DaoAuthenticationProvider();
-
-		daoAuthenticationProvider.setUserDetailsService(userDetailsService);
-		daoAuthenticationProvider.setPasswordEncoder(passwordEncoder());
-
-		return daoAuthenticationProvider;
+	public PasswordEncoder passwordEncoder() {
+		return new BCryptPasswordEncoder();
+	}
+	@Bean
+	public AuthenticationProvider authenticationProvider() {
+		DaoAuthenticationProvider authenticationProvider = new DaoAuthenticationProvider();
+		authenticationProvider.setUserDetailsService(userDetailsService);
+		authenticationProvider.setPasswordEncoder(passwordEncoder());
+		return authenticationProvider;
 	}
 
 	@Bean
-	public static PasswordEncoder passwordEncoder() {
-		return PasswordEncoderFactories.createDelegatingPasswordEncoder();
-	}
-
-	@Bean
-	public AuthenticationManager authenticationManager() throws Exception {
-		DaoAuthenticationProvider provider = daoAuthenticationProvider();
-		return new ProviderManager(provider);
-	}
-
-	@Bean
-	public LoginSuccessJWTProvideHandler loginSuccessJWTProvideHandler() {
-		return new LoginSuccessJWTProvideHandler(jwtService, userRepo);
-	}
-
-	@Bean
-	public LoginFailureHandler loginFailureHandler() {
-		return new LoginFailureHandler();
-	}
-
-	@Bean
-	public JsonUsernamePasswordAuthenticationFilter jsonUsernamePasswordAuthenticationFilter() throws Exception {
-		JsonUsernamePasswordAuthenticationFilter jsonUsernamePasswordAuthenticationFilter = new JsonUsernamePasswordAuthenticationFilter(objectMapper);
-		jsonUsernamePasswordAuthenticationFilter.setAuthenticationManager(authenticationManager());
-		jsonUsernamePasswordAuthenticationFilter.setAuthenticationSuccessHandler(loginSuccessJWTProvideHandler());
-		jsonUsernamePasswordAuthenticationFilter.setAuthenticationFailureHandler(loginFailureHandler());
-		return jsonUsernamePasswordAuthenticationFilter;
-	}
-
-	@Bean
-	public JwtAuthenticationProcessingFilter jwtAuthenticationProcessingFilter() {
-		JwtAuthenticationProcessingFilter jsonUsernamePasswordLoginFilter = new JwtAuthenticationProcessingFilter(jwtService, userRepo);
-
-		return jsonUsernamePasswordLoginFilter;
+	public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
+		return config.getAuthenticationManager();
 	}
 }
