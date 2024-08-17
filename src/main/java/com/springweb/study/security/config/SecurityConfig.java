@@ -5,7 +5,6 @@ import com.springweb.study.security.filter.JwtAuthenticationProcessingFilter;
 import com.springweb.study.security.handler.LoginFailureHandler;
 import com.springweb.study.security.handler.LoginSuccessJWTProvideHandler;
 import com.springweb.study.security.repository.UserRepo;
-import com.springweb.study.security.service.JwtService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

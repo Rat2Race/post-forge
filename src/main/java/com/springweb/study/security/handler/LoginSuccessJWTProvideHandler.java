@@ -1,7 +1,6 @@
 package com.springweb.study.security.handler;
 
 import com.springweb.study.security.repository.UserRepo;
-import com.springweb.study.security.service.JwtService;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
