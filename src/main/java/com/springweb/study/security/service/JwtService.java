@@ -1,30 +1,80 @@
 package com.springweb.study.security.service;
 
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.SignatureAlgorithm;
+import io.jsonwebtoken.io.Decoders;
+import io.jsonwebtoken.security.Keys;
+import lombok.AccessLevel;
+import lombok.RequiredArgsConstructor;
+import lombok.Setter;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Optional;
+import java.security.Key;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.function.Function;
 
-public interface JwtService {
-	String createAccessToken(String email);
-	String createRefreshToken();
+@Transactional
+@Service
+@RequiredArgsConstructor
+@Setter(value = AccessLevel.PRIVATE)
+@Slf4j
+public class JwtService {
 
-	void updateRefreshToken(String email, String refreshToken);
+	public static final String SECRET = "5367566B59703373367639792F423F4528482B4D6251655468576D5A71347437";
 
-	void destroyRefreshToken(String email);
+	public String generateToken(String username) {
+		Map<String, Object> claims = new HashMap<>();
+		return createToken(claims, username);
+	}
 
-	void sendAccessAndRefreshToken(HttpServletResponse response, String accessToken, String refreshToken);
-	void sendAccessToken(HttpServletResponse response, String accessToken);
+	private String createToken(Map<String, Object> claims, String username) {
+		return Jwts.builder()
+				.setClaims(claims)
+				.setSubject(username)
+				.setIssuedAt(new Date())
+				.setExpiration(new Date(System.currentTimeMillis() + 1000 * 60 * 30))
+				.signWith(getSignKey(), SignatureAlgorithm.HS256)
+				.compact();
+	}
 
-	Optional<String> extractAccessToken(HttpServletRequest request);
+	private Key getSignKey() {
+		byte[] keyBytes = Decoders.BASE64.decode(SECRET);
+		return Keys.hmacShaKeyFor(keyBytes);
+	}
 
-	Optional<String> extractRefreshToken(HttpServletRequest request);
+	public String extractUsername(String token) {
+		return extractClaim(token, Claims::getSubject);
+	}
 
-	Optional<String> extractEmail(String accessToken);
+	public Date extractExpiration(String token) {
+		return extractClaim(token, Claims::getExpiration);
+	}
 
-	void setAccessTokenHeader(HttpServletResponse response, String accessToken);
+	public <T> T extractClaim(String token, Function<Claims, T> claimsResolver) {
+		final Claims claims = extractAllClaims(token);
+		return claimsResolver.apply(claims);
+	}
 
-	void setRefreshTokenHeader(HttpServletResponse response, String refreshToken);
+	private Claims extractAllClaims(String token) {
+		return Jwts.parserBuilder()
+				.setSigningKey(getSignKey())
+				.build()
+				.parseClaimsJws(token)
+				.getBody();
+	}
 
-	boolean isTokenValid(String token);
+	private Boolean isTokenExpired(String token) {
+		return extractExpiration(token).before(new Date());
+	}
+
+	public Boolean validateToken(String token, UserDetails userDetails) {
+		final String username = extractUsername(token);
+		return (username.equals(userDetails.getUsername()) && !isTokenExpired(token));
+	}
 }

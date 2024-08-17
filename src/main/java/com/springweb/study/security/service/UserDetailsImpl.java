@@ -13,13 +13,13 @@ import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
 @Service
-public class UserInfoDetails implements UserDetails {
+public class UserDetailsImpl implements UserDetails {
 
 	private String username;
 	private String password;
 	private List<GrantedAuthority> authorities;
 
-	public UserInfoDetails(User user) {
+	public UserDetails(User user) {
 		this.username = user.getUsername();
 		this.password = user.getPassword();
 		this.authorities = user.getRole().stream()
