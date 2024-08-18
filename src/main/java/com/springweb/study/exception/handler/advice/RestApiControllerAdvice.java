@@ -4,11 +4,14 @@ import com.springweb.study.exception.BadRequestException;
 import com.springweb.study.exception.Login_RestException;
 import com.springweb.study.exception.NotFindPage_RestException;
 import com.springweb.study.exception.handler.ErrorResult;
+import io.jsonwebtoken.ExpiredJwtException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+
+import java.security.SignatureException;
 
 @Slf4j
 @RestControllerAdvice(basePackages = "study.controller")
@@ -33,6 +36,16 @@ public class RestApiControllerAdvice {
 		log.error("[login 에러] ex", e);
 		ErrorResult errorResult = new ErrorResult("Login-rest-EX", e.getMessage());
 		return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorResult);
+	}
+
+	@ExceptionHandler(ExpiredJwtException.class)
+	public ResponseEntity<String> handleExpiredJwtException(ExpiredJwtException ex) {
+		return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("JWT Token has expired");
+	}
+
+	@ExceptionHandler(SignatureException.class)
+	public ResponseEntity<String> handleSignatureException(SignatureException ex) {
+		return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid JWT signature");
 	}
 }
 

@@ -1,6 +1,8 @@
 package com.springweb.study.security.domain;
 
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.springweb.study.domain.AuditingFields;
+import com.springweb.study.security.service.RoleTypeListDeserializer;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -33,6 +35,7 @@ public class User extends AuditingFields {
 
 	@Enumerated(EnumType.STRING)
 	@Column(name = "ROLE", nullable = false)
+	@JsonDeserialize(using = RoleTypeListDeserializer.class)
 	private List<RoleType> role;
 
 	@Enumerated(EnumType.STRING)

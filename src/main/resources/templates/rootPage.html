@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>메인 페이지</title>
+    <link rel="stylesheet" th:href="@{/css/styles.css}">
+</head>
+<body>
+<div class="main-container">
+    <h2>환영합니다!</h2>
+    <button class="btn" onclick="window.location.href='/logout'">로그아웃</button>
+
+    <h3>기사 목록</h3>
+    <table>
+        <thead>
+        <tr>
+            <th>제목</th>
+            <th>작성자</th>
+            <th>액션</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="article : ${articles}">
+            <td th:text="${article.title}"></td>
+            <td th:text="${article.author}"></td>
+            <td>
+                <a th:href="@{/api/read/article/{id}(id=${article.id})}">보기</a>
+                <a th:href="@{/update/{id}(id=${article.id})}">수정</a>
+            </td>
+        </tr>
+        </tbody>
+    </table>
+    <button class="btn" onclick="window.location.href='/api/create'">새 기사 작성</button>
+</div>
+</body>
+</html>
