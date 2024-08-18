@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>기사 수정</title>
+    <link rel="stylesheet" th:href="@{/css/styles.css}">
+</head>
+<body>
+<div class="article-container">
+    <h2>기사 수정</h2>
+    <form th:action="@{/api/update}" method="post">
+        <input type="hidden" th:value="${article.id}" name="id">
+        <div class="input-group">
+            <label for="title">제목:</label>
+            <input type="text" id="title" th:value="${article.title}" name="title" required>
+        </div>
+        <div class="input-group">
+            <label for="content">내용:</label>
+            <textarea id="content" name="content" required th:text="${article.content}"></textarea>
+        </div>
+        <div class="input-group">
+            <label for="author">작성자:</label>
+            <input type="text" id="author" th:value="${article.author}" name="author" required>
+        </div>
+        <button type="submit" class="btn">수정하기</button>
+    </form>
+</div>
+</body>
+</html>
