@@ -4,10 +4,13 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.function.Function;
 
 @Service
@@ -49,15 +52,15 @@ public class JwtService {
 	}
 
 	// JWT 토큰을 생성하는 메서드
-	public String generateToken(UserDetails userDetails) {
-		return createToken(userDetails.getUsername());
-	}
+	public String generateToken(Authentication authentication) {
+		UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
+		Map<String, Object> claims = new HashMap<>();
+		claims.put("role", userDetails.getAuthorities());
 
-	// JWT 토큰을 생성하는 내부 메서드
-	private String createToken(String subject) {
 		return Jwts.builder()
-				.setSubject(subject)
-				.setIssuedAt(new Date(System.currentTimeMillis()))
+				.setClaims(claims)
+				.setSubject(userDetails.getUsername())
+				.setIssuedAt(new Date())
 				.setExpiration(new Date(System.currentTimeMillis() + tokenValidity))
 				.signWith(SignatureAlgorithm.HS512, secretKey)
 				.compact();
