@@ -1,5 +1,6 @@
 package com.springweb.study.security.config;
 
+import com.springweb.study.security.domain.RoleType;
 import com.springweb.study.security.filter.JwtAuthFilter;
 import com.springweb.study.security.service.UserDetailsServiceImpl;
 import lombok.RequiredArgsConstructor;
@@ -33,9 +34,9 @@ public class SecurityConfig {
 				.httpBasic(AbstractHttpConfigurer::disable)
 				.formLogin(AbstractHttpConfigurer::disable)
 				.authorizeHttpRequests(auth -> auth
-						.requestMatchers("/auth/welcome", "/auth/addNewUser", "/auth/generateToken").permitAll()
-						.requestMatchers("/auth/user/**").hasAuthority("ROLE_USER")
-						.requestMatchers("/auth/admin/**").hasAuthority("ROLE_ADMIN")
+						.requestMatchers("/auth/login", "/auth/register").permitAll()
+						.requestMatchers("/css/**", "/js/**", "/images/**", "/webjars/**").permitAll()
+						.requestMatchers("/auth/dashboard").hasRole("USER")
 						.anyRequest().authenticated() // Protect all other endpoints
 				)
 				.sessionManagement(session -> session

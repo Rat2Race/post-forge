@@ -29,25 +29,27 @@ public class UserService {
 	 * @return 등록된 사용자 정보
 	 */
 	public User registerUser(AuthRequest authRequest) {
-		// 이메일 중복 검사
 		if (userRepo.existsByEmail(authRequest.getEmail())) {
-			throw new IllegalStateException("이미 존재하는 이메일입니다.");
+			throw new IllegalStateException("Email already exists.");
 		}
 
-		// 비밀번호 암호화
 		String encodedPassword = passwordEncoder.encode(authRequest.getPassword());
-
-		// 사용자 엔티티 생성
 		User user = User.builder()
 				.username(authRequest.getUsername())
-				.password(encodedPassword)
 				.email(authRequest.getEmail())
-				.role(List.of(RoleType.ROLE_USER))
-				.userStatus(UserStatus.Y)
+				.password(encodedPassword)
 				.build();
-
-		// 사용자 정보 저장
 		return userRepo.save(user);
+	}
+
+	public User authenticateUser(AuthRequest authRequest) {
+		User user = userRepo.findByEmail(authRequest.getEmail())
+				.orElseThrow(() -> new IllegalStateException("User not found."));
+		if (passwordEncoder.matches(authRequest.getPassword(), user.getPassword())) {
+			return user;
+		} else {
+			throw new IllegalStateException("Invalid password.");
+		}
 	}
 
 	/**

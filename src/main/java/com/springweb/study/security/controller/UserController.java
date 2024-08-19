@@ -2,60 +2,87 @@ package com.springweb.study.security.controller;
 
 import com.springweb.study.security.domain.User;
 import com.springweb.study.security.domain.dto.AuthRequest;
-import com.springweb.study.security.domain.dto.AuthResponse;
 import com.springweb.study.security.service.JwtService;
-import com.springweb.study.security.service.UserDetailsImpl;
 import com.springweb.study.security.service.UserDetailsServiceImpl;
 import com.springweb.study.security.service.UserService;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
-@RestController
+@Controller
 @RequestMapping("/auth")
 @RequiredArgsConstructor
 public class UserController {
 
-	private final AuthenticationManager authenticationManager;
-	private final JwtService jwtService;
 	private final UserService userService;
+	private final JwtService jwtService;
+	private final UserDetailsServiceImpl userDetailsService;
 
-	// 회원가입 엔드포인트
-	@PostMapping("/register")
-	public ResponseEntity<User> registerUser(@RequestBody AuthRequest authRequest) {
-		User newUser = userService.registerUser(authRequest);
-		return ResponseEntity.ok(newUser);
+	@GetMapping("/login")
+	public String showLoginForm(HttpSession session) {
+		String token = (String) session.getAttribute("token");
+		if (token != null) {
+			return "redirect:/dashboard";
+		}
+		return "login";
 	}
 
-	// 관리자 회원가입 엔드포인트 (예: ADMIN 역할 추가)
-//	@PostMapping("/register-admin")
-//	public ResponseEntity<User> registerAdminUser(@RequestBody AuthRequest authRequest) {
-//		User newAdminUser = userService.registerAdminUser(authRequest);
-//		return ResponseEntity.ok(newAdminUser);
-//	}
 
-	// 로그인 엔드포인트
 	@PostMapping("/login")
-	public ResponseEntity<AuthResponse> login(@RequestBody AuthRequest authRequest) {
-		Authentication authentication = authenticationManager.authenticate(
-				new UsernamePasswordAuthenticationToken(authRequest.getUsername(), authRequest.getPassword())
-		);
-
-		SecurityContextHolder.getContext().setAuthentication(authentication);
-		final String jwt = jwtService.generateToken(authentication);
-
-		return ResponseEntity.ok(new AuthResponse(jwt));
+	public String login(@ModelAttribute AuthRequest authRequest, HttpSession session, Model model) {
+		try {
+			User user = userService.authenticateUser(authRequest);
+			String token = jwtService.generateToken(user.getUsername());
+			session.setAttribute("token", token);
+			return "redirect:/dashboard";
+		} catch (Exception e) {
+			model.addAttribute("error", "Invalid username or password.");
+			return "login";
+		}
 	}
 
-	// 로그아웃 엔드포인트 (토큰 블랙리스트 또는 무효화 로직을 추가할 수 있음)
+	@GetMapping("/register")
+	public String showRegisterForm() {
+		return "register";
+	}
+
+	@PostMapping("/register")
+	public String register(@ModelAttribute AuthRequest authRequest, Model model) {
+		try {
+			userService.registerUser(authRequest);
+			model.addAttribute("message", "Registration successful. Please login.");
+			return "redirect:/auth/login";
+		} catch (Exception e) {
+			model.addAttribute("message", "Registration failed. Please try again.");
+			return "register";
+		}
+	}
+
+	@GetMapping("/dashboard")
+	public String dashboard(HttpSession session, Model model) {
+		String token = (String) session.getAttribute("token");
+		if (token != null) {
+			String username = jwtService.getUsernameFromToken(token);
+			UserDetails userDetails = userDetailsService.loadUserByUsername(username);
+
+			if (jwtService.validateToken(token, userDetails)) {
+				model.addAttribute("username", username);
+				return "dashboard";
+			}
+		}
+		return "redirect:/auth/login";
+	}
+
 	@PostMapping("/logout")
-	public ResponseEntity<String> logout() {
-		SecurityContextHolder.clearContext();
-		return ResponseEntity.ok("로그아웃 성공");
+	public String logout(HttpServletRequest request) {
+		HttpSession session = request.getSession(false);
+		if (session != null) {
+			session.invalidate();
+		}
+		return "redirect:/auth/login";
 	}
 }
