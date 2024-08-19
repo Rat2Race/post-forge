@@ -4,7 +4,6 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
@@ -41,9 +40,9 @@ public class JwtService {
 				.getBody();
 	}
 
-	// 토큰이 만료되었는지 확인하는 메서드
-	private Boolean isTokenExpired(String token) {
-		return extractExpiration(token).before(new Date());
+	// JWT 토큰에서 사용자 이름을 추출하는 메서드
+	public String getUsernameFromToken(String token) {
+		return extractUsername(token);
 	}
 
 	// JWT 토큰에서 만료 날짜를 추출하는 메서드
@@ -51,15 +50,17 @@ public class JwtService {
 		return extractClaim(token, Claims::getExpiration);
 	}
 
-	// JWT 토큰을 생성하는 메서드
-	public String generateToken(Authentication authentication) {
-		UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
-		Map<String, Object> claims = new HashMap<>();
-		claims.put("role", userDetails.getAuthorities());
+	// 토큰이 만료되었는지 확인하는 메서드
+	private Boolean isTokenExpired(String token) {
+		return extractExpiration(token).before(new Date());
+	}
 
+	// JWT 토큰을 생성하는 메서드
+	public String generateToken(String username) {
+		Map<String, Object> claims = new HashMap<>();
 		return Jwts.builder()
 				.setClaims(claims)
-				.setSubject(userDetails.getUsername())
+				.setSubject(username)
 				.setIssuedAt(new Date())
 				.setExpiration(new Date(System.currentTimeMillis() + tokenValidity))
 				.signWith(SignatureAlgorithm.HS512, secretKey)
@@ -69,6 +70,8 @@ public class JwtService {
 	// JWT 토큰의 유효성을 검증하는 메서드
 	public Boolean validateToken(String token, UserDetails userDetails) {
 		final String username = extractUsername(token);
+		// UserDetails 인터페이스에서 `getUsername()` 메서드를 사용하여 일치 여부를 확인
 		return (username.equals(userDetails.getUsername()) && !isTokenExpired(token));
 	}
+
 }
