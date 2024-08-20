@@ -8,7 +8,9 @@ import com.springweb.study.security.repository.UserRepo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.ui.Model;
 
+import java.util.Arrays;
 import java.util.List;
 
 @Service
@@ -28,22 +30,26 @@ public class UserService {
 	 * @param authRequest 사용자 등록 요청 정보 (이메일, 비밀번호 등)
 	 * @return 등록된 사용자 정보
 	 */
-	public User registerUser(AuthRequest authRequest) {
+	public User registerUser(AuthRequest authRequest, Model model) {
 		if (userRepo.existsByEmail(authRequest.getEmail())) {
 			throw new IllegalStateException("Email already exists.");
 		}
+
+		model.addAttribute("message", "Registration successful. Please login.");
 
 		String encodedPassword = passwordEncoder.encode(authRequest.getPassword());
 		User user = User.builder()
 				.username(authRequest.getUsername())
 				.email(authRequest.getEmail())
 				.password(encodedPassword)
+				.role(Arrays.asList(RoleType.ROLE_USER))
+				.userStatus(UserStatus.Y)
 				.build();
 		return userRepo.save(user);
 	}
 
 	public User authenticateUser(AuthRequest authRequest) {
-		User user = userRepo.findByEmail(authRequest.getEmail())
+		User user = userRepo.findByUsername(authRequest.getUsername())
 				.orElseThrow(() -> new IllegalStateException("User not found."));
 		if (passwordEncoder.matches(authRequest.getPassword(), user.getPassword())) {
 			return user;

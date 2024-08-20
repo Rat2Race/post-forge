@@ -21,8 +21,8 @@ public class User extends AuditingFields {
 	@Column(name = "MEMBER_ID")
 	private Long id;
 
-	@Column(name = "LOGIN_ID", nullable = false)
-	private String loginId;
+//	@Column(name = "LOGIN_ID", nullable = false)
+//	private String loginId;
 
 	@Column(name = "PASSWORD", nullable = false)
 	private String password;

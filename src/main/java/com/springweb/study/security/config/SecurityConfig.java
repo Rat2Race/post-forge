@@ -36,7 +36,7 @@ public class SecurityConfig {
 				.authorizeHttpRequests(auth -> auth
 						.requestMatchers("/auth/login", "/auth/register").permitAll()
 						.requestMatchers("/css/**", "/js/**", "/images/**", "/webjars/**").permitAll()
-						.requestMatchers("/auth/dashboard").hasRole("USER")
+//						.requestMatchers("/auth/dashboard").hasRole("USER")
 						.anyRequest().authenticated() // Protect all other endpoints
 				)
 				.sessionManagement(session -> session

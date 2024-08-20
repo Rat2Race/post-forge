@@ -38,7 +38,7 @@ public class UserController {
 			User user = userService.authenticateUser(authRequest);
 			String token = jwtService.generateToken(user.getUsername());
 			session.setAttribute("token", token);
-			return "redirect:/dashboard";
+			return "redirect:/auth/dashboard";
 		} catch (Exception e) {
 			model.addAttribute("error", "Invalid username or password.");
 			return "login";
@@ -53,8 +53,7 @@ public class UserController {
 	@PostMapping("/register")
 	public String register(@ModelAttribute AuthRequest authRequest, Model model) {
 		try {
-			userService.registerUser(authRequest);
-			model.addAttribute("message", "Registration successful. Please login.");
+			userService.registerUser(authRequest, model);
 			return "redirect:/auth/login";
 		} catch (Exception e) {
 			model.addAttribute("message", "Registration failed. Please try again.");
