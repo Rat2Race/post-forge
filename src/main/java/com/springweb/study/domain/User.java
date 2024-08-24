@@ -5,6 +5,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.util.List;
+import java.util.UUID;
 
 @Entity
 @Getter
@@ -16,7 +17,7 @@ public class User extends AuditingFields {
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.UUID)
-	private Long id;
+	private UUID id;
 
 	@Column(name = "PASSWORD", nullable = false)
 	private String password;
