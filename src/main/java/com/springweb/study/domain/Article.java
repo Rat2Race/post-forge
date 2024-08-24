@@ -1,13 +1,11 @@
 package com.springweb.study.domain;
 
-import com.springweb.study.domain.dto.ArticleRequest;
-import com.springweb.study.domain.dto.ArticleResponse;
+import com.springweb.study.dto.article.ArticleRequest;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import org.hibernate.annotations.ColumnDefault;
 
 @Entity
 @Table(name = "article")

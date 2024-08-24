@@ -1,6 +1,6 @@
 package com.springweb.study.security.repository;
 
-import com.springweb.study.security.domain.User;
+import com.springweb.study.domain.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

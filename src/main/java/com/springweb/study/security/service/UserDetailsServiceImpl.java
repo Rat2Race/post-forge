@@ -1,7 +1,6 @@
 package com.springweb.study.security.service;
 
-import com.springweb.study.security.domain.User;
-import com.springweb.study.security.domain.dto.AuthRequest;
+import com.springweb.study.domain.User;
 import com.springweb.study.security.repository.UserRepo;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.userdetails.UserDetails;

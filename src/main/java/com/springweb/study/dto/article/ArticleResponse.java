@@ -1,4 +1,4 @@
-package com.springweb.study.domain.dto;
+package com.springweb.study.dto.article;
 
 import com.springweb.study.domain.Article;
 import lombok.Builder;

@@ -1,7 +1,7 @@
 package com.springweb.study.security.controller;
 
-import com.springweb.study.security.domain.User;
-import com.springweb.study.security.domain.dto.AuthRequest;
+import com.springweb.study.domain.User;
+import com.springweb.study.dto.user.AuthRequest;
 import com.springweb.study.security.service.JwtService;
 import com.springweb.study.security.service.UserDetailsServiceImpl;
 import com.springweb.study.security.service.UserService;
