@@ -1,6 +1,5 @@
 package com.springweb.study.security.config;
 
-import com.springweb.study.security.domain.RoleType;
 import com.springweb.study.security.filter.JwtAuthFilter;
 import com.springweb.study.security.service.UserDetailsServiceImpl;
 import lombok.RequiredArgsConstructor;

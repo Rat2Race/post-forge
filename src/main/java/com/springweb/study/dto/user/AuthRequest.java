@@ -1,4 +1,4 @@
-package com.springweb.study.security.domain.dto;
+package com.springweb.study.dto.user;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

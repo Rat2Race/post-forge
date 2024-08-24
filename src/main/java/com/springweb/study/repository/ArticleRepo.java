@@ -1,7 +1,7 @@
 package com.springweb.study.repository;
 
 import com.springweb.study.domain.Article;
-import com.springweb.study.domain.dto.ArticleResponse;
+import com.springweb.study.dto.article.ArticleResponse;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;

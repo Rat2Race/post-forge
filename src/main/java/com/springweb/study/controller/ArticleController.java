@@ -1,7 +1,7 @@
 package com.springweb.study.controller;
 
-import com.springweb.study.domain.dto.ArticleRequest;
-import com.springweb.study.domain.dto.ArticleResponse;
+import com.springweb.study.dto.article.ArticleRequest;
+import com.springweb.study.dto.article.ArticleResponse;
 import com.springweb.study.service.ArticleService;
 import com.springweb.study.service.PagingService;
 import com.springweb.study.service.ViewsEvent;
