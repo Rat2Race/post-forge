@@ -16,7 +16,7 @@ public record UserInfoResponse(
 				user.getId(),
 				user.getAccount(),
 				user.getUsername(),
-				user.getRole().get(0)
+				user.getRole()
 		);
 	}
 }

@@ -7,7 +7,6 @@ import lombok.NoArgsConstructor;
 public record UserUpdateRequest(
 		String password,
 		String newPassword,
-		String name,
-		Integer age
+		String name
 ) {
 }

@@ -1,8 +1,11 @@
 package com.springweb.study.domain;
 
 import com.springweb.study.common.RoleType;
+import com.springweb.study.dto.sign_up.request.SignUpRequest;
+import com.springweb.study.dto.user.request.UserUpdateRequest;
 import jakarta.persistence.*;
 import lombok.*;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.List;
 import java.util.UUID;
@@ -30,5 +33,20 @@ public class User extends AuditingFields {
 
 	@Enumerated(EnumType.STRING)
 	@Column(name = "ROLE", nullable = false)
-	private List<RoleType> role;
+	private RoleType role;
+
+	public static User from(SignUpRequest request, PasswordEncoder passwordEncoder) {
+		return User.builder()
+				.account(request.account())
+				.password(passwordEncoder.encode(request.password()))
+				.username(request.name())
+				.role(RoleType.USER)
+				.build();
+	}
+
+	public void update(UserUpdateRequest request, PasswordEncoder passwordEncoder) {
+		this.password = request.newPassword() == null || request.newPassword().isBlank()
+				? this.password : passwordEncoder.encode(request.newPassword());
+		this.username = request.name();
+	}
 }
