@@ -1,7 +1,7 @@
 package com.springweb.study.security.controller;
 
 import com.springweb.study.domain.User;
-import com.springweb.study.dto.user.AuthRequest;
+import com.springweb.study.dto.user.request.UserUpdateRequest;
 import com.springweb.study.security.service.JwtService;
 import com.springweb.study.security.service.UserDetailsServiceImpl;
 import com.springweb.study.security.service.UserService;
@@ -33,7 +33,7 @@ public class UserController {
 
 
 	@PostMapping("/login")
-	public String login(@ModelAttribute AuthRequest authRequest, HttpSession session, Model model) {
+	public String login(@ModelAttribute UserUpdateRequest authRequest, HttpSession session, Model model) {
 		try {
 			User user = userService.authenticateUser(authRequest);
 			String token = jwtService.generateToken(user.getUsername());
@@ -51,7 +51,7 @@ public class UserController {
 	}
 
 	@PostMapping("/register")
-	public String register(@ModelAttribute AuthRequest authRequest, Model model) {
+	public String register(@ModelAttribute UserUpdateRequest authRequest, Model model) {
 		try {
 			userService.registerUser(authRequest, model);
 			return "redirect:/auth/login";
