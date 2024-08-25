@@ -4,7 +4,7 @@ import com.springweb.study.dto.user.request.UserUpdateRequest;
 import com.springweb.study.dto.user.response.UserDeleteResponse;
 import com.springweb.study.dto.user.response.UserInfoResponse;
 import com.springweb.study.dto.user.response.UserUpdateResponse;
-import com.springweb.study.security.repository.UserRepo;
+import com.springweb.study.repository.UserRepo;
 import java.util.NoSuchElementException;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;

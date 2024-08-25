@@ -1,4 +1,4 @@
-package com.springweb.study.security.repository;
+package com.springweb.study.repository;
 
 import com.springweb.study.common.RoleType;
 import com.springweb.study.domain.User;

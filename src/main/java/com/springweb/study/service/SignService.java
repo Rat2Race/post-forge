@@ -1,4 +1,4 @@
-package com.springweb.study.security.service;
+package com.springweb.study.service;
 
 import com.springweb.study.domain.User;
 import com.springweb.study.dto.sign_in.request.SignInRequest;
@@ -7,8 +7,8 @@ import com.springweb.study.dto.sign_up.request.SignUpRequest;
 import com.springweb.study.dto.sign_up.response.SignUpResponse;
 import com.springweb.study.dto.user.request.UserUpdateRequest;
 import com.springweb.study.dto.user.response.UserUpdateResponse;
-import com.springweb.study.security.repository.UserRepo;
-import java.util.Optional;
+import com.springweb.study.repository.UserRepo;
+import com.springweb.study.security.service.TokenProvider;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
