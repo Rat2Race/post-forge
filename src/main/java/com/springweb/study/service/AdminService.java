@@ -2,7 +2,7 @@ package com.springweb.study.service;
 
 import com.springweb.study.common.RoleType;
 import com.springweb.study.dto.user.response.UserInfoResponse;
-import com.springweb.study.security.repository.UserRepo;
+import com.springweb.study.repository.UserRepo;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
