@@ -21,6 +21,7 @@ public class SignService {
 
     private final PasswordEncoder encoder;
     private final UserRepo userRepo;
+    private final TokenProvider tokenProvider;
 
     @Transactional
     public SignUpResponse regUser(SignUpRequest request) {
@@ -33,7 +34,8 @@ public class SignService {
         User user = userRepo.findByAccount(request.account())
                 .filter(it -> encoder.matches(request.password(), it.getPassword()))
                 .orElseThrow(() -> new IllegalArgumentException("not match password"));
-        return new SignInResponse(user.getUsername(), user.getRole());
+        String token = tokenProvider.createToken(String.format("%s:%s", user.getId(), user.getRole()));
+        return new SignInResponse(user.getUsername(), user.getRole(), token);
     }
 
     @Transactional
