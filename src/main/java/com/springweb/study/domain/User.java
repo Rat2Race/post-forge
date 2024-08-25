@@ -44,14 +44,6 @@ public class User extends AuditingFields {
 				.build();
 	}
 
-	@Builder
-	private User(String account, String password, String name, Integer age, RoleType type) {
-		this.account = account;
-		this.password = password;
-		this.username = name;
-		this.role = type;
-	}
-
 	public void update(UserUpdateRequest request, PasswordEncoder passwordEncoder) {
 		this.password = request.newPassword() == null || request.newPassword().isBlank()
 				? this.password : passwordEncoder.encode(request.newPassword());
