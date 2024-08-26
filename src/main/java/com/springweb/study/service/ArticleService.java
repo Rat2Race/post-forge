@@ -20,9 +20,9 @@ public class ArticleService {
 	//Create
 	public Long createArticle(ArticleRequest articleRequest) {
 		Article article = Article.builder()
-				.title(articleRequest.getTitle())
-				.content(articleRequest.getContent())
-				.author(articleRequest.getAuthor())
+				.title(articleRequest.title())
+				.content(articleRequest.content())
+				.author(articleRequest.author())
 				.views(0L)
 				.build();
 

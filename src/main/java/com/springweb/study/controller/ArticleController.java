@@ -15,7 +15,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api")
+@RequestMapping("/article")
 @RequiredArgsConstructor
 @CrossOrigin(origins = "http://localhost:3000")
 public class ArticleController {
@@ -33,7 +33,7 @@ public class ArticleController {
 
 	//Read
 	// /read/article?id=1
-	@GetMapping("/read/article/{id}")
+	@GetMapping("/read/{id}")
 	public ResponseEntity<ArticleResponse> readArticleById(@PathVariable Long id) {
 		ArticleResponse articleResponse = articleService.readArticleById(id);
 
@@ -43,7 +43,7 @@ public class ArticleController {
 		return ResponseEntity.status(HttpStatus.OK).body(articleResponse);
 	}
 
-	@GetMapping("/read/article")
+	@GetMapping("/read")
 	public ResponseEntity<Page<ArticleResponse>> readArticles(
 			@PageableDefault(size = 10) Pageable pageable) {
 		Page<ArticleResponse> paging = this.pagingService.getArticles(pageable);
