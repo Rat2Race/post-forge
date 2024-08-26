@@ -31,9 +31,9 @@ public class Article extends AuditingFields {
 	private Long views;
 
 	public void update(ArticleRequest articleRequest) {
-		this.title = articleRequest.getTitle();
-		this.content = articleRequest.getContent();
-		this.author = articleRequest.getAuthor();
+		this.title = articleRequest.title();
+		this.content = articleRequest.content();
+		this.author = articleRequest.author();
 	}
 
 	public void updateViews(Long count) {
