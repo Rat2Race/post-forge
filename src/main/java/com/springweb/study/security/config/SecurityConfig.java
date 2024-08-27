@@ -1,6 +1,6 @@
 package com.springweb.study.security.config;
 
-import com.springweb.study.security.filter.JwtAuthenticationFilter;
+import com.springweb.study.security.JwtAuthFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -18,7 +18,7 @@ import org.springframework.security.web.authentication.www.BasicAuthenticationFi
 @RequiredArgsConstructor
 public class SecurityConfig {
 
-	private final JwtAuthenticationFilter jwtAuthenticationFilter;
+	private final JwtAuthFilter jwtAuthFilter;
 
 	@Bean
 	public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
@@ -34,7 +34,7 @@ public class SecurityConfig {
 				.sessionManagement(session -> session
 						.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
 				)
-				.addFilterBefore(jwtAuthenticationFilter, BasicAuthenticationFilter.class);
+				.addFilterBefore(jwtAuthFilter, BasicAuthenticationFilter.class);
 		return http.build();
 	}
 

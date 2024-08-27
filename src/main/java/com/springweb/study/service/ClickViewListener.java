@@ -14,6 +14,6 @@ public class ClickViewListener implements ApplicationListener<ViewsEvent> {
 	@Override
 	public void onApplicationEvent(ViewsEvent event) {
 		ArticleResponse articleResponse = event.getArticleResponse();
-		articleService.countViews(articleResponse.getId());
+		articleService.countViews(articleResponse.id());
 	}
 }
