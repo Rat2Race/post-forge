@@ -8,7 +8,7 @@ import com.springweb.study.dto.sign_up.response.SignUpResponse;
 import com.springweb.study.dto.user.request.UserUpdateRequest;
 import com.springweb.study.dto.user.response.UserUpdateResponse;
 import com.springweb.study.repository.UserRepo;
-import com.springweb.study.security.service.TokenProvider;
+import com.springweb.study.security.JwtUtils;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -21,7 +21,7 @@ public class SignService {
 
     private final PasswordEncoder encoder;
     private final UserRepo userRepo;
-    private final TokenProvider tokenProvider;
+    private final JwtUtils jwtUtils;
 
     @Transactional
     public SignUpResponse regUser(SignUpRequest request) {
@@ -34,7 +34,7 @@ public class SignService {
         User user = userRepo.findByAccount(request.account())
                 .filter(it -> encoder.matches(request.password(), it.getPassword()))
                 .orElseThrow(() -> new IllegalArgumentException("not match password"));
-        String token = tokenProvider.createToken(String.format("%s:%s", user.getId(), user.getRole()));
+        String token = jwtUtils.createToken(String.format("%s:%s", user.getId(), user.getRole()));
         return new SignInResponse(user.getUsername(), user.getRole(), token);
     }
 

@@ -22,7 +22,6 @@ public abstract class AuditingFields {
 
 	@LastModifiedDate
 	private LocalDateTime modifiedAt;
-
 	@LastModifiedBy
 	private String modifiedBy;
 
