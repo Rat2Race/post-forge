@@ -22,11 +22,11 @@ public class User extends AuditingFields {
 	@GeneratedValue(strategy = GenerationType.UUID)
 	private UUID id;
 
-	@Column(name = "PASSWORD", nullable = false)
-	private String password;
-
 	@Column(name = "ACCOUNT", scale = 20, nullable = false, unique = true)
 	private String account;
+
+	@Column(name = "PASSWORD", nullable = false)
+	private String password;
 
 	@Column(name = "USERNAME", nullable = false)
 	private String username;

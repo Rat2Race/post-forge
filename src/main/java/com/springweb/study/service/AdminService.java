@@ -16,14 +16,14 @@ public class AdminService {
 
     @Transactional(readOnly = true)
     public List<UserInfoResponse> getMembers() {
-        return userRepo.findAllByType(RoleType.USER).stream()
+        return userRepo.findAllByType(RoleType.USER.name()).stream()
                 .map(UserInfoResponse::from)
                 .toList();
     }
 
     @Transactional(readOnly = true)
     public List<UserInfoResponse> getAdmins() {
-        return userRepo.findAllByType(RoleType.ADMIN).stream()
+        return userRepo.findAllByType(RoleType.ADMIN.name()).stream()
                 .map(UserInfoResponse::from)
                 .toList();
     }
