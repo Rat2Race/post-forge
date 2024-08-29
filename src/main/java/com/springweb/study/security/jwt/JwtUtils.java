@@ -1,8 +1,6 @@
-package com.springweb.study.security;
+package com.springweb.study.security.jwt;
 
-import io.jsonwebtoken.ExpiredJwtException;
-import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.MalformedJwtException;
+import io.jsonwebtoken.*;
 
 import java.security.Key;
 import java.sql.Date;
@@ -12,7 +10,6 @@ import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import javax.crypto.SecretKey;
 
-import io.jsonwebtoken.UnsupportedJwtException;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import lombok.extern.slf4j.Slf4j;
