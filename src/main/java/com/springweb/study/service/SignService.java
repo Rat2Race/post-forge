@@ -8,7 +8,7 @@ import com.springweb.study.dto.sign_up.response.SignUpResponse;
 import com.springweb.study.dto.user.request.UserUpdateRequest;
 import com.springweb.study.dto.user.response.UserUpdateResponse;
 import com.springweb.study.repository.UserRepo;
-import com.springweb.study.security.JwtUtils;
+import com.springweb.study.security.jwt.JwtUtils;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
