@@ -20,7 +20,6 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 
-@Order(0)
 @RequiredArgsConstructor
 @Component
 @Slf4j

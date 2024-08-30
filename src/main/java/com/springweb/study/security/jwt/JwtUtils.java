@@ -8,6 +8,7 @@ import java.sql.Timestamp;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
+import java.util.UUID;
 import javax.crypto.SecretKey;
 
 import io.jsonwebtoken.io.Decoders;
@@ -35,10 +36,10 @@ public class JwtUtils {
 		this.issuer = issuer;
 	}
 
-	public String createToken(String subject) {
+	public String createToken(String account) {
 		return Jwts.builder()
 				.signWith(secretKey)
-				.subject(subject)
+				.subject(account)
 				.issuer(issuer)
 				.issuedAt(Timestamp.valueOf(LocalDateTime.now()))
 				.expiration(Date.from(Instant.now().plus(expirationHours, ChronoUnit.HOURS)))

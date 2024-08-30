@@ -27,7 +27,7 @@ public class SecurityConfig {
 				.httpBasic(AbstractHttpConfigurer::disable)
 				.formLogin(AbstractHttpConfigurer::disable)
 				.authorizeHttpRequests(auth -> auth
-						.requestMatchers("/auth/login", "/auth/register").permitAll()
+						.requestMatchers("/sign-up", "/sign-in").permitAll()
 						.requestMatchers("/css/**", "/js/**", "/images/**", "/webjars/**").permitAll()
 						.anyRequest().authenticated() // Protect all other endpoints
 				)
