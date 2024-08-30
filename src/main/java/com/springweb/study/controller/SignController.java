@@ -15,7 +15,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RequiredArgsConstructor
 @RestController
-@RequestMapping
 public class SignController {
 	private final SignService signService;
 

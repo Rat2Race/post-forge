@@ -32,10 +32,10 @@ public class SignService {
     @Transactional(readOnly = true)
     public SignInResponse signIn(SignInRequest request) {
         User user = userRepo.findByAccount(request.account())
-                .filter(it -> encoder.matches(request.password(), it.getPassword()))
+                .filter(findedUser -> encoder.matches(request.password(), findedUser.getPassword()))
                 .orElseThrow(() -> new IllegalArgumentException("not match password"));
-        String token = jwtUtils.createToken(String.format("%s:%s", user.getId(), user.getRole()));
-        return new SignInResponse(user.getUsername(), user.getRole(), token);
+	    String token = jwtUtils.createToken(user.getAccount());
+	    return SignInResponse.from(user, token);
     }
 
     @Transactional
