@@ -11,6 +11,7 @@ import com.springweb.study.repository.UserRepo;
 import com.springweb.study.security.jwt.JwtUtils;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -34,7 +35,7 @@ public class SignService {
         User user = userRepo.findByAccount(request.account())
                 .filter(findedUser -> encoder.matches(request.password(), findedUser.getPassword()))
                 .orElseThrow(() -> new IllegalArgumentException("not match password"));
-	    String token = jwtUtils.createToken(user.getAccount());
+	    String token = jwtUtils.createToken(user);
 	    return SignInResponse.from(user, token);
     }
 
