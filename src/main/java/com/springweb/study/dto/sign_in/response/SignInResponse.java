@@ -6,13 +6,15 @@ import com.springweb.study.domain.User;
 public record SignInResponse(
 		String name,
 		RoleType type,
-		String token
+		String accessToken,
+		String refreshToken
 ) {
-	public static SignInResponse from(User user, String token) {
+	public static SignInResponse from(User user, String accessToken, String refreshToken) {
 		return new SignInResponse(
 				user.getUsername(),
 				user.getRole(),
-				token
+				accessToken,
+				refreshToken
 		);
 	}
 }

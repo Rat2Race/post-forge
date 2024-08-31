@@ -33,9 +33,11 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 			throws ServletException, IOException {
 		try {
 			String token = parseJwt(request);
-			String subject = jwtUtils.validateTokenAndGetSubject(token);
-			if(token != null &&  subject != null) {
-				UserDetails userDetails = userDetailsService.loadUserByUsername(subject);
+			if(token != null) {
+				if(!jwtUtils.isTokenExpired(token)) {
+					jwtUtils.
+				}
+				UserDetails userDetails = userDetailsService.loadUserByUsername(jwtUtils.getUsername(token));
 
 				if(userDetails != null) {
 					UsernamePasswordAuthenticationToken authentication =
