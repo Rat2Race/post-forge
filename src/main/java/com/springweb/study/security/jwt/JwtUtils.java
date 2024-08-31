@@ -1,17 +1,12 @@
 package com.springweb.study.security.jwt;
 
-import com.springweb.study.domain.User;
-import com.springweb.study.security.impl.UserDetailsImpl;
 import io.jsonwebtoken.*;
 
-import java.security.Key;
-import java.sql.Date;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
-import java.util.stream.Collectors;
 import javax.crypto.SecretKey;
 
 import io.jsonwebtoken.io.Decoders;
@@ -19,8 +14,6 @@ import io.jsonwebtoken.security.Keys;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.PropertySource;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.GrantedAuthority;
 import org.springframework.stereotype.Component;
 
 @PropertySource("classpath:application-jwt.properties")
@@ -28,66 +21,60 @@ import org.springframework.stereotype.Component;
 @Slf4j
 public class JwtUtils {
 	private final SecretKey secretKey;
-	private final long expirationHours;
+	private final long accessTokenExpirationHours;
+	private final long refreshTokenExpirationHours;
 	private final String issuer;
 
 	public JwtUtils(
 			@Value("${secret-key}") String secretKey,
-			@Value("${expiration-hours}") long expirationHours,
+			@Value("${at-expiration-hours}") long accessTokenExpirationHours,
+			@Value("${rt-expiration-hours}") long refreshTokenExpirationHours,
 			@Value("${issuer}") String issuer
 	) {
 		this.secretKey = Keys.hmacShaKeyFor(Decoders.BASE64URL.decode(secretKey));
-		this.expirationHours = expirationHours;
+		this.accessTokenExpirationHours = accessTokenExpirationHours;
+		this.refreshTokenExpirationHours = refreshTokenExpirationHours;
 		this.issuer = issuer;
 	}
 
-	public String createToken(User user) {
-
-		UserDetailsImpl userDetails = UserDetailsImpl.build(user);
-
-		Map<String, Object> claims = new HashMap<>();
-		claims.put("username", userDetails.getUsername());
-		claims.put("roles", userDetails.getAuthorities().stream()
-				.map(GrantedAuthority::getAuthority)
-				.collect(Collectors.toList())); // 권한 목록을 클레임에 추가
-
-		String token = Jwts.builder()
+	public String createAccessToken(String username) {
+		return Jwts.builder()
 				.signWith(secretKey)
-				.subject(userDetails.getUsername())
-				.claims(claims)
+				.subject(username)
 				.issuer(issuer)
 				.issuedAt(Timestamp.valueOf(LocalDateTime.now()))
-				.expiration(Date.from(Instant.now().plus(expirationHours, ChronoUnit.HOURS)))
+				.expiration(setExpiration(accessTokenExpirationHours))
 				.compact();
-
-		log.debug("Generated JWT Token: {}", token);  // 추가된 디버그 로그
-		return token;
 	}
 
-	public String validateTokenAndGetSubject(String jws) {
-		if (jws == null || jws.trim().isEmpty()) {
-			log.error("JWT claims string is empty: CharSequence cannot be null or empty.");
-			return null;
-		}
+	public String createRefreshToken() {
+		return Jwts.builder()
+				.signWith(secretKey)
+				.issuer(issuer)
+				.issuedAt(Timestamp.valueOf(LocalDateTime.now()))
+				.expiration(setExpiration(refreshTokenExpirationHours))
+				.compact();
+	}
 
-		try {
-			return Jwts.parser()
-					.verifyWith(secretKey)
-					.build()
-					.parseSignedClaims(jws)
-					.getPayload()
-					.getSubject();
-		} catch (MalformedJwtException e) {
-			log.error("Invalid JWT token: {}", e.getMessage());
-		} catch (ExpiredJwtException e) {
-			log.error("JWT token is expired: {}", e.getMessage());
-		} catch (UnsupportedJwtException e) {
-			log.error("JWT token is unsupported: {}", e.getMessage());
-		} catch (IllegalArgumentException e) {
-			log.error("JWT claims string is empty: {}", e.getMessage());
-			e.printStackTrace();
-		}
+	private Date setExpiration(Long expirationHours) {
+		return Date.from(Instant.now().plus(expirationHours, ChronoUnit.HOURS));
+	}
 
-		return null;
+	public String getUsername(String jws) {
+		return getClaimsFromToken(jws).getSubject();
+	}
+
+	public boolean isAccessTokenExpired(String jws) {
+		Date expiration = getClaimsFromToken(jws).getExpiration();
+		return expiration.before(new Date());
+	}
+
+
+	private Claims getClaimsFromToken(String jws) {
+		return Jwts.parser()
+				.verifyWith(secretKey)
+				.build()
+				.parseSignedClaims(jws)
+				.getPayload();
 	}
 }
