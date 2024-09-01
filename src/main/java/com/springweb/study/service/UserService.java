@@ -8,6 +8,8 @@ import com.springweb.study.repository.TokenRepo;
 import com.springweb.study.repository.UserRepo;
 import java.util.NoSuchElementException;
 import java.util.UUID;
+
+import lombok.NoArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -16,7 +18,6 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 @Service
 public class UserService {
-	private final TokenRepo tokenRepo;
     private final UserRepo userRepo;
     private final PasswordEncoder encoder;
 
