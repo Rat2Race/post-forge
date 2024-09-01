@@ -1,5 +1,6 @@
 package com.springweb.study.security.jwt;
 
+import com.springweb.study.repository.TokenRepo;
 import io.jsonwebtoken.*;
 
 import java.sql.Timestamp;
@@ -11,15 +12,17 @@ import javax.crypto.SecretKey;
 
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.stereotype.Component;
 
-@PropertySource("classpath:application-jwt.properties")
 @Component
 @Slf4j
+@RequiredArgsConstructor
 public class JwtUtils {
+
 	private final SecretKey secretKey;
 	private final long accessTokenExpirationHours;
 	private final long refreshTokenExpirationHours;
@@ -64,11 +67,10 @@ public class JwtUtils {
 		return getClaimsFromToken(jws).getSubject();
 	}
 
-	public boolean isAccessTokenExpired(String jws) {
+	public boolean  isAccessTokenExpired(String jws) {
 		Date expiration = getClaimsFromToken(jws).getExpiration();
 		return expiration.before(new Date());
 	}
-
 
 	private Claims getClaimsFromToken(String jws) {
 		return Jwts.parser()

@@ -28,8 +28,4 @@ public class SignController {
 		return ResponseEntity.status(HttpStatus.OK).body(signService.signIn(request));
 	}
 
-	@PostMapping("/refresh-token")
-	public ResponseEntity<String> refreshToken(@RequestBody String refreshToken) {
-
-	}
 }

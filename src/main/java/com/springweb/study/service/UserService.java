@@ -4,6 +4,7 @@ import com.springweb.study.dto.user.request.UserUpdateRequest;
 import com.springweb.study.dto.user.response.UserDeleteResponse;
 import com.springweb.study.dto.user.response.UserInfoResponse;
 import com.springweb.study.dto.user.response.UserUpdateResponse;
+import com.springweb.study.repository.TokenRepo;
 import com.springweb.study.repository.UserRepo;
 import java.util.NoSuchElementException;
 import java.util.UUID;
@@ -15,7 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 @Service
 public class UserService {
-
+	private final TokenRepo tokenRepo;
     private final UserRepo userRepo;
     private final PasswordEncoder encoder;
 
@@ -45,4 +46,5 @@ public class UserService {
                 })
                 .orElseThrow(() -> new IllegalArgumentException("아이디 또는 비밀번호가 일치하지 않습니다."));
     }
+
 }

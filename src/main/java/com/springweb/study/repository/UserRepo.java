@@ -17,4 +17,6 @@ public interface UserRepo extends JpaRepository<User, UUID> {
 
 	@Query("SELECT u FROM User u WHERE u.role LIKE %:role%")
 	List<User> findAllByType(@Param("role") String type);
+
+	Optional<User> findByUsername(String username);
 }
