@@ -23,18 +23,18 @@ public class UserController {
     private final UserService userService;
 
 	@GetMapping
-	public ResponseEntity<UserInfoResponse> getUserInfo(@RequestBody User user) {
-		return ResponseEntity.status(HttpStatus.OK).body(userService.getUserInfo(UUID.fromString(user.getUsername())));
+	public ResponseEntity<UserInfoResponse> getUserInfo(@RequestBody UUID id) {
+		return ResponseEntity.status(HttpStatus.OK).body(userService.getUserInfo(id));
 	}
 
 	@DeleteMapping
-	public ResponseEntity<UserDeleteResponse> deleteUser(@RequestBody User user) {
-		return ResponseEntity.status(HttpStatus.OK).body(userService.deleteUser(UUID.fromString(user.getUsername())));
+	public ResponseEntity<UserDeleteResponse> deleteUser(@RequestBody UUID id) {
+		return ResponseEntity.status(HttpStatus.OK).body(userService.deleteUser(id));
 	}
 
 	@PutMapping
-	public ResponseEntity<UserUpdateResponse> updateUser(@RequestBody User user, @RequestBody UserUpdateRequest request) {
-		return ResponseEntity.status(HttpStatus.OK).body(userService.updateMember(UUID.fromString(user.getUsername()), request));
+	public ResponseEntity<UserUpdateResponse> updateUser(@RequestBody UUID id, @RequestBody UserUpdateRequest request) {
+		return ResponseEntity.status(HttpStatus.OK).body(userService.updateMember(id, request));
 	}
 
 }
