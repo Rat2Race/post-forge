@@ -7,11 +7,8 @@
 <body>
 
 <div class="dashboard-container">
-    <h2>Welcome, <span th:text="${username}"></span>!</h2>
+    <h2>Welcome!</h2>
     <p>This is your dashboard.</p>
-    <form th:action="@{/auth/logout}" method="post">
-        <button type="submit">Logout</button>
-    </form>
 </div>
 
 </body>
