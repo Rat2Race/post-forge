@@ -6,7 +6,6 @@ import com.postforge.auth.article.service.BlogService;
 import com.postforge.auth.article.service.dto.ServiceDto;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
