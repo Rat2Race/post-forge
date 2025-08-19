@@ -1,43 +1,9 @@
 plugins {
-	id 'java'
-	id 'org.springframework.boot' version '3.4.0-SNAPSHOT'
-	id 'io.spring.dependency-management' version '1.1.6'
-}
-
-group = 'com.springweb'
-version = '0.0.1-SNAPSHOT'
-
-java {
-	toolchain {
-		languageVersion = JavaLanguageVersion.of(17)
-	}
-}
-
-configurations {
-	compileOnly {
-		extendsFrom annotationProcessor
-	}
-}
-
-repositories {
-	mavenCentral()
-	maven { url 'https://repo.spring.io/milestone' }
-	maven { url 'https://repo.spring.io/snapshot' }
+	id "java-library"
+	id "io.spring.dependency-management"
 }
 
 dependencies {
-    implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
-	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
-    implementation 'org.springframework.boot:spring-boot-starter-web'
-	compileOnly 'org.projectlombok:lombok'
-    implementation 'org.postgresql:postgresql:42.7.3'
-//	developmentOnly 'org.springframework.boot:spring-boot-docker-compose'
-	annotationProcessor 'org.projectlombok:lombok'
+	api project(':common-lib')
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
-	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
-    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.2.0'
-}
-
-tasks.named('test') {
-	useJUnitPlatform()
 }

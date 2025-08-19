@@ -1,0 +1,2 @@
+rootProject.name = "postforge"
+include("app", "common-lib", "auth-service", "board-service")
