@@ -1,0 +1,34 @@
+version: '3'
+services:
+  db:
+    image: mysql:8.0
+    container_name: mysql
+    restart: always
+    ports:
+      - 3306:3306
+    environment:
+      MYSQL_DATABASE: login
+      MYSQL_ROOT_HOST: '%'
+      MYSQL_ROOT_PASSWORD: 12345678
+      TZ: Asia/Seoul
+    volumes:
+      - .docker/setup.sql:/docker-entrypoint-initdb.d/setup.sql
+      - db_data:/var/lib/mysql
+    platform: linux/x86_64
+    networks:
+      - test_network
+  app:
+    image: cchuyong/login-api:latest
+    container_name: login-api
+    restart: always
+    ports:
+      - 8080:8080
+    depends_on:
+      - db
+    networks:
+      - test_network
+
+networks:
+  test_network:
+volumes:
+  db_data:
