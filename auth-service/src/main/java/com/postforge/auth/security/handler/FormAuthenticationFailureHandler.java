@@ -1,6 +1,6 @@
-package TEST.backend.security.handler;
+package com.postforge.auth.security.handler;
 
-import TEST.backend.security.exception.SecretException;
+import com.postforge.auth.security.exception.SecretException;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;

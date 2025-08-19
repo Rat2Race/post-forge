@@ -1,7 +1,7 @@
-package TEST.backend.security.config;
+package com.postforge.auth.security.config;
 
-import TEST.backend.security.handler.FormAuthenticationFailureHandler;
-import TEST.backend.security.handler.FormAuthenticationSuccessHandler;
+import com.postforge.auth.security.handler.FormAuthenticationFailureHandler;
+import com.postforge.auth.security.handler.FormAuthenticationSuccessHandler;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

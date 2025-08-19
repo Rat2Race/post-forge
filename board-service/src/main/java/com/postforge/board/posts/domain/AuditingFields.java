@@ -1,4 +1,4 @@
-package rat.boardservice.posts.domain;
+package com.postforge.board.posts.domain;
 
 import jakarta.persistence.EntityListeners;
 import jakarta.persistence.MappedSuperclass;

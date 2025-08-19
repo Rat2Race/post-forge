@@ -1,4 +1,4 @@
-package rat.boardservice.posts.dto.article;
+package com.postforge.board.posts.dto.article;
 
 public record ArticleRequest (
 		String title,

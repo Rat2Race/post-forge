@@ -1,6 +1,6 @@
-package TEST.backend.security.config;
+package com.postforge.auth.security.config;
 
-import TEST.backend.security.handler.JwtAuthenticationFilter;
+import com.postforge.auth.security.handler.JwtAuthenticationFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.SecurityConfigurerAdapter;

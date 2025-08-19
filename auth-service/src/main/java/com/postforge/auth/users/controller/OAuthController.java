@@ -1,10 +1,10 @@
-package TEST.backend.users.controller;
+package com.postforge.auth.users.controller;
 
-import TEST.backend.domain.dto.JwtResponseDto;
-import TEST.backend.domain.dto.KakaoLoginRequestDto;
-import TEST.backend.domain.dto.RefreshTokenRequestDto;
-import TEST.backend.domain.dto.TokenPair;
-import TEST.backend.users.service.OAuthService;
+import com.postforge.auth.domain.dto.JwtResponseDto;
+import com.postforge.auth.domain.dto.KakaoLoginRequestDto;
+import com.postforge.auth.domain.dto.RefreshTokenRequestDto;
+import com.postforge.auth.domain.dto.TokenPair;
+import com.postforge.auth.users.service.OAuthService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;

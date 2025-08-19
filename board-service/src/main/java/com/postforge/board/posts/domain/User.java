@@ -1,6 +1,6 @@
-package rat.boardservice.posts.domain;
+package com.postforge.board.posts.domain;
 
-import rat.boardservice.posts.dto.user.request.UserUpdateRequest;
+import com.postforge.board.posts.dto.user.request.UserUpdateRequest;
 import jakarta.persistence.*;
 import lombok.*;
 

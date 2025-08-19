@@ -1,4 +1,4 @@
-package rat.boardservice.posts.dto.user.response;
+package com.postforge.board.posts.dto.user.response;
 
 public record UserDeleteResponse(
 		boolean result

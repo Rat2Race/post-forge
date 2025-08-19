@@ -1,4 +1,4 @@
-package TEST.backend.domain.entity;
+package com.postforge.auth.domain.entity;
 
 import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;

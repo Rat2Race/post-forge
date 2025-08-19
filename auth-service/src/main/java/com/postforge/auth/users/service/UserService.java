@@ -1,10 +1,10 @@
-package TEST.backend.users.service;
+package com.postforge.auth.users.service;
 
-import TEST.backend.domain.entity.Account;
-import TEST.backend.domain.entity.SocialMember;
-import TEST.backend.domain.entity.SocialMemberKey;
-import TEST.backend.users.repository.SocialMemberRepository;
-import TEST.backend.users.repository.UserRepository;
+import com.postforge.auth.domain.entity.Account;
+import com.postforge.auth.domain.entity.SocialMember;
+import com.postforge.auth.domain.entity.SocialMemberKey;
+import com.postforge.auth.users.repository.SocialMemberRepository;
+import com.postforge.auth.users.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;

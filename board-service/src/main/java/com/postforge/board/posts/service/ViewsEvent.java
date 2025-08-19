@@ -1,6 +1,6 @@
-package rat.boardservice.posts.service;
+package com.postforge.board.posts.service;
 
-import rat.boardservice.posts.dto.article.ArticleResponse;
+import com.postforge.board.posts.dto.article.ArticleResponse;
 import lombok.Getter;
 import org.springframework.context.ApplicationEvent;
 

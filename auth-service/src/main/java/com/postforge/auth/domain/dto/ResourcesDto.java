@@ -1,6 +1,6 @@
-//package TEST.backend.domain.dto;
+//package com.postforge.auth.domain.dto;
 //
-//import TEST.backend.domain.entity.Role;
+//import com.postforge.auth.domain.entity.Role;
 //import lombok.AllArgsConstructor;
 //import lombok.Builder;
 //import lombok.Data;
