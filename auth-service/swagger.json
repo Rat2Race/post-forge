@@ -1,0 +1,125 @@
+{
+  "openapi": "3.0.1",
+  "info": {
+    "title": "OpenAPI definition",
+    "version": "v0"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8080",
+      "description": "Generated server url"
+    }
+  ],
+  "tags": [
+    {
+      "name": "OAuth",
+      "description": "OAuth 인증 관련 API"
+    }
+  ],
+  "paths": {
+    "/v1/oauth/refresh": {
+      "post": {
+        "tags": [
+          "OAuth"
+        ],
+        "summary": "토큰 갱신",
+        "operationId": "refreshToken",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RefreshTokenRequestDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/JwtResponseDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/oauth/kakao": {
+      "post": {
+        "tags": [
+          "OAuth"
+        ],
+        "summary": "카카오 로그인",
+        "operationId": "loginWithKakao",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/KakaoLoginRequestDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/JwtResponseDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "RefreshTokenRequestDto": {
+        "type": "object",
+        "properties": {
+          "refreshToken": {
+            "type": "string",
+            "description": "리프레시 토큰",
+            "example": "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhZG1pbiIsImF1dGhvcml0aWVzIjpbIlJPTEVfQURNSU4iXSwiaWF0IjoxNjI5MjM5MjIyLCJleHAiOjE2MjkzMDI4MjJ9.7"
+          }
+        },
+        "description": "토큰 갱신 요청"
+      },
+      "JwtResponseDto": {
+        "type": "object",
+        "properties": {
+          "accessToken": {
+            "type": "string",
+            "description": "액세스 토큰",
+            "example": "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhZG1pbiIsImF1dGhvcml0aWVzIjpbIlJPTEVfQURNSU4iXSwiaWF0IjoxNjI5MjM5MjIyLCJleHAiOjE2MjkzMDI4MjJ9.7"
+          },
+          "refreshToken": {
+            "type": "string",
+            "description": "리프레시 토큰",
+            "example": "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhZG1pbiIsImF1dGhvcml0aWVzIjpbIlJPTEVfQURNSU4iXSwiaWF0IjoxNjI5MjM5MjIyLCJleHAiOjE2MjkzMDI4MjJ9.7"
+          }
+        },
+        "description": "JWT 응답"
+      },
+      "KakaoLoginRequestDto": {
+        "type": "object",
+        "properties": {
+          "accessToken": {
+            "type": "string",
+            "description": "카카오 액세스 토큰",
+            "example": "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhZG1pbiIsImF1dGhvcml0aWVzIjpbIlJPTEVfQURNSU4iXSwiaWF0IjoxNjI5MjM5MjIyLCJleHAiOjE2MjkzMDI4MjJ9.7"
+          }
+        },
+        "description": "카카오 로그인 요청"
+      }
+    }
+  }
+}
