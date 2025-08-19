@@ -1,6 +1,6 @@
-package rat.boardservice.posts.domain;
+package com.postforge.board.posts.domain;
 
-import rat.boardservice.posts.dto.article.ArticleRequest;
+import com.postforge.board.posts.dto.article.ArticleRequest;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;

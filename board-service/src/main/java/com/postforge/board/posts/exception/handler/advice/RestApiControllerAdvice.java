@@ -1,8 +1,8 @@
-package rat.boardservice.posts.exception.handler.advice;
+package com.postforge.board.posts.exception.handler.advice;
 
-import rat.boardservice.posts.exception.BadRequestException;
-import rat.boardservice.posts.exception.NotFindPage_RestException;
-import rat.boardservice.posts.exception.handler.ErrorResult;
+import com.postforge.board.posts.exception.BadRequestException;
+import com.postforge.board.posts.exception.NotFindPage_RestException;
+import com.postforge.board.posts.exception.handler.ErrorResult;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

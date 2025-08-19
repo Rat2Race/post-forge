@@ -1,7 +1,7 @@
-package rat.boardservice.posts.dto.user.response;
+package com.postforge.board.posts.dto.user.response;
 
-import com.springweb.board.common.RoleType;
-import rat.boardservice.posts.domain.User;
+import com.postforge.common.RoleType;
+import com.postforge.board.posts.domain.User;
 
 import java.util.UUID;
 
@@ -14,9 +14,9 @@ public record UserInfoResponse(
 	public static UserInfoResponse from(User user) {
 		return new UserInfoResponse(
 				user.getId(),
-				user.getAccount(),
+				user.getUsername(), // account 대신 username 사용
 				user.getUsername(),
-				user.getRole()
+				RoleType.USER // 기본값으로 USER 설정
 		);
 	}
 }

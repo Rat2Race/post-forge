@@ -1,9 +1,9 @@
-package TEST.backend.users.service;
+package com.postforge.auth.users.service;
 
-import TEST.backend.domain.dto.JwtResponseDto;
-import TEST.backend.domain.dto.KakaoAuthResponse;
-import TEST.backend.domain.dto.TokenPair;
-import TEST.backend.domain.entity.Account;
+import com.postforge.auth.domain.dto.JwtResponseDto;
+import com.postforge.auth.domain.dto.KakaoAuthResponse;
+import com.postforge.auth.domain.dto.TokenPair;
+import com.postforge.auth.domain.entity.Account;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;

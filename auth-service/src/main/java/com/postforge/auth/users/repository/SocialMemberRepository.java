@@ -1,7 +1,7 @@
-package TEST.backend.users.repository;
+package com.postforge.auth.users.repository;
 
-import TEST.backend.domain.entity.SocialMember;
-import TEST.backend.domain.entity.SocialMemberKey;
+import com.postforge.auth.domain.entity.SocialMember;
+import com.postforge.auth.domain.entity.SocialMemberKey;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface SocialMemberRepository extends JpaRepository<SocialMember, SocialMemberKey> {

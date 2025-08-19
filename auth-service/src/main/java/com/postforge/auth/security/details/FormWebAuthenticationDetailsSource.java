@@ -1,4 +1,4 @@
-package TEST.backend.security.details;
+package com.postforge.auth.security.details;
 
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.security.authentication.AuthenticationDetailsSource;

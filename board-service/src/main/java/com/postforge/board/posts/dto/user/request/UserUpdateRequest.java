@@ -1,4 +1,4 @@
-package rat.boardservice.posts.dto.user.request;
+package com.postforge.board.posts.dto.user.request;
 
 public record UserUpdateRequest(
 		String name

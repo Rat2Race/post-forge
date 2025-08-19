@@ -1,7 +1,7 @@
-package rat.boardservice.posts.exception.handler.advice;
+package com.postforge.board.posts.exception.handler.advice;
 
-import rat.boardservice.posts.exception.NotFindPageException;
-import rat.boardservice.posts.exception.handler.ErrorResult;
+import com.postforge.board.posts.exception.NotFindPageException;
+import com.postforge.board.posts.exception.handler.ErrorResult;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.ControllerAdvice;

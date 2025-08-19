@@ -1,8 +1,8 @@
-package TEST.backend.users.service;
+package com.postforge.auth.users.service;
 
 
-import TEST.backend.domain.dto.TokenPair;
-import TEST.backend.security.config.TokenProperties;
+import com.postforge.auth.domain.dto.TokenPair;
+import com.postforge.auth.security.config.TokenProperties;
 import io.jsonwebtoken.*;
 import org.springframework.stereotype.Component;
 

@@ -1,6 +1,6 @@
-package TEST.backend.security.handler;
+package com.postforge.auth.security.handler;
 
-import TEST.backend.security.details.JwtAuthenticationToken;
+import com.postforge.auth.security.details.JwtAuthenticationToken;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;

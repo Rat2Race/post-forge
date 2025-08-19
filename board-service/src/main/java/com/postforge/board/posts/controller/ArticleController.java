@@ -1,10 +1,10 @@
-package rat.boardservice.posts.controller;
+package com.postforge.board.posts.controller;
 
-import rat.boardservice.posts.dto.article.ArticleRequest;
-import rat.boardservice.posts.dto.article.ArticleResponse;
-import rat.boardservice.posts.service.ArticleService;
-import rat.boardservice.posts.service.PagingService;
-import rat.boardservice.posts.service.ViewsEvent;
+import com.postforge.board.posts.dto.article.ArticleRequest;
+import com.postforge.board.posts.dto.article.ArticleResponse;
+import com.postforge.board.posts.service.ArticleService;
+import com.postforge.board.posts.service.PagingService;
+import com.postforge.board.posts.service.ViewsEvent;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;

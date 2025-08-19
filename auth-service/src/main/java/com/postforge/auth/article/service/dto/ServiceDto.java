@@ -1,4 +1,4 @@
-package TEST.backend.article.service.dto;
+package com.postforge.auth.article.service.dto;
 
 import java.time.LocalDateTime;
 import lombok.AllArgsConstructor;

@@ -1,9 +1,9 @@
-package TEST.backend.article.api;
+package com.postforge.auth.article.api;
 
-import TEST.backend.article.domain.dto.ArticleRequest;
-import TEST.backend.article.domain.dto.ArticleResponse;
-import TEST.backend.article.service.BlogService;
-import TEST.backend.article.service.dto.ServiceDto;
+import com.postforge.auth.article.domain.dto.ArticleRequest;
+import com.postforge.auth.article.domain.dto.ArticleResponse;
+import com.postforge.auth.article.service.BlogService;
+import com.postforge.auth.article.service.dto.ServiceDto;
 import jakarta.validation.Valid;
 import java.util.List;
 import lombok.RequiredArgsConstructor;

@@ -1,4 +1,4 @@
-package TEST.backend.security.exception;
+package com.postforge.auth.security.exception;
 
 import org.springframework.security.core.AuthenticationException;
 public class SecretException extends AuthenticationException {

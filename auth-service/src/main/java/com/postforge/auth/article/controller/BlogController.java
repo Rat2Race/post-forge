@@ -1,9 +1,9 @@
-package TEST.backend.article.controller;
+package com.postforge.auth.article.controller;
 
-import TEST.backend.article.domain.dto.ArticleResponse;
-import TEST.backend.article.domain.entity.Article;
-import TEST.backend.article.service.BlogService;
-import TEST.backend.article.service.dto.ServiceDto;
+import com.postforge.auth.article.domain.dto.ArticleResponse;
+import com.postforge.auth.article.domain.entity.Article;
+import com.postforge.auth.article.service.BlogService;
+import com.postforge.auth.article.service.dto.ServiceDto;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;

@@ -1,6 +1,6 @@
-package TEST.backend.article.domain.dto;
+package com.postforge.auth.article.domain.dto;
 
-import TEST.backend.article.service.dto.ServiceDto;
+import com.postforge.auth.article.service.dto.ServiceDto;
 import java.time.LocalDateTime;
 import lombok.AllArgsConstructor;
 import lombok.Builder;

@@ -1,7 +1,7 @@
-package rat.boardservice.posts.repository;
+package com.postforge.board.posts.repository;
 
-import com.springweb.board.common.RoleType;
-import rat.boardservice.posts.domain.User;
+import com.postforge.common.RoleType;
+import com.postforge.board.posts.domain.User;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
