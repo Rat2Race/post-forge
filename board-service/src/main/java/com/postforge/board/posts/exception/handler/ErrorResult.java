@@ -1,4 +1,4 @@
-package rat.boardservice.posts.exception.handler;
+package com.postforge.board.posts.exception.handler;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

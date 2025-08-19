@@ -1,9 +1,9 @@
-package rat.boardservice.posts.service;
+package com.postforge.board.posts.service;
 
-import rat.boardservice.posts.domain.Article;
-import rat.boardservice.posts.dto.article.ArticleRequest;
-import rat.boardservice.posts.dto.article.ArticleResponse;
-import rat.boardservice.posts.repository.ArticleRepo;
+import com.postforge.board.posts.domain.Article;
+import com.postforge.board.posts.dto.article.ArticleRequest;
+import com.postforge.board.posts.dto.article.ArticleResponse;
+import com.postforge.board.posts.repository.ArticleRepo;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

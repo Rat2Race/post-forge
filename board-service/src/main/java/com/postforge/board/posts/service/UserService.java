@@ -1,10 +1,10 @@
-package rat.boardservice.posts.service;
+package com.postforge.board.posts.service;
 
-import rat.boardservice.posts.dto.user.request.UserUpdateRequest;
-import rat.boardservice.posts.dto.user.response.UserDeleteResponse;
-import rat.boardservice.posts.dto.user.response.UserInfoResponse;
-import rat.boardservice.posts.dto.user.response.UserUpdateResponse;
-import rat.boardservice.posts.repository.UserRepo;
+import com.postforge.board.posts.dto.user.request.UserUpdateRequest;
+import com.postforge.board.posts.dto.user.response.UserDeleteResponse;
+import com.postforge.board.posts.dto.user.response.UserInfoResponse;
+import com.postforge.board.posts.dto.user.response.UserUpdateResponse;
+import com.postforge.board.posts.repository.UserRepo;
 import java.util.NoSuchElementException;
 import java.util.UUID;
 

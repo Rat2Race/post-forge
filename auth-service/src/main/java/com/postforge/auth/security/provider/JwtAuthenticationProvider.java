@@ -1,7 +1,7 @@
-package TEST.backend.security.provider;
+package com.postforge.auth.security.provider;
 
-import TEST.backend.security.details.JwtAuthenticationToken;
-import TEST.backend.users.service.JWTTokenService;
+import com.postforge.auth.security.details.JwtAuthenticationToken;
+import com.postforge.auth.users.service.JWTTokenService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.security.authentication.AuthenticationProvider;

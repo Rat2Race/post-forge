@@ -1,4 +1,4 @@
-package TEST.backend.security.details;
+package com.postforge.auth.security.details;
 
 import java.util.Collection;
 import org.springframework.security.authentication.AbstractAuthenticationToken;

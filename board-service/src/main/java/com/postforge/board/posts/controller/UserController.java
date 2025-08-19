@@ -1,10 +1,10 @@
-package rat.boardservice.posts.controller;
+package com.postforge.board.posts.controller;
 
-import rat.boardservice.posts.dto.user.request.UserUpdateRequest;
-import rat.boardservice.posts.dto.user.response.UserDeleteResponse;
-import rat.boardservice.posts.dto.user.response.UserInfoResponse;
-import rat.boardservice.posts.dto.user.response.UserUpdateResponse;
-import rat.boardservice.posts.service.UserService;
+import com.postforge.board.posts.dto.user.request.UserUpdateRequest;
+import com.postforge.board.posts.dto.user.response.UserDeleteResponse;
+import com.postforge.board.posts.dto.user.response.UserInfoResponse;
+import com.postforge.board.posts.dto.user.response.UserUpdateResponse;
+import com.postforge.board.posts.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

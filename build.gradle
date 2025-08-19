@@ -14,18 +14,33 @@ allprojects {
 
 subprojects {
     plugins.withId('java') {
-//        configurations {
-//            compileOnly {
-//                extendsFrom annotationProcessor
-//            }
-//        }
-
         java {
             toolchain {
                 languageVersion = JavaLanguageVersion.of(21)
             }
-            withSourcesJar()
-            withJavadocJar()
+        }
+
+        plugins.withId('java-library') {
+            java {
+                withSourcesJar()
+                withJavadocJar()
+            }
+        }
+
+        plugins.withId('io.spring.dependency-management') {
+            dependencyManagement {
+                imports {
+                    mavenBom "org.springframework.boot:spring-boot-dependencies:3.5.4"
+                }
+            }
+        }
+
+        tasks.withType(JavaCompile).configureEach {
+            options.encoding = 'UTF-8'
+        }
+
+        tasks.withType(Javadoc).configureEach {
+            options.encoding = 'UTF-8'
         }
 
         dependencies {
@@ -38,6 +53,10 @@ subprojects {
         tasks.withType(Test).configureEach {
             useJUnitPlatform()
         }
+
+
     }
+
+
 }
 

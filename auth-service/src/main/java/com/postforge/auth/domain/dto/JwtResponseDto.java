@@ -1,4 +1,4 @@
-package TEST.backend.domain.dto;
+package com.postforge.auth.domain.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 

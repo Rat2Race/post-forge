@@ -1,4 +1,4 @@
-package rat.boardservice.posts.exception;
+package com.postforge.board.posts.exception;
 
 /**
  * 잘못된 요청 오류

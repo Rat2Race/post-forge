@@ -1,6 +1,6 @@
-package rat.boardservice.posts.dto.article;
+package com.postforge.board.posts.dto.article;
 
-import rat.boardservice.posts.domain.Article;
+import com.postforge.board.posts.domain.Article;
 
 public record ArticleResponse (
 	Long id,

@@ -1,8 +1,8 @@
-package TEST.backend.users.controller;
+package com.postforge.auth.users.controller;
 
-import TEST.backend.domain.dto.AccountDto;
-import TEST.backend.domain.entity.Account;
-import TEST.backend.users.service.UserService;
+import com.postforge.auth.domain.dto.AccountDto;
+import com.postforge.auth.domain.entity.Account;
+import com.postforge.auth.users.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springframework.security.crypto.password.PasswordEncoder;

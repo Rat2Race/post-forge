@@ -1,8 +1,8 @@
-package TEST.backend.security.provider;
+package com.postforge.auth.security.provider;
 
-import TEST.backend.domain.dto.AccountContext;
-import TEST.backend.security.details.FormWebAuthenticationDetails;
-import TEST.backend.security.exception.SecretException;
+import com.postforge.auth.domain.dto.AccountContext;
+import com.postforge.auth.security.details.FormWebAuthenticationDetails;
+import com.postforge.auth.security.exception.SecretException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.BadCredentialsException;

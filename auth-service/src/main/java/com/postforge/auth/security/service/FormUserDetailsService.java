@@ -1,9 +1,9 @@
-package TEST.backend.security.service;
+package com.postforge.auth.security.service;
 
-import TEST.backend.domain.dto.AccountContext;
-import TEST.backend.domain.dto.AccountDto;
-import TEST.backend.domain.entity.Account;
-import TEST.backend.users.repository.UserRepository;
+import com.postforge.auth.domain.dto.AccountContext;
+import com.postforge.auth.domain.dto.AccountDto;
+import com.postforge.auth.domain.entity.Account;
+import com.postforge.auth.users.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springframework.security.core.GrantedAuthority;

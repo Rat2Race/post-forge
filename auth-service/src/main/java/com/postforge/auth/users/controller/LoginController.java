@@ -1,6 +1,6 @@
-package TEST.backend.users.controller;
+package com.postforge.auth.users.controller;
 
-import TEST.backend.domain.dto.AccountDto;
+import com.postforge.auth.domain.dto.AccountDto;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.security.core.Authentication;

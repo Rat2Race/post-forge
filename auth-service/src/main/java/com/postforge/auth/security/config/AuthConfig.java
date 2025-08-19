@@ -1,4 +1,4 @@
-package TEST.backend.security.config;
+package com.postforge.auth.security.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

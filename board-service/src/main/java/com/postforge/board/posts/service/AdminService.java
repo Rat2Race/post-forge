@@ -1,8 +1,8 @@
-package rat.boardservice.posts.service;
+package com.postforge.board.posts.service;
 
-import com.springweb.board.common.RoleType;
-import rat.boardservice.posts.dto.user.response.UserInfoResponse;
-import rat.boardservice.posts.repository.UserRepo;
+import com.postforge.common.RoleType;
+import com.postforge.board.posts.dto.user.response.UserInfoResponse;
+import com.postforge.board.posts.repository.UserRepo;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;

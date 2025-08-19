@@ -1,4 +1,4 @@
-package TEST.backend.domain.entity;
+package com.postforge.auth.domain.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;

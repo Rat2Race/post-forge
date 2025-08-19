@@ -1,6 +1,6 @@
-package rat.boardservice.posts.dto.user.response;
+package com.postforge.board.posts.dto.user.response;
 
-import rat.boardservice.posts.domain.User;
+import com.postforge.board.posts.domain.User;
 
 public record UserUpdateResponse(
 		boolean result,

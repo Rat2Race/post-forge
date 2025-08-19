@@ -1,4 +1,4 @@
-package rat.boardservice.posts.exception;
+package com.postforge.board.posts.exception;
 
 public class NotFindPageException extends RuntimeException {
 

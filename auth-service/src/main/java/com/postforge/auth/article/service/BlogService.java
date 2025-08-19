@@ -1,9 +1,9 @@
-package TEST.backend.article.service;
+package com.postforge.auth.article.service;
 
-import TEST.backend.article.domain.dto.ArticleRequest;
-import TEST.backend.article.domain.entity.Article;
-import TEST.backend.article.repository.BlogRepository;
-import TEST.backend.article.service.dto.ServiceDto;
+import com.postforge.auth.article.domain.dto.ArticleRequest;
+import com.postforge.auth.article.domain.entity.Article;
+import com.postforge.auth.article.repository.BlogRepository;
+import com.postforge.auth.article.service.dto.ServiceDto;
 import java.util.List;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;

@@ -1,6 +1,6 @@
-package TEST.backend.article.domain.dto;
+package com.postforge.auth.article.domain.dto;
 
-import TEST.backend.article.domain.entity.Article;
+import com.postforge.auth.article.domain.entity.Article;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
