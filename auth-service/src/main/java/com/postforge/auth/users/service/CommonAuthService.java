@@ -13,7 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class UserService {
+public class CommonAuthService {
 
 	private final SocialMemberRepository socialMemberRepository;
 	private final UserRepository userRepository;
