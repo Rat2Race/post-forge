@@ -40,7 +40,7 @@ subprojects {
 
         tasks.withType(Javadoc).configureEach {
             options.encoding = 'UTF-8'
-            options.addStringOption('Xdoclint:none', '-quiet')  // 경고 줄이기
+            options.addStringOption('Xdoclint:none', '-quiet')
         }
 
         tasks.named('test') {
