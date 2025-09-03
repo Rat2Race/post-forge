@@ -1,7 +1,7 @@
 package com.postforge.board.posts.controller;
 
-import com.postforge.board.posts.dto.article.ArticleRequest;
-import com.postforge.board.posts.dto.article.ArticleResponse;
+import com.postforge.board.posts.domain.dto.article.ArticleRequest;
+import com.postforge.board.posts.domain.dto.article.ArticleResponse;
 import com.postforge.board.posts.service.ArticleService;
 import com.postforge.board.posts.service.PagingService;
 import com.postforge.board.posts.service.ViewsEvent;

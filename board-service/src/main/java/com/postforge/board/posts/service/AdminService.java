@@ -1,8 +1,8 @@
 package com.postforge.board.posts.service;
 
 import com.postforge.common.RoleType;
-import com.postforge.board.posts.dto.user.response.UserInfoResponse;
-import com.postforge.board.posts.repository.UserRepo;
+import com.postforge.board.posts.domain.dto.user.response.UserInfoResponse;
+import com.postforge.board.posts.domain.repository.UserRepo;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;

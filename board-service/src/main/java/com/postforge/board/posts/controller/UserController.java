@@ -1,9 +1,9 @@
 package com.postforge.board.posts.controller;
 
-import com.postforge.board.posts.dto.user.request.UserUpdateRequest;
-import com.postforge.board.posts.dto.user.response.UserDeleteResponse;
-import com.postforge.board.posts.dto.user.response.UserInfoResponse;
-import com.postforge.board.posts.dto.user.response.UserUpdateResponse;
+import com.postforge.board.posts.domain.dto.user.request.UserUpdateRequest;
+import com.postforge.board.posts.domain.dto.user.response.UserDeleteResponse;
+import com.postforge.board.posts.domain.dto.user.response.UserInfoResponse;
+import com.postforge.board.posts.domain.dto.user.response.UserUpdateResponse;
 import com.postforge.board.posts.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
