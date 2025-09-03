@@ -1,8 +1,8 @@
 package com.postforge.board.posts.service;
 
-import com.postforge.board.posts.domain.Article;
-import com.postforge.board.posts.dto.article.ArticleResponse;
-import com.postforge.board.posts.repository.ArticleRepo;
+import com.postforge.board.posts.domain.entity.Article;
+import com.postforge.board.posts.domain.dto.article.ArticleResponse;
+import com.postforge.board.posts.domain.repository.ArticleRepo;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;

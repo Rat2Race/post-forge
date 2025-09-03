@@ -1,6 +1,6 @@
 package com.postforge.board.posts.service;
 
-import com.postforge.board.posts.dto.article.ArticleResponse;
+import com.postforge.board.posts.domain.dto.article.ArticleResponse;
 import lombok.Getter;
 import org.springframework.context.ApplicationEvent;
 
