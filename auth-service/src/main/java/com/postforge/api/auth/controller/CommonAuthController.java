@@ -15,18 +15,27 @@ public class CommonAuthController {
 
     ObjectMapper om = new ObjectMapper();
 
+    /** testing **/
     @GetMapping("/security")
     public String operate() {
         return "security";
     }
 
-    @PostMapping("/login")
-    public CommonLoginRequest login(@RequestBody CommonLoginRequest commonLoginDto) {
-        return commonLoginDto;
+    /** 회원가입 **/
+    @PostMapping("/register")
+    public CommonRegisterRequest register(@RequestBody CommonRegisterRequest request) {
+        return request;
     }
 
-    @PostMapping("/register")
-    public CommonRegisterRequest register(@RequestBody CommonRegisterRequest registerDto) {
-        return registerDto;
+    /** 로그인 **/
+    @PostMapping("/login")
+    public CommonLoginRequest login(@RequestBody CommonLoginRequest request) {
+        return request;
+    }
+
+    /** 로그아웃 **/
+    @PostMapping("/logout")
+    public String logout() {
+        return "logout";
     }
 }

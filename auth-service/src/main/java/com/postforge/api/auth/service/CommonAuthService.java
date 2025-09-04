@@ -67,7 +67,6 @@ public class CommonAuthService {
             .username(request.name())
             .userId(request.id())
             .userPw(passwordEncoder.encode(request.pw()))
-            .role(RoleType.USER)
             .build();
 
         return userRepository.save(member).getId();
