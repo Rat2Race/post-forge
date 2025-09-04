@@ -1,6 +1,5 @@
 package com.postforge.domain.member.entity;
 
-import com.postforge.common.RoleType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
