@@ -1,8 +1,13 @@
 package com.postforge.api.auth.controller;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.postforge.domain.member.dto.CommonLoginRequest;
 import com.postforge.domain.member.dto.CommonRegisterRequest;
+import com.postforge.global.security.dto.TokenReissueRequest;
+import com.postforge.global.security.dto.TokenResponse;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -11,9 +16,9 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/auth")
+@RequiredArgsConstructor
+@Slf4j
 public class CommonAuthController {
-
-    ObjectMapper om = new ObjectMapper();
 
     /** testing **/
     @GetMapping("/security")
@@ -23,14 +28,21 @@ public class CommonAuthController {
 
     /** 회원가입 **/
     @PostMapping("/register")
-    public CommonRegisterRequest register(@RequestBody CommonRegisterRequest request) {
+    public CommonRegisterRequest register(@Valid @RequestBody CommonRegisterRequest request) {
         return request;
     }
 
     /** 로그인 **/
     @PostMapping("/login")
-    public CommonLoginRequest login(@RequestBody CommonLoginRequest request) {
+    public CommonLoginRequest login(@Valid @RequestBody CommonLoginRequest request) {
         return request;
+    }
+
+    /** 토큰 재발급 **/
+    @PostMapping("/reissue")
+    public ResponseEntity<TokenResponse> reissue(@Valid @RequestBody TokenReissueRequest request) {
+        TokenResponse tokenResponse = null;
+        return ResponseEntity.ok(tokenResponse);
     }
 
     /** 로그아웃 **/
