@@ -27,8 +27,8 @@ public class CommonAuthController {
     }
 
     /** 회원가입 **/
-    @PostMapping("/register")
-    public CommonRegisterRequest register(@Valid @RequestBody CommonRegisterRequest request) {
+    @PostMapping("/signup")
+    public CommonRegisterRequest signup(@Valid @RequestBody CommonRegisterRequest request) {
         return request;
     }
 
