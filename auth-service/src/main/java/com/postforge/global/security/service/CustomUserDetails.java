@@ -1,4 +1,4 @@
-package com.postforge.global.security.dto;
+package com.postforge.global.security.service;
 
 import com.postforge.domain.member.entity.Member;
 import java.util.Collection;

@@ -2,7 +2,6 @@ package com.postforge.global.security.service;
 
 import com.postforge.domain.member.entity.Member;
 import com.postforge.domain.member.repository.MemberRepository;
-import com.postforge.global.security.dto.CustomUserDetails;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
