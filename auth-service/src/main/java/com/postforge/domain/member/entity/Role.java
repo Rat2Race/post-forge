@@ -11,6 +11,10 @@ public enum Role {
         this.value = value;
     }
 
+    public String getValue() {
+        return value;
+    }
+
     public static Role fromValue(String value) {
         for (Role role : Role.values()) {
             if (role.value.equals(value)) {
