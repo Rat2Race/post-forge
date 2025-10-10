@@ -28,8 +28,9 @@ public class MemberController {
         @AuthenticationPrincipal CustomUserDetails userDetails) {
 
         MemberResponse response = MemberResponse.builder()
-            .id(userDetails.member().getId())
-            .userId(userDetails.getUsername())
+            .id(userDetails.id())
+            .name(userDetails.name())
+            .userId(userDetails.userId())
             .roles(userDetails.getAuthorities().stream()
                 .map(GrantedAuthority::getAuthority)
                 .toList())

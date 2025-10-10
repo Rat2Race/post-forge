@@ -3,5 +3,6 @@ include(
         ":app",
         ":common-lib",
         ":auth-service",
-        ":board-service"
+        ":board-service",
+        ":security-api"
 )

@@ -1,0 +1,26 @@
+server:
+  port: 8080
+
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/postforge
+    username: postgres
+    password: 1234
+  jpa:
+    hibernate:
+      ddl-auto: update
+    open-in-view: false
+  data:
+    redis:
+      host: localhost
+      port: 6379
+
+jwt:
+  # 개발용 시크릿: 운영에서는 환경변수/외부 시크릿 사용 권장(32바이트 이상)
+  secret: "b3f2c1a9e7d6f5c4b3a2918070605040302019a8b7c6d5e4f3a2b1c0dffeeddc"
+  accessTokenValidity: 900000       # 15분 (ms)
+  refreshTokenValidity: 604800000   # 7일 (ms)
+
+lostark:
+  url: https://developer-lostark.game.onstove.com
+  secret: eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsIng1dCI6IktYMk40TkRDSTJ5NTA5NWpjTWk5TllqY2lyZyIsImtpZCI6IktYMk40TkRDSTJ5NTA5NWpjTWk5TllqY2lyZyJ9.eyJpc3MiOiJodHRwczovL2x1ZHkuZ2FtZS5vbnN0b3ZlLmNvbSIsImF1ZCI6Imh0dHBzOi8vbHVkeS5nYW1lLm9uc3RvdmUuY29tL3Jlc291cmNlcyIsImNsaWVudF9pZCI6IjEwMDAwMDAwMDA1ODY2MTMifQ.d5GPtWFXdK-gmyCyG6J-ndCJSdloklsvMFKrDDPBnOW0x647UrxyfGohWkzhnqG5o465WK2uzLLPPGvWaUnaNBFyDa5UWjBzZCDpeFHoZ1DyKnqxko7sx-iIcH1C5_DfAO9vjpElqbfOvUfYcX5PdkhUN2mX0hO1s98cmzW7BzevSiZ4uSl_stmivO1R4tf0EuUlIA027y9OAqzECSi1CAoMTJbQPwN3Qg48WpSSjphOwPm9aYGgF-TTzzU_GMuTUCkog2iPQSePAoyHDoEhRB8zUo_ebT_cn0AIU2-QSkYk9X48n2evSWYaQO6-gWWv24bnEXHpXeq4tPwqrelGLQ

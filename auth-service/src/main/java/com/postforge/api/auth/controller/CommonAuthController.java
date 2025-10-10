@@ -10,6 +10,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -33,9 +34,9 @@ public class CommonAuthController {
     }
 
     /** 회원가입 **/
-    @PostMapping("/signup")
-    public ResponseEntity<String> signup(@Valid @RequestBody CommonRegisterRequest request) {
-        Long memberId = commonAuthService.signup(request);
+    @PostMapping("/register")
+    public ResponseEntity<String> register(@Valid @RequestBody CommonRegisterRequest request) {
+        Long memberId = commonAuthService.register(request);
         return ResponseEntity.status(HttpStatus.CREATED).body("회원가입이 완료되었습니다. ID: " + memberId);
     }
 
@@ -48,6 +49,7 @@ public class CommonAuthController {
 
     /** 토큰 재발급 **/
     @PostMapping("/reissue")
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     public ResponseEntity<TokenResponse> reissue(@Valid @RequestBody TokenReissueRequest request) {
         TokenResponse tokenResponse = commonAuthService.reissueToken(request.refreshToken());
         return ResponseEntity.ok(tokenResponse);
@@ -55,6 +57,7 @@ public class CommonAuthController {
 
     /** 로그아웃 **/
     @PostMapping("/logout")
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     public ResponseEntity<String> logout(@AuthenticationPrincipal UserDetails userDetails) {
         commonAuthService.logout(userDetails.getUsername());
         return ResponseEntity.ok("로그아웃되었습니다.");

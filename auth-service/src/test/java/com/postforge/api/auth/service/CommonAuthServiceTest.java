@@ -8,14 +8,11 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.postforge.api.auth.service.CommonAuthService;
-import com.postforge.common.RoleType;
 import com.postforge.domain.member.dto.CommonRegisterRequest;
 import com.postforge.domain.member.entity.Member;
-import com.postforge.domain.member.entity.Member.MemberBuilder;
+import com.postforge.domain.member.entity.Role;
 import com.postforge.domain.member.repository.MemberRepository;
 import java.util.Optional;
-import javax.swing.text.html.Option;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -51,13 +48,14 @@ class CommonAuthServiceTest {
             .username("test")
             .userId("testtestId")
             .userPw("testtestPw")
-            .role(RoleType.USER)
             .build();
+
+        newMember.addRole(Role.USER);
 
         when(mockUserRepo.save(any()))
             .thenReturn(newMember);
 
-        Long userId = authService.save(request);
+        Long userId = authService.signup(request);
 
         assertThat(userId).isEqualTo(1L);
 
@@ -78,13 +76,14 @@ class CommonAuthServiceTest {
             .username("test")
             .userId("testtestId")
             .userPw("testtestPw")
-            .role(RoleType.USER)
             .build();
+
+        newMember.addRole(Role.USER);
 
         when(mockUserRepo.findByUsername("test"))
             .thenReturn(Optional.of(newMember));
 
-        assertThrows(IllegalArgumentException.class, () -> authService.save(request));
+        assertThrows(IllegalArgumentException.class, () -> authService.signup(request));
 
         verify(mockUserRepo, never()).save(any());
         verify(mockPasswordEncoder, never()).encode(any());

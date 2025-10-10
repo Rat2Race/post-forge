@@ -1,5 +1,6 @@
 package com.postforge.domain.member.dto;
 
+import com.postforge.api.auth.dto.LoginRequest;
 import jakarta.validation.constraints.NotBlank;
 
 public record CommonLoginRequest(
@@ -11,4 +12,7 @@ public record CommonLoginRequest(
     String pw
 ) {
 
+    public static CommonLoginRequest from(LoginRequest request) {
+        return new CommonLoginRequest(request.id(), request.pw());
+    }
 }

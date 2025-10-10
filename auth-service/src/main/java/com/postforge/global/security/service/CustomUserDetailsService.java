@@ -1,7 +1,9 @@
 package com.postforge.global.security.service;
 
 import com.postforge.domain.member.entity.Member;
+import com.postforge.domain.member.entity.Role;
 import com.postforge.domain.member.repository.MemberRepository;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -20,9 +22,17 @@ public class CustomUserDetailsService implements UserDetailsService {
     @Transactional(readOnly = true)
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
 
-        Member member = memberRepository.findByUsernameWithRoles(username)
+        Member member = memberRepository.findByUsername(username)
             .orElseThrow(() -> new UsernameNotFoundException("사용자를 찾을 수 없습니다: " + username));
 
-        return new CustomUserDetails(member);
+        return new CustomUserDetails(
+            member.getId(),
+            member.getUsername(),
+            member.getUserId(),
+            member.getUserPw(),
+            member.getRoles().stream()
+                .map(Role::getValue)
+                .collect(Collectors.toSet())
+        );
     }
 }
