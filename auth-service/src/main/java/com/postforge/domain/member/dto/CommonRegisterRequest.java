@@ -1,5 +1,6 @@
 package com.postforge.domain.member.dto;
 
+import com.postforge.api.auth.dto.RegisterRequest;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
@@ -21,5 +22,7 @@ public record CommonRegisterRequest(
         message = "비밀번호는 대소문자, 숫자, 특수문자를 포함해야 합니다")
     String pw
 ) {
-
+    public static CommonRegisterRequest from(RegisterRequest request) {
+        return new CommonRegisterRequest(request.name(), request.id(), request.pw());
+    }
 }

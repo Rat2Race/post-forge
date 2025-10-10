@@ -1,5 +1,8 @@
 package com.postforge.domain.member.entity;
 
+import lombok.Getter;
+
+@Getter
 public enum Role {
     USER("ROLE_USER"),
     ADMIN("ROLE_ADMIN"),
@@ -9,10 +12,6 @@ public enum Role {
 
     Role(String value) {
         this.value = value;
-    }
-
-    public String getValue() {
-        return value;
     }
 
     public static Role fromValue(String value) {
