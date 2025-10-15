@@ -1,25 +1,35 @@
 package com.postforge.global.security.jwt;
 
+import com.postforge.global.exception.CustomException;
+import com.postforge.global.exception.ErrorCode;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
+import io.jsonwebtoken.JwtBuilder;
+import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.MalformedJwtException;
-import io.jsonwebtoken.SignatureAlgorithm;
-import io.jsonwebtoken.UnsupportedJwtException;
 import io.jsonwebtoken.security.Keys;
+import io.jsonwebtoken.security.SecurityException;
 import jakarta.annotation.PostConstruct;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 import java.util.stream.Collectors;
 import javax.crypto.SecretKey;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.stereotype.Component;
 
 @Slf4j
@@ -28,7 +38,6 @@ import org.springframework.stereotype.Component;
 public class JwtTokenProvider {
 
     private final JwtProperties jwtProperties;
-    private final UserDetailsService userDetailsService;
     private SecretKey key;
 
     @PostConstruct
@@ -41,64 +50,93 @@ public class JwtTokenProvider {
         String username = authentication.getName();
         Collection<? extends GrantedAuthority> authorities = authentication.getAuthorities();
 
-        Date now = new Date();
-        Date expiry = new Date(now.getTime() + jwtProperties.getAccessTokenValidity());
-
-        return Jwts.builder()
-            .subject(username)
-            .claim("roles", authorities.stream()
+        Map<String, Object> claims = Map.of("roles",
+            authorities.stream()
                 .map(GrantedAuthority::getAuthority)
-                .collect(Collectors.toList()))
-            .issuedAt(now)
-            .expiration(expiry)
-            .signWith(key, SignatureAlgorithm.HS256)
-            .compact();
+                .toList());
+
+        return createToken(username, claims,
+            Duration.ofMinutes(jwtProperties.getAccessTokenValidity()), true);
     }
 
     public String createRefreshToken(String username) {
-        Date now = new Date();
-        Date expiry = new Date(now.getTime() + jwtProperties.getRefreshTokenValidity());
-
-        return Jwts.builder()
-            .setSubject(username)
-            .setIssuedAt(now)
-            .setExpiration(expiry)
-            .signWith(key, SignatureAlgorithm.HS256)
-            .compact();
-    }
-
-    public String getUsername(String token) {
-        return getClaims(token).getSubject();
-    }
-
-    public UserDetails getUserDetails(String username) {
-        return userDetailsService.loadUserByUsername(username);
+        return createToken(username, Collections.emptyMap(),
+            Duration.ofDays(jwtProperties.getRefreshTokenValidity()), false);
     }
 
     public boolean validateToken(String token) {
         try {
-            Jwts.parser()
-                .setSigningKey(key)
-                .build()
-                .parseClaimsJws(token);
+            getClaims(token);
             return true;
-        } catch (SecurityException | MalformedJwtException e) {
-            log.error("잘못된 JWT 서명입니다.");
-        } catch (ExpiredJwtException e) {
-            log.error("만료된 JWT 토큰입니다.");
-        } catch (UnsupportedJwtException e) {
-            log.error("지원되지 않는 JWT 토큰입니다.");
-        } catch (IllegalArgumentException e) {
-            log.error("JWT 토큰이 잘못되었습니다.");
+        } catch (CustomException e) {
+            log.debug("JWT 검증 실패: {}", e.getMessage());
+            return false;
         }
-        return false;
     }
 
     public Claims getClaims(String token) {
-        return Jwts.parser()
-            .setSigningKey(key)
-            .build()
-            .parseClaimsJws(token)
-            .getBody();
+        try {
+            return Jwts.parser()
+                .verifyWith(key)
+                .build()
+                .parseSignedClaims(token)
+                .getPayload();
+        } catch (SecurityException | MalformedJwtException e) {
+            log.error("JWT 서명 검증 실패: {}", e.getMessage());
+            throw new CustomException(ErrorCode.INVALID_TOKEN);
+        } catch (ExpiredJwtException e) {
+            log.error("JWT 만료: {}", e.getMessage());
+            throw new CustomException(ErrorCode.EXPIRED_TOKEN);
+        } catch (JwtException | IllegalArgumentException e) {
+            log.error("JWT 검증 실패: {}", e.getMessage());
+            throw new CustomException(ErrorCode.INVALID_TOKEN);
+        }
+    }
+
+    public Authentication getAuthentication(String token) {
+        Claims claims = getClaims(token);
+        String username = claims.getSubject();
+        List<String> roles = claims.get("roles", List.class);
+
+        if (roles == null || roles.isEmpty()) {
+            throw new CustomException(ErrorCode.INVALID_TOKEN);
+        }
+
+        Collection<GrantedAuthority> authorities = roles.stream()
+            .map(SimpleGrantedAuthority::new)
+            .collect(Collectors.toList());
+
+        UserDetails principal = new User(username, "", authorities);
+        return UsernamePasswordAuthenticationToken.authenticated(principal, token, authorities);
+    }
+
+    private String createToken(
+        String subject,
+        Map<String, Object> claims,
+        Duration validity,
+        boolean includeJti
+    ) {
+        Instant now = Instant.now();
+        Instant expiry = now.plus(validity);
+
+        JwtBuilder builder = Jwts.builder();
+
+        if (claims != null && !claims.isEmpty()) {
+            builder.claims(claims);
+        }
+
+        builder
+            .subject(subject)
+            .issuer("post-forge-auth")
+            .audience().add("post-forge-api").and()
+            .issuedAt(Date.from(now))
+            .expiration(Date.from(expiry))
+            .signWith(key);
+
+        if (includeJti) {
+            builder.id(UUID.randomUUID().toString());
+        }
+
+        return builder.compact();
     }
 }
