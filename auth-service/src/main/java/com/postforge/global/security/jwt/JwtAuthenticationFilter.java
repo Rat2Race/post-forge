@@ -1,17 +1,14 @@
 package com.postforge.global.security.jwt;
 
-import io.jsonwebtoken.Claims;
+import com.postforge.global.exception.CustomException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -26,7 +23,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private static final String BEARER_PREFIX = "Bearer ";
 
     private final JwtTokenProvider jwtTokenProvider;
-//    private final AuthenticationManager authenticationManager;
+
+    @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) {
+        String path = request.getRequestURI();
+        return path.startsWith("/api/auth/register") ||
+            path.startsWith("/api/auth/login") ||
+            path.startsWith("/api/auth/security");
+    }
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,
@@ -38,28 +42,23 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         if (StringUtils.hasText(token)) {
             try {
                 Authentication authentication = jwtTokenProvider.getAuthentication(token);
-                authentication.setDetails(
-                    new WebAuthenticationDetailsSource().buildDetails(request));
-
                 SecurityContextHolder.getContext().setAuthentication(authentication);
+
                 log.debug("Security Context에 '{}' 인증 정보를 저장했습니다, uri: {}",
                     authentication.getName(), request.getRequestURI());
+
+            } catch (CustomException e) {
+                log.debug("JWT 인증 실패: {}, uri: {}",
+                    e.getMessage(), request.getRequestURI());
             } catch (Exception e) {
-                log.debug("JWT 인증 실패: {}", e.getMessage());
+                log.error("예상치 못한 JWT 처리 오류: {}, uri: {}",
+                    e.getMessage(), request.getRequestURI(), e);
             }
         }
 
         filterChain.doFilter(request, response);
     }
 
-    @Override
-    protected boolean shouldNotFilter(HttpServletRequest request) {
-        String path = request.getRequestURI();
-
-        return path.startsWith("/api/auth/register") ||
-            path.startsWith("/api/auth/login") ||
-            path.startsWith("/api/auth/security");
-    }
 
     private String extractToken(HttpServletRequest request) {
         String bearerToken = request.getHeader(AUTHORIZATION_HEADER);
