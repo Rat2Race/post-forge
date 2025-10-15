@@ -35,22 +35,30 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         String token = extractToken(request);
 
-        if (StringUtils.hasText(token) && jwtTokenProvider.validateToken(token)) {
+        if (StringUtils.hasText(token)) {
+            try {
+                Authentication authentication = jwtTokenProvider.getAuthentication(token);
+                authentication.setDetails(
+                    new WebAuthenticationDetailsSource().buildDetails(request));
 
-            /** Spring security 표준 보안 흐름으로 변경 예정 **/
-            String username = jwtTokenProvider.getUsername(token);
-            UserDetails userDetails = jwtTokenProvider.getUserDetails(username);
-
-            UsernamePasswordAuthenticationToken authentication =
-                new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
-
-            authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-
-            SecurityContextHolder.getContext().setAuthentication(authentication);
-            log.debug("Security Context에 '{}' 인증 정보를 저장했습니다, uri: {}", username, request.getRequestURI());
+                SecurityContextHolder.getContext().setAuthentication(authentication);
+                log.debug("Security Context에 '{}' 인증 정보를 저장했습니다, uri: {}",
+                    authentication.getName(), request.getRequestURI());
+            } catch (Exception e) {
+                log.debug("JWT 인증 실패: {}", e.getMessage());
+            }
         }
 
         filterChain.doFilter(request, response);
+    }
+
+    @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) {
+        String path = request.getRequestURI();
+
+        return path.startsWith("/api/auth/register") ||
+            path.startsWith("/api/auth/login") ||
+            path.startsWith("/api/auth/security");
     }
 
     private String extractToken(HttpServletRequest request) {

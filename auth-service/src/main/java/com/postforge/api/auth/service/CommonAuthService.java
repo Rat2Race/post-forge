@@ -62,14 +62,13 @@ public class CommonAuthService {
     public TokenResponse login(CommonLoginRequest request) {
 
         UsernamePasswordAuthenticationToken authenticationToken =
-            new UsernamePasswordAuthenticationToken(request.id(), request.pw());
+            UsernamePasswordAuthenticationToken.unauthenticated(request.id(), request.pw());
 
         Authentication authentication = authenticationManager.authenticate(authenticationToken);
 
         String accessToken = jwtTokenProvider.createAccessToken(authentication);
         String refreshToken = jwtTokenProvider.createRefreshToken(authentication.getName());
 
-        // Refresh Token DB에 저장
         saveRefreshToken(authentication.getName(), refreshToken);
 
         log.info("사용자 로그인: {}", authentication.getName());
@@ -83,7 +82,7 @@ public class CommonAuthService {
 
     private void saveRefreshToken(String username, String token) {
         LocalDateTime expiryDate = LocalDateTime.now()
-            .plusSeconds(jwtProperties.getRefreshTokenValidity() / 1000);
+            .plusDays(jwtProperties.getRefreshTokenValidity());
 
         RefreshToken refreshToken = refreshTokenRepository.findByUsername(username)
             .orElse(null);
@@ -140,10 +139,6 @@ public class CommonAuthService {
             .accessToken(newAccessToken)
             .refreshToken(refreshToken)
             .build();
-    }
-
-    public boolean validateToken(String token) {
-        return jwtTokenProvider.validateToken(token);
     }
 
     public void logout(String username) {
