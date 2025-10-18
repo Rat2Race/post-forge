@@ -49,7 +49,6 @@ public class CommonAuthController {
 
     /** 토큰 재발급 **/
     @PostMapping("/reissue")
-    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     public ResponseEntity<TokenResponse> reissue(@Valid @RequestBody TokenReissueRequest request) {
         TokenResponse tokenResponse = commonAuthService.reissueToken(request.refreshToken());
         return ResponseEntity.ok(tokenResponse);
