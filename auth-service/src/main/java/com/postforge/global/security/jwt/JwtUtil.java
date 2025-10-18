@@ -35,7 +35,7 @@ import org.springframework.stereotype.Component;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class JwtTokenProvider {
+public class JwtUtil {
 
     private final JwtProperties jwtProperties;
     private SecretKey key;
@@ -47,7 +47,7 @@ public class JwtTokenProvider {
     }
 
     public String createAccessToken(Authentication authentication) {
-        String username = authentication.getName();
+        String userId = authentication.getName();
         Collection<? extends GrantedAuthority> authorities = authentication.getAuthorities();
 
         Map<String, Object> claims = Map.of("roles",
@@ -55,12 +55,12 @@ public class JwtTokenProvider {
                 .map(GrantedAuthority::getAuthority)
                 .toList());
 
-        return createToken(username, claims,
+        return createToken(userId, claims,
             Duration.ofMinutes(jwtProperties.getAccessTokenValidity()), true);
     }
 
-    public String createRefreshToken(String username) {
-        return createToken(username, Collections.emptyMap(),
+    public String createRefreshToken(String userId) {
+        return createToken(userId, Collections.emptyMap(),
             Duration.ofDays(jwtProperties.getRefreshTokenValidity()), false);
     }
 
@@ -95,7 +95,7 @@ public class JwtTokenProvider {
 
     public Authentication getAuthentication(String token) {
         Claims claims = getClaims(token);
-        String username = claims.getSubject();
+        String userId = claims.getSubject();
         List<String> roles = claims.get("roles", List.class);
 
         if (roles == null || roles.isEmpty()) {
@@ -106,7 +106,7 @@ public class JwtTokenProvider {
             .map(SimpleGrantedAuthority::new)
             .collect(Collectors.toList());
 
-        UserDetails principal = new User(username, "", authorities);
+        UserDetails principal = new User(userId, "", authorities);
         return UsernamePasswordAuthenticationToken.authenticated(principal, token, authorities);
     }
 

@@ -3,7 +3,7 @@ package com.postforge.global.config;
 import com.postforge.global.security.handler.JwtAccessDeniedHandler;
 import com.postforge.global.security.handler.JwtAuthenticationEntryPoint;
 import com.postforge.global.security.jwt.JwtAuthenticationFilter;
-import com.postforge.global.security.jwt.JwtTokenProvider;
+import com.postforge.global.security.jwt.JwtUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
@@ -30,7 +30,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @ConditionalOnWebApplication
 public class SecurityConfig {
 
-    private final JwtTokenProvider jwtTokenProvider;
+    private final JwtUtil jwtUtil;
     private final JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
     private final JwtAccessDeniedHandler jwtAccessDeniedHandler;
 
@@ -47,7 +47,6 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-
         http
             .csrf(AbstractHttpConfigurer::disable)
             .httpBasic(AbstractHttpConfigurer::disable)
@@ -61,11 +60,12 @@ public class SecurityConfig {
                 .requestMatchers("/api/auth/register").permitAll()
                 .requestMatchers("/api/auth/login").permitAll()
                 .requestMatchers("/api/auth/security").permitAll()
+                .requestMatchers("/api/auth/reissue").permitAll()
                 .requestMatchers("/api/users/**").hasAnyRole("USER", "ADMIN")
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")
                 .anyRequest().authenticated())
             .addFilterBefore(
-                new JwtAuthenticationFilter(jwtTokenProvider),
+                new JwtAuthenticationFilter(jwtUtil),
                 UsernamePasswordAuthenticationFilter.class);
 
         return http.build();

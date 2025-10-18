@@ -12,12 +12,16 @@ import com.postforge.global.exception.ErrorCode;
 import com.postforge.global.security.dto.TokenResponse;
 import com.postforge.global.security.jwt.JwtProperties;
 import com.postforge.global.security.jwt.JwtTokenProvider;
+import com.postforge.global.security.jwt.JwtUtil;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.util.Date;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -32,17 +36,19 @@ public class CommonAuthService {
     private final RefreshTokenRepository refreshTokenRepository;
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
-    private final JwtTokenProvider jwtTokenProvider;
+    private final JwtUtil jwtUtil;
     private final JwtProperties jwtProperties;
 
     public Long register(CommonRegisterRequest request) {
+
+        /** 사용자 인증 추가해야함 (이메일 인증) **/
 
         if (memberRepository.existsByUsername(request.name())) {
             throw new CustomException(ErrorCode.DUPLICATE_USERNAME);
         }
 
         if (memberRepository.existsByUserId(request.id())) {
-            throw new CustomException(ErrorCode.DUPLICATE_EMAIL);
+            throw new CustomException(ErrorCode.DUPLICATE_ID);
         }
 
         Member member = Member.builder()
@@ -60,14 +66,13 @@ public class CommonAuthService {
     }
 
     public TokenResponse login(CommonLoginRequest request) {
-
         UsernamePasswordAuthenticationToken authenticationToken =
             UsernamePasswordAuthenticationToken.unauthenticated(request.id(), request.pw());
 
         Authentication authentication = authenticationManager.authenticate(authenticationToken);
 
-        String accessToken = jwtTokenProvider.createAccessToken(authentication);
-        String refreshToken = jwtTokenProvider.createRefreshToken(authentication.getName());
+        String accessToken = jwtUtil.createAccessToken(authentication);
+        String refreshToken = jwtUtil.createRefreshToken(authentication.getName());
 
         saveRefreshToken(authentication.getName(), refreshToken);
 
@@ -80,69 +85,54 @@ public class CommonAuthService {
             .build();
     }
 
-    private void saveRefreshToken(String username, String token) {
-        LocalDateTime expiryDate = LocalDateTime.now()
-            .plusDays(jwtProperties.getRefreshTokenValidity());
-
-        RefreshToken refreshToken = refreshTokenRepository.findByUsername(username)
-            .orElse(null);
-
-        if (refreshToken == null) {
-            refreshToken = RefreshToken.builder()
-                .username(username)
-                .token(token)
-                .expiryDate(expiryDate)
-                .build();
-        } else {
-            refreshToken.updateToken(token, expiryDate);
-        }
-
-        refreshTokenRepository.save(refreshToken);
-    }
-
     public TokenResponse reissueToken(String refreshToken) {
 
-        if (!jwtTokenProvider.validateToken(refreshToken)) {
-            throw new CustomException(ErrorCode.INVALID_TOKEN);
-        }
+        /** 만료되면 CustomException **/
+        String userId = jwtUtil.getClaims(refreshToken).getSubject();
 
-        String username = jwtTokenProvider.getUsername(refreshToken);
-
-        // DB에서 Refresh Token 조회
-        RefreshToken savedToken = refreshTokenRepository.findByUsername(username)
+        /** refreshToken repo에 userId 없으면 CustomException **/
+        RefreshToken savedToken = refreshTokenRepository.findByUserId(userId)
             .orElseThrow(() -> new CustomException(ErrorCode.INVALID_TOKEN));
 
-        if (!savedToken.getToken().equals(refreshToken)) {
-            throw new CustomException(ErrorCode.INVALID_TOKEN);
-        }
+        /** 정상적인 refreshToekn **/
+        savedToken.validateToken(refreshToken);
 
-        if (savedToken.isExpired()) {
-            refreshTokenRepository.delete(savedToken);
-            throw new CustomException(ErrorCode.INVALID_TOKEN);
-        }
-
-        Member member = memberRepository.findByUsernameWithRoles(username)
+        Member member = memberRepository.findByUserId(userId)
             .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
 
-        UsernamePasswordAuthenticationToken authentication =
-            new UsernamePasswordAuthenticationToken(username, null,
-                member.getRoles().stream()
-                    .map(role -> new org.springframework.security.core.authority.SimpleGrantedAuthority(role.getValue()))
-                    .toList());
+        UsernamePasswordAuthenticationToken authentication = UsernamePasswordAuthenticationToken.authenticated(
+            userId, null, member.getRoles().stream().map(role -> new SimpleGrantedAuthority(role.getValue())).toList());
 
-        String newAccessToken = jwtTokenProvider.createAccessToken(authentication);
-
-        log.info("토큰 재발급: {}", username);
+        String newToken = jwtUtil.createAccessToken(authentication);
 
         return TokenResponse.builder()
             .grantType("Bearer")
-            .accessToken(newAccessToken)
+            .accessToken(newToken)
             .refreshToken(refreshToken)
             .build();
     }
 
-    public void logout(String username) {
-        refreshTokenRepository.deleteByUsername(username);
-        log.info("사용자 로그아웃: {}", username);
+    public void logout(String userId) {
+        refreshTokenRepository.deleteByUserId(userId);
+        log.info("사용자 로그아웃: {}", userId);
+    }
+
+    private void saveRefreshToken(String userId, String token) {
+        LocalDateTime expiryDate = getLocalDateTimeFromDate(
+            jwtUtil.getClaims(token).getExpiration());
+
+        RefreshToken refreshToken = RefreshToken.builder()
+            .userId(userId)
+            .token(token)
+            .expiryDate(expiryDate)
+            .build();
+
+        refreshTokenRepository.save(refreshToken);
+    }
+
+    private LocalDateTime getLocalDateTimeFromDate(Date date) {
+        return date.toInstant()
+            .atZone(ZoneId.systemDefault())
+            .toLocalDateTime();
     }
 }
