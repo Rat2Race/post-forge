@@ -51,7 +51,7 @@ export default function Home() {
                   로그인
                 </button>
                 <button
-                  onClick={() => navigate('/register')}
+                  onClick={() => navigate('/verify-email')}
                   className="px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all"
                 >
                   회원가입
@@ -78,7 +78,7 @@ export default function Home() {
           {!isAuthenticated && (
             <div className="flex justify-center gap-4">
               <button
-                onClick={() => navigate('/register')}
+                onClick={() => navigate('/verify-email')}
                 className="px-8 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg font-semibold hover:from-blue-700 hover:to-purple-700 focus:ring-4 focus:ring-blue-300 transition-all"
               >
                 시작하기

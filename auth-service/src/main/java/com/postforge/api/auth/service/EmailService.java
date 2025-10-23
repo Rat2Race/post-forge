@@ -57,4 +57,8 @@ public class EmailService {
             throw new CustomException(ErrorCode.EMAIL_SEND_FAILED);
         }
     }
+
+    /**
+     * 만료시간 지난 토큰 삭제 로직이 필요할거 같긴 함
+     */
 }
