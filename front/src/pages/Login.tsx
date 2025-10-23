@@ -28,7 +28,10 @@ export default function Login() {
       login(response.accessToken, response.refreshToken);
       navigate('/');
     } catch (err: any) {
-      setError(err.response?.data?.message || '로그인에 실패했습니다.');
+      // 백엔드에서 보낸 에러 메시지 사용
+      const errorMessage = err.response?.data?.message || '로그인에 실패했습니다. 다시 시도해주세요.';
+      setError(errorMessage);
+      console.error('Login error:', err.response?.data);
     } finally {
       setIsLoading(false);
     }

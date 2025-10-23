@@ -7,47 +7,55 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import java.time.LocalDateTime;
 import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+@Table(name = "email_verifications")
 @Entity
-@Table(name = "refresh_tokens")
 @Getter
+@Builder
+@AllArgsConstructor
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class RefreshToken {
-
+public class EmailVerification {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @Column(nullable = false, unique = true)
-    private String userId;
+    private String email;
 
-    @Column(nullable = false, length = 1000)
+    @Column(nullable = false, unique = true)
     private String token;
 
     @Column(nullable = false)
     private LocalDateTime expiryDate;
 
-    @Builder
-    public RefreshToken(String userId, String token, LocalDateTime expiryDate) {
-        this.userId = userId;
-        this.token = token;
-        this.expiryDate = expiryDate;
+    @Builder.Default
+    private Boolean verified = false;
+
+    @PrePersist
+    public void prePersist() {
+        if(this.expiryDate == null) {
+            this.expiryDate = LocalDateTime.now().plusMinutes(30);
+        }
     }
 
-    public void validateToken(String requestToken) {
-        if (!this.token.equals(requestToken)) {
-            throw new CustomException(ErrorCode.INVALID_TOKEN);
+    public void verifyToken() {
+        if(LocalDateTime.now().isAfter(this.expiryDate)) {
+            throw new CustomException(ErrorCode.EMAIL_CODE_EXPIRED);
         }
 
-        if (LocalDateTime.now().isAfter(this.expiryDate)) {
-            throw new CustomException(ErrorCode.EXPIRED_TOKEN);
+        if(this.verified) {
+            throw new CustomException(ErrorCode.EMAIL_ALREADY_VERIFIED);
         }
+
+        this.verified = true;
     }
 
     public void updateToken(String token, LocalDateTime expiryDate) {

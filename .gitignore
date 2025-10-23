@@ -1,4 +1,34 @@
+# IDE
 .idea/
-build/
+*.iml
+*.iws
+*.ipr
+
+# Gradle
 .gradle/
-app/src/main/resources/
+build/
+out/
+!gradle-wrapper.jar
+
+# Application Configuration (contains secrets)
+**/src/main/resources/application.yml
+**/src/main/resources/application.properties
+**/src/main/resources/application-*.yml
+**/src/main/resources/application-*.properties
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Logs
+logs/
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Node (for frontend)
+node_modules/
+dist/

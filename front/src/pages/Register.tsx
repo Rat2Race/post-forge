@@ -1,25 +1,75 @@
 import { useForm } from 'react-hook-form';
 import { Link, useNavigate } from 'react-router-dom';
 import { authApi, RegisterRequest } from '../lib/api';
-import { UserPlus, Mail, Lock, User } from 'lucide-react';
-import { useState } from 'react';
+import { UserPlus, Mail, Lock, User, CheckCircle2 } from 'lucide-react';
+import { useState, useEffect } from 'react';
 
 export default function Register() {
   const navigate = useNavigate();
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isEmailSending, setIsEmailSending] = useState(false);
+  const [isEmailSent, setIsEmailSent] = useState(false);
+  const [emailMessage, setEmailMessage] = useState('');
+  const [isEmailVerified, setIsEmailVerified] = useState(false);
 
   const {
     register,
     handleSubmit,
     formState: { errors },
+    watch,
+    setValue,
   } = useForm<RegisterRequest>();
+
+  const email = watch('email');
+
+  // 컴포넌트 마운트 시 localStorage에서 인증된 이메일 확인
+  useEffect(() => {
+    const verifiedEmail = localStorage.getItem('verifiedEmail');
+    if (verifiedEmail) {
+      setValue('email', verifiedEmail);
+      setIsEmailVerified(true);
+      setIsEmailSent(true);
+      setEmailMessage('이메일 인증이 완료되었습니다.');
+    }
+
+    // 컴포넌트 unmount 시 (페이지를 벗어날 때) localStorage 정리
+    return () => {
+      localStorage.removeItem('verifiedEmail');
+    };
+  }, [setValue]);
+
+  // 이메일 인증 메일 발송
+  const handleSendEmailCode = async () => {
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setError('올바른 이메일 주소를 입력해주세요.');
+      return;
+    }
+
+    try {
+      setIsEmailSending(true);
+      setError('');
+      setEmailMessage('');
+      await authApi.sendEmailCode({ email });
+
+      // 인증 메일 발송 성공 후 메인 페이지로 이동
+      alert('인증 메일이 발송되었습니다.\n이메일을 확인하고 인증 링크를 클릭해주세요.');
+      navigate('/');
+    } catch (err: any) {
+      setError(err.response?.data?.message || '이메일 전송에 실패했습니다.');
+      setIsEmailSending(false);
+    }
+  };
 
   const onSubmit = async (data: RegisterRequest) => {
     try {
       setIsLoading(true);
       setError('');
       await authApi.register(data);
+
+      // 회원가입 성공 후 localStorage 정리
+      localStorage.removeItem('verifiedEmail');
+
       navigate('/login', { state: { message: '회원가입이 완료되었습니다. 로그인해주세요.' } });
     } catch (err: any) {
       setError(err.response?.data?.message || '회원가입에 실패했습니다.');
@@ -49,6 +99,12 @@ export default function Register() {
               </div>
             )}
 
+            {emailMessage && (
+              <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg text-green-600 text-sm">
+                {emailMessage}
+              </div>
+            )}
+
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
               {/* Name Field */}
               <div>
@@ -73,13 +129,65 @@ export default function Register() {
                 )}
               </div>
 
+              {/* Email Field with Inline Button */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  이메일
+                </label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <input
+                    {...register('email', {
+                      required: '이메일을 입력해주세요',
+                      pattern: {
+                        value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+                        message: '올바른 이메일 형식이 아닙니다',
+                      },
+                    })}
+                    type="email"
+                    disabled={isEmailVerified}
+                    className={`w-full pl-11 py-3 border border-gray-300 rounded-lg transition-all ${
+                      isEmailVerified
+                        ? 'pr-4 bg-gray-100 text-gray-600 cursor-not-allowed'
+                        : 'pr-28 focus:ring-2 focus:ring-blue-500 focus:border-transparent'
+                    }`}
+                    placeholder="example@email.com"
+                  />
+                  {!isEmailVerified && (
+                    <button
+                      type="button"
+                      onClick={handleSendEmailCode}
+                      disabled={isEmailSending || !email}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 px-3 py-1.5 text-sm font-medium text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-md transition-all disabled:text-gray-400 disabled:hover:bg-transparent disabled:cursor-not-allowed"
+                    >
+                      {isEmailSending ? '전송중...' : isEmailSent ? '재전송' : '인증메일'}
+                    </button>
+                  )}
+                </div>
+                {errors.email && (
+                  <p className="mt-1 text-sm text-red-600">{errors.email.message}</p>
+                )}
+                {isEmailSent && !isEmailVerified && (
+                  <p className="mt-2 text-sm text-green-600 flex items-center gap-1">
+                    <CheckCircle2 className="w-4 h-4" />
+                    이메일을 확인하고 인증 링크를 클릭해주세요
+                  </p>
+                )}
+                {isEmailVerified && (
+                  <p className="mt-2 text-sm text-green-600 flex items-center gap-1">
+                    <CheckCircle2 className="w-4 h-4" />
+                    이메일 인증이 완료되었습니다
+                  </p>
+                )}
+              </div>
+
               {/* ID Field */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   아이디
                 </label>
                 <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                   <input
                     {...register('id', {
                       required: '아이디를 입력해주세요',

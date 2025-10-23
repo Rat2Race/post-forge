@@ -27,34 +27,30 @@ public class CommonAuthController {
 
     private final CommonAuthService commonAuthService;
 
-    /** testing **/
+    /** 테스트 **/
     @GetMapping("/security")
     public String operate() {
         return "security";
     }
 
-    /** 회원가입 **/
     @PostMapping("/register")
     public ResponseEntity<String> register(@Valid @RequestBody CommonRegisterRequest request) {
         Long memberId = commonAuthService.register(request);
         return ResponseEntity.status(HttpStatus.CREATED).body("회원가입이 완료되었습니다. ID: " + memberId);
     }
 
-    /** 로그인 **/
     @PostMapping("/login")
     public ResponseEntity<TokenResponse> login(@Valid @RequestBody CommonLoginRequest request) {
         TokenResponse tokenResponse = commonAuthService.login(request);
         return ResponseEntity.ok(tokenResponse);
     }
 
-    /** 토큰 재발급 **/
     @PostMapping("/reissue")
     public ResponseEntity<TokenResponse> reissue(@Valid @RequestBody TokenReissueRequest request) {
         TokenResponse tokenResponse = commonAuthService.reissueToken(request.refreshToken());
         return ResponseEntity.ok(tokenResponse);
     }
 
-    /** 로그아웃 **/
     @PostMapping("/logout")
     @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     public ResponseEntity<String> logout(@AuthenticationPrincipal UserDetails userDetails) {

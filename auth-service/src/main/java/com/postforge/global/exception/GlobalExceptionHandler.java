@@ -3,8 +3,6 @@ package com.postforge.global.exception;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
-import lombok.Builder;
-import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -77,15 +75,5 @@ public class GlobalExceptionHandler {
             .build();
 
         return ResponseEntity.internalServerError().body(response);
-    }
-
-    @Getter
-    @Builder
-    public static class ErrorResponse {
-        private int status;
-        private String error;
-        private String message;
-        private Map<String, String> validation;
-        private LocalDateTime timestamp;
     }
 }

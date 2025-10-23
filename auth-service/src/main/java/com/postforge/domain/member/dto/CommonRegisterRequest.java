@@ -1,6 +1,7 @@
 package com.postforge.domain.member.dto;
 
 import com.postforge.api.auth.dto.RegisterRequest;
+import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
@@ -20,9 +21,13 @@ public record CommonRegisterRequest(
     @Size(min = 8, message = "비밀번호는 최소 8자 이상이어야 합니다")
     @Pattern(regexp = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]+$",
         message = "비밀번호는 대소문자, 숫자, 특수문자를 포함해야 합니다")
-    String pw
+    String pw,
+
+    @NotBlank(message = "이메일은 필수입니다")
+    @Email(message = "올바른 이메일 형식이 아닙니다")
+    String email
 ) {
     public static CommonRegisterRequest from(RegisterRequest request) {
-        return new CommonRegisterRequest(request.name(), request.id(), request.pw());
+        return new CommonRegisterRequest(request.name(), request.id(), request.pw(), request.email());
     }
 }
