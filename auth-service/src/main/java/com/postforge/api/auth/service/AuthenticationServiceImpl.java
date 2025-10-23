@@ -41,9 +41,4 @@ public class AuthenticationServiceImpl implements com.postforge.api.auth.Authent
     public void logout(String username) {
         commonAuthService.logout(username);
     }
-
-    @Override
-    public boolean validateToken(String token) {
-        return commonAuthService.validateToken(token);
-    }
 }

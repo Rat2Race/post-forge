@@ -64,16 +64,6 @@ public class JwtUtil {
             Duration.ofDays(jwtProperties.getRefreshTokenValidity()), false);
     }
 
-    public boolean validateToken(String token) {
-        try {
-            getClaims(token);
-            return true;
-        } catch (CustomException e) {
-            log.debug("JWT 검증 실패: {}", e.getMessage());
-            return false;
-        }
-    }
-
     public Claims getClaims(String token) {
         try {
             return Jwts.parser()

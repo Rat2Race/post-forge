@@ -35,7 +35,7 @@ public class AuthorizationServiceImpl implements com.postforge.api.auth.Authoriz
 
     @Override
     public MemberPermission getPermissions(String username) {
-        Member member = memberRepository.findByUsernameWithRoles(username)
+        Member member = memberRepository.findByUserId(username)
             .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
 
         return new MemberPermission(

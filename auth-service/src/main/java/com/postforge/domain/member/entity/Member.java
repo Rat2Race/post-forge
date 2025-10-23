@@ -47,6 +47,9 @@ public class Member {
     @Column(nullable = false)
     private String userPw;
 
+    @Column(nullable = false, unique = true, length = 100)
+    private String email;
+
     @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "member_roles", joinColumns = @JoinColumn(name = "member_id"))
     @Enumerated(EnumType.STRING)

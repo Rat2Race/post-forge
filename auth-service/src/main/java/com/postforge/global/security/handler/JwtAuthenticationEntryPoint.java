@@ -1,13 +1,15 @@
 package com.postforge.global.security.handler;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.postforge.global.exception.ErrorResponse;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
+import java.time.LocalDateTime;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.AuthenticationEntryPoint;
@@ -15,9 +17,10 @@ import org.springframework.stereotype.Component;
 
 @Component
 @Slf4j
+@RequiredArgsConstructor
 public class JwtAuthenticationEntryPoint implements AuthenticationEntryPoint {
 
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    private final ObjectMapper objectMapper;
 
     @Override
     public void commence(HttpServletRequest request, HttpServletResponse response,
@@ -26,15 +29,16 @@ public class JwtAuthenticationEntryPoint implements AuthenticationEntryPoint {
         log.error("Unauthorized error: {}", authException.getMessage());
 
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
-        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+        response.setStatus(HttpStatus.UNAUTHORIZED.value());
         response.setCharacterEncoding("UTF-8");
 
-        Map<String, Object> errorDetails = new HashMap<>();
-        errorDetails.put("status", HttpServletResponse.SC_UNAUTHORIZED);
-        errorDetails.put("error", "Unauthorized");
-        errorDetails.put("message", "인증이 필요합니다.");
-        errorDetails.put("path", request.getServletPath());
+        ErrorResponse errorResponse = ErrorResponse.builder()
+            .status(HttpStatus.UNAUTHORIZED.value())
+            .error("UNAUTHORIZED")
+            .message("인증이 필요합니다.")
+            .timestamp(LocalDateTime.now())
+            .build();
 
-        objectMapper.writeValue(response.getOutputStream(), errorDetails);
+        objectMapper.writeValue(response.getOutputStream(), errorResponse);
     }
 }

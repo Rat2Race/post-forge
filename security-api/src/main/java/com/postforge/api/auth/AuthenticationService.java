@@ -9,5 +9,4 @@ public interface AuthenticationService {
     TokenInfo login(LoginRequest request);
     TokenInfo reissueToken(String refreshToken);
     void logout(String username);
-    boolean validateToken(String token);
 }

@@ -3,8 +3,6 @@ package com.postforge.global.security.service;
 import com.postforge.domain.member.entity.Member;
 import com.postforge.domain.member.entity.Role;
 import com.postforge.domain.member.repository.MemberRepository;
-import com.postforge.global.exception.CustomException;
-import com.postforge.global.exception.ErrorCode;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -24,8 +22,11 @@ public class CustomUserDetailsService implements UserDetailsService {
     @Transactional(readOnly = true)
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
 
-        Member member = memberRepository.findByUsername(username)
-            .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+        /** UsernameNotFoundException(401) 이외의 예외는
+         * InternalAuthenticationServiceException(500)으로 래핑됨
+         * 즉, GlobalExceptionHandler가 예외를 잡지 못함 **/
+        Member member = memberRepository.findByUserId(username)
+            .orElseThrow(() -> new UsernameNotFoundException("사용자 찾을 수 없음"));
 
         return new CustomUserDetails(
             member.getId(),

@@ -19,9 +19,6 @@ public class MemberController {
 
     private final PasswordEncoder passwordEncoder;
 
-    /**
-     * 본인 정보 조회
-     **/
     @GetMapping("/user/profile")
     @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     public ResponseEntity<MemberResponse> getMyProfile(
@@ -39,9 +36,6 @@ public class MemberController {
         return ResponseEntity.ok(response);
     }
 
-    /**
-     * 모든 회원 조회
-     **/
     @GetMapping("/admin/members")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<String> getAllMembers() {

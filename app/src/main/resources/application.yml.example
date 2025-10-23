@@ -1,0 +1,40 @@
+server:
+  port: 8080
+
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/postforge
+    username: postgres
+    password: YOUR_DB_PASSWORD
+  jpa:
+    hibernate:
+      ddl-auto: create
+    open-in-view: false
+  data:
+    redis:
+      host: localhost
+      port: 6379
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: YOUR_EMAIL@gmail.com
+    password: YOUR_GMAIL_APP_PASSWORD
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
+          connectiontimeout: 5000
+          timeout: 5000
+          writetimeout: 5000
+
+jwt:
+  secret: "GENERATE_YOUR_OWN_SECRET_KEY_32_BYTES_OR_MORE"
+  accessTokenValidity: 15
+  refreshTokenValidity: 7
+
+lostark:
+  url: https://developer-lostark.game.onstove.com
+  secret: YOUR_LOSTARK_API_KEY
