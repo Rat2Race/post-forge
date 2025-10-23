@@ -10,14 +10,27 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   return isAuthenticated ? <>{children}</> : <Navigate to="/login" replace />;
 }
 
+// 이메일 인증이 완료된 경우에만 회원가입 페이지 접근 가능
+function EmailVerifiedRoute({ children }: { children: React.ReactNode }) {
+  const verifiedEmail = localStorage.getItem('verifiedEmail');
+  return verifiedEmail ? <>{children}</> : <Navigate to="/verify-email" replace />;
+}
+
 function App() {
   return (
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
         <Route path="/verify-email" element={<VerifyEmail />} />
+        <Route
+          path="/register"
+          element={
+            <EmailVerifiedRoute>
+              <Register />
+            </EmailVerifiedRoute>
+          }
+        />
       </Routes>
     </BrowserRouter>
   );

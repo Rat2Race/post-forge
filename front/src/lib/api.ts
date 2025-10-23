@@ -70,6 +70,7 @@ export interface RegisterRequest {
   name: string;
   id: string;
   pw: string;
+  email: string;
 }
 
 export interface LoginRequest {
@@ -100,8 +101,8 @@ export interface VerifyEmailCodeRequest {
 }
 
 export interface EmailVerificationResponse {
-  verified: boolean;
   message: string;
+  email: string;
 }
 
 export const authApi = {
@@ -111,9 +112,9 @@ export const authApi = {
     return response.data;
   },
 
-  // 이메일 인증 코드 확인
-  verifyEmailCode: async (data: VerifyEmailCodeRequest) => {
-    const response = await api.post<EmailVerificationResponse>('/api/auth/email/verify', data);
+  // 이메일 토큰으로 인증 (이메일 링크 클릭 시)
+  verifyEmail: async (token: string) => {
+    const response = await api.get<EmailVerificationResponse>(`/api/auth/email/verify?token=${token}`);
     return response.data;
   },
 
