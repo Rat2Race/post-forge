@@ -1,4 +1,4 @@
-package com.postforge.domain.member.dto;
+package com.postforge.domain.member.dto.request;
 
 import com.postforge.api.auth.dto.RegisterRequest;
 import jakarta.validation.constraints.Email;
@@ -10,6 +10,7 @@ public record CommonRegisterRequest(
 
     @NotBlank(message = "이름은 필수입니다")
     @Size(min = 2, max = 20, message = "이름은 2-20자여야 합니다")
+    @Pattern(regexp = "^[가-힣a-zA-Z]+$", message = "이름은 한글 또는 영문만 가능합니다")
     String name,
 
     @NotBlank(message = "사용자명은 필수입니다")
@@ -25,9 +26,14 @@ public record CommonRegisterRequest(
 
     @NotBlank(message = "이메일은 필수입니다")
     @Email(message = "올바른 이메일 형식이 아닙니다")
-    String email
+    String email,
+
+    @NotBlank(message = "닉네임은 필수입니다")
+    @Size(min = 2, max = 20, message = "닉네임은 2-20자여야 합니다")
+    @Pattern(regexp = "^[가-힣a-zA-Z0-9]+$", message = "닉네임은 한글, 영문, 숫자만 가능합니다")
+    String nickname
 ) {
     public static CommonRegisterRequest from(RegisterRequest request) {
-        return new CommonRegisterRequest(request.name(), request.id(), request.pw(), request.email());
+        return new CommonRegisterRequest(request.name(), request.id(), request.pw(), request.email(), request.nickname());
     }
 }

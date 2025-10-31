@@ -1,6 +1,6 @@
 package com.postforge.api.auth.controller;
 
-import com.postforge.domain.member.dto.MemberResponse;
+import com.postforge.domain.member.dto.response.MemberResponse;
 import com.postforge.global.security.service.CustomUserDetails;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -26,7 +26,6 @@ public class MemberController {
 
         MemberResponse response = MemberResponse.builder()
             .id(userDetails.id())
-            .name(userDetails.name())
             .userId(userDetails.userId())
             .roles(userDetails.getAuthorities().stream()
                 .map(GrantedAuthority::getAuthority)

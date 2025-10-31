@@ -39,7 +39,7 @@ public class Member {
     private Long id;
 
     @Column(nullable = false, length = 50)
-    private String username;
+    private String userName;
 
     @Column(nullable = false, unique = true, length = 50)
     private String userId;
@@ -50,7 +50,10 @@ public class Member {
     @Column(nullable = false, unique = true, length = 100)
     private String email;
 
-    @ElementCollection(fetch = FetchType.EAGER)
+    @Column(nullable = false, unique = true, length = 50)
+    private String nickname;
+
+    @ElementCollection(fetch = FetchType.LAZY)
     @CollectionTable(name = "member_roles", joinColumns = @JoinColumn(name = "member_id"))
     @Enumerated(EnumType.STRING)
     @Column(name = "role")
@@ -72,8 +75,8 @@ public class Member {
         this.roles.add(role);
     }
 
-    public void updateProfile(String username) {
-        this.username = username;
+    public void updateProfile(String nickname) {
+        this.nickname = nickname;
     }
 
     public void changePassword(String newPassword, PasswordEncoder passwordEncoder) {

@@ -25,7 +25,7 @@ public class AuthorizationServiceImpl implements com.postforge.api.auth.Authoriz
 
     @Override
     public boolean hasRole(String username, String role) {
-        Member member = memberRepository.findByUsername(username)
+        Member member = memberRepository.findByUserId(username)
             .orElse(null);
         if (member == null) return false;
 
@@ -39,7 +39,7 @@ public class AuthorizationServiceImpl implements com.postforge.api.auth.Authoriz
             .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
 
         return new MemberPermission(
-            member.getUsername(),
+            member.getUserId(),
             member.getRoles().stream()
                 .map(Role::getValue)
                 .toList()

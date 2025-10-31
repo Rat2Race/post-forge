@@ -13,24 +13,27 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @Entity
-@Table(name = "article_comment")
+@Table(name = "comments")
 @Getter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class ArticleComment extends AuditingFields {
+public class Comment extends AuditingFields {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @ManyToOne(optional = false)
-    private Article article;
-
-    @Column(name = "author")
-    private String author;
+    private Post post;
 
     @Column(nullable = false, length = 500)
     private String content;
 
+    @Column(name = "user_id", nullable = false, updatable = false, length = 100)
+    private String userId;
+
+    public void updateContent(String newContent) {
+        this.content = newContent;
+    }
 }

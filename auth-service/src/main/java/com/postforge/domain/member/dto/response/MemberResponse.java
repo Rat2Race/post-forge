@@ -1,4 +1,4 @@
-package com.postforge.domain.member.dto;
+package com.postforge.domain.member.dto.response;
 
 import java.util.List;
 import lombok.Builder;
@@ -6,7 +6,6 @@ import lombok.Builder;
 @Builder
 public record MemberResponse(
     Long id,
-    String name,
     String userId,
     List<String> roles
 ) {
