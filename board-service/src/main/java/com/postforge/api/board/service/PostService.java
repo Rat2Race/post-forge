@@ -40,10 +40,15 @@ public class PostService {
             .map(PostResponse::from);
     }
 
-    public PostResponse getPost(Long postId) {
-        return postRepository.findById(postId)
-            .map(PostResponse::from)
+    public PostResponse getPost(Long postId, boolean incrementView) {
+        Post post = postRepository.findById(postId)
             .orElseThrow(() -> new CustomException(ErrorCode.POST_NOT_FOUND));
+
+        if (incrementView) {
+            post.updateViews(post.getViews() + 1);
+        }
+
+        return PostResponse.from(post);
     }
 
     @Transactional
