@@ -4,7 +4,8 @@ import com.postforge.domain.board.dto.request.PostRequest;
 import com.postforge.domain.board.dto.response.PostResponse;
 import com.postforge.domain.board.entity.Post;
 import com.postforge.domain.board.repository.PostRepository;
-import jakarta.persistence.EntityNotFoundException;
+import com.postforge.global.exception.CustomException;
+import com.postforge.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -42,13 +43,13 @@ public class PostService {
     public PostResponse getPost(Long postId) {
         return postRepository.findById(postId)
             .map(PostResponse::from)
-            .orElseThrow(() -> new EntityNotFoundException("게시글이 없습니다"));
+            .orElseThrow(() -> new CustomException(ErrorCode.POST_NOT_FOUND));
     }
 
     @Transactional
     public PostResponse updatePost(Long postId, String title, String content) {
         Post post = postRepository.findById(postId)
-            .orElseThrow(() -> new EntityNotFoundException("게시글이 없습니다"));
+            .orElseThrow(() -> new CustomException(ErrorCode.POST_NOT_FOUND));
 
         post.update(title, content);
 
@@ -58,14 +59,14 @@ public class PostService {
     @Transactional
     public void deletePost(Long postId) {
         Post post = postRepository.findById(postId)
-            .orElseThrow(() -> new EntityNotFoundException("게시글이 없습니다"));
+            .orElseThrow(() -> new CustomException(ErrorCode.POST_NOT_FOUND));
 
         postRepository.delete(post);
     }
 
     public boolean isOwner(Long postId, String userId) {
         Post post = postRepository.findById(postId)
-            .orElseThrow(() -> new EntityNotFoundException("게시글이 없습니다"));
+            .orElseThrow(() -> new CustomException(ErrorCode.POST_NOT_FOUND));
 
         return post.getUserId().equals(userId);
     }

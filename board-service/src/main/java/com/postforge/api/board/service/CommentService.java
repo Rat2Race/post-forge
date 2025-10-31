@@ -6,7 +6,8 @@ import com.postforge.domain.board.entity.Post;
 import com.postforge.domain.board.entity.Comment;
 import com.postforge.domain.board.repository.CommentRepository;
 import com.postforge.domain.board.repository.PostRepository;
-import jakarta.persistence.EntityNotFoundException;
+import com.postforge.global.exception.CustomException;
+import com.postforge.global.exception.ErrorCode;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -25,7 +26,7 @@ public class CommentService {
     @Transactional
     public CommentResponse saveComment(Long postId, String content, String userId) {
         Post foundPost = postRepository.findById(postId)
-            .orElseThrow(() -> new EntityNotFoundException("게시글이 없습니다"));
+            .orElseThrow(() -> new CustomException(ErrorCode.POST_NOT_FOUND));
 
         Comment newComment = Comment.builder()
             .post(foundPost)
@@ -46,13 +47,13 @@ public class CommentService {
     public CommentResponse getComment(Long commentId) {
         return commentRepository.findById(commentId)
             .map(CommentResponse::from)
-            .orElseThrow(() -> new EntityNotFoundException("댓글이 없습니다"));
+            .orElseThrow(() -> new CustomException(ErrorCode.COMMENT_NOT_FOUND));
     }
 
     @Transactional
     public CommentResponse updateComment(Long commentId, String newContent) {
         Comment comment = commentRepository.findById(commentId)
-            .orElseThrow(() -> new EntityNotFoundException("댓글이 없습니다"));
+            .orElseThrow(() -> new CustomException(ErrorCode.COMMENT_NOT_FOUND));
 
         comment.updateContent(newContent);
 
@@ -62,14 +63,14 @@ public class CommentService {
     @Transactional
     public void deleteComment(Long commentId) {
         Comment comment = commentRepository.findById(commentId)
-            .orElseThrow(() -> new EntityNotFoundException("댓글이 없습니다"));
+            .orElseThrow(() -> new CustomException(ErrorCode.COMMENT_NOT_FOUND));
 
         commentRepository.delete(comment);
     }
 
     public boolean isCommentOwner(Long commentId, String userId) {
         Comment comment = commentRepository.findById(commentId)
-            .orElseThrow(() -> new EntityNotFoundException("댓글이 없습니다"));
+            .orElseThrow(() -> new CustomException(ErrorCode.COMMENT_NOT_FOUND));
 
         return comment.getUserId().equals(userId);
     }
