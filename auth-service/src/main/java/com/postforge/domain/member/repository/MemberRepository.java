@@ -8,12 +8,11 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface MemberRepository extends JpaRepository<Member, Long> {
-	Optional<Member> findByUsername(String username);
-
 	@EntityGraph(attributePaths = "roles")
 	Optional<Member> findByUserId(String userId);
 
-	boolean existsByUsername(String username);
+	boolean existsByUserName(String name);
 	boolean existsByUserId(String userId);
 	boolean existsByEmail(String email);
+//	boolean existsByNickname(String nickname);
 }

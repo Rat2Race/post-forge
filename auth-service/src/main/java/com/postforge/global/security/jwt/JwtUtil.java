@@ -2,6 +2,7 @@ package com.postforge.global.security.jwt;
 
 import com.postforge.global.exception.CustomException;
 import com.postforge.global.exception.ErrorCode;
+import com.postforge.global.security.service.CustomUserDetails;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.JwtBuilder;
@@ -17,8 +18,10 @@ import java.time.Instant;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import javax.crypto.SecretKey;
@@ -50,8 +53,8 @@ public class JwtUtil {
         String userId = authentication.getName();
         Collection<? extends GrantedAuthority> authorities = authentication.getAuthorities();
 
-        Map<String, Object> claims = Map.of("roles",
-            authorities.stream()
+        Map<String, Object> claims = Map.of(
+            "roles", authorities.stream()
                 .map(GrantedAuthority::getAuthority)
                 .toList());
 
@@ -83,6 +86,7 @@ public class JwtUtil {
         }
     }
 
+    @SuppressWarnings("unchecked")
     public Authentication getAuthentication(String token) {
         Claims claims = getClaims(token);
         String userId = claims.getSubject();
@@ -96,8 +100,18 @@ public class JwtUtil {
             .map(SimpleGrantedAuthority::new)
             .collect(Collectors.toList());
 
-        UserDetails principal = new User(userId, "", authorities);
-        return UsernamePasswordAuthenticationToken.authenticated(principal, token, authorities);
+        UserDetails principal = new CustomUserDetails(
+            null,
+            userId,
+            "",
+            authorities
+        );
+
+        return UsernamePasswordAuthenticationToken.authenticated(
+            principal,
+            token,
+            principal.getAuthorities()
+        );
     }
 
     private String createToken(

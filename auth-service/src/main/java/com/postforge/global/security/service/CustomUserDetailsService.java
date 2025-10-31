@@ -3,8 +3,11 @@ package com.postforge.global.security.service;
 import com.postforge.domain.member.entity.Member;
 import com.postforge.domain.member.entity.Role;
 import com.postforge.domain.member.repository.MemberRepository;
+import java.util.Collection;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -28,14 +31,15 @@ public class CustomUserDetailsService implements UserDetailsService {
         Member member = memberRepository.findByUserId(username)
             .orElseThrow(() -> new UsernameNotFoundException("사용자 찾을 수 없음"));
 
+        Collection<GrantedAuthority> authorities = member.getRoles().stream()
+            .map(role -> new SimpleGrantedAuthority(role.getValue()))
+            .collect(Collectors.toList());
+
         return new CustomUserDetails(
             member.getId(),
-            member.getUsername(),
             member.getUserId(),
             member.getUserPw(),
-            member.getRoles().stream()
-                .map(Role::getValue)
-                .collect(Collectors.toSet())
+            authorities
         );
     }
 }

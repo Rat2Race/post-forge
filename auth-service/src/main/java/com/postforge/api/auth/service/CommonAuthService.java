@@ -1,7 +1,7 @@
 package com.postforge.api.auth.service;
 
-import com.postforge.domain.member.dto.CommonLoginRequest;
-import com.postforge.domain.member.dto.CommonRegisterRequest;
+import com.postforge.domain.member.dto.request.CommonLoginRequest;
+import com.postforge.domain.member.dto.request.CommonRegisterRequest;
 import com.postforge.domain.member.entity.EmailVerification;
 import com.postforge.domain.member.entity.Member;
 import com.postforge.domain.member.entity.RefreshToken;
@@ -19,8 +19,6 @@ import java.util.Date;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.BadCredentialsException;
-import org.springframework.security.authentication.InternalAuthenticationServiceException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -30,7 +28,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
-@Transactional
+@Transactional(readOnly = true)
 @Slf4j
 public class CommonAuthService {
 
@@ -41,6 +39,7 @@ public class CommonAuthService {
     private final EmailVerificationRepository emailVerificationRepository;
     private final JwtUtil jwtUtil;
 
+    @Transactional
     public Long register(CommonRegisterRequest request) {
 
         EmailVerification verification = emailVerificationRepository.findByEmail(request.email())
@@ -50,7 +49,7 @@ public class CommonAuthService {
             throw new CustomException(ErrorCode.EMAIL_NOT_VERIFIED);
         }
 
-        if (memberRepository.existsByUsername(request.name())) {
+        if (memberRepository.existsByUserName(request.name())) {
             throw new CustomException(ErrorCode.DUPLICATE_USERNAME);
         }
 
@@ -59,22 +58,24 @@ public class CommonAuthService {
         }
 
         Member member = Member.builder()
-            .username(request.name())
+            .userName(request.name())
             .userId(request.id())
             .userPw(passwordEncoder.encode(request.pw()))
             .email(request.email())
+            .nickname(request.nickname())
             .build();
 
         member.addRole(Role.USER);
 
         Member savedMember = memberRepository.save(member);
-        log.info("새로운 회원 등록: {}", savedMember.getUsername());
+        log.info("새로운 회원 등록: {}", savedMember.getUserName());
 
         emailVerificationRepository.delete(verification);
 
         return savedMember.getId();
     }
 
+    @Transactional
     public TokenResponse login(CommonLoginRequest request) {
         UsernamePasswordAuthenticationToken authenticationToken =
             UsernamePasswordAuthenticationToken.unauthenticated(request.id(), request.pw());
@@ -123,6 +124,7 @@ public class CommonAuthService {
             .build();
     }
 
+    @Transactional
     public void logout(String userId) {
         refreshTokenRepository.deleteByUserId(userId);
         log.info("사용자 로그아웃: {}", userId);

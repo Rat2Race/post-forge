@@ -1,8 +1,8 @@
 package com.postforge.api.auth.controller;
 
 import com.postforge.api.auth.service.EmailVerificationService;
-import com.postforge.domain.member.dto.EmailVerificationResponse;
-import com.postforge.domain.member.dto.SendEmailRequest;
+import com.postforge.domain.member.dto.response.EmailVerificationResponse;
+import com.postforge.domain.member.dto.request.SendEmailRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

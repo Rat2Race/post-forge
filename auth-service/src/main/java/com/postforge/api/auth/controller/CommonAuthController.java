@@ -1,8 +1,8 @@
 package com.postforge.api.auth.controller;
 
 import com.postforge.api.auth.service.CommonAuthService;
-import com.postforge.domain.member.dto.CommonLoginRequest;
-import com.postforge.domain.member.dto.CommonRegisterRequest;
+import com.postforge.domain.member.dto.request.CommonLoginRequest;
+import com.postforge.domain.member.dto.request.CommonRegisterRequest;
 import com.postforge.global.security.dto.TokenReissueRequest;
 import com.postforge.global.security.dto.TokenResponse;
 import jakarta.validation.Valid;

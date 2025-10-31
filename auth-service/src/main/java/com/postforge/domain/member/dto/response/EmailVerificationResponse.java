@@ -1,4 +1,4 @@
-package com.postforge.domain.member.dto;
+package com.postforge.domain.member.dto.response;
 
 public record EmailVerificationResponse(
     String message,
