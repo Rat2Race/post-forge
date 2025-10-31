@@ -29,12 +29,18 @@ public class CommentController {
     @PreAuthorize("hasRole('USER')")
     public ResponseEntity<CommentResponse> createComment(
         @PathVariable Long postId,
-        @RequestBody @Valid CommentRequest request,
+        @RequestBody @Valid CommentRequest commentRequest,
         @AuthenticationPrincipal UserDetails user
     ) {
+        CommentResponse savedComment = commentService.saveComment(
+            postId,
+            commentRequest.content(),
+            user.getUsername()
+        );
+
         return ResponseEntity
             .status(HttpStatus.CREATED)
-            .body(commentService.saveComment(postId, request.content(), user.getUsername()));
+            .body(savedComment);
     }
 
     @GetMapping
@@ -42,20 +48,27 @@ public class CommentController {
         @PathVariable Long postId,
         @PageableDefault(size = 50, sort = "createdAt", direction = Direction.ASC) Pageable pageable
     ) {
+        Page<CommentResponse> commentsByPost = commentService.getCommentsByPost(postId, pageable);
+
         return ResponseEntity
             .status(HttpStatus.OK)
-            .body(commentService.getCommentsByPost(postId, pageable));
+            .body(commentsByPost);
     }
 
     @PutMapping("/{commentId}")
     @PreAuthorize("hasRole('ADMIN') or hasRole('USER') and @commentService.isCommentOwner(#commentId, authentication.name)")
-    public ResponseEntity<CommentResponse> updateComment(
+    public ResponseEntity<String> updateComment(
         @PathVariable Long commentId,
-        @RequestBody @Valid CommentRequest request
+        @RequestBody @Valid CommentRequest commentRequest
     ) {
+        commentService.updateComment(
+            commentId,
+            commentRequest.content()
+        );
+
         return ResponseEntity
             .status(HttpStatus.OK)
-            .body(commentService.updateComment(commentId, request.content()));
+            .body("댓글 업데이트 완료");
     }
 
     @DeleteMapping("/{commentId}")
@@ -64,6 +77,7 @@ public class CommentController {
         @PathVariable Long commentId
     ) {
         commentService.deleteComment(commentId);
+
         return ResponseEntity.ok("댓글 삭제 완료");
     }
 }
