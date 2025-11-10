@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { authApi } from '../lib/api';
+import { sendEmailCode, verifyEmail } from '../api/auth';
 import { Mail, CheckCircle2, XCircle, Loader2 } from 'lucide-react';
+import Navigation from '../components/Navigation';
 
 type VerificationStep = 'input' | 'sent' | 'verifying' | 'success' | 'error';
 
@@ -27,7 +28,7 @@ export default function VerifyEmail() {
   const verifyEmailWithToken = async (token: string) => {
     setStep('verifying');
     try {
-      const response = await authApi.verifyEmail(token);
+      const response = await verifyEmail(token);
       setVerifiedEmail(response.email);
       setStep('success');
 
@@ -39,7 +40,7 @@ export default function VerifyEmail() {
         navigate('/register');
       }, 3000);
     } catch (err: any) {
-      setError(err.response?.data?.message || '이메일 인증에 실패했습니다.');
+      setError(err.message || '이메일 인증에 실패했습니다.');
       setStep('error');
     }
   };
@@ -55,10 +56,10 @@ export default function VerifyEmail() {
     try {
       setIsLoading(true);
       setError('');
-      await authApi.sendEmailCode({ email });
+      await sendEmailCode({ email });
       setStep('sent');
     } catch (err: any) {
-      setError(err.response?.data?.message || '이메일 전송에 실패했습니다.');
+      setError(err.message || '이메일 전송에 실패했습니다.');
     } finally {
       setIsLoading(false);
     }
@@ -70,6 +71,7 @@ export default function VerifyEmail() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
+      <Navigation />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
         <div className="max-w-md mx-auto">
           {/* Header */}

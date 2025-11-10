@@ -11,6 +11,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -57,14 +58,34 @@ public class SecurityConfig {
                 .authenticationEntryPoint(jwtAuthenticationEntryPoint)
                 .accessDeniedHandler(jwtAccessDeniedHandler))
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/api/auth/register").permitAll()
-                .requestMatchers("/api/auth/login").permitAll()
-                .requestMatchers("/api/auth/security").permitAll()
-                .requestMatchers("/api/auth/reissue").permitAll()
-                .requestMatchers("/api/auth/email/**").permitAll()
+                // ===== 공개 API =====
+                .requestMatchers(HttpMethod.POST, "/api/auth/register").permitAll()
+                .requestMatchers(HttpMethod.POST, "/api/auth/login").permitAll()
+                .requestMatchers(HttpMethod.POST, "/api/auth/reissue").permitAll()
+                .requestMatchers(HttpMethod.POST, "/api/auth/email/send").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/auth/email/verify").permitAll()
+                .requestMatchers(HttpMethod.GET, "/posts").permitAll()
+                .requestMatchers(HttpMethod.GET, "/posts/*").permitAll()
+                .requestMatchers(HttpMethod.GET, "/posts/*/comments").permitAll()
                 .requestMatchers("/images/**").permitAll()
-                .requestMatchers("/api/users/**").hasAnyRole("USER", "ADMIN")
+
+                .requestMatchers("/api/auth/security").permitAll()
+
+                // ===== 인증 필요 API =====
+                .requestMatchers("/api/user/**").hasAnyRole("USER", "ADMIN")
+                .requestMatchers(HttpMethod.POST, "/api/auth/logout").hasAnyRole("USER", "ADMIN")
+                .requestMatchers(HttpMethod.POST, "/posts").hasRole("USER")
+                .requestMatchers(HttpMethod.PUT, "/posts/*").hasAnyRole("USER", "ADMIN")
+                .requestMatchers(HttpMethod.DELETE, "/posts/*").hasAnyRole("USER", "ADMIN")
+                .requestMatchers(HttpMethod.POST, "/posts/*/like").hasRole("USER")
+                .requestMatchers(HttpMethod.POST, "/posts/*/comments").hasRole("USER")
+                .requestMatchers(HttpMethod.PUT, "/posts/*/comments/*").hasAnyRole("USER", "ADMIN")
+                .requestMatchers(HttpMethod.DELETE, "/posts/*/comments/*").hasAnyRole("USER", "ADMIN")
+                .requestMatchers(HttpMethod.POST, "/posts/*/comments/*/like").hasRole("USER")
+
+                // ===== 관리자 전용 API =====
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")
+
                 .anyRequest().authenticated())
             .addFilterBefore(
                 new JwtAuthenticationFilter(jwtUtil),

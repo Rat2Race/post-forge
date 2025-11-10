@@ -22,10 +22,9 @@ public class CharacterInfo {
     @JsonProperty("ItemAvgLevel")
     private String itemLevel;
 
-    // ✅ 추가 필요
 //    @JsonProperty("ArkPassive")
-//    private ArkPassive arkPassive;  // 음속돌파, 뭉가 정보
+//    private ArkPassive arkPassive;
 
 //    @JsonProperty("Stats")
-//    private List<Stat> stats;  // 치명타, 특화 등
+//    private List<Stat> stats;
 }

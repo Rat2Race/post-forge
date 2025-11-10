@@ -1,14 +1,16 @@
 import { useForm } from 'react-hook-form';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { authApi, LoginRequest } from '../lib/api';
+import { login, getProfile } from '../api/auth';
 import { useAuthStore } from '../store/authStore';
 import { LogIn, Mail, Lock } from 'lucide-react';
 import { useState } from 'react';
+import Navigation from '../components/Navigation';
+import type { LoginRequest } from '../api/types';
 
 export default function Login() {
   const navigate = useNavigate();
   const location = useLocation();
-  const login = useAuthStore((state) => state.login);
+  const authLogin = useAuthStore((state) => state.login);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
@@ -24,14 +26,21 @@ export default function Login() {
     try {
       setIsLoading(true);
       setError('');
-      const response = await authApi.login(data);
-      login(response.accessToken, response.refreshToken);
+      const response = await login(data);
+      authLogin(response.accessToken, response.refreshToken);
+      // 로그인 후 프로필 가져와서 userId 저장
+      try {
+        const profile = await getProfile();
+        useAuthStore.getState().setUserId(profile.userId);
+      } catch (err) {
+        console.error('Failed to fetch profile:', err);
+      }
       navigate('/');
     } catch (err: any) {
       // 백엔드에서 보낸 에러 메시지 사용
-      const errorMessage = err.response?.data?.message || '로그인에 실패했습니다. 다시 시도해주세요.';
+      const errorMessage = err.message || '로그인에 실패했습니다. 다시 시도해주세요.';
       setError(errorMessage);
-      console.error('Login error:', err.response?.data);
+      console.error('Login error:', err);
     } finally {
       setIsLoading(false);
     }
@@ -39,6 +48,7 @@ export default function Login() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
+      <Navigation />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
         <div className="max-w-md mx-auto">
           {/* Header */}

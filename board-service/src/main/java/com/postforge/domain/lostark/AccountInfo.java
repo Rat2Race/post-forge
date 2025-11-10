@@ -9,12 +9,16 @@ import lombok.Getter;
 public class AccountInfo {
     @JsonProperty("ServerName")
     private String server;
+
     @JsonProperty("CharacterName")
     private String name;
+
     @JsonProperty("CharacterLevel")
     private int level;
+
     @JsonProperty("CharacterClassName")
     private String className;
+
     @JsonProperty("ItemAvgLevel")
     private String itemLevel;
 }
