@@ -1,14 +1,15 @@
 package com.postforge.api.board.controller;
 
+import com.postforge.api.board.service.CommentLikeService;
 import com.postforge.api.board.service.CommentService;
 import com.postforge.domain.board.dto.request.CommentRequest;
-import com.postforge.domain.board.dto.response.CommentResponse;
+import com.postforge.domain.board.dto.response.CommentDetailResponse;
+import com.postforge.domain.board.dto.response.CommentSummaryResponse;
+import com.postforge.domain.board.dto.response.LikeResponse;
 import jakarta.validation.Valid;
-import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Sort.Direction;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
@@ -19,20 +20,21 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/posts/{postId}/comments")
+@RequestMapping("/posts/{postId:\\d+}/comments")
 @RequiredArgsConstructor
 public class CommentController {
 
     private final CommentService commentService;
+    private final CommentLikeService commentLikeService;
 
     @PostMapping
     @PreAuthorize("hasRole('USER')")
-    public ResponseEntity<CommentResponse> createComment(
-        @PathVariable Long postId,
+    public ResponseEntity<CommentSummaryResponse> createComment(
+        @PathVariable("postId") Long postId,
         @RequestBody @Valid CommentRequest commentRequest,
         @AuthenticationPrincipal UserDetails user
     ) {
-        CommentResponse savedComment = commentService.saveComment(
+        CommentSummaryResponse savedComment = commentService.saveComment(
             postId,
             commentRequest.content(),
             user.getUsername()
@@ -44,41 +46,53 @@ public class CommentController {
     }
 
     @GetMapping
-    public ResponseEntity<Page<CommentResponse>> getComments(
-        @PathVariable Long postId,
-        @PageableDefault(size = 50, sort = "createdAt", direction = Direction.ASC) Pageable pageable
+    public ResponseEntity<Page<CommentDetailResponse>> getComments(
+        @PathVariable("postId") Long postId,
+        @PageableDefault(size = 50, sort = "createdAt", direction = Direction.ASC) Pageable pageable,
+        @AuthenticationPrincipal UserDetails user
     ) {
-        Page<CommentResponse> commentsByPost = commentService.getCommentsByPost(postId, pageable);
+        String userId = user != null ? user.getUsername() : null;
+        Page<CommentDetailResponse> commentsByPost = commentService.getCommentsByPost(postId, pageable, userId);
 
         return ResponseEntity
             .status(HttpStatus.OK)
             .body(commentsByPost);
     }
 
-    @PutMapping("/{commentId}")
+    @PutMapping("/{commentId:\\d+}")
     @PreAuthorize("hasRole('ADMIN') or hasRole('USER') and @commentService.isCommentOwner(#commentId, authentication.name)")
-    public ResponseEntity<String> updateComment(
-        @PathVariable Long commentId,
+    public ResponseEntity<CommentSummaryResponse> updateComment(
+        @PathVariable("commentId") Long commentId,
         @RequestBody @Valid CommentRequest commentRequest
     ) {
-        commentService.updateComment(
+        CommentSummaryResponse response = commentService.updateComment(
             commentId,
             commentRequest.content()
         );
 
         return ResponseEntity
             .status(HttpStatus.OK)
-            .body("댓글 업데이트 완료");
+            .body(response);
     }
 
-    @DeleteMapping("/{commentId}")
+    @DeleteMapping("/{commentId:\\d+}")
     @PreAuthorize("hasRole('ADMIN') or hasRole('USER') and @commentService.isCommentOwner(#commentId, authentication.name)")
     public ResponseEntity<String> deleteComment(
-        @PathVariable Long commentId
+        @PathVariable("commentId") Long commentId
     ) {
         commentService.deleteComment(commentId);
 
         return ResponseEntity.ok("댓글 삭제 완료");
     }
-}
 
+    @PostMapping("/{commentId:\\d+}/like")
+    @PreAuthorize("hasRole('USER')")
+    public ResponseEntity<LikeResponse> toggleLike(
+        @PathVariable("commentId") Long commentId,
+        @AuthenticationPrincipal UserDetails user
+    ) {
+        LikeResponse response = commentLikeService.toggleLike(commentId, user.getUsername());
+
+        return ResponseEntity.ok(response);
+    }
+}

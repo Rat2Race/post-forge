@@ -1,7 +1,7 @@
 package com.postforge.api.board.service;
 
-import com.postforge.domain.board.dto.request.PostRequest;
-import com.postforge.domain.board.dto.response.PostResponse;
+import com.postforge.domain.board.dto.response.PostDetailResponse;
+import com.postforge.domain.board.dto.response.PostSummaryResponse;
 import com.postforge.domain.board.entity.Post;
 import com.postforge.domain.board.repository.PostRepository;
 import com.postforge.global.exception.CustomException;
@@ -9,8 +9,6 @@ import com.postforge.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.List;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -21,9 +19,10 @@ import org.springframework.data.domain.Pageable;
 public class PostService {
 
     private final PostRepository postRepository;
+    private final PostLikeService postLikeService;
 
     @Transactional
-    public PostResponse savePost(String title, String content, String userId) {
+    public PostSummaryResponse savePost(String title, String content, String userId) {
         Post newPost = Post.builder()
             .title(title)
             .content(content)
@@ -32,15 +31,15 @@ public class PostService {
 
         postRepository.save(newPost);
 
-        return PostResponse.from(newPost);
+        return PostSummaryResponse.from(newPost);
     }
 
-    public Page<PostResponse> getPosts(Pageable pageable) {
+    public Page<PostDetailResponse> getPosts(Pageable pageable, String userId) {
         return postRepository.findAll(pageable)
-            .map(PostResponse::from);
+            .map(post -> getPostDetailResponse(post, userId));
     }
 
-    public PostResponse getPost(Long postId, boolean incrementView) {
+    public PostDetailResponse getPost(Long postId, boolean incrementView, String userId) {
         Post post = postRepository.findById(postId)
             .orElseThrow(() -> new CustomException(ErrorCode.POST_NOT_FOUND));
 
@@ -48,17 +47,17 @@ public class PostService {
             post.updateViews(post.getViews() + 1);
         }
 
-        return PostResponse.from(post);
+        return getPostDetailResponse(post, userId);
     }
 
     @Transactional
-    public PostResponse updatePost(Long postId, String title, String content) {
+    public PostSummaryResponse updatePost(Long postId, String title, String content, String userId) {
         Post post = postRepository.findById(postId)
             .orElseThrow(() -> new CustomException(ErrorCode.POST_NOT_FOUND));
 
         post.update(title, content);
 
-        return PostResponse.from(post);
+        return PostSummaryResponse.from(post);
     }
 
     @Transactional
@@ -74,5 +73,12 @@ public class PostService {
             .orElseThrow(() -> new CustomException(ErrorCode.POST_NOT_FOUND));
 
         return post.getUserId().equals(userId);
+    }
+
+    private PostDetailResponse getPostDetailResponse(Post post, String userId) {
+        Long likeCount = postLikeService.getLikeCount(post.getId());
+        boolean isLiked = postLikeService.isLiked(post.getId(), userId);
+
+        return PostDetailResponse.from(post, isLiked, likeCount);
     }
 }

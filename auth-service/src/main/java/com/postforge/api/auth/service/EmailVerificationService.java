@@ -31,6 +31,7 @@ public class EmailVerificationService {
             .email(email)
             .token(token)
             .build();
+
         emailVerificationRepository.save(verification);
 
         emailService.sendVerificationEmail(email, token);
@@ -41,6 +42,7 @@ public class EmailVerificationService {
             .orElseThrow(() -> new CustomException(ErrorCode.EMAIL_CODE_NOT_FOUND));
 
         verification.verifyToken();
+
         return verification.getEmail();
     }
 

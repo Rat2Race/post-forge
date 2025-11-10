@@ -72,10 +72,10 @@ public class JwtUtil {
                 .parseSignedClaims(token)
                 .getPayload();
         } catch (SecurityException | MalformedJwtException e) {
-            log.error("JWT 서명 검증 실패: {}", e.getMessage());
+            log.debug("JWT 서명 검증 실패: {}", e.getMessage());
             throw new CustomException(ErrorCode.INVALID_TOKEN);
         } catch (ExpiredJwtException e) {
-            log.error("JWT 만료: {}", e.getMessage());
+            log.debug("JWT 만료: {}", e.getMessage());
             throw new CustomException(ErrorCode.EXPIRED_TOKEN);
         } catch (JwtException | IllegalArgumentException e) {
             log.error("JWT 검증 실패: {}", e.getMessage());

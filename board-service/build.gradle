@@ -1,5 +1,6 @@
 plugins {
 	id "java-library"
+	id 'org.jetbrains.kotlin.jvm'
 }
 
 dependencies {
@@ -13,4 +14,11 @@ dependencies {
 
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testImplementation 'org.springframework.security:spring-security-test'
+	implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
+}
+repositories {
+	mavenCentral()
+}
+kotlin {
+	jvmToolchain(21)
 }

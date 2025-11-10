@@ -3,24 +3,21 @@ package com.postforge.domain.board.dto.response;
 import com.postforge.domain.board.entity.Post;
 import java.time.LocalDateTime;
 
-public record PostResponse(
+public record PostSummaryResponse(
     Long id,
     String title,
     String content,
     String userId,
-    Long views,
-    Integer commentCount,
     LocalDateTime createdAt,
     LocalDateTime modifiedAt
 ) {
-    public static PostResponse from(Post post) {
-        return new PostResponse(
+
+    public static PostSummaryResponse from(Post post) {
+        return new PostSummaryResponse(
             post.getId(),
             post.getTitle(),
             post.getContent(),
             post.getUserId(),
-            post.getViews(),
-            post.getComments().size(),
             post.getCreatedAt(),
             post.getModifiedAt()
         );

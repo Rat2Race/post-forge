@@ -20,30 +20,30 @@ import org.hibernate.annotations.OnDeleteAction;
 @Entity
 @Table(
     uniqueConstraints = @UniqueConstraint(
-        columnNames = {"post_id", "user_id"}
+        columnNames = {"comment_id", "user_id"}
     )
 )
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 @Builder
 @Getter
-public class PostLike extends AuditingFields {
+public class CommentLike extends AuditingFields {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @ManyToOne(optional = false)
-    @JoinColumn(name = "post_id", nullable = false)
+    @JoinColumn(name = "comment_id", nullable = false)
     @OnDelete(action = OnDeleteAction.CASCADE)
-    private Post post;
+    private Comment comment;
 
     @Column(name = "user_id", nullable = false)
     private String userId;
 
-    public static PostLike of(Post post, String userId) {
-        return PostLike.builder()
-            .post(post)
+    public static CommentLike of(Comment comment, String userId) {
+        return CommentLike.builder()
+            .comment(comment)
             .userId(userId)
             .build();
     }

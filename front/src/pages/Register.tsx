@@ -1,14 +1,16 @@
 import { useForm } from 'react-hook-form';
 import { Link, useNavigate } from 'react-router-dom';
-import { authApi } from '../lib/api';
+import { signup } from '../api/auth';
 import { UserPlus, Mail, Lock, User, CheckCircle2 } from 'lucide-react';
 import { useState, useEffect } from 'react';
+import Navigation from '../components/Navigation';
 
 interface RegisterFormData {
   name: string;
   id: string;
   pw: string;
   email: string;
+  nickname: string;
 }
 
 export default function Register() {
@@ -67,11 +69,12 @@ export default function Register() {
       setError('');
 
       // 회원가입 요청 (인증된 이메일 포함)
-      await authApi.register({
+      await signup({
         name: data.name,
         id: data.id,
         pw: data.pw,
         email: verifiedEmail,
+        nickname: data.nickname,
       });
 
       // 회원가입 성공 후 localStorage 정리
@@ -79,7 +82,7 @@ export default function Register() {
 
       navigate('/login', { state: { message: '회원가입이 완료되었습니다. 로그인해주세요.' } });
     } catch (err: any) {
-      setError(err.response?.data?.message || '회원가입에 실패했습니다.');
+      setError(err.message || '회원가입에 실패했습니다.');
     } finally {
       setIsLoading(false);
     }
@@ -87,6 +90,7 @@ export default function Register() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
+      <Navigation />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
         <div className="max-w-md mx-auto">
           {/* Header */}
@@ -206,6 +210,33 @@ export default function Register() {
                 </div>
                 {errors.pw && (
                   <p className="mt-1 text-sm text-red-600">{errors.pw.message}</p>
+                )}
+              </div>
+
+              {/* Nickname Field */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  닉네임
+                </label>
+                <div className="relative">
+                  <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <input
+                    {...register('nickname', {
+                      required: '닉네임을 입력해주세요',
+                      minLength: { value: 2, message: '닉네임은 최소 2자 이상이어야 합니다' },
+                      maxLength: { value: 20, message: '닉네임은 최대 20자까지 가능합니다' },
+                      pattern: {
+                        value: /^[가-힣a-zA-Z0-9]+$/,
+                        message: '닉네임은 한글, 영문, 숫자만 사용 가능합니다',
+                      },
+                    })}
+                    type="text"
+                    className="w-full pl-11 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                    placeholder="한글/영문/숫자 조합"
+                  />
+                </div>
+                {errors.nickname && (
+                  <p className="mt-1 text-sm text-red-600">{errors.nickname.message}</p>
                 )}
               </div>
 

@@ -7,16 +7,12 @@ export default defineConfig({
     port: 3000,
     open: true,
     proxy: {
-      // dev에서 CORS 우회를 위해 프록시 적용
+      // All services run on port 8080
       '/api': {
         target: 'http://localhost:8080',
         changeOrigin: true
       },
-      '/articles': {
-        target: 'http://localhost:8080',
-        changeOrigin: true
-      },
-      '/comments': {
+      '/posts': {
         target: 'http://localhost:8080',
         changeOrigin: true
       }

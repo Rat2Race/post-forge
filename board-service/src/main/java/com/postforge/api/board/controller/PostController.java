@@ -1,14 +1,16 @@
 package com.postforge.api.board.controller;
 
+import com.postforge.api.board.service.PostLikeService;
 import com.postforge.api.board.service.PostService;
 import com.postforge.api.board.service.ViewCountService;
 import com.postforge.domain.board.dto.request.PostRequest;
-import com.postforge.domain.board.dto.response.PostResponse;
+import com.postforge.domain.board.dto.response.LikeResponse;
+import com.postforge.domain.board.dto.response.PostDetailResponse;
+import com.postforge.domain.board.dto.response.PostSummaryResponse;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
-import java.util.Arrays;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -28,15 +30,16 @@ import org.springframework.web.bind.annotation.*;
 public class PostController {
 
     private final PostService postService;
+    private final PostLikeService postLikeService;
     private final ViewCountService viewCountService;
 
     @PostMapping
     @PreAuthorize("hasRole('USER')")
-    public ResponseEntity<PostResponse> createPost(
+    public ResponseEntity<PostSummaryResponse> createPost(
         @RequestBody @Valid PostRequest postRequest,
         @AuthenticationPrincipal UserDetails user
     ) {
-        PostResponse savedPost = postService.savePost(
+        PostSummaryResponse savedPost = postService.savePost(
             postRequest.title(),
             postRequest.content(),
             user.getUsername()
@@ -48,24 +51,28 @@ public class PostController {
     }
 
     @GetMapping
-    public ResponseEntity<Page<PostResponse>> getPosts(
-        @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable
+    public ResponseEntity<Page<PostDetailResponse>> getPosts(
+        @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable,
+        @AuthenticationPrincipal UserDetails user
     ) {
-        Page<PostResponse> posts = postService.getPosts(pageable);
+        String userId = user != null ? user.getUsername() : null;
+        Page<PostDetailResponse> posts = postService.getPosts(pageable, userId);
 
         return ResponseEntity.ok(posts);
     }
 
-    @GetMapping("/{id}")
-    public ResponseEntity<PostResponse> getPost(
-        @PathVariable Long postId,
+    @GetMapping("/{postId:\\d+}")
+    public ResponseEntity<PostDetailResponse> getPost(
+        @PathVariable("postId") Long postId,
         HttpServletRequest servletRequest,
-        HttpServletResponse servletResponse
+        HttpServletResponse servletResponse,
+        @AuthenticationPrincipal UserDetails user
     ) {
         Cookie[] cookies = servletRequest.getCookies();
 
         boolean shouldIncrement = viewCountService.shouldIncrementView(postId, cookies);
-        PostResponse post = postService.getPost(postId, shouldIncrement);
+        String userId = user != null ? user.getUsername() : null;
+        PostDetailResponse post = postService.getPost(postId, shouldIncrement, userId);
 
         if(shouldIncrement) {
             Cookie cookie = viewCountService.createViewCookie(postId);
@@ -75,28 +82,41 @@ public class PostController {
         return ResponseEntity.ok(post);
     }
 
-    @PutMapping("/{id}")
+    @PutMapping("/{postId:\\d+}")
     @PreAuthorize("hasRole('ADMIN') or hasRole('USER') and @postService.isOwner(#id, authentication.name)")
-    public ResponseEntity<String> updatePost(
-        @PathVariable Long postId,
-        @RequestBody PostRequest postRequest
+    public ResponseEntity<PostSummaryResponse> updatePost(
+        @PathVariable("postId") Long postId,
+        @RequestBody PostRequest postRequest,
+        @AuthenticationPrincipal UserDetails user
     ) {
-        postService.updatePost(
+        PostSummaryResponse response = postService.updatePost(
             postId,
             postRequest.title(),
-            postRequest.content()
+            postRequest.content(),
+            user.getUsername()
         );
 
-        return ResponseEntity.ok("게시글 업데이트 완료");
+        return ResponseEntity.ok(response);
     }
 
-    @DeleteMapping("/{id}")
+    @DeleteMapping("/{postId:\\d+}")
     @PreAuthorize("hasRole('ADMIN') or hasRole('USER') and @postService.isOwner(#id, authentication.name)")
     public ResponseEntity<String> deletePost(
-        @PathVariable Long postId
+        @PathVariable("postId") Long postId
     ) {
         postService.deletePost(postId);
 
         return ResponseEntity.ok("게시글 삭제 완료");
+    }
+
+    @PostMapping("/{postId:\\d+}/like")
+    @PreAuthorize("hasRole('USER')")
+    public ResponseEntity<LikeResponse> toggleLike(
+        @PathVariable("postId") Long postId,
+        @AuthenticationPrincipal UserDetails user
+    ) {
+        LikeResponse response = postLikeService.toggleLike(postId, user.getUsername());
+
+        return ResponseEntity.ok(response);
     }
 }
