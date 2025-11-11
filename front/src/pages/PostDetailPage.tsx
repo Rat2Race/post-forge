@@ -11,7 +11,7 @@ import {
   toggleCommentLike,
 } from '../api/board';
 import type { PostResponse, CommentResponse, CommentRequest, Page } from '../api/types';
-import { Heart, MessageCircle, Eye, Trash2, ArrowLeft } from 'lucide-react';
+import { Heart, MessageCircle, Eye, Trash2, ArrowLeft, CornerDownRight } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
 import Navigation from '../components/Navigation';
 
@@ -26,12 +26,20 @@ export default function PostDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [commentPage, setCommentPage] = useState(0);
+  const [replyingTo, setReplyingTo] = useState<number | null>(null);
 
   const {
     register,
     handleSubmit,
     reset,
     formState: { errors },
+  } = useForm<CommentRequest>();
+
+  const {
+    register: registerReply,
+    handleSubmit: handleSubmitReply,
+    reset: resetReply,
+    formState: { errors: replyErrors },
   } = useForm<CommentRequest>();
 
   useEffect(() => {
@@ -92,12 +100,30 @@ export default function PostDetailPage() {
       return;
     }
     try {
-      await createComment(Number(id), data);
+      await createComment(Number(id), { ...data, parentId: null });
       reset();
       loadComments();
       loadPost(); // Reload to update comment count
     } catch (err: any) {
       alert('댓글 작성에 실패했습니다.');
+    }
+  };
+
+  const onSubmitReply = async (data: CommentRequest) => {
+    if (!isAuthenticated) {
+      alert('로그인이 필요합니다.');
+      return;
+    }
+    if (!replyingTo) return;
+
+    try {
+      await createComment(Number(id), { ...data, parentId: replyingTo });
+      resetReply();
+      setReplyingTo(null);
+      loadComments();
+      loadPost(); // Reload to update comment count
+    } catch (err: any) {
+      alert('대댓글 작성에 실패했습니다.');
     }
   };
 
@@ -242,41 +268,140 @@ export default function PostDetailPage() {
 
           {/* Comments List */}
           {comments && comments.content.length > 0 ? (
-            <div className="space-y-4">
-              {comments.content.map((comment) => (
-                <div key={comment.id} className="border-b border-gray-200 pb-4 last:border-0">
-                  <div className="flex items-start justify-between mb-2">
-                    <div>
-                      <span className="font-medium text-gray-900">{comment.userId}</span>
-                      <span className="text-sm text-gray-500 ml-3">
-                        {formatDate(comment.createdAt)}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <button
-                        onClick={() => handleToggleCommentLike(comment.id)}
-                        className="flex items-center gap-1 text-sm text-gray-500 hover:text-red-500"
-                      >
-                        <Heart
-                          className={`w-4 h-4 ${
-                            comment.isLiked ? 'fill-red-500 text-red-500' : ''
-                          }`}
-                        />
-                        {comment.likeCount}
-                      </button>
-                      {isAuthenticated && currentUserId === comment.userId && (
-                        <button
-                          onClick={() => handleDeleteComment(comment.id)}
-                          className="text-sm text-red-600 hover:text-red-700"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+            <div className="space-y-6">
+              {comments.content
+                .filter((c) => c.parentId === null)
+                .map((comment) => {
+                  const replies = comments.content.filter((c) => c.parentId === comment.id);
+                  return (
+                    <div key={comment.id} className="border-b border-gray-200 pb-6 last:border-0">
+                      {/* Parent Comment */}
+                      <div className="mb-3">
+                        <div className="flex items-start justify-between mb-2">
+                          <div>
+                            <span className="font-medium text-gray-900">{comment.userId}</span>
+                            <span className="text-sm text-gray-500 ml-3">
+                              {formatDate(comment.createdAt)}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-3">
+                            <button
+                              onClick={() => handleToggleCommentLike(comment.id)}
+                              className="flex items-center gap-1 text-sm text-gray-500 hover:text-red-500"
+                            >
+                              <Heart
+                                className={`w-4 h-4 ${
+                                  comment.isLiked ? 'fill-red-500 text-red-500' : ''
+                                }`}
+                              />
+                              {comment.likeCount}
+                            </button>
+                            {isAuthenticated && currentUserId === comment.userId && (
+                              <button
+                                onClick={() => handleDeleteComment(comment.id)}
+                                className="text-sm text-red-600 hover:text-red-700"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                        <p className="text-gray-700 mb-2">{comment.content}</p>
+                        {isAuthenticated && (
+                          <button
+                            onClick={() =>
+                              setReplyingTo(replyingTo === comment.id ? null : comment.id)
+                            }
+                            className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-700"
+                          >
+                            <CornerDownRight className="w-3 h-3" />
+                            답글 {comment.replyCount > 0 && `(${comment.replyCount})`}
+                          </button>
+                        )}
+                      </div>
+
+                      {/* Replies */}
+                      {replies.length > 0 && (
+                        <div className="ml-8 space-y-3 border-l-2 border-gray-200 pl-4">
+                          {replies.map((reply) => (
+                            <div key={reply.id}>
+                              <div className="flex items-start justify-between mb-2">
+                                <div>
+                                  <span className="font-medium text-gray-900">{reply.userId}</span>
+                                  <span className="text-sm text-gray-500 ml-3">
+                                    {formatDate(reply.createdAt)}
+                                  </span>
+                                </div>
+                                <div className="flex items-center gap-3">
+                                  <button
+                                    onClick={() => handleToggleCommentLike(reply.id)}
+                                    className="flex items-center gap-1 text-sm text-gray-500 hover:text-red-500"
+                                  >
+                                    <Heart
+                                      className={`w-4 h-4 ${
+                                        reply.isLiked ? 'fill-red-500 text-red-500' : ''
+                                      }`}
+                                    />
+                                    {reply.likeCount}
+                                  </button>
+                                  {isAuthenticated && currentUserId === reply.userId && (
+                                    <button
+                                      onClick={() => handleDeleteComment(reply.id)}
+                                      className="text-sm text-red-600 hover:text-red-700"
+                                    >
+                                      <Trash2 className="w-4 h-4" />
+                                    </button>
+                                  )}
+                                </div>
+                              </div>
+                              <p className="text-gray-700">{reply.content}</p>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* Reply Form */}
+                      {replyingTo === comment.id && (
+                        <div className="ml-8 mt-3">
+                          <form onSubmit={handleSubmitReply(onSubmitReply)}>
+                            <textarea
+                              {...registerReply('content', {
+                                required: '답글 내용을 입력해주세요',
+                                minLength: { value: 1, message: '답글은 최소 1자 이상이어야 합니다' },
+                              })}
+                              rows={2}
+                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none text-sm"
+                              placeholder="답글을 입력하세요"
+                            />
+                            {replyErrors.content && (
+                              <p className="mt-1 text-sm text-red-600">
+                                {replyErrors.content.message}
+                              </p>
+                            )}
+                            <div className="flex justify-end gap-2 mt-2">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setReplyingTo(null);
+                                  resetReply();
+                                }}
+                                className="px-3 py-1 text-sm text-gray-600 hover:text-gray-800"
+                              >
+                                취소
+                              </button>
+                              <button
+                                type="submit"
+                                className="px-3 py-1 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                              >
+                                답글 작성
+                              </button>
+                            </div>
+                          </form>
+                        </div>
                       )}
                     </div>
-                  </div>
-                  <p className="text-gray-700">{comment.content}</p>
-                </div>
-              ))}
+                  );
+                })}
             </div>
           ) : (
             <p className="text-center text-gray-500 py-8">첫 댓글을 작성해보세요!</p>

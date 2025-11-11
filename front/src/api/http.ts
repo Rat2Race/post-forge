@@ -1,7 +1,7 @@
 const DEV = import.meta.env.DEV;
 const USE_PROXY = (import.meta.env.VITE_USE_PROXY ?? 'true') !== 'false';
 const AUTH_BASE = DEV && USE_PROXY ? '' : (import.meta.env.VITE_AUTH_BASE_URL || 'http://localhost:8080');
-const BOARD_BASE = DEV && USE_PROXY ? '' : (import.meta.env.VITE_BOARD_BASE_URL || 'http://localhost:8081');
+const BOARD_BASE = DEV && USE_PROXY ? '' : (import.meta.env.VITE_BOARD_BASE_URL || 'http://localhost:8080');
 
 export const baseUrls = { AUTH_BASE, BOARD_BASE };
 

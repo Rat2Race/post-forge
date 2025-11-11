@@ -53,6 +53,8 @@ export type CommentResponse = {
   id: number;
   content: string;
   userId: string;
+  parentId: number | null;
+  replyCount: number;
   likeCount: number;
   isLiked: boolean;
   createdAt: string;
@@ -63,12 +65,14 @@ export type CommentSummaryResponse = {
   id: number;
   content: string;
   userId: string;
+  parentId: number | null;
   createdAt: string;
   modifiedAt: string;
 };
 
 export type CommentRequest = {
   content: string;
+  parentId?: number | null;
 };
 
 export type LikeResponse = {

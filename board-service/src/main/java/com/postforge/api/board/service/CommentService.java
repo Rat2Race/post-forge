@@ -26,42 +26,37 @@ public class CommentService {
     private final CommentLikeService commentLikeService;
 
     @Transactional
-    public CommentSummaryResponse saveComment(Long postId, String content, String userId) {
-        Post post = postRepository.findById(postId)
-            .orElseThrow(() -> new CustomException(ErrorCode.POST_NOT_FOUND));
-
-        Comment newComment = Comment.builder()
-            .post(post)
-            .content(content)
-            .userId(userId)
-            .parent(null)
-            .build();
-
-        post.addComment(newComment);
-
-        commentRepository.save(newComment);
-
-        return CommentSummaryResponse.from(newComment);
-    }
-
-    @Transactional
-    public CommentSummaryResponse saveReply(Long postId, Long parentId, String content,
+    public CommentSummaryResponse saveComment(Long postId, Long parentId, String content,
         String userId) {
         Post post = postRepository.findById(postId)
             .orElseThrow(() -> new CustomException(ErrorCode.POST_NOT_FOUND));
 
-        Comment parentComment = commentRepository.findById(parentId)
-            .orElseThrow(() -> new CustomException(ErrorCode.COMMENT_NOT_FOUND));
+        Comment parent = null;
+        if (parentId != null) {
+            parent = commentRepository.findById(parentId)
+                .orElseThrow(() -> new CustomException(ErrorCode.COMMENT_NOT_FOUND));
+
+            if (!parent.getPost().getId().equals(postId)) {
+                throw new CustomException(ErrorCode.INVALID_COMMENT_PARENT);
+            }
+
+            if (parent.getParent() != null) {
+                throw new CustomException(ErrorCode.MAX_COMMENT_DEPTH_EXCEEDED);
+            }
+        }
 
         Comment newComment = Comment.builder()
             .post(post)
             .content(content)
             .userId(userId)
-            .parent(parentComment)
+            .parent(parent)
             .build();
 
+        if (parent != null) {
+            parent.addReply(newComment);
+        }
+
         post.addComment(newComment);
-        parentComment.addReply(newComment);
 
         commentRepository.save(newComment);
 
@@ -96,8 +91,11 @@ public class CommentService {
         Comment comment = commentRepository.findById(commentId)
             .orElseThrow(() -> new CustomException(ErrorCode.COMMENT_NOT_FOUND));
 
+        if (comment.getParent() != null) {
+            comment.getParent().removeReply(comment);
+        }
+
         comment.getPost().removeComment(comment);
-        comment.getParent().removeReply(comment);
 
         commentRepository.delete(comment);
     }

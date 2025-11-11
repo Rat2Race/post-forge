@@ -25,7 +25,7 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/posts")
+@RequestMapping("/api/posts")
 @CrossOrigin(origins = "http://localhost:3000")
 public class PostController {
 
@@ -72,6 +72,7 @@ public class PostController {
 
         boolean shouldIncrement = viewCountService.shouldIncrementView(postId, cookies);
         String userId = user != null ? user.getUsername() : null;
+
         PostDetailResponse post = postService.getPost(postId, shouldIncrement, userId);
 
         if(shouldIncrement) {
@@ -83,7 +84,7 @@ public class PostController {
     }
 
     @PutMapping("/{postId:\\d+}")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('USER') and @postService.isOwner(#id, authentication.name)")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('USER') and @postService.isOwner(#postId, authentication.name)")
     public ResponseEntity<PostSummaryResponse> updatePost(
         @PathVariable("postId") Long postId,
         @RequestBody PostRequest postRequest,
@@ -100,7 +101,7 @@ public class PostController {
     }
 
     @DeleteMapping("/{postId:\\d+}")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('USER') and @postService.isOwner(#id, authentication.name)")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('USER') and @postService.isOwner(#postId, authentication.name)")
     public ResponseEntity<String> deletePost(
         @PathVariable("postId") Long postId
     ) {

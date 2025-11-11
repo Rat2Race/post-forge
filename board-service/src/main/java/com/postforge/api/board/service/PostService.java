@@ -39,6 +39,7 @@ public class PostService {
             .map(post -> getPostDetailResponse(post, userId));
     }
 
+    @Transactional
     public PostDetailResponse getPost(Long postId, boolean incrementView, String userId) {
         Post post = postRepository.findById(postId)
             .orElseThrow(() -> new CustomException(ErrorCode.POST_NOT_FOUND));
