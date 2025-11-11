@@ -20,7 +20,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/posts/{postId:\\d+}/comments")
+@RequestMapping("/api/posts/{postId:\\d+}/comments")
 @RequiredArgsConstructor
 public class CommentController {
 
@@ -36,6 +36,7 @@ public class CommentController {
     ) {
         CommentSummaryResponse savedComment = commentService.saveComment(
             postId,
+            commentRequest.parentId(),
             commentRequest.content(),
             user.getUsername()
         );
