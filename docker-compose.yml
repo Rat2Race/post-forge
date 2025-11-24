@@ -1,0 +1,36 @@
+services:
+  db:
+    image: postgres:18
+    environment:
+      POSTGRES_DATABASE: postforge
+      POSTGRES_USER: postforge_user
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+  app:
+    build: .
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/postforge
+      SPRING_DATASOURCE_USERNAME: postforge_user
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD}
+    expose:
+      - "8080"
+    depends_on:
+      - db
+    volumes:
+      - ./logs:/app/logs
+
+#  nginx:
+#    image: nginx:alpine
+#    volumes:
+#      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+#    ports:
+#      - "80:80"
+#    depends_on:
+#      - app
+
+volumes:
+  postforge-data:

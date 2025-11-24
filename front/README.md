@@ -1,163 +1,205 @@
 # PostForge Frontend
 
-PostForge 프로젝트의 프론트엔드 애플리케이션입니다. React + TypeScript + Vite 기반으로, 인증 시스템과 게시판 기능을 제공합니다.
+당근마켓 스타일의 중고거래 커뮤니티 프론트엔드
 
 ## 기술 스택
 
-- React 18.2.0
-- TypeScript 5.4.2
-- Vite 5.2.0
-- React Router DOM 6.22.1
-- Axios 1.12.2
-- Zustand 5.0.8 (상태 관리)
-- React Hook Form 7.63.0
-- Tailwind CSS 3.4.17
-- Lucide React (아이콘)
-
-## 개발 서버 실행
-
-1) 환경 변수 파일 생성
-
-```
-cp .env.sample .env
-# 필요 시 포트/호스트 수정
-```
-
-2) 의존성 설치 및 실행 (로컬에서)
-
-```
-npm install
-npm run dev
-```
-
-기본 개발 서버 주소는 `http://localhost:3000` 입니다.
-
-개발 환경에서는 Vite 프록시로 CORS를 우회합니다. `.env`에서 `VITE_USE_PROXY=true`로 두고, 서버가 `http://localhost:8080`에서 동작 중이어야 합니다.
-
-## 환경 변수
-
-`.env` 파일:
-```
-VITE_AUTH_BASE_URL=http://localhost:8080
-VITE_BOARD_BASE_URL=http://localhost:8081
-VITE_USE_PROXY=true
-```
-
-- `VITE_AUTH_BASE_URL` - Auth Service 주소 (포트 8080)
-- `VITE_BOARD_BASE_URL` - Board Service 주소 (포트 8081)
-- `VITE_USE_PROXY` - 개발 모드에서 프록시 사용 여부
+- **Framework**: React 18
+- **Build Tool**: Vite
+- **Styling**: Tailwind CSS
+- **Routing**: React Router DOM
+- **State Management**: Zustand
+- **HTTP Client**: Axios
+- **Icons**: Lucide React
+- **Form Handling**: React Hook Form
 
 ## 주요 기능
 
-### 인증 시스템
-- 이메일 인증 기반 회원가입 (name, id, pw, email, nickname 필수)
-- JWT 토큰 기반 로그인/로그아웃
-- 자동 토큰 갱신 (Refresh Token)
-- 인증 상태 관리 (Zustand)
+### 인증 기능
+- 회원가입 (유효성 검증 포함)
+- 로그인/로그아웃
+- JWT 토큰 기반 인증
+- 자동 토큰 갱신
 
-### 게시판
-- 게시글 CRUD (생성, 읽기, 수정, 삭제)
-- 게시글 페이지네이션
-- 게시글 좋아요 기능
-- 조회수 추적
-- 댓글 CRUD
-- 댓글 페이지네이션
-- 댓글 좋아요 기능
+### 게시글 기능
+- 게시글 목록 조회 (페이징)
+- 게시글 상세 조회 (조회수 자동 증가)
+- 게시글 작성/수정/삭제
+- 게시글 좋아요
 
-## 주요 경로
+### 댓글 기능
+- 댓글 작성/수정/삭제
+- 대댓글 (2단계까지)
+- 댓글 좋아요
 
-- 홈: `/`
-- 이메일 인증: `/verify-email`
-- 회원가입: `/register` (이메일 인증 필요)
-- 로그인: `/login`
-- 게시글 목록: `/posts`
-- 게시글 작성: `/posts/create` (로그인 필요)
-- 게시글 상세: `/posts/:id`
+## 시작하기
 
-## 토큰 처리
+### 환경 변수 설정
 
-- 로그인 성공 시 `accessToken`/`refreshToken`을 `localStorage`에 저장합니다.
-- 요청 401 응답 시 자동으로 `/api/auth/reissue`로 재발급을 시도하고, 성공 시 원 요청을 1회 재시도합니다.
-- 로그아웃 시 서버 `POST /api/auth/logout` 호출 후 토큰을 제거합니다.
+`.env` 파일을 생성하고 백엔드 API URL을 설정하세요:
+
+```env
+VITE_API_BASE_URL=http://localhost:8080/api
+```
+
+### 설치 및 실행
+
+```bash
+# 의존성 설치
+npm install
+
+# 개발 서버 실행
+npm run dev
+
+# 프로덕션 빌드
+npm run build
+
+# 프로덕션 빌드 미리보기
+npm run preview
+```
+
+개발 서버는 기본적으로 `http://localhost:5173`에서 실행됩니다.
+
+## 프로젝트 구조
+
+```
+front/
+├── src/
+│   ├── api/              # API 클라이언트
+│   │   ├── axios.js      # Axios 인스턴스 설정
+│   │   ├── auth.js       # 인증 API
+│   │   ├── posts.js      # 게시글 API
+│   │   └── comments.js   # 댓글 API
+│   ├── components/       # 재사용 가능한 컴포넌트
+│   │   ├── Header.jsx
+│   │   ├── Layout.jsx
+│   │   ├── PostCard.jsx
+│   │   └── CommentSection.jsx
+│   ├── pages/           # 페이지 컴포넌트
+│   │   ├── Login.jsx
+│   │   ├── Register.jsx
+│   │   ├── PostList.jsx
+│   │   ├── PostDetail.jsx
+│   │   └── PostForm.jsx
+│   ├── store/           # 상태 관리
+│   │   └── authStore.js
+│   ├── utils/           # 유틸리티 함수
+│   │   └── dateUtils.js
+│   ├── App.jsx          # 라우팅 설정
+│   ├── main.jsx         # 엔트리 포인트
+│   └── index.css        # 글로벌 스타일
+├── .env                 # 환경 변수
+├── tailwind.config.js   # Tailwind 설정
+└── package.json
+```
 
 ## API 엔드포인트
 
-### Auth Service (http://localhost:8080)
+### 인증
 - `POST /api/auth/register` - 회원가입
 - `POST /api/auth/login` - 로그인
 - `POST /api/auth/logout` - 로그아웃
-- `POST /api/auth/reissue` - 토큰 재발급
-- `POST /api/auth/email/send` - 이메일 인증 코드 전송
-- `GET /api/auth/email/verify` - 이메일 인증
+- `POST /api/auth/reissue` - 토큰 갱신
 
-### Board Service (http://localhost:8081)
-- `GET /posts` - 게시글 목록 (페이지네이션)
-- `POST /posts` - 게시글 작성
-- `GET /posts/{id}` - 게시글 상세
-- `PUT /posts/{id}` - 게시글 수정
-- `DELETE /posts/{id}` - 게시글 삭제
-- `POST /posts/{id}/like` - 게시글 좋아요 토글
-- `GET /posts/{postId}/comments` - 댓글 목록
-- `POST /posts/{postId}/comments` - 댓글 작성
-- `PUT /posts/{postId}/comments/{commentId}` - 댓글 수정
-- `DELETE /posts/{postId}/comments/{commentId}` - 댓글 삭제
-- `POST /posts/{postId}/comments/{commentId}/like` - 댓글 좋아요 토글
+### 게시글
+- `GET /api/posts` - 게시글 목록 조회
+- `GET /api/posts/:id` - 게시글 상세 조회
+- `POST /api/posts` - 게시글 작성
+- `PUT /api/posts/:id` - 게시글 수정
+- `DELETE /api/posts/:id` - 게시글 삭제
+- `POST /api/posts/:id/like` - 게시글 좋아요 토글
 
-## 프록시 설정 (vite.config.ts)
+### 댓글
+- `GET /api/posts/:postId/comments` - 댓글 목록 조회
+- `POST /api/posts/:postId/comments` - 댓글 작성
+- `PUT /api/posts/:postId/comments/:id` - 댓글 수정
+- `DELETE /api/posts/:postId/comments/:id` - 댓글 삭제
+- `POST /api/posts/:postId/comments/:id/like` - 댓글 좋아요 토글
 
-개발 모드에서 CORS 문제를 해결하기 위한 프록시 설정:
+## 디자인 시스템
 
-```typescript
-proxy: {
-  '/api': {
-    target: 'http://localhost:8080',    // Auth Service
-    changeOrigin: true
-  },
-  '/posts': {
-    target: 'http://localhost:8081',   // Board Service
-    changeOrigin: true
-  }
+### 컬러 팔레트
+
+당근마켓에서 영감을 받은 따뜻한 오렌지 컬러를 사용합니다:
+
+- **Primary (Carrot)**: `#ff6f0f`
+- **Primary Light**: `#ffe8d6`
+- **Primary Dark**: `#cc4900`
+- **Background**: `#f9fafb` (Gray 50)
+- **Text**: `#111827` (Gray 900)
+
+### 컴포넌트 스타일
+
+Tailwind CSS의 `@layer components`를 활용한 재사용 가능한 클래스:
+
+- `.btn-primary` - 주요 액션 버튼 (오렌지)
+- `.btn-secondary` - 보조 버튼 (화이트)
+- `.card` - 카드 컨테이너
+- `.input-field` - 입력 필드
+
+## 주요 기능 설명
+
+### 인증 상태 관리
+
+Zustand를 사용하여 전역 인증 상태를 관리하며, localStorage와 동기화됩니다:
+
+```javascript
+const { user, isAuthenticated, login, logout } = useAuthStore();
+```
+
+### 자동 토큰 갱신
+
+Axios 인터셉터를 통해 401 에러 발생 시 자동으로 토큰을 갱신합니다.
+
+### 보호된 라우트
+
+`ProtectedRoute` 컴포넌트를 통해 인증이 필요한 페이지를 보호합니다.
+
+### 댓글 계층 구조
+
+댓글과 대댓글(최대 2단계)을 트리 구조로 표시합니다.
+
+## 개발 가이드
+
+### 새로운 페이지 추가
+
+1. `src/pages/` 에 컴포넌트 생성
+2. `src/App.jsx`에 라우트 추가
+3. 필요시 `ProtectedRoute`로 감싸기
+
+### 새로운 API 추가
+
+1. `src/api/` 에 API 함수 추가
+2. Axios 인스턴스(`apiClient`) 사용
+3. 에러 핸들링 구현
+
+### 스타일링
+
+Tailwind CSS 유틸리티 클래스를 우선 사용하고, 재사용 가능한 스타일은 `index.css`의 `@layer components`에 추가합니다.
+
+## 트러블슈팅
+
+### CORS 에러
+
+백엔드 서버에서 CORS 설정이 필요합니다:
+
+```java
+@Configuration
+public class WebConfig implements WebMvcConfigurer {
+    @Override
+    public void addCorsMappings(CorsRegistry registry) {
+        registry.addMapping("/api/**")
+                .allowedOrigins("http://localhost:5173")
+                .allowedMethods("*")
+                .allowCredentials(true);
+    }
 }
 ```
 
-## 서버 실행 전제조건
+### 토큰 만료
 
-프론트엔드를 실행하기 전에 백엔드 서버가 실행되어 있어야 합니다:
+토큰이 만료되면 자동으로 갱신을 시도하며, 실패 시 로그인 페이지로 리다이렉트됩니다.
 
-1. Auth Service (포트 8080)
-2. Board Service (포트 8081)
+## 라이선스
 
-백엔드 실행 방법:
-```bash
-# 프로젝트 루트에서
-./gradlew :app:bootRun
-```
-
-## 주요 변경사항 (최신 업데이트)
-
-### 1. 타입 정의 업데이트
-- `SignupRequest`에 `nickname`, `email` 필드 추가
-- `PostResponse`, `CommentResponse` 타입 추가
-- `Page<T>` 타입 추가 (페이지네이션)
-
-### 2. API 클라이언트 업데이트
-- `/articles` → `/posts` 엔드포인트 변경
-- 페이지네이션 지원
-- 좋아요 기능 추가
-- 댓글 CRUD API 추가
-
-### 3. 새 페이지 추가
-- `PostsPage.tsx` - 게시글 목록
-- `PostDetailPage.tsx` - 게시글 상세 + 댓글
-- `CreatePostPage.tsx` - 게시글 작성
-
-### 4. 회원가입 폼 업데이트
-- nickname 입력 필드 추가
-- 유효성 검사 추가
-
-## 빌드
-
-```
-npm run build
-npm run preview
-```
+MIT

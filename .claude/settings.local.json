@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "WebSearch",
+      "Bash(npm install:*)",
+      "WebFetch(domain:minitoolshub.com)",
+      "WebFetch(domain:www.daangn.com)",
+      "Bash(npm create:*)",
+      "Bash(npx tailwindcss init -p)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

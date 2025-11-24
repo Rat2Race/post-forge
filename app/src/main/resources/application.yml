@@ -1,0 +1,14 @@
+spring:
+  application:
+    name: postforge
+
+  profiles:
+    include: secret
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+
+logging:
+  level:
+    sql: info
