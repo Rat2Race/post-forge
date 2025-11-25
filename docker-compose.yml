@@ -9,8 +9,10 @@ services:
       - postgres-data:/var/lib/postgresql/data
     ports:
       - "5432:5432"
+    networks:
+      - postforge-net
 
-  app:
+  app1:
     build: .
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/postforge
@@ -20,8 +22,16 @@ services:
       - "8080"
     depends_on:
       - db
-    volumes:
-      - ./logs:/app/logs
+    networks:
+      - postforge-net
+
+  app2:
+    build: .
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/postforge
+      SPRING_DATASOURCE_USERNAME: postforge_user
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD}
+
 
 #  nginx:
 #    image: nginx:alpine
