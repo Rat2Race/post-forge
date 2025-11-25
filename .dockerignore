@@ -1,0 +1,33 @@
+# GIT
+.git
+.gitignore
+
+# IDE
+.idea
+.vscode
+*.iml
+
+# BUILD
+build/
+!gradle/wrapper/gradle-wrapper.jar
+
+# ENV
+.env
+.env.local
+.env.production
+
+# LOG
+logs/
+*.log
+
+# Docker
+docker-compose.yml
+Dockerfile
+nginx/
+
+# DOCS
+docs/docker-notes.md
+docs/
+
+# TEST
+src/test/
