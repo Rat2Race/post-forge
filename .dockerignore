@@ -21,9 +21,7 @@ logs/
 *.log
 
 # Docker
-docker-compose.yml
 Dockerfile
-nginx/
 
 # DOCS
 docs/docker-notes.md
