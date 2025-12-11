@@ -16,11 +16,6 @@ out/
 **/src/main/resources/application-dev.yml
 **/src/main/resources/application-prod.yml
 
-# Environment files
-.env
-.env.local
-.env.*.local
-
 # Logs
 logs/
 *.log

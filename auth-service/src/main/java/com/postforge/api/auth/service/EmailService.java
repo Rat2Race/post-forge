@@ -23,9 +23,12 @@ public class EmailService {
 
     @Value("${spring.profiles.active:dev}")
     private String activeProfile;
+    
+    @Value("${spring.cors.allowed-origins}")
+    private String allowedOrigins;
 
     public void sendVerificationEmail(String toEmail, String token) {
-        String verificationUrl = "http://localhost:3000/verify-email?token=" + token;
+        String verificationUrl = allowedOrigins + "/verify-email?token=" + token;
 
         if ("dev".equals(activeProfile) || "local".equals(activeProfile)) {
             log.info("========================================");

@@ -1,14 +1,39 @@
 spring:
-  application:
-    name: postforge
+  cors:
+    allowed-origins: ${FRONT_URI}
 
-  profiles:
-    include: secret
+  datasource:
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+    driver-class-name: org.postgresql.Driver
 
   jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
     hibernate:
-      ddl-auto: update
+      ddl-auto: ${SPRING_JPA_DDL_AUTO:update}
+    show-sql: ${SPRING_JPA_SHOW_SQL:false}
+    properties:
+      hibernate:
+        format_sql: true
 
-logging:
-  level:
-    sql: info
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: ${GMAIL_USERNAME}
+    password: ${GMAIL_PASSWORD}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
+          connectiontimeout: 5000
+          timeout: 5000
+          writetimeout: 5000
+
+jwt:
+  secret: ${JWT_SECRET}
+  accessTokenValidity: ${JWT_ACCESS_TOKEN_VALIDITY:15}
+  refreshTokenValidity: ${JWT_REFRESH_TOKEN_VALIDITY:7}
