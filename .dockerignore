@@ -17,6 +17,7 @@ logs/
 
 # Docker
 Dockerfile
+docker-compose-local.yml
 
 # DOCS
 docs/docker-notes.md
@@ -24,3 +25,6 @@ docs/
 
 # TEST
 src/test/
+
+# YAML
+**/src/main/resources/application-local.yml

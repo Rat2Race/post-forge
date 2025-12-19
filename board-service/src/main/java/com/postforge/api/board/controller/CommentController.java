@@ -20,7 +20,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/posts/{postId:\\d+}/comments")
+@RequestMapping("/posts/{postId:\\d+}/comments")
 @RequiredArgsConstructor
 public class CommentController {
 

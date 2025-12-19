@@ -50,10 +50,6 @@ public class Post extends AuditingFields {
 		this.comments.add(comment);
 	}
 
-	public void removeComment(Comment comment) {
-		this.comments.remove(comment);
-	}
-
 	public void update(String title, String content) {
 		this.title = title;
 		this.content = content;
