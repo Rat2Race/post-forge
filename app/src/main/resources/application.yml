@@ -1,6 +1,6 @@
 spring:
-  cors:
-    allowed-origins: ${FRONT_URI}
+  profiles:
+    active: local
 
   datasource:
     url: ${DB_URL}

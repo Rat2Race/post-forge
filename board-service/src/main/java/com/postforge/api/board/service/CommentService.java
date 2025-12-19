@@ -90,20 +90,7 @@ public class CommentService {
     public void deleteComment(Long commentId) {
         Comment comment = commentRepository.findById(commentId)
             .orElseThrow(() -> new CustomException(ErrorCode.COMMENT_NOT_FOUND));
-
-        // 답글이 있으면 먼저 삭제
-        if (!comment.getReplies().isEmpty()) {
-            for (Comment reply : comment.getReplies()) {
-                commentRepository.delete(reply);
-            }
-        }
-
-        if (comment.getParent() != null) {
-            comment.getParent().removeReply(comment);
-        }
-
-        comment.getPost().removeComment(comment);
-
+        
         commentRepository.delete(comment);
     }
 

@@ -35,12 +35,12 @@ public class SecurityConfig {
     private final JwtUtil jwtUtil;
     private final JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
     private final JwtAccessDeniedHandler jwtAccessDeniedHandler;
-    
+
     @Bean
     public PasswordEncoder passwordEncoder() {
         return PasswordEncoderFactories.createDelegatingPasswordEncoder();
     }
-    
+
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration) throws Exception {
         return authenticationConfiguration.getAuthenticationManager();
@@ -59,33 +59,34 @@ public class SecurityConfig {
                 .authenticationEntryPoint(jwtAuthenticationEntryPoint)
                 .accessDeniedHandler(jwtAccessDeniedHandler))
             .authorizeHttpRequests(auth -> auth
+//                .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                 // ===== 공개 API =====
-                .requestMatchers(HttpMethod.POST, "/api/auth/register").permitAll()
-                .requestMatchers(HttpMethod.POST, "/api/auth/login").permitAll()
-                .requestMatchers(HttpMethod.POST, "/api/auth/reissue").permitAll()
-                .requestMatchers(HttpMethod.POST, "/api/auth/email/send").permitAll()
-                .requestMatchers(HttpMethod.GET, "/api/auth/email/verify").permitAll()
-                .requestMatchers(HttpMethod.GET, "/api/posts").permitAll()
-                .requestMatchers(HttpMethod.GET, "/api/posts/*").permitAll()
-                .requestMatchers(HttpMethod.GET, "/api/posts/*/comments").permitAll()
+                .requestMatchers(HttpMethod.POST, "/auth/register").permitAll()
+                .requestMatchers(HttpMethod.POST, "/auth/login").permitAll()
+                .requestMatchers(HttpMethod.POST, "/auth/reissue").permitAll()
+                .requestMatchers(HttpMethod.POST, "/auth/email/send").permitAll()
+                .requestMatchers(HttpMethod.GET, "/auth/email/verify").permitAll()
+                .requestMatchers(HttpMethod.GET, "/posts").permitAll()
+                .requestMatchers(HttpMethod.GET, "/posts/*").permitAll()
+                .requestMatchers(HttpMethod.GET, "/posts/*/comments").permitAll()
                 .requestMatchers("/images/**").permitAll()
 
-                .requestMatchers("/api/auth/security").permitAll()
+                .requestMatchers("/auth/security").permitAll()
 
                 // ===== 인증 필요 API =====
-                .requestMatchers("/api/user/**").hasAnyRole("USER", "ADMIN")
-                .requestMatchers(HttpMethod.POST, "/api/auth/logout").hasAnyRole("USER", "ADMIN")
-                .requestMatchers(HttpMethod.POST, "/api/posts").hasRole("USER")
-                .requestMatchers(HttpMethod.PUT, "/api/posts/*").hasAnyRole("USER", "ADMIN")
-                .requestMatchers(HttpMethod.DELETE, "/api/posts/*").hasAnyRole("USER", "ADMIN")
-                .requestMatchers(HttpMethod.POST, "/api/posts/*/like").hasRole("USER")
-                .requestMatchers(HttpMethod.POST, "/api/posts/*/comments").hasRole("USER")
-                .requestMatchers(HttpMethod.PUT, "/api/posts/*/comments/*").hasAnyRole("USER", "ADMIN")
-                .requestMatchers(HttpMethod.DELETE, "/api/posts/*/comments/*").hasAnyRole("USER", "ADMIN")
-                .requestMatchers(HttpMethod.POST, "/api/posts/*/comments/*/like").hasRole("USER")
+                .requestMatchers("/user/**").hasAnyRole("USER", "ADMIN")
+                .requestMatchers(HttpMethod.POST, "/auth/logout").hasAnyRole("USER", "ADMIN")
+                .requestMatchers(HttpMethod.POST, "/posts").hasRole("USER")
+                .requestMatchers(HttpMethod.PUT, "/posts/*").hasAnyRole("USER", "ADMIN")
+                .requestMatchers(HttpMethod.DELETE, "/posts/*").hasAnyRole("USER", "ADMIN")
+                .requestMatchers(HttpMethod.POST, "/posts/*/like").hasRole("USER")
+                .requestMatchers(HttpMethod.POST, "/posts/*/comments").hasRole("USER")
+                .requestMatchers(HttpMethod.PUT, "/posts/*/comments/*").hasAnyRole("USER", "ADMIN")
+                .requestMatchers(HttpMethod.DELETE, "/posts/*/comments/*").hasAnyRole("USER", "ADMIN")
+                .requestMatchers(HttpMethod.POST, "/posts/*/comments/*/like").hasRole("USER")
 
                 // ===== 관리자 전용 API =====
-                .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                .requestMatchers("/admin/**").hasRole("ADMIN")
 
                 .anyRequest().authenticated())
             .addFilterBefore(

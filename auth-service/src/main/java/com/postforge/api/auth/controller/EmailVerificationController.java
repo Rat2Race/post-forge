@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/api/auth/email")
+@RequestMapping("/auth/email")
 @RequiredArgsConstructor
 @Slf4j
 public class EmailVerificationController {
