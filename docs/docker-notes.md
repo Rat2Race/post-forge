@@ -1,6 +1,7 @@
 # Dockerfile 설명
+***
 
-## FROM gradle:8.5-jdk17 AS build
+#### FROM gradle:8.5-jdk17 AS build
 - gradle 8.5 + JDK 17 이미지 사용해서 빌드
 - `AS build` = 이 단계 이름은 "build"
 
@@ -31,3 +32,5 @@ build 단계에서 만든 jar 파일 가져오기
 
 ## ENTRYPOINT ["java", "-jar", "app.jar"]
 - 컨테이너 시작하면 이 명령어 실행
+
+
