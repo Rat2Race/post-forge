@@ -24,8 +24,13 @@ public class EmailService {
     @Value("${spring.profiles.active:dev}")
     private String activeProfile;
     
+//    //local
     @Value("${spring.cors.allowed-origins}")
     private String allowedOrigins;
+    
+//    //cloud
+//    @Value("${cors.allowed-origins}")
+//    private String allowedOrigins;
 
     public void sendVerificationEmail(String toEmail, String token) {
         String verificationUrl = allowedOrigins + "/verify-email?token=" + token;
