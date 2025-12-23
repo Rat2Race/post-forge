@@ -4,9 +4,8 @@ plugins {
 }
 
 dependencies {
-    implementation project(':auth-service')
-    implementation project(':board-service')
-    implementation project(':security-api')
+    implementation project(':auth')
+    implementation project(':board')
 
     implementation 'org.springframework.boot:spring-boot-starter'
     implementation 'org.springframework.boot:spring-boot-starter-web'
