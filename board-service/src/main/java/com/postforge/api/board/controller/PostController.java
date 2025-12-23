@@ -51,11 +51,17 @@ public class PostController {
 
     @GetMapping
     public ResponseEntity<Page<PostDetailResponse>> getPosts(
+        @RequestParam(required = false) String keyword,
         @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable,
         @AuthenticationPrincipal UserDetails user
     ) {
-        String userId = user != null ? user.getUsername() : null;
-        Page<PostDetailResponse> posts = postService.getPosts(pageable, userId);
+        String userId = user != null
+            ? user.getUsername()
+            : null;
+        
+        Page<PostDetailResponse> posts = keyword != null
+            ? postService.searchPosts(keyword, pageable, userId)
+            : postService.getPosts(pageable, userId);
 
         return ResponseEntity.ok(posts);
     }

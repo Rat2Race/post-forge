@@ -38,6 +38,11 @@ public class PostService {
         return postRepository.findAll(pageable)
             .map(post -> getPostDetailResponse(post, userId));
     }
+    
+    public Page<PostDetailResponse> searchPosts(String keyword, Pageable pageable, String userId) {
+        return postRepository.findByKeyword(keyword, pageable)
+            .map(post -> getPostDetailResponse(post, userId));
+    }
 
     @Transactional
     public PostDetailResponse getPost(Long postId, boolean incrementView, String userId) {
