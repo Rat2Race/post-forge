@@ -1,6 +1,5 @@
 package com.postforge.domain.member.dto.request;
 
-import com.postforge.api.auth.dto.LoginRequest;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
@@ -15,8 +14,4 @@ public record CommonLoginRequest(
     @NotBlank(message = "비밀번호는 필수입니다")
     String pw
 ) {
-
-    public static CommonLoginRequest from(LoginRequest request) {
-        return new CommonLoginRequest(request.id(), request.pw());
-    }
 }

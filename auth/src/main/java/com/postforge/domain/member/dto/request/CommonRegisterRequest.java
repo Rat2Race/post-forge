@@ -1,6 +1,5 @@
 package com.postforge.domain.member.dto.request;
 
-import com.postforge.api.auth.dto.RegisterRequest;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
@@ -33,7 +32,4 @@ public record CommonRegisterRequest(
     @Pattern(regexp = "^[가-힣a-zA-Z0-9]+$", message = "닉네임은 한글, 영문, 숫자만 가능합니다")
     String nickname
 ) {
-    public static CommonRegisterRequest from(RegisterRequest request) {
-        return new CommonRegisterRequest(request.name(), request.id(), request.pw(), request.email(), request.nickname());
-    }
 }
