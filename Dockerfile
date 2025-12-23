@@ -5,19 +5,17 @@ COPY build.gradle settings.gradle ./
 COPY gradle ./gradle
 
 COPY app/build.gradle ./app/
-COPY auth-service/build.gradle ./auth-service/
-COPY board-service/build.gradle ./board-service/
-COPY common-lib/build.gradle ./common-lib/
-COPY security-api/build.gradle ./security-api/
+COPY auth/build.gradle ./auth/
+COPY board/build.gradle ./board/
+COPY core/build.gradle ./core/
 
 RUN --mount=type=cache,target=/root/.gradle \
     gradle dependencies --no-daemon
 
 COPY app/src ./app/src
-COPY auth-service/src ./auth-service/src
-COPY board-service/src ./board-service/src
-COPY common-lib/src ./common-lib/src
-COPY security-api/src ./security-api/src
+COPY auth/src ./auth/src
+COPY board/src ./board/src
+COPY core/src ./core/src
 
 RUN --mount=type=cache,target=/root/.gradle \
     gradle clean :app:build -x test --no-daemon
