@@ -33,6 +33,15 @@ spring:
           timeout: 5000
           writetimeout: 5000
 
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            client-id: ${}
+            client-secret: ${}
+            scope: profile, email
+
 jwt:
   secret: ${JWT_SECRET}
   accessTokenValidity: ${JWT_ACCESS_TOKEN_VALIDITY:15}

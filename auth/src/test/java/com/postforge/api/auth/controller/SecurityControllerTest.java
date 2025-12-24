@@ -8,10 +8,11 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.postforge.api.auth.service.CommonAuthService;
-import com.postforge.domain.member.dto.request.CommonLoginRequest;
-import com.postforge.domain.member.dto.request.CommonRegisterRequest;
-import com.postforge.global.security.dto.TokenResponse;
+import com.postforge.email.controller.CommonAuthController;
+import com.postforge.member.service.CommonAuthService;
+import com.postforge.member.dto.CommonLoginRequest;
+import com.postforge.member.dto.CommonRegisterRequest;
+import com.postforge.token.dto.TokenResponse;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.springframework.beans.factory.annotation.Autowired;
