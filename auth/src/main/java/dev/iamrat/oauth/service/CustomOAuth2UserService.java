@@ -1,0 +1,64 @@
+package dev.iamrat.oauth.service;
+
+import dev.iamrat.member.entity.Member;
+import dev.iamrat.member.entity.Role;
+import dev.iamrat.member.repository.MemberRepository;
+import dev.iamrat.member.service.MemberService;
+import dev.iamrat.oauth.dto.CustomOAuth2User;
+import dev.iamrat.oauth.dto.GoogleUserInfo;
+import dev.iamrat.oauth.dto.OAuth2UserInfo;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.oauth2.client.userinfo.DefaultOAuth2UserService;
+import org.springframework.security.oauth2.client.userinfo.OAuth2UserRequest;
+import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
+import org.springframework.security.oauth2.core.user.OAuth2User;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+@RequiredArgsConstructor
+@Service
+@Transactional
+@Slf4j
+public class CustomOAuth2UserService extends DefaultOAuth2UserService {
+    
+    private final MemberRepository memberRepository;
+    private final MemberService memberService;
+    
+    @Override
+    public OAuth2User loadUser(OAuth2UserRequest userRequest) throws OAuth2AuthenticationException {
+        OAuth2User oAuth2User = super.loadUser(userRequest);
+        
+        String registrationId = userRequest.getClientRegistration().getRegistrationId();
+        OAuth2UserInfo userInfo = getUserInfo(registrationId, oAuth2User);
+        
+        String provider = registrationId.toUpperCase();
+        String providerId = userInfo.getId();
+        
+        Member member = memberRepository.findByProviderAndProviderId(provider, providerId)
+            .orElseGet(() -> createMember(provider, providerId, userInfo));
+        
+        log.info("OAuth2 로그인: provider={}, providerId={}, email={}", provider, providerId, member.getEmail());
+        
+        return new CustomOAuth2User(member, oAuth2User.getAttributes());
+    }
+    
+    private OAuth2UserInfo getUserInfo(String registrationId, OAuth2User oAuth2User) {
+        if("google".equals(registrationId)){
+            return new GoogleUserInfo(oAuth2User.getAttributes());
+        }
+        throw new OAuth2AuthenticationException("지원하지 않는 소셜 로그인: " + registrationId);
+    }
+    
+    private Member createMember(String provider, String providerId, OAuth2UserInfo userInfo) {
+        return memberService.createMember(
+            userInfo.getName(),
+            provider + "_" + providerId,
+            "",
+            userInfo.getEmail(),
+            userInfo.getName(),
+            provider,
+            providerId
+        );
+    }
+}
