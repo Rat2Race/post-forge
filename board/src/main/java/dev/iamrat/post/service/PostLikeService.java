@@ -43,7 +43,7 @@ public class PostLikeService {
 
     public Long getLikeCount(Long postId) {
         Post post = postRepository.findById(postId)
-            .orElseThrow(() -> new CustomException(ErrorCode.COMMENT_NOT_FOUND));
+            .orElseThrow(() -> new CustomException(ErrorCode.POST_NOT_FOUND));
 
         return post.getLikeCount();
     }

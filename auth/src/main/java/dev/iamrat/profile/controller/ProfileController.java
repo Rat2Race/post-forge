@@ -1,7 +1,7 @@
 package dev.iamrat.profile.controller;
 
 import dev.iamrat.member.dto.MemberResponse;
-import dev.iamrat.security.dto.CustomUserDetails;
+import dev.iamrat.login.dto.CustomUserDetails;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -23,7 +23,6 @@ public class ProfileController {
         @AuthenticationPrincipal CustomUserDetails userDetails) {
 
         MemberResponse response = MemberResponse.builder()
-            .id(userDetails.id())
             .userId(userDetails.userId())
             .roles(userDetails.getAuthorities().stream()
                 .map(GrantedAuthority::getAuthority)

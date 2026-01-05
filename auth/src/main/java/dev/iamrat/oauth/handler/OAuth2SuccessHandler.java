@@ -1,10 +1,7 @@
 package dev.iamrat.oauth.handler;
 
-import dev.iamrat.oauth.dto.CustomOAuth2User;
 import dev.iamrat.token.dto.TokenResponse;
-import dev.iamrat.token.entity.RefreshToken;
 import dev.iamrat.token.provider.JwtProvider;
-import dev.iamrat.token.repository.RefreshTokenRepository;
 import dev.iamrat.token.service.TokenService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -16,7 +13,6 @@ import org.springframework.security.web.authentication.SimpleUrlAuthenticationSu
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
-import java.time.LocalDateTime;
 
 @Component
 @RequiredArgsConstructor
@@ -32,15 +28,19 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response,
                                         Authentication authentication) throws IOException {
-        CustomOAuth2User oAuth2User = (CustomOAuth2User) authentication.getPrincipal();
         TokenResponse token = tokenService.createToken(authentication);
         
         log.info("OAuth2 로그인 성공, JWT 발급: userId={}", jwtProvider.getClaims(token.accessToken()).getId());
         
-        String redirectUrl = frontendUrl + "/oauth/callback"
-            + "?accessToken=" + token.accessToken()
-            + "&refreshToken=" + token.refreshToken();
+//        String redirectUrl = frontendUrl + "/oauth/callback"
+//            + "?accessToken=" + token.accessToken()
+//            + "&refreshToken=" + token.refreshToken();
+//
+//        response.sendRedirect(redirectUrl);
         
-        response.sendRedirect(redirectUrl);
+        response.setContentType("application/json;charset=UTF-8");
+        response.getWriter().write("""
+        {"accessToken": "%s", "refreshToken": "%s"}
+        """.formatted(token.accessToken(), token.refreshToken()));
     }
 }
