@@ -44,7 +44,7 @@ public class Member {
     @Column(nullable = false, unique = true, length = 50)
     private String userId;
 
-    @Column(nullable = false)
+    @Column
     private String userPw;
 
     @Column(nullable = false, unique = true, length = 100)
