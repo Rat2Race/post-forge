@@ -8,7 +8,7 @@ public record GoogleUserInfo(
     
     @Override
     public String getId() {
-        return (String)  attributes.get("id");
+        return (String) attributes.get("sub");
     }
     
     @Override

@@ -38,8 +38,6 @@ public class TokenService {
             .build();
     }
     
-//    일반로그인 / OAuth로그인 토큰 생성 분리
-    
     public TokenResponse reissueToken(String refreshToken) {
         String userId = jwtProvider.getClaims(refreshToken).getSubject();
         

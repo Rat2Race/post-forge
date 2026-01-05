@@ -1,13 +1,13 @@
-package dev.iamrat.security.dto;
+package dev.iamrat.login.dto;
 
 import java.util.Collection;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 public record CustomUserDetails(
-    Long id,
     String userId,
     String userPw,
+    String nickname,
     Collection<GrantedAuthority> authorities
 ) implements UserDetails {
 
@@ -24,5 +24,9 @@ public record CustomUserDetails(
     @Override
     public String getPassword() {
         return userPw;
+    }
+    
+    public String getNickname() {
+        return nickname;
     }
 }

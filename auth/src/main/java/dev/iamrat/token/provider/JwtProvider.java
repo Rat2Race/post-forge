@@ -2,7 +2,7 @@ package dev.iamrat.token.provider;
 
 import dev.iamrat.global.exception.CustomException;
 import dev.iamrat.global.exception.ErrorCode;
-import dev.iamrat.security.dto.CustomUserDetails;
+import dev.iamrat.login.dto.CustomUserDetails;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.JwtBuilder;
@@ -15,12 +15,7 @@ import jakarta.annotation.PostConstruct;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 import javax.crypto.SecretKey;
 import lombok.RequiredArgsConstructor;
@@ -30,6 +25,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.stereotype.Component;
 
 @Slf4j
@@ -38,6 +34,7 @@ import org.springframework.stereotype.Component;
 public class JwtProvider {
 
     private final JwtProperties jwtProperties;
+    private final UserDetailsService userDetailsService;
     private SecretKey key;
 
     @PostConstruct
@@ -50,10 +47,9 @@ public class JwtProvider {
         String userId = authentication.getName();
         Collection<? extends GrantedAuthority> authorities = authentication.getAuthorities();
 
-        Map<String, Object> claims = Map.of(
-            "roles", authorities.stream()
-                .map(GrantedAuthority::getAuthority)
-                .toList());
+        Map<String, Object> claims = new HashMap<>();
+        
+        claims.put("roles", authorities.stream().map(GrantedAuthority::getAuthority).collect(Collectors.toList()));
 
         return createToken(userId, claims,
             Duration.ofMinutes(jwtProperties.getAccessTokenValidity()), true);
@@ -83,32 +79,34 @@ public class JwtProvider {
         }
     }
 
-    @SuppressWarnings("unchecked")
     public Authentication getAuthentication(String token) {
         Claims claims = getClaims(token);
         String userId = claims.getSubject();
-        List<String> roles = claims.get("roles", List.class);
-
-        if (roles == null || roles.isEmpty()) {
+        log.debug("[JWT] Claims 파싱 성공 - subject={}", userId);
+        
+        if (userId == null || userId.isBlank()) {
+            log.warn("[JWT] subject 값이 비어있음");
             throw new CustomException(ErrorCode.INVALID_TOKEN);
         }
-
-        Collection<GrantedAuthority> authorities = roles.stream()
-            .map(SimpleGrantedAuthority::new)
-            .collect(Collectors.toList());
-
-        UserDetails principal = new CustomUserDetails(
-            null,
-            userId,
-            "",
-            authorities
-        );
-
-        return UsernamePasswordAuthenticationToken.authenticated(
-            principal,
-            token,
-            principal.getAuthorities()
-        );
+        
+        log.debug("[JWT] UserDetails 조회 시작 - userId={}", userId);
+        
+        UserDetails userDetails = userDetailsService.loadUserByUsername(userId);
+        
+        log.debug("[JWT] UserDetails 조회 성공 - authorities={}",
+            userDetails.getAuthorities());
+        
+        Authentication auth =
+            UsernamePasswordAuthenticationToken.authenticated(
+                userDetails,
+                token,
+                userDetails.getAuthorities()
+            );
+        
+        log.debug("[JWT] Authentication 생성 완료 - principal={}",
+            userDetails.getUsername());
+        
+        return auth;
     }
 
     private String createToken(

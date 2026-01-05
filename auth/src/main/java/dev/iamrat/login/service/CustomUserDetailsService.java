@@ -1,11 +1,11 @@
-package dev.iamrat.security.service;
+package dev.iamrat.login.service;
 
 import dev.iamrat.member.entity.Member;
 import dev.iamrat.member.repository.MemberRepository;
 import java.util.Collection;
 import java.util.stream.Collectors;
 
-import dev.iamrat.security.dto.CustomUserDetails;
+import dev.iamrat.login.dto.CustomUserDetails;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -37,9 +37,9 @@ public class CustomUserDetailsService implements UserDetailsService {
             .collect(Collectors.toList());
 
         return new CustomUserDetails(
-            member.getId(),
             member.getUserId(),
             member.getUserPw(),
+            member.getNickname(),
             authorities
         );
     }
