@@ -4,10 +4,7 @@ import dev.iamrat.member.entity.Member;
 import dev.iamrat.member.entity.Role;
 import dev.iamrat.member.repository.MemberRepository;
 import dev.iamrat.member.service.MemberService;
-import dev.iamrat.oauth.dto.CustomOAuth2User;
-import dev.iamrat.oauth.dto.GoogleUserInfo;
-import dev.iamrat.oauth.dto.NaverUserInfo;
-import dev.iamrat.oauth.dto.OAuth2UserInfo;
+import dev.iamrat.oauth.dto.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.GrantedAuthority;
@@ -72,6 +69,7 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
         return switch (registrationId) {
             case "google" -> new GoogleUserInfo(oAuth2User.getAttributes());
             case "naver" -> new NaverUserInfo(oAuth2User.getAttributes());
+            case "kakao" -> new KakaoUserInfo(oAuth2User.getAttributes());
             default -> throw new OAuth2AuthenticationException("지원하지 않는 소셜 로그인: " + registrationId);
         };
     }
