@@ -17,6 +17,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Collection;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
@@ -38,8 +39,6 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
         String provider = registrationId.toUpperCase();
         String providerId = userInfo.getId();
         
-        String nicknameWithTag = provider.toLowerCase() + "_" + userInfo.getName();
-        
         Member member = memberRepository.findByProviderAndProviderId(provider, providerId)
             .orElseGet(() ->
                     memberService.createMember(
@@ -47,7 +46,7 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
                         providerId,
                         null,
                         userInfo.getEmail(),
-                        nicknameWithTag,
+                        generateUniqueNickname(userInfo.getNickname()),
                         provider,
                         providerId
                     )
@@ -66,6 +65,23 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
             oAuth2User.getAttributes(),
             authorities
         );
+    }
+    
+    private String generateUniqueNickname(String nickname) {
+        int maxRetries = 100;
+        
+        for (int i = 0; i < maxRetries; i++) {
+            if (!memberRepository.existsByNickname(nickname)) {
+                return nickname;
+            }
+            
+            String randomId = UUID.randomUUID().toString().substring(0, 8);
+            nickname = "user_" + randomId;
+        }
+        
+        String timestamp = String.valueOf(System.currentTimeMillis() % 1000000);
+        String random = UUID.randomUUID().toString().substring(0, 6);
+        return "user_" + timestamp + random;
     }
     
     private OAuth2UserInfo getUserInfo(String registrationId, OAuth2User oAuth2User) {

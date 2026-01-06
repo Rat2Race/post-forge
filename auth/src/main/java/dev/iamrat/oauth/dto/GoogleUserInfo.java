@@ -1,6 +1,7 @@
 package dev.iamrat.oauth.dto;
 
 import java.util.Map;
+import java.util.UUID;
 
 public record GoogleUserInfo(
     Map<String, Object> attributes
@@ -8,16 +9,22 @@ public record GoogleUserInfo(
     
     @Override
     public String getId() {
-        return (String) attributes.get("sub");
+        return String.valueOf(attributes.get("sub"));
     }
     
     @Override
     public String getEmail() {
-        return (String) attributes.get("email");
+        return String.valueOf(attributes.get("email"));
     }
     
     @Override
     public String getName() {
-        return (String) attributes.get("name");
+        return String.valueOf(attributes.get("name"));
+    }
+    
+    @Override
+    public String getNickname() {
+        String randomId = UUID.randomUUID().toString().substring(0, 8);
+        return "user_" + randomId;
     }
 }
