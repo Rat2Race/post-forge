@@ -13,6 +13,7 @@ import org.springframework.security.web.authentication.SimpleUrlAuthenticationSu
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
+import java.util.List;
 
 @Component
 @RequiredArgsConstructor
@@ -23,7 +24,7 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
     private final TokenService tokenService;
     
     @Value("${spring.cors.allowed-origins:http://localhost:5173}")
-    private String frontendUrl;
+    private String allowedOrigins;
     
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response,
@@ -32,7 +33,8 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
         
         log.info("OAuth2 로그인 성공, JWT 발급: userId={}", jwtProvider.getClaims(token.accessToken()).getId());
         
-        String redirectUrl = frontendUrl + "/oauth/callback"
+        String redirectUrl = List.of(allowedOrigins.split(",")).getFirst()
+            + "/oauth/callback"
             + "?accessToken=" + token.accessToken()
             + "&refreshToken=" + token.refreshToken();
 

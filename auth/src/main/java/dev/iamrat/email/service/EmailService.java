@@ -6,6 +6,8 @@ import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -33,7 +35,8 @@ public class EmailService {
 //    private String allowedOrigins;
 
     public void sendVerificationEmail(String toEmail, String token) {
-        String verificationUrl = allowedOrigins + "/verify-email?token=" + token;
+        String verificationUrl = List.of(allowedOrigins.split(",")).getFirst()
+            + "/verify-email?token=" + token;
 
         if ("dev".equals(activeProfile) || "local".equals(activeProfile)) {
             log.info("========================================");
