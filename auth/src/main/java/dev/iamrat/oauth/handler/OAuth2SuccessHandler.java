@@ -32,15 +32,15 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
         
         log.info("OAuth2 로그인 성공, JWT 발급: userId={}", jwtProvider.getClaims(token.accessToken()).getId());
         
-//        String redirectUrl = frontendUrl + "/oauth/callback"
-//            + "?accessToken=" + token.accessToken()
-//            + "&refreshToken=" + token.refreshToken();
-//
-//        response.sendRedirect(redirectUrl);
+        String redirectUrl = frontendUrl + "/oauth/callback"
+            + "?accessToken=" + token.accessToken()
+            + "&refreshToken=" + token.refreshToken();
+
+        response.sendRedirect(redirectUrl);
         
-        response.setContentType("application/json;charset=UTF-8");
-        response.getWriter().write("""
-        {"accessToken": "%s", "refreshToken": "%s"}
-        """.formatted(token.accessToken(), token.refreshToken()));
+//        response.setContentType("application/json;charset=UTF-8");
+//        response.getWriter().write("""
+//        {"accessToken": "%s", "refreshToken": "%s"}
+//        """.formatted(token.accessToken(), token.refreshToken()));
     }
 }
