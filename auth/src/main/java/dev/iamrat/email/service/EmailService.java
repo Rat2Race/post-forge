@@ -27,7 +27,7 @@ public class EmailService {
     private String activeProfile;
     
 //    //local
-    @Value("${spring.cors.allowed-origins}")
+    @Value("${spring.cors.allowed-origins:${cors.allowed-origins}}")
     private String allowedOrigins;
     
 //    //cloud
