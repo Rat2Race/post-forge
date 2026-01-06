@@ -23,7 +23,7 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
     private final JwtProvider jwtProvider;
     private final TokenService tokenService;
     
-    @Value("${spring.cors.allowed-origins:http://localhost:5173}")
+    @Value("${spring.cors.allowed-origins:${cors.allowed-origins}}")
     private String allowedOrigins;
     
     @Override

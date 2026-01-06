@@ -13,7 +13,7 @@ import java.util.List;
 @Slf4j
 @Configuration
 public class CorsConfig {
-    @Value("${cors.allowed-origins:${cors.allowed-origins:http://localhost:5173}}")
+    @Value("${spring.cors.allowed-origins:${cors.allowed-origins}}")
     private List<String> allowedOrigins;
     
     @Bean
