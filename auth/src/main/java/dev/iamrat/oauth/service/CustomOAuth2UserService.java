@@ -38,6 +38,8 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
         String provider = registrationId.toUpperCase();
         String providerId = userInfo.getId();
         
+        String nicknameWithTag = provider.toLowerCase() + "_" + userInfo.getName();
+        
         Member member = memberRepository.findByProviderAndProviderId(provider, providerId)
             .orElseGet(() ->
                     memberService.createMember(
@@ -45,11 +47,12 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
                         providerId,
                         null,
                         userInfo.getEmail(),
-                        userInfo.getName(),
+                        nicknameWithTag,
                         provider,
                         providerId
                     )
             );
+        //프로필 변경 API 만들어서 닉네임 중복 해결
         
         log.info("OAuth2 로그인: provider={}, providerId={}, email={}", provider, providerId, member.getEmail());
         
