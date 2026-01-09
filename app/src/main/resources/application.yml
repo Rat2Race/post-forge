@@ -67,8 +67,16 @@ spring:
             user-info-uri: https://kapi.kakao.com/v2/user/me
             user-name-attribute: id
 
-
 jwt:
   secret: ${JWT_SECRET}
   accessTokenValidity: ${JWT_ACCESS_TOKEN_VALIDITY:15}
   refreshTokenValidity: ${JWT_REFRESH_TOKEN_VALIDITY:7}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, info, prometheus
+  endpoint:
+    prometheus:
+      enabled: true
