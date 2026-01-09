@@ -33,6 +33,7 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
     public OAuth2User loadUser(OAuth2UserRequest userRequest) throws OAuth2AuthenticationException {
         OAuth2User oAuth2User = super.loadUser(userRequest);
         
+        //member 만드는거 분리해도 졿을 것 같음
         String registrationId = userRequest.getClientRegistration().getRegistrationId();
         OAuth2UserInfo userInfo = getUserInfo(registrationId, oAuth2User);
         
@@ -43,10 +44,10 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
             .orElseGet(() ->
                     memberService.createMember(
                         userInfo.getName(),
-                        providerId,
+                        userInfo.getId(),
                         null,
                         userInfo.getEmail(),
-                        generateUniqueNickname(userInfo.getNickname()),
+                        generateUniqueNickname(),
                         provider,
                         providerId
                     )
@@ -67,16 +68,17 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
         );
     }
     
-    private String generateUniqueNickname(String nickname) {
+    private String generateUniqueNickname() {
+        String nickname;
         int maxRetries = 100;
         
         for (int i = 0; i < maxRetries; i++) {
+            String randomId = UUID.randomUUID().toString().substring(0, 8);
+            nickname = "user_" + randomId;
+            
             if (!memberRepository.existsByNickname(nickname)) {
                 return nickname;
             }
-            
-            String randomId = UUID.randomUUID().toString().substring(0, 8);
-            nickname = "user_" + randomId;
         }
         
         String timestamp = String.valueOf(System.currentTimeMillis() % 1000000);
