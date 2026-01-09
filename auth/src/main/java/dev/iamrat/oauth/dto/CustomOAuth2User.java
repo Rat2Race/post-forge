@@ -28,7 +28,4 @@ public record CustomOAuth2User(
         return userId;
     }
     
-    public String getNickname() {
-        return nickname;
-    }
 }

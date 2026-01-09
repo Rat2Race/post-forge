@@ -1,7 +1,6 @@
 package dev.iamrat.oauth.dto;
 
 import java.util.Map;
-import java.util.UUID;
 
 public record GoogleUserInfo(
     Map<String, Object> attributes
@@ -22,9 +21,4 @@ public record GoogleUserInfo(
         return String.valueOf(attributes.get("name"));
     }
     
-    @Override
-    public String getNickname() {
-        String randomId = UUID.randomUUID().toString().substring(0, 8);
-        return "user_" + randomId;
-    }
 }

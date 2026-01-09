@@ -34,7 +34,7 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
         log.info("OAuth2 로그인 성공, JWT 발급: userId={}", jwtProvider.getClaims(token.accessToken()).getId());
         
         String redirectUrl = List.of(allowedOrigins.split(",")).getFirst()
-            + "/oauth/callback"
+            + "/oauth2/callback"
             + "?accessToken=" + token.accessToken()
             + "&refreshToken=" + token.refreshToken();
 
