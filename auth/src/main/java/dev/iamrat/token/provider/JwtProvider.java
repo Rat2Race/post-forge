@@ -3,6 +3,7 @@ package dev.iamrat.token.provider;
 import dev.iamrat.global.exception.CustomException;
 import dev.iamrat.global.exception.ErrorCode;
 import dev.iamrat.login.dto.CustomUserDetails;
+import dev.iamrat.login.service.CustomUserDetailsService;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.JwtBuilder;
@@ -34,7 +35,7 @@ import org.springframework.stereotype.Component;
 public class JwtProvider {
 
     private final JwtProperties jwtProperties;
-    private final UserDetailsService userDetailsService;
+    private final CustomUserDetailsService customUserDetailsService;
     private SecretKey key;
 
     @PostConstruct
@@ -91,7 +92,7 @@ public class JwtProvider {
         
         log.debug("[JWT] UserDetails 조회 시작 - userId={}", userId);
         
-        UserDetails userDetails = userDetailsService.loadUserByUsername(userId);
+        UserDetails userDetails = customUserDetailsService.loadUserByUsername(userId);
         
         log.debug("[JWT] UserDetails 조회 성공 - authorities={}",
             userDetails.getAuthorities());
