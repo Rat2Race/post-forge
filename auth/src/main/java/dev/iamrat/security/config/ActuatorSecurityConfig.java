@@ -23,7 +23,7 @@ public class ActuatorSecurityConfig {
     private String password;
     
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain actuatorSecurityFilterChain(HttpSecurity http) throws Exception {
         http
             .securityMatcher("/actuator/**")
             .authorizeHttpRequests(auth -> auth
