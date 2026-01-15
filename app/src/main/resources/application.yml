@@ -80,3 +80,7 @@ management:
   endpoint:
     prometheus:
       enabled: true
+
+monitoring:
+  username: prometheus
+  password: prometheusTest
