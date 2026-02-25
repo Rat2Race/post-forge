@@ -95,14 +95,14 @@ public class PostController {
         @RequestBody PostRequest postRequest,
         @AuthenticationPrincipal UserDetails user
     ) {
-        PostSummaryResponse response = postService.updatePost(
+        PostSummaryResponse modifiedPost = postService.updatePost(
             postId,
             postRequest.title(),
             postRequest.content(),
             user.getUsername()
         );
 
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(modifiedPost);
     }
 
     @DeleteMapping("/{postId:\\d+}")
@@ -121,8 +121,8 @@ public class PostController {
         @PathVariable("postId") Long postId,
         @AuthenticationPrincipal UserDetails user
     ) {
-        LikeResponse response = postLikeService.toggleLike(postId, user.getUsername());
+        LikeResponse likeStatus = postLikeService.toggleLike(postId, user.getUsername());
 
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(likeStatus);
     }
 }

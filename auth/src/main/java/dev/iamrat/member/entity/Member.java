@@ -15,6 +15,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.Table;
 import java.time.LocalDateTime;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -24,6 +25,7 @@ import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 @Table(name = "members")
@@ -76,15 +78,21 @@ public class Member {
 
     @LastModifiedDate
     private LocalDateTime updatedAt;
-
+    
+    public List<SimpleGrantedAuthority> getAuthorities() {
+        return roles.stream()
+            .map(role -> new SimpleGrantedAuthority(role.getValue()))
+            .toList();
+    }
+    
     public void addRole(Role role) {
         this.roles.add(role);
     }
-
+    
     public void updateProfile(String nickname) {
         this.nickname = nickname;
     }
-
+    
     public void changePassword(String newPassword, PasswordEncoder passwordEncoder) {
         this.userPw  = passwordEncoder.encode(newPassword);
     }

@@ -18,7 +18,6 @@ import org.springframework.stereotype.Component;
 @Component
 @RequiredArgsConstructor
 public class JwtAccessDeniedHandler implements AccessDeniedHandler {
-
     private final ObjectMapper objectMapper;
 
     @Override
@@ -32,7 +31,7 @@ public class JwtAccessDeniedHandler implements AccessDeniedHandler {
         response.setCharacterEncoding("UTF-8");
 
         ErrorResponse errorResponse = ErrorResponse.builder()
-            .status(HttpStatus.UNAUTHORIZED.value())
+            .status(HttpStatus.FORBIDDEN.value())
             .error("FORBIDDEN")
             .message("접근 권한이 없습니다.")
             .timestamp(LocalDateTime.now())

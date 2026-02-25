@@ -14,7 +14,6 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequiredArgsConstructor
 public class ProfileController {
-
     private final PasswordEncoder passwordEncoder;
 
     @GetMapping("/user/profile")

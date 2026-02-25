@@ -3,6 +3,10 @@ plugins {
     id "org.springframework.boot"
 }
 
+bootJar {
+    mainClass = 'dev.iamrat.app.ApplicationServer'
+}
+
 dependencies {
     implementation project(':core')
     implementation project(':auth')

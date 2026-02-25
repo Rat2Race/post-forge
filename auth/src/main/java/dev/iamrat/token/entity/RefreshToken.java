@@ -19,7 +19,6 @@ import lombok.NoArgsConstructor;
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class RefreshToken {
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -43,10 +42,6 @@ public class RefreshToken {
     public void validateToken(String requestToken) {
         if (!this.token.equals(requestToken)) {
             throw new CustomException(ErrorCode.INVALID_TOKEN);
-        }
-
-        if (LocalDateTime.now().isAfter(this.expiryDate)) {
-            throw new CustomException(ErrorCode.EXPIRED_TOKEN);
         }
     }
 
