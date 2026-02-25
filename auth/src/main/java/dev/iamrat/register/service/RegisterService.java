@@ -17,7 +17,6 @@ import java.util.Random;
 @Service
 @RequiredArgsConstructor
 public class RegisterService {
-    
     private final MemberService memberService;
     private final MemberRepository memberRepository;
     private final EmailVerificationRepository emailVerificationRepository;

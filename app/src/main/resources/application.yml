@@ -12,7 +12,8 @@ spring:
     database-platform: org.hibernate.dialect.PostgreSQLDialect
     hibernate:
       ddl-auto: ${SPRING_JPA_DDL_AUTO:create}
-    show-sql: ${SPRING_JPA_SHOW_SQL:false}
+#    show-sql: ${SPRING_JPA_SHOW_SQL:false}
+    show-sql: true
     properties:
       hibernate:
         format_sql: true

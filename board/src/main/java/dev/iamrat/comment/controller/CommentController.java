@@ -66,14 +66,14 @@ public class CommentController {
         @PathVariable("commentId") Long commentId,
         @RequestBody @Valid CommentRequest commentRequest
     ) {
-        CommentSummaryResponse response = commentService.updateComment(
+        CommentSummaryResponse modifiedComment = commentService.updateComment(
             commentId,
             commentRequest.content()
         );
 
         return ResponseEntity
             .status(HttpStatus.OK)
-            .body(response);
+            .body(modifiedComment);
     }
 
     @DeleteMapping("/{commentId:\\d+}")
@@ -92,8 +92,8 @@ public class CommentController {
         @PathVariable("commentId") Long commentId,
         @AuthenticationPrincipal UserDetails user
     ) {
-        LikeResponse response = commentLikeService.toggleLike(commentId, user.getUsername());
+        LikeResponse likeStatus = commentLikeService.toggleLike(commentId, user.getUsername());
 
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(likeStatus);
     }
 }

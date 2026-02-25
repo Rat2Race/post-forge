@@ -32,7 +32,6 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @RequiredArgsConstructor
 @ConditionalOnWebApplication
 public class SecurityConfig {
-
     private final JwtProvider jwtProvider;
     private final JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
     private final JwtAccessDeniedHandler jwtAccessDeniedHandler;

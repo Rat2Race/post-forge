@@ -25,65 +25,31 @@ import java.util.stream.Collectors;
 @Transactional
 @Slf4j
 public class CustomOAuth2UserService extends DefaultOAuth2UserService {
-    
-    private final MemberRepository memberRepository;
-    private final MemberService memberService;
+    private final OAuth2MemberService oAuth2MemberService;
     
     @Override
     public OAuth2User loadUser(OAuth2UserRequest userRequest) throws OAuth2AuthenticationException {
-        OAuth2User oAuth2User = super.loadUser(userRequest);
+        OAuth2User oAuth2User = loadOAuth2User(userRequest);
         
-        //member 만드는거 분리해도 졿을 것 같음
         String registrationId = userRequest.getClientRegistration().getRegistrationId();
         OAuth2UserInfo userInfo = getUserInfo(registrationId, oAuth2User);
         
         String provider = registrationId.toUpperCase();
-        String providerId = userInfo.getId();
+        Member member = oAuth2MemberService.getOrCreateMember(provider, userInfo);
         
-        Member member = memberRepository.findByProviderAndProviderId(provider, providerId)
-            .orElseGet(() ->
-                    memberService.createMember(
-                        userInfo.getName(),
-                        userInfo.getId(),
-                        null,
-                        userInfo.getEmail(),
-                        generateUniqueNickname(),
-                        provider,
-                        providerId
-                    )
-            );
-        //프로필 변경 API 만들어서 닉네임 중복 해결
-        
-        log.info("OAuth2 로그인: provider={}, providerId={}, email={}", provider, providerId, member.getEmail());
-        
-        Collection<GrantedAuthority> authorities = member.getRoles().stream()
-            .map(role -> new SimpleGrantedAuthority(role.getValue()))
-            .collect(Collectors.toList());
+        log.info("OAuth2 로그인: provider={}, providerId={}, email={}, nickname={}",
+            member.getProvider(), member.getId(), member.getEmail(), member.getNickname());
         
         return new CustomOAuth2User(
             member.getUserId(),
             member.getNickname(),
             oAuth2User.getAttributes(),
-            authorities
+            member.getAuthorities()
         );
     }
     
-    private String generateUniqueNickname() {
-        String nickname;
-        int maxRetries = 100;
-        
-        for (int i = 0; i < maxRetries; i++) {
-            String randomId = UUID.randomUUID().toString().substring(0, 8);
-            nickname = "user_" + randomId;
-            
-            if (!memberRepository.existsByNickname(nickname)) {
-                return nickname;
-            }
-        }
-        
-        String timestamp = String.valueOf(System.currentTimeMillis() % 1000000);
-        String random = UUID.randomUUID().toString().substring(0, 6);
-        return "user_" + timestamp + random;
+    protected OAuth2User loadOAuth2User(OAuth2UserRequest oAuth2UserRequest) {
+        return super.loadUser(oAuth2UserRequest);
     }
     
     private OAuth2UserInfo getUserInfo(String registrationId, OAuth2User oAuth2User) {

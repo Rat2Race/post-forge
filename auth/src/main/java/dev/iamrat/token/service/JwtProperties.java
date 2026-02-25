@@ -1,4 +1,4 @@
-package dev.iamrat.token.provider;
+package dev.iamrat.token.service;
 
 import lombok.Getter;
 import lombok.Setter;

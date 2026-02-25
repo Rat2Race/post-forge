@@ -10,7 +10,7 @@ public record CustomOAuth2User(
     String userId,
     String nickname,
     Map<String, Object> attributes,
-    Collection<GrantedAuthority> authorities
+    Collection<? extends GrantedAuthority> authorities
 ) implements OAuth2User {
     
     @Override

@@ -15,7 +15,6 @@ import org.springframework.security.web.SecurityFilterChain;
 @Configuration
 @Order(1)
 public class ActuatorSecurityConfig {
-    
     @Value("${monitoring.username}")
     private String username;
     

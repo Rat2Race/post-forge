@@ -17,7 +17,6 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 @Slf4j
 public class RegisterController {
-    
     private final RegisterService registerService;
     
     @PostMapping

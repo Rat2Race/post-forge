@@ -1,9 +1,8 @@
 package dev.iamrat.login.controller;
 
 import dev.iamrat.login.service.LoginService;
-import dev.iamrat.member.service.MemberService;
 import dev.iamrat.login.dto.LoginRequest;
-import dev.iamrat.token.dto.TokenResponse;
+import dev.iamrat.token.dto.JwtResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -21,13 +20,12 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 @Slf4j
 public class LoginController {
-
     private final LoginService loginService;
 
     @PostMapping("/login")
-    public ResponseEntity<TokenResponse> login(@Valid @RequestBody LoginRequest request) {
-        TokenResponse tokenResponse = loginService.login(request);
-        return ResponseEntity.ok(tokenResponse);
+    public ResponseEntity<JwtResponse> login(@Valid @RequestBody LoginRequest request) {
+        JwtResponse jwtResponse = loginService.login(request);
+        return ResponseEntity.ok(jwtResponse);
     }
 
     @PostMapping("/logout")

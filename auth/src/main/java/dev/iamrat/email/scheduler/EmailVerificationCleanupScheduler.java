@@ -17,12 +17,12 @@ public class EmailVerificationCleanupScheduler {
     @Scheduled(cron = "0 0 3 * * *")
     @Transactional
     public void cleanupExpiredTokens() {
-        log.info("Starting cleanup of expired email verification tokens");
+        log.info("만료된 이메일 인증 토큰 정리 시작");
         try {
             emailVerificationRepository.deleteByExpiryDateBefore(LocalDateTime.now());
-            log.info("Successfully cleaned up expired email verification tokens");
+            log.info("만료된 이메일 인증 토큰 정리 완료");
         } catch (Exception e) {
-            log.error("Failed to cleanup expired email verification tokens", e);
+            log.error("만료된 이메일 인증 토큰 정리 실패", e);
         }
     }
 }

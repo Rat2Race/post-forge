@@ -1,9 +1,15 @@
 package dev.iamrat.token.provider;
 
+import com.nimbusds.oauth2.sdk.TokenResponse;
 import dev.iamrat.global.exception.CustomException;
 import dev.iamrat.global.exception.ErrorCode;
-import dev.iamrat.login.dto.CustomUserDetails;
 import dev.iamrat.login.service.CustomUserDetailsService;
+import dev.iamrat.member.entity.Member;
+import dev.iamrat.member.service.MemberService;
+import dev.iamrat.token.dto.JwtResponse;
+import dev.iamrat.token.entity.RefreshToken;
+import dev.iamrat.token.service.JwtProperties;
+import dev.iamrat.token.service.JwtService;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.JwtBuilder;
@@ -26,117 +32,66 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.stereotype.Component;
 
 @Slf4j
 @Component
 @RequiredArgsConstructor
 public class JwtProvider {
-
-    private final JwtProperties jwtProperties;
+    private final JwtService jwtService;
+    private final MemberService memberService;
     private final CustomUserDetailsService customUserDetailsService;
-    private SecretKey key;
 
-    @PostConstruct
-    protected void init() {
-        String secret = jwtProperties.getSecret();
-        this.key = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
-    }
-
-    public String createAccessToken(Authentication authentication) {
-        String userId = authentication.getName();
-        Collection<? extends GrantedAuthority> authorities = authentication.getAuthorities();
-
-        Map<String, Object> claims = new HashMap<>();
+    public JwtResponse createToken(Authentication authentication) {
+        String accessToken = jwtService.generateAccessToken(authentication.getName(), authentication.getAuthorities());
+        String refreshToken = jwtService.generateRefreshToken(authentication.getName());
         
-        claims.put("roles", authorities.stream().map(GrantedAuthority::getAuthority).collect(Collectors.toList()));
-
-        return createToken(userId, claims,
-            Duration.ofMinutes(jwtProperties.getAccessTokenValidity()), true);
+        jwtService.saveOrUpdateRefreshToken(authentication.getName(), refreshToken);
+        
+        return JwtResponse.builder()
+            .grantType("Bearer")
+            .accessToken(accessToken)
+            .refreshToken(refreshToken)
+            .build();
     }
-
-    public String createRefreshToken(String userId) {
-        return createToken(userId, Collections.emptyMap(),
-            Duration.ofDays(jwtProperties.getRefreshTokenValidity()), false);
+    
+    public JwtResponse reissueToken(String refreshToken) {
+        String userId = jwtService.parseClaims(refreshToken).getSubject();
+        
+        jwtService.getRefreshToken(userId).validateToken(refreshToken);
+        
+        Member member = memberService.findByUserId(userId);
+        
+        String newAccessToken = jwtService.generateAccessToken(userId, member.getAuthorities());
+        String newRefreshToken = jwtService.generateRefreshToken(userId);
+        
+        jwtService.saveOrUpdateRefreshToken(userId, newRefreshToken);
+        
+        return JwtResponse.builder()
+            .grantType("Bearer")
+            .accessToken(newAccessToken)
+            .refreshToken(newRefreshToken)
+            .build();
     }
-
-    public Claims getClaims(String token) {
-        try {
-            return Jwts.parser()
-                .verifyWith(key)
-                .build()
-                .parseSignedClaims(token)
-                .getPayload();
-        } catch (SecurityException | MalformedJwtException e) {
-            log.debug("JWT 서명 검증 실패: {}", e.getMessage());
-            throw new CustomException(ErrorCode.INVALID_TOKEN);
-        } catch (ExpiredJwtException e) {
-            log.debug("JWT 만료: {}", e.getMessage());
-            throw new CustomException(ErrorCode.EXPIRED_TOKEN);
-        } catch (JwtException | IllegalArgumentException e) {
-            log.error("JWT 검증 실패: {}", e.getMessage());
-            throw new CustomException(ErrorCode.INVALID_TOKEN);
-        }
+    
+    public void deleteToken(String userId) {
+        jwtService.deleteRefreshToken(userId);
     }
-
-    public Authentication getAuthentication(String token) {
-        Claims claims = getClaims(token);
-        String userId = claims.getSubject();
+    
+    public Authentication resolveAuthentication(String token) {
+        String userId = jwtService.parseClaims(token).getSubject();
         log.debug("[JWT] Claims 파싱 성공 - subject={}", userId);
         
         if (userId == null || userId.isBlank()) {
-            log.warn("[JWT] subject 값이 비어있음");
             throw new CustomException(ErrorCode.INVALID_TOKEN);
         }
         
-        log.debug("[JWT] UserDetails 조회 시작 - userId={}", userId);
-        
         UserDetails userDetails = customUserDetailsService.loadUserByUsername(userId);
         
-        log.debug("[JWT] UserDetails 조회 성공 - authorities={}",
-            userDetails.getAuthorities());
+        log.debug("[JWT] UserDetails 조회 성공 - authorities={}", userDetails.getAuthorities());
         
-        Authentication auth =
-            UsernamePasswordAuthenticationToken.authenticated(
-                userDetails,
-                token,
-                userDetails.getAuthorities()
-            );
-        
-        log.debug("[JWT] Authentication 생성 완료 - principal={}",
-            userDetails.getUsername());
-        
-        return auth;
-    }
-
-    private String createToken(
-        String subject,
-        Map<String, Object> claims,
-        Duration validity,
-        boolean includeJti
-    ) {
-        Instant now = Instant.now();
-        Instant expiry = now.plus(validity);
-
-        JwtBuilder builder = Jwts.builder();
-
-        if (claims != null && !claims.isEmpty()) {
-            builder.claims(claims);
-        }
-
-        builder
-            .subject(subject)
-            .issuer("post-forge-auth")
-            .audience().add("post-forge-api").and()
-            .issuedAt(Date.from(now))
-            .expiration(Date.from(expiry))
-            .signWith(key);
-
-        if (includeJti) {
-            builder.id(UUID.randomUUID().toString());
-        }
-
-        return builder.compact();
+        return UsernamePasswordAuthenticationToken.authenticated(
+            userDetails, token, userDetails.getAuthorities()
+        );
     }
 }

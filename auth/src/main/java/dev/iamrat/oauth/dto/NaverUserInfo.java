@@ -3,8 +3,7 @@ package dev.iamrat.oauth.dto;
 import java.util.Map;
 
 public class NaverUserInfo implements OAuth2UserInfo{
-    
-    Map<String, Object> attributes;
+    private final Map<String, Object> attributes;
     
     public NaverUserInfo(Map<String, Object> attributes) {
         this.attributes = (Map<String, Object>) attributes.get("response");

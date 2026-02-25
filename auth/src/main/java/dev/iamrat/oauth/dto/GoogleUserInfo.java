@@ -20,5 +20,4 @@ public record GoogleUserInfo(
     public String getName() {
         return String.valueOf(attributes.get("name"));
     }
-    
 }

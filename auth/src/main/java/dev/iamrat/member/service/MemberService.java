@@ -16,7 +16,6 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional(readOnly = true)
 @Slf4j
 public class MemberService {
-
     private final MemberRepository memberRepository;
     private final PasswordEncoder passwordEncoder;
     

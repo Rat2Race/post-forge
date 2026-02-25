@@ -18,7 +18,6 @@ import java.io.IOException;
 @Slf4j
 @RequiredArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
-
     private static final String AUTHORIZATION_HEADER = "Authorization";
     private static final String BEARER_PREFIX = "Bearer ";
     private final JwtProvider jwtProvider;
@@ -32,12 +31,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         if (StringUtils.hasText(token)) {
             try {
-                Authentication authentication = jwtProvider.getAuthentication(token);
+                Authentication authentication = jwtProvider.resolveAuthentication(token);
                 SecurityContextHolder.getContext().setAuthentication(authentication);
 
                 log.debug("Security Context에 '{}' 인증 정보를 저장했습니다, uri: {}",
                     authentication.getName(), request.getRequestURI());
-
             } catch (CustomException e) {
                 log.debug("JWT 인증 실패: {}, uri: {}",
                     e.getMessage(), request.getRequestURI());
@@ -49,8 +47,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         filterChain.doFilter(request, response);
     }
-
-
+    
     private String extractToken(HttpServletRequest request) {
         String bearerToken = request.getHeader(AUTHORIZATION_HEADER);
         if (StringUtils.hasText(bearerToken) && bearerToken.startsWith(BEARER_PREFIX)) {

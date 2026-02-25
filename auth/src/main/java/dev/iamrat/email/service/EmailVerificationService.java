@@ -45,6 +45,5 @@ public class EmailVerificationService {
 
         return verification.getEmail();
     }
-
-
+    
 }

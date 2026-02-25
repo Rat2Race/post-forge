@@ -3,10 +3,9 @@ package dev.iamrat.oauth.dto;
 import java.util.Map;
 
 public class KakaoUserInfo implements OAuth2UserInfo{
-    
-    Map<String, Object> attributes;
-    Map<String, Object> kakaoAccount;
-    Map<String, Object> profile;
+    private final Map<String, Object> attributes;
+    private final Map<String, Object> kakaoAccount;
+    private final Map<String, Object> profile;
     
     public KakaoUserInfo(Map<String, Object> attributes) {
         this.attributes = attributes;

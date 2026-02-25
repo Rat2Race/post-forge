@@ -7,7 +7,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 public record CustomUserDetails(
     String userId,
     String nickname,
-    Collection<GrantedAuthority> authorities
+    Collection<? extends GrantedAuthority> authorities
 ) implements UserDetails {
 
     @Override
