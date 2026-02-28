@@ -27,3 +27,7 @@ Thumbs.db
 # Node (for frontend)
 node_modules/
 dist/
+
+# env
+.env
+!.env.example

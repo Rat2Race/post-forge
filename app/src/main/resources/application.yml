@@ -1,18 +1,14 @@
 spring:
-  profiles:
-    active: local
-
   datasource:
-    url: ${DB_URL}
-    username: ${DB_USERNAME}
-    password: ${DB_PASSWORD}
+    url: jdbc:postgresql://localhost:5432/postforge
+    username:  ${POSTGRES_USER}
+    password: ${POSTGRES_PASSWORD}
     driver-class-name: org.postgresql.Driver
 
   jpa:
     database-platform: org.hibernate.dialect.PostgreSQLDialect
     hibernate:
-      ddl-auto: ${SPRING_JPA_DDL_AUTO:create}
-#    show-sql: ${SPRING_JPA_SHOW_SQL:false}
+      ddl-auto: create
     show-sql: true
     properties:
       hibernate:
@@ -69,9 +65,9 @@ spring:
             user-name-attribute: id
 
 jwt:
-  secret: ${JWT_SECRET}
-  accessTokenValidity: ${JWT_ACCESS_TOKEN_VALIDITY:15}
-  refreshTokenValidity: ${JWT_REFRESH_TOKEN_VALIDITY:7}
+  secret: ${JWT_SECRET:local-dev-jwt-secret-key-minimum-length-32-chars}
+  accessTokenValidity: ${JWT_ACCESS_TOKEN_VALIDITY}
+  refreshTokenValidity: ${JWT_REFRESH_TOKEN_VALIDITY}
 
 management:
   endpoints:
@@ -85,3 +81,8 @@ management:
 monitoring:
   username: prometheus
   password: prometheusTest
+
+logging:
+  level:
+    org.springframework.security: DEBUG
+    com.postforge: DEBUG
