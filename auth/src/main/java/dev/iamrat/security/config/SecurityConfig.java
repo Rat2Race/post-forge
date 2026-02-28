@@ -60,7 +60,7 @@ public class SecurityConfig {
                 // ===== 공개 API =====
                 .requestMatchers(HttpMethod.POST, "/auth/register").permitAll()
                 .requestMatchers(HttpMethod.POST, "/auth/login").permitAll()
-                .requestMatchers(HttpMethod.POST, "/auth/reissue").permitAll()
+                .requestMatchers(HttpMethod.POST, "/auth/token/reissue").permitAll()
                 .requestMatchers(HttpMethod.POST, "/auth/email/send").permitAll()
                 .requestMatchers(HttpMethod.GET, "/auth/email/verify").permitAll()
                 .requestMatchers(HttpMethod.GET, "/posts").permitAll()

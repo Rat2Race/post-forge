@@ -2,7 +2,7 @@
 
 > Spring Boot 기반의 멀티 모듈 커뮤니티 게시판
 
-PostForge는 게시글 작성, 댓글/대댓글, 좋아요 등 커뮤니티 핵심 기능을 제공하는 백엔드 API 서버입니다.  
+PostForge는 게시글, 댓글/대댓글, 좋아요 등 커뮤니티 핵심 기능을 제공하는 백엔드 API 서버입니다.  
 JWT + OAuth2 소셜 로그인, Docker 기반 배포, CI/CD 파이프라인, 모니터링까지 구축했습니다.
 
 ---
@@ -141,16 +141,16 @@ board → core
 
 ### 공개 API
 
-| Method | Endpoint | 설명 |
-|--------|----------|------|
-| `POST` | `/auth/register` | 회원가입 |
-| `POST` | `/auth/login` | 로그인 |
-| `POST` | `/auth/reissue` | 토큰 재발급 |
-| `POST` | `/auth/email/send` | 인증 메일 발송 |
+| Method | Endpoint                    | 설명 |
+|--------|-----------------------------|------|
+| `POST` | `/auth/register`            | 회원가입 |
+| `POST` | `/auth/login`               | 로그인 |
+| `POST` | `/auth/token/reissue`       | 토큰 재발급 |
+| `POST` | `/auth/email/send`          | 인증 메일 발송 |
 | `GET` | `/auth/email/verify?token=` | 이메일 인증 |
-| `GET` | `/posts` | 게시글 목록 조회 (검색: `?keyword=`) |
-| `GET` | `/posts/{id}` | 게시글 상세 조회 |
-| `GET` | `/posts/{id}/comments` | 댓글 목록 조회 |
+| `GET` | `/posts`                    | 게시글 목록 조회 (검색: `?keyword=`) |
+| `GET` | `/posts/{id}`               | 게시글 상세 조회 |
+| `GET` | `/posts/{id}/comments`      | 댓글 목록 조회 |
 
 ### 인증 필요 API
 
@@ -194,10 +194,10 @@ board → core
 
 ```bash
 # 전체 테스트
-gradle test
+gradlew test
 
 # 특정 태그 제외
-gradle test -PexcludeTags=integration
+gradlew test -PexcludeTags=integration
 ```
 
 ---
@@ -207,23 +207,22 @@ gradle test -PexcludeTags=integration
 ### 사전 요구사항
 - Java 21+
 - Docker & Docker Compose
-- PostgreSQL 18 (또는 Docker로 실행)
 
 ### 로컬 실행
 
 ```bash
-# 저장소 클론
-git clone https://github.com/Rat2Race/PostForge.git
-cd PostForge
+# .env 파일 복사하고 실제 값 입력
+cp .env.example .env
 
-# 환경변수 설정
-cp docs/cloud-env.md .env
-# .env 파일에 실제 값 입력
+# DB 실행
+docker compose -f docker-compose-local.yml up -d
 
-# Docker Compose로 실행
-docker-compose up -d
+# Spring Boot 실행 (택 1)
+set -a
+source .env 
+set +a
+./gradlew bootRun
 ```
-
 ### 환경변수
 
 ```env
@@ -234,6 +233,9 @@ FRONT_URI=http://localhost:3000
 POSTGRES_DB=postforge
 POSTGRES_USER=postgres
 POSTGRES_PASSWORD=your_password
+
+# Spring Boot 직접 실행용
+SPRING_CORS_ALLOWED_ORIGINS=http://localhost:3000
 
 # Email (Gmail SMTP)
 GMAIL_USERNAME=your_gmail
@@ -264,7 +266,6 @@ JWT_REFRESH_TOKEN_VALIDITY=7
 
 ## 향후 계획
 
-- [ ] Spring AI를 활용한 AI 기능 통합
 - [ ] 검색 기능 고도화 (Elasticsearch)
 - [ ] 캐싱 전략 적용 (Redis)
 - [ ] 테스트 커버리지 확대
