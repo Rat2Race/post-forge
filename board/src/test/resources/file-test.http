@@ -1,0 +1,32 @@
+### 0. 로그인
+POST http://localhost:8080/auth/login
+Content-Type: application/json
+
+{
+"id": "testUser",
+"pw": "testUser1*"
+}
+
+> {%
+client.global.set("accessToken", response.body.accessToken);
+%}
+
+### 1. 파일 업로드 테스트 (POST)
+# 'boundary'는 각 파트를 구분하는 기준선입니다.
+POST http://localhost:8080/files/upload
+#Authorization: Bearer {{accessToken}}
+Content-Type: multipart/form-data; boundary=WebAppBoundary
+
+--WebAppBoundary
+Content-Disposition: form-data; name="file"; filename="my_test_image.png"
+Content-Type: image/png
+
+< C:/SpringWorkspace/post-forge/board/src/test/resources/sample.png
+--WebAppBoundary--
+
+
+### 2-1 파일 조회 (GET)
+GET http://localhost:8080/files/1?download=false
+
+### 2-2 파일 다운로드 테스트 (GET)
+GET http://localhost:8080/files/1?download=true

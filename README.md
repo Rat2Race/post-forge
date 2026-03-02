@@ -227,7 +227,7 @@ set +a
 
 ```env
 # Frontend
-FRONT_URI=http://localhost:3000
+SPRING_CORS_ALLOWED_ORIGINS=http://localhost:3000
 
 # Database
 POSTGRES_DB=postforge

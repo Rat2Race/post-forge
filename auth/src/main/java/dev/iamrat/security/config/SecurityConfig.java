@@ -69,7 +69,9 @@ public class SecurityConfig {
                 .requestMatchers("/images/**").permitAll()
                 .requestMatchers("/oauth2/**").permitAll()
                 .requestMatchers("/login/oauth2/**").permitAll()
-                
+
+//                .requestMatchers("/files/**").permitAll()
+
                 // ===== 인증 필요 API =====
                 .requestMatchers("/user/**").hasAnyRole("USER", "ADMIN")
                 .requestMatchers(HttpMethod.POST, "/auth/logout").hasAnyRole("USER", "ADMIN")
