@@ -5,3 +5,8 @@ spring:
   jpa:
     hibernate:
       ddl-auto: create-drop
+
+logging:
+  level:
+    org.apache.coyote.http11: TRACE
+    org.springframework.web: DEBUG
