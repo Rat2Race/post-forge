@@ -1,20 +1,5 @@
-### 0. 로그인
-POST http://localhost:8080/auth/login
-Content-Type: application/json
-
-{
-"id": "testUser",
-"pw": "testUser1*"
-}
-
-> {%
-client.global.set("accessToken", response.body.accessToken);
-%}
-
-### 1. 파일 업로드 테스트 (POST)
-# 'boundary'는 각 파트를 구분하는 기준선입니다.
-POST http://localhost:8080/files/upload
-#Authorization: Bearer {{accessToken}}
+### 1. 로컬 파일 업로드 (POST)
+POST http://localhost:8080/files/local/upload
 Content-Type: multipart/form-data; boundary=WebAppBoundary
 
 --WebAppBoundary
@@ -24,9 +9,25 @@ Content-Type: image/png
 < C:/SpringWorkspace/post-forge/board/src/test/resources/sample.png
 --WebAppBoundary--
 
+### 2-1. 로컬 파일 조회 (GET)
+GET http://localhost:8080/files/local/download/1?download=false
 
-### 2-1 파일 조회 (GET)
-GET http://localhost:8080/files/1?download=false
+### 2-2. 로컬 파일 다운로드 (GET)
+GET http://localhost:8080/files/local/download/1?download=true
 
-### 2-2 파일 다운로드 테스트 (GET)
-GET http://localhost:8080/files/1?download=true
+### 3. S3 presigned URL 발급 (업로드용)
+GET http://localhost:8080/files/s3/presigned-url?fileName=sample.png&contentType=image/png
+
+> {%
+client.global.set("presignedUrl", response.body.url);
+client.global.set("s3FileId", response.body.fileId);
+%}
+
+### 3-1. presigned URL로 S3에 직접 업로드
+PUT {{presignedUrl}}
+Content-Type: image/png
+
+< F:\01_Dev Project\01_Spring\001_Post Forge_v1.0\board\src\test\resources\sample.png
+
+### 4. S3 다운로드 URL 발급
+GET http://localhost:8080/files/s3/{{s3FileId}}/download-url

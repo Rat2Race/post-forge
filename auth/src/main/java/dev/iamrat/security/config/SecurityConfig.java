@@ -70,7 +70,7 @@ public class SecurityConfig {
                 .requestMatchers("/oauth2/**").permitAll()
                 .requestMatchers("/login/oauth2/**").permitAll()
 
-//                .requestMatchers("/files/**").permitAll()
+                .requestMatchers("/files/**").permitAll()
 
                 // ===== 인증 필요 API =====
                 .requestMatchers("/user/**").hasAnyRole("USER", "ADMIN")

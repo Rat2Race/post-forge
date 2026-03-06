@@ -41,7 +41,8 @@ public class PostController {
         PostSummaryResponse savedPost = postService.savePost(
             postRequest.title(),
             postRequest.content(),
-            user.getUsername()
+            user.getUsername(),
+            postRequest.fileIds()
         );
 
         return ResponseEntity
@@ -92,14 +93,13 @@ public class PostController {
     @PreAuthorize("hasRole('ADMIN') or hasRole('USER') and @postService.isOwner(#postId, authentication.name)")
     public ResponseEntity<PostSummaryResponse> updatePost(
         @PathVariable("postId") Long postId,
-        @RequestBody PostRequest postRequest,
-        @AuthenticationPrincipal UserDetails user
+        @RequestBody PostRequest postRequest
     ) {
         PostSummaryResponse modifiedPost = postService.updatePost(
             postId,
             postRequest.title(),
             postRequest.content(),
-            user.getUsername()
+            postRequest.fileIds()
         );
 
         return ResponseEntity.ok(modifiedPost);

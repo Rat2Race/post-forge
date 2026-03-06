@@ -3,6 +3,7 @@ package dev.iamrat.post.dto;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
+import java.util.List;
 
 public record PostRequest(
    @NotBlank(message = "제목은 필수입니다")
@@ -12,6 +13,8 @@ public record PostRequest(
 
    @NotBlank(message = "내용은 필수입니다")
    @Size(min = 10, max = 10000, message = "내용은 10-10000자여야 합니다")
-   String content
+   String content,
+
+   List<Long> fileIds
 ) {
 }
