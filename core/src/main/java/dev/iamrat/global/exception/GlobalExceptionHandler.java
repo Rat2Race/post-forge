@@ -52,6 +52,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ErrorResponse> handleValidationException(MethodArgumentNotValidException e) {
+        log.warn("MethodArgumentNotValidException: {}", e.getMessage());
         Map<String, String> errors = new HashMap<>();
 
         e.getBindingResult().getAllErrors().forEach((error) -> {
@@ -72,7 +73,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
     public ResponseEntity<ErrorResponse> handleMethodArgumentTypeMismatchException(MethodArgumentTypeMismatchException e) {
         log.warn("Invalid path variable: {} cannot be converted to {}",
-            e.getValue(), e.getRequiredType().getSimpleName());
+            e.getValue(), e.getRequiredType() != null ? e.getRequiredType().getSimpleName() : "unknown");
         return buildErrorResponse(ErrorCode.INVALID_INPUT);
     }
     
