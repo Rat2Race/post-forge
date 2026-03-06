@@ -56,7 +56,6 @@ public class SecurityConfig {
                 .authenticationEntryPoint(jwtAuthenticationEntryPoint)
                 .accessDeniedHandler(jwtAccessDeniedHandler))
             .authorizeHttpRequests(auth -> auth
-//                .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                 // ===== 공개 API =====
                 .requestMatchers(HttpMethod.POST, "/auth/register").permitAll()
                 .requestMatchers(HttpMethod.POST, "/auth/login").permitAll()
@@ -69,9 +68,8 @@ public class SecurityConfig {
                 .requestMatchers("/images/**").permitAll()
                 .requestMatchers("/oauth2/**").permitAll()
                 .requestMatchers("/login/oauth2/**").permitAll()
-
-                .requestMatchers("/files/**").permitAll()
-
+                
+                
                 // ===== 인증 필요 API =====
                 .requestMatchers("/user/**").hasAnyRole("USER", "ADMIN")
                 .requestMatchers(HttpMethod.POST, "/auth/logout").hasAnyRole("USER", "ADMIN")
@@ -83,14 +81,15 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.PUT, "/posts/*/comments/*").hasAnyRole("USER", "ADMIN")
                 .requestMatchers(HttpMethod.DELETE, "/posts/*/comments/*").hasAnyRole("USER", "ADMIN")
                 .requestMatchers(HttpMethod.POST, "/posts/*/comments/*/like").hasRole("USER")
-
+                .requestMatchers("/files/**").hasAnyRole("USER", "ADMIN")
+                
                 // ===== 관리자 전용 API =====
                 .requestMatchers("/admin/**").hasRole("ADMIN")
-
+                
                 .anyRequest().authenticated())
             .addFilterBefore(
-                new JwtAuthenticationFilter(jwtProvider),
-                UsernamePasswordAuthenticationFilter.class);
+        new JwtAuthenticationFilter(jwtProvider),
+        UsernamePasswordAuthenticationFilter.class);
         
         http
             .oauth2Login(oauth2 -> oauth2
