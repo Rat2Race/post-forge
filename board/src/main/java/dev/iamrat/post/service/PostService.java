@@ -1,11 +1,14 @@
 package dev.iamrat.post.service;
 
+import dev.iamrat.file.entity.PostFile;
+import dev.iamrat.file.repository.FileRepository;
 import dev.iamrat.post.dto.PostDetailResponse;
 import dev.iamrat.post.dto.PostSummaryResponse;
 import dev.iamrat.post.entity.Post;
 import dev.iamrat.global.exception.CustomException;
 import dev.iamrat.global.exception.ErrorCode;
 import dev.iamrat.post.repository.PostRepository;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -20,9 +23,10 @@ public class PostService {
 
     private final PostRepository postRepository;
     private final PostLikeService postLikeService;
+    private final FileRepository fileRepository;
 
     @Transactional
-    public PostSummaryResponse savePost(String title, String content, String userId) {
+    public PostSummaryResponse savePost(String title, String content, String userId, List<Long> fileIds) {
         Post newPost = Post.builder()
             .title(title)
             .content(content)
@@ -30,6 +34,7 @@ public class PostService {
             .build();
 
         postRepository.save(newPost);
+        linkFiles(newPost, fileIds);
 
         return PostSummaryResponse.from(newPost);
     }
@@ -57,11 +62,16 @@ public class PostService {
     }
 
     @Transactional
-    public PostSummaryResponse updatePost(Long postId, String title, String content, String userId) {
+    public PostSummaryResponse updatePost(Long postId, String title, String content, List<Long> fileIds) {
         Post post = postRepository.findById(postId)
             .orElseThrow(() -> new CustomException(ErrorCode.POST_NOT_FOUND));
 
         post.update(title, content);
+        
+        List<PostFile> existingFiles = fileRepository.findAllByPost(post);
+        existingFiles.forEach(PostFile::unassignPost);
+
+        linkFiles(post, fileIds);
 
         return PostSummaryResponse.from(post);
     }
@@ -71,6 +81,9 @@ public class PostService {
         Post post = postRepository.findById(postId)
             .orElseThrow(() -> new CustomException(ErrorCode.POST_NOT_FOUND));
 
+        List<PostFile> files = fileRepository.findAllByPost(post);
+        files.forEach(PostFile::unassignPost);
+
         postRepository.delete(post);
     }
 
@@ -79,6 +92,14 @@ public class PostService {
             .orElseThrow(() -> new CustomException(ErrorCode.POST_NOT_FOUND));
 
         return post.getUserId().equals(userId);
+    }
+
+    private void linkFiles(Post post, List<Long> fileIds) {
+        if (fileIds == null || fileIds.isEmpty()) {
+            return;
+        }
+        List<PostFile> files = fileRepository.findAllByIdIn(fileIds);
+        files.forEach(file -> file.assignPost(post));
     }
 
     private PostDetailResponse getPostDetailResponse(Post post, String userId) {

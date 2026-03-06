@@ -1,4 +1,7 @@
 spring:
+  profiles:
+    active: s3
+
   datasource:
     url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://127.0.0.1:5432/postforge}
     username: ${SPRING_DATASOURCE_USERNAME:postforge_user}
@@ -95,3 +98,12 @@ logging:
   level:
     org.springframework.security: DEBUG
     com.postforge: DEBUG
+
+cloud:
+  aws:
+    s3:
+      endpoint: http://100.116.199.46:9000
+      bucket: postforge-bucket
+    credentials:
+      access-key: postforge_admin
+      secret-key: postforge_password123!

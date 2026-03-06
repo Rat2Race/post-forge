@@ -2,6 +2,7 @@ package dev.iamrat.post.entity;
 
 import dev.iamrat.common.entity.AuditingFields;
 import dev.iamrat.comment.entity.Comment;
+import dev.iamrat.file.entity.PostFile;
 import jakarta.persistence.*;
 import java.util.LinkedHashSet;
 import java.util.Set;
@@ -45,6 +46,11 @@ public class Post extends AuditingFields {
 	@OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
 	@Builder.Default
 	private Set<Comment> comments = new LinkedHashSet<>();
+
+	@ToString.Exclude
+	@OneToMany(mappedBy = "post")
+	@Builder.Default
+	private Set<PostFile> files = new LinkedHashSet<>();
 
 	public void addComment(Comment comment) {
 		this.comments.add(comment);

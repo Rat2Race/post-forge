@@ -1,12 +1,12 @@
 package dev.iamrat.global.exception;
 
+import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
-import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
@@ -63,12 +63,6 @@ public class GlobalExceptionHandler {
         return buildValidationErrorResponse(ErrorCode.VALIDATION_ERROR, errors);
     }
 
-    @ExceptionHandler(BadCredentialsException.class)
-    public ResponseEntity<ErrorResponse> handleBadCredentialsException(BadCredentialsException e) {
-        log.error("BadCredentialsException: {}", e.getMessage());
-        return buildErrorResponse(ErrorCode.INVALID_CREDENTIALS);
-    }
-
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<ErrorResponse> handleHttpMessageNotReadableException(HttpMessageNotReadableException e) {
         log.error("HttpMessageNotReadableException: {}", e.getMessage());
@@ -86,6 +80,12 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleMissingServletRequestParameterException(MissingServletRequestParameterException e) {
         log.warn("Missing required parameter: {}", e.getParameterName());
         return buildErrorResponse(ErrorCode.INVALID_INPUT);
+    }
+
+    @ExceptionHandler(IOException.class)
+    public ResponseEntity<ErrorResponse> handleIOException(IOException e) {
+        log.error("IOException: {}", e.getMessage());
+        return buildErrorResponse(ErrorCode.FILE_STORAGE_ERROR);
     }
 
     @ExceptionHandler(Exception.class)

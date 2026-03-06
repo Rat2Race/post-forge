@@ -5,6 +5,11 @@ plugins {
 dependencies {
 	api project(':core')
 
+	api 'org.springframework.boot:spring-boot-starter-security'
+	api 'io.jsonwebtoken:jjwt-api:0.12.3'
+	implementation 'io.jsonwebtoken:jjwt-impl:0.12.3'
+	runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.12.3'
+
 	implementation 'org.springframework.boot:spring-boot-starter-mail'
 	implementation 'org.springframework.boot:spring-boot-starter-oauth2-client'
 

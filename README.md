@@ -269,7 +269,6 @@ JWT_REFRESH_TOKEN_VALIDITY=7
 - [ ] 검색 기능 고도화 (Elasticsearch)
 - [ ] 캐싱 전략 적용 (Redis)
 - [ ] 테스트 커버리지 확대
-- [ ] 파일 업로드 기능 구현
 
 ---
 

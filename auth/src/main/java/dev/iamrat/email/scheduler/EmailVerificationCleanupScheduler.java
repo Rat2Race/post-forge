@@ -19,8 +19,12 @@ public class EmailVerificationCleanupScheduler {
     public void cleanupExpiredTokens() {
         log.info("만료된 이메일 인증 토큰 정리 시작");
         try {
-            emailVerificationRepository.deleteByExpiryDateBefore(LocalDateTime.now());
-            log.info("만료된 이메일 인증 토큰 정리 완료");
+            int count = emailVerificationRepository.deleteByExpiryDateBefore(LocalDateTime.now());
+            if (count == 0) {
+                log.info("정리할 만료 토큰 없음");
+                return;
+            }
+            log.info("만료된 이메일 인증 토큰 {}건 정리 완료", count);
         } catch (Exception e) {
             log.error("만료된 이메일 인증 토큰 정리 실패", e);
         }
