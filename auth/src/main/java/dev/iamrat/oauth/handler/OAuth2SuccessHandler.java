@@ -1,6 +1,7 @@
 package dev.iamrat.oauth.handler;
 
 import dev.iamrat.token.dto.JwtResponse;
+import dev.iamrat.token.provider.CookieProvider;
 import dev.iamrat.token.provider.JwtProvider;
 import dev.iamrat.token.service.JwtService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -21,27 +22,24 @@ import java.util.List;
 public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler {
     private final JwtProvider jwtProvider;
     private final JwtService jwtService;
-    
+    private final CookieProvider cookieProvider;
+
     @Value("${spring.cors.allowed-origins:${cors.allowed-origins}}")
     private String allowedOrigins;
-    
+
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response,
                                         Authentication authentication) throws IOException {
         JwtResponse jwtResponse = jwtProvider.createToken(authentication);
-        
+
         log.info("OAuth2 로그인 성공, JWT 발급: userId={}", jwtService.parseClaims(jwtResponse.accessToken()).getId());
-        
+
+        cookieProvider.addRefreshTokenCookie(response, jwtResponse.refreshToken());
+
         String redirectUrl = List.of(allowedOrigins.split(",")).getFirst()
             + "/oauth2/callback"
-            + "?accessToken=" + jwtResponse.accessToken()
-            + "&refreshToken=" + jwtResponse.refreshToken();
+            + "?accessToken=" + jwtResponse.accessToken();
 
         response.sendRedirect(redirectUrl);
-        
-//        response.setContentType("application/json;charset=UTF-8");
-//        response.getWriter().write("""
-//        {"accessToken": "%s", "refreshToken": "%s"}
-//        """.formatted(token.accessToken(), token.refreshToken()));
     }
 }
