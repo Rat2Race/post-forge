@@ -27,7 +27,7 @@ client.global.set("s3FileId", response.body.fileId);
 PUT {{presignedUrl}}
 Content-Type: image/png
 
-< F:\01_Dev Project\01_Spring\001_Post Forge_v1.0\board\src\test\resources\sample.png
+< C:/SpringWorkspace/post-forge/board/src/test/resources/sample.png
 
 ### 4. S3 다운로드 URL 발급
-GET http://localhost:8080/files/s3/{{s3FileId}}/download-url
+GET http://postforge-uploads.s3.ap-northeast-2.amazonqws.com/files/s3/{{s3FileId}}/download-url
