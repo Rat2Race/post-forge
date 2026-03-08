@@ -81,7 +81,8 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.PUT, "/posts/*/comments/*").hasAnyRole("USER", "ADMIN")
                 .requestMatchers(HttpMethod.DELETE, "/posts/*/comments/*").hasAnyRole("USER", "ADMIN")
                 .requestMatchers(HttpMethod.POST, "/posts/*/comments/*/like").hasRole("USER")
-                .requestMatchers("/files/**").hasAnyRole("USER", "ADMIN")
+//                .requestMatchers("/files/**").hasAnyRole("USER", "ADMIN")
+                .requestMatchers("/files/**").permitAll()
                 
                 // ===== 관리자 전용 API =====
                 .requestMatchers("/admin/**").hasRole("ADMIN")
