@@ -1,6 +1,7 @@
 #### 클라우드 docker-compose.yml 파일
 ```
 services:
+services:
   postgres:
     image: postgres:18
     container_name: postforge-db
@@ -10,7 +11,7 @@ services:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     volumes:
-      - postgres_data:/var/lib/postfresql/data
+      - postgres_data:/var/lib/postgresql
     networks:
       - postforge-network
     ports:
@@ -28,30 +29,31 @@ services:
     ports:
       - "8080:8080"
     environment:
+      SPRING_CORS_ALLOWED_ORIGINS: ${FRONT_URI}
+
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB}
       SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
-
-      SPRING_CORS_ALLOWED_ORIGINS: ${FRONT_URI}
 
       GMAIL_USERNAME: ${GMAIL_USERNAME}
       GMAIL_PASSWORD: ${GMAIL_PASSWORD}
 
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
-      GOOGLE_REDIRECT_URI: ${GOOGLE_REDIRECT_URI}
 
       NAVER_CLIENT_ID: ${NAVER_CLIENT_ID}
       NAVER_CLIENT_SECRET: ${NAVER_CLIENT_SECRET}
-      NAVER_REDIRECT_URI: ${NAVER_REDIRECT_URI}
 
       KAKAO_CLIENT_ID: ${KAKAO_CLIENT_ID}
       KAKAO_CLIENT_SECRET: ${KAKAO_CLIENT_SECRET}
-      KAKAO_REDIRECT_URI: ${KAKAO_REDIRECT_URI}
 
       JWT_SECRET: ${JWT_SECRET}
-      JWT_ACCESS_TOKEN_VALIDITY: ${JWT_ACCESS_TOKEN_VALIDITY:-15}
-      JWT_REFRESH_TOKEN_VALIDITY: ${JWT_REFRESH_TOKEN_VALIDITY:-7}
+
+      MONITORING_USERNAME: ${MONITORING_USERNAME}
+      MONITORING_PASSWORD: ${MONITORING_PASSWORD}
+
+      AWS_S3_ACCESS_KEY: ${AWS_S3_ACCESS_KEY}
+      AWS_S3_SECRET_KEY: ${AWS_S3_SECRET_KEY}
     depends_on:
       postgres:
          condition: service_healthy
