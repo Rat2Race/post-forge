@@ -5,6 +5,7 @@ import dev.iamrat.global.exception.GlobalExceptionHandler;
 import dev.iamrat.login.dto.LoginRequest;
 import dev.iamrat.login.service.LoginService;
 import dev.iamrat.token.dto.JwtResponse;
+import dev.iamrat.token.provider.CookieProvider;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Tag;
@@ -47,6 +48,9 @@ class LoginControllerTest {
     
     @MockitoBean
     LoginService loginService;
+
+    @MockitoBean
+    CookieProvider cookieProvider;
     
     private LoginRequest createValidLoginRequest() {
         return new LoginRequest("testuser1", "Test1234!");
@@ -78,7 +82,7 @@ class LoginControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.grantType").value("Bearer"))
                 .andExpect(jsonPath("$.accessToken").value("mock-access-token"))
-                .andExpect(jsonPath("$.refreshToken").value("mock-refresh-token"))
+                .andExpect(jsonPath("$.refreshToken").doesNotExist())
                 .andDo(print());
         }
     }
