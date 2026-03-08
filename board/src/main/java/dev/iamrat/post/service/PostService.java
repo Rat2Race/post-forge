@@ -7,8 +7,11 @@ import dev.iamrat.post.dto.PostSummaryResponse;
 import dev.iamrat.post.entity.Post;
 import dev.iamrat.global.exception.CustomException;
 import dev.iamrat.global.exception.ErrorCode;
+import dev.iamrat.post.repository.PostLikeRepository;
 import dev.iamrat.post.repository.PostRepository;
+import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,6 +26,7 @@ public class PostService {
 
     private final PostRepository postRepository;
     private final PostLikeService postLikeService;
+    private final PostLikeRepository postLikeRepository;
     private final FileRepository fileRepository;
 
     @Transactional
@@ -40,13 +44,17 @@ public class PostService {
     }
 
     public Page<PostDetailResponse> getPosts(Pageable pageable, String userId) {
-        return postRepository.findAll(pageable)
-            .map(post -> getPostDetailResponse(post, userId));
+        Page<Post> posts = postRepository.findAllWithDetails(pageable);
+        Set<Long> likedPostIds = getLikedPostIds(posts, userId);
+
+        return posts.map(post -> PostDetailResponse.from(post, likedPostIds.contains(post.getId()), post.getLikeCount()));
     }
-    
+
     public Page<PostDetailResponse> searchPosts(String keyword, Pageable pageable, String userId) {
-        return postRepository.findByKeyword(keyword, pageable)
-            .map(post -> getPostDetailResponse(post, userId));
+        Page<Post> posts = postRepository.findByKeyword(keyword, pageable);
+        Set<Long> likedPostIds = getLikedPostIds(posts, userId);
+
+        return posts.map(post -> PostDetailResponse.from(post, likedPostIds.contains(post.getId()), post.getLikeCount()));
     }
 
     @Transactional
@@ -102,10 +110,16 @@ public class PostService {
         files.forEach(file -> file.assignPost(post));
     }
 
-    private PostDetailResponse getPostDetailResponse(Post post, String userId) {
-        Long likeCount = postLikeService.getLikeCount(post.getId());
-        boolean isLiked = postLikeService.isLiked(post.getId(), userId);
+    private Set<Long> getLikedPostIds(Page<Post> posts, String userId) {
+        if (userId == null) {
+            return Collections.emptySet();
+        }
+        List<Long> postIds = posts.getContent().stream().map(Post::getId).toList();
+        return Set.copyOf(postLikeRepository.findLikedPostIds(postIds, userId));
+    }
 
-        return PostDetailResponse.from(post, isLiked, likeCount);
+    private PostDetailResponse getPostDetailResponse(Post post, String userId) {
+        boolean isLiked = postLikeService.isLiked(post.getId(), userId);
+        return PostDetailResponse.from(post, isLiked, post.getLikeCount());
     }
 }

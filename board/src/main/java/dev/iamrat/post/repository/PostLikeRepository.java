@@ -8,14 +8,18 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+
 @Repository
 public interface PostLikeRepository extends JpaRepository<PostLike, Long> {
 
     @Query("SELECT COUNT(pl) FROM PostLike pl WHERE pl.post.id = :postId")
     long countByPostId(@Param("postId") Long postId);
 
-    @Query("SELECT CASE WHEN COUNT(pl) > 0 THEN true ELSE false END FROM PostLike pl WHERE pl.post.id = :postId AND pl.userId = :userId")
-    boolean existsByPostIdAndUserId(@Param("postId") Long postId, @Param("userId") String userId);
+    boolean existsByPostIdAndUserId(Long postId, String userId);
+
+    @Query("SELECT pl.post.id FROM PostLike pl WHERE pl.post.id IN :postIds AND pl.userId = :userId")
+    List<Long> findLikedPostIds(@Param("postIds") List<Long> postIds, @Param("userId") String userId);
 
     @Modifying
     @Transactional

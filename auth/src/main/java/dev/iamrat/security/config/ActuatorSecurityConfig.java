@@ -34,8 +34,7 @@ public class ActuatorSecurityConfig {
         return http.build();
     }
     
-    @Bean
-    public UserDetailsService actuatorUserDetailsService() {
+    private UserDetailsService actuatorUserDetailsService() {
         UserDetails userDetails = User.withUsername(username)
             .password("{noop}" + password)
             .roles("ACTUATOR")
