@@ -10,6 +10,7 @@ spring:
     properties:
       hibernate:
         format_sql: false
+        generate_statistics: true
 
   servlet:
     multipart:
@@ -91,6 +92,7 @@ monitoring:
 logging:
   level:
     org.springframework.security: INFO
+    org.hibernate.stat: debug
     com.postforge: INFO
 
 cloud:
