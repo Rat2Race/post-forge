@@ -7,6 +7,9 @@ import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
@@ -81,6 +84,24 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleMissingServletRequestParameterException(MissingServletRequestParameterException e) {
         log.warn("Missing required parameter: {}", e.getParameterName());
         return buildErrorResponse(ErrorCode.INVALID_INPUT);
+    }
+
+    @ExceptionHandler(BadCredentialsException.class)
+    public ResponseEntity<ErrorResponse> handleBadCredentialsException(BadCredentialsException e) {
+        log.warn("BadCredentialsException: {}", e.getMessage());
+        return buildErrorResponse(ErrorCode.INVALID_CREDENTIALS);
+    }
+
+    @ExceptionHandler(UsernameNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleUsernameNotFoundException(UsernameNotFoundException e) {
+        log.warn("UsernameNotFoundException: {}", e.getMessage());
+        return buildErrorResponse(ErrorCode.INVALID_CREDENTIALS);
+    }
+
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<ErrorResponse> handleAccessDeniedException(AccessDeniedException e) {
+        log.warn("AccessDeniedException: {}", e.getMessage());
+        return buildErrorResponse(ErrorCode.ACCESS_DENIED);
     }
 
     @ExceptionHandler(IOException.class)
