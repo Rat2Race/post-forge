@@ -6,6 +6,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 
 public record CustomUserDetails(
     String userId,
+    String password,
     String nickname,
     Collection<? extends GrantedAuthority> authorities
 ) implements UserDetails {
@@ -22,9 +23,9 @@ public record CustomUserDetails(
 
     @Override
     public String getPassword() {
-        return null;
+        return password;
     }
-    
+
     public String getNickname() {
         return nickname;
     }
