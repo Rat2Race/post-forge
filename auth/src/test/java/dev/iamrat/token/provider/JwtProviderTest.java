@@ -176,7 +176,7 @@ class JwtProviderTest {
             given(jwtService.parseClaims("valid-token")).willReturn(claims);
 
             CustomUserDetails userDetails = new CustomUserDetails(
-                USER_ID, "tester", List.of(new SimpleGrantedAuthority("ROLE_USER"))
+                USER_ID, "testerPw","tester", List.of(new SimpleGrantedAuthority("ROLE_USER"))
             );
             
             given(customUserDetailsService.loadUserByUsername(USER_ID)).willReturn(userDetails);

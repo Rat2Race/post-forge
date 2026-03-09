@@ -8,9 +8,9 @@ import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
 import io.jsonwebtoken.security.SecurityException;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.boot.autoconfigure.info.ProjectInfoProperties;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
@@ -72,6 +72,7 @@ public class JwtService {
         refreshTokenRepository.save(refreshToken);
     }
     
+    @Transactional
     public void deleteRefreshToken(String userId) {
         refreshTokenRepository.deleteByUserId(userId);
     }

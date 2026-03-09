@@ -1,0 +1,81 @@
+### =============================================
+### Auth API 로컬 테스트
+### =============================================
+
+### accessToken은 테스트마다 갈아줘야함
+@host = http://localhost:8080
+@accessToken = eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJ0ZXN0dXNlciIsInJvbGVzIjpbIlJPTEVfVVNFUiJdLCJpc3MiOiJwb3N0LWZvcmdlLWF1dGgiLCJhdWQiOlsicG9zdC1mb3JnZS1hcGkiXSwiaWF0IjoxNzczMDIyODk5LCJleHAiOjE3NzMwMjM3OTl9.4j9Gh0C41XZsV3AZn5Qpwj-iOahFTXtcp9ZGEW-6XvZxDICOokPRa_ZPyYc0t4JVBWCzKzli7F64usw6bgFJKA
+
+### ----- 이메일 인증 -----
+
+### 1. 인증 메일 발송
+POST {{host}}/auth/email/send
+Content-Type: application/json
+
+{
+  "email": "test@test.com"
+}
+
+### 2. 이메일 인증 확인 (메일에서 받은 토큰)
+### 인증 메일에 있는 토큰 값으로 테스트마다 바꿔줘야함
+GET {{host}}/auth/email/verify?token=de3562d1-16d5-428b-9ff7-1b2cfeda27cb
+
+### ----- 회원가입 -----
+
+### 3. 회원가입
+POST {{host}}/auth/register
+Content-Type: application/json
+
+{
+  "name": "테스트",
+  "id": "testuser",
+  "pw": "Test1234!@",
+  "email": "test@test.com",
+  "nickname": "테스트유저"
+}
+
+### ----- 로그인 / 로그아웃 -----
+
+### 4. 로그인
+# @name login
+POST {{host}}/auth/login
+Content-Type: application/json
+
+{
+  "id": "testuser",
+  "pw": "Test1234!@"
+}
+
+### 5. 로그아웃
+POST {{host}}/auth/logout
+Authorization: Bearer {{accessToken}}
+
+### ----- 토큰 -----
+
+### 6. 토큰 재발급 (refresh token은 쿠키로 자동 전송)
+POST {{host}}/auth/token/reissue
+
+### ----- 프로필 -----
+
+### 7. 내 프로필 조회
+GET {{host}}/user/profile
+Authorization: Bearer {{accessToken}}
+
+### 8. 닉네임 변경
+PATCH {{host}}/user/profile/nickname
+Content-Type: application/json
+Authorization: Bearer {{accessToken}}
+
+{
+  "nickname": "새닉네임"
+}
+
+### 9. 비밀번호 변경
+PATCH {{host}}/user/profile/password
+Content-Type: application/json
+Authorization: Bearer {{accessToken}}
+
+{
+  "currentPassword": "Test1234!@",
+  "newPassword": "NewPass1234!@"
+}
