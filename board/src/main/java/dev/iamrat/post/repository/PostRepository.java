@@ -16,7 +16,4 @@ public interface PostRepository extends JpaRepository<Post, Long> {
     @Query("SELECT p FROM Post p WHERE LOWER(p.title) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
             "OR LOWER(p.content) LIKE LOWER(CONCAT('%', :keyword, '%'))")
     Page<Post> findByKeyword(@Param("keyword") String keyword, Pageable pageable);
-
-    @Query("SELECT p FROM Post p LEFT JOIN FETCH p.comments LEFT JOIN FETCH p.files")
-    Page<Post> findAllWithDetails(Pageable pageable);
 }
