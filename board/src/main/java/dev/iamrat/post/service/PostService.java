@@ -44,7 +44,7 @@ public class PostService {
     }
 
     public Page<PostDetailResponse> getPosts(Pageable pageable, String userId) {
-        Page<Post> posts = postRepository.findAllWithDetails(pageable);
+        Page<Post> posts = postRepository.findAll(pageable);
         Set<Long> likedPostIds = getLikedPostIds(posts, userId);
 
         return posts.map(post -> PostDetailResponse.from(post, likedPostIds.contains(post.getId()), post.getLikeCount()));
