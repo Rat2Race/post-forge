@@ -20,7 +20,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 
 import java.time.LocalDateTime;
 import java.util.Collections;
@@ -45,9 +44,6 @@ class JwtProviderTest {
     private MemberService memberService;
 
     @Mock
-    private CustomUserDetailsService customUserDetailsService;
-
-    @Mock
     private Authentication authentication;
 
     @InjectMocks
@@ -62,9 +58,11 @@ class JwtProviderTest {
         @Test
         @DisplayName("인증 정보로 토큰을 생성한다")
         void createToken_validAuthentication_returnsJwtResponse() {
-            given(jwtService.generateAccessToken(any(), any())).willReturn("access-token");
+            given(jwtService.generateAccessToken(any(), any(), any())).willReturn("access-token");
             given(jwtService.generateRefreshToken(any())).willReturn("refresh-token");
             given(authentication.getName()).willReturn(USER_ID);
+            CustomUserDetails userDetails = new CustomUserDetails(USER_ID, "pw", "tester", Collections.emptyList());
+            given(authentication.getPrincipal()).willReturn(userDetails);
             given(authentication.getAuthorities()).willReturn(Collections.emptyList());
 
             JwtResponse result = jwtProvider.createToken(authentication);
@@ -72,7 +70,7 @@ class JwtProviderTest {
             assertThat(result.grantType()).isEqualTo("Bearer");
             assertThat(result.accessToken()).isEqualTo("access-token");
             assertThat(result.refreshToken()).isEqualTo("refresh-token");
-            verify(jwtService).generateAccessToken(eq(USER_ID), any());
+            verify(jwtService).generateAccessToken(eq(USER_ID), eq("tester"), any());
             verify(jwtService).generateRefreshToken(eq(USER_ID));
             verify(jwtService).saveOrUpdateRefreshToken(eq(USER_ID), eq("refresh-token"));
         }
@@ -106,7 +104,7 @@ class JwtProviderTest {
             
             given(memberService.findByUserId(USER_ID)).willReturn(member);
             
-            given(jwtService.generateAccessToken(eq(USER_ID), any())).willReturn("new-access-token");
+            given(jwtService.generateAccessToken(eq(USER_ID), any(), any())).willReturn("new-access-token");
             given(jwtService.generateRefreshToken(USER_ID)).willReturn("new-refresh-token");
 
             JwtResponse result = jwtProvider.reissueToken("old-refresh-token");
@@ -173,18 +171,18 @@ class JwtProviderTest {
         void resolveAuthentication_validToken_returnsAuthentication() {
             Claims claims = mock(Claims.class);
             given(claims.getSubject()).willReturn(USER_ID);
+            given(claims.get("nickname", String.class)).willReturn("tester");
+            given(claims.get("roles", List.class)).willReturn(List.of("ROLE_USER"));
             given(jwtService.parseClaims("valid-token")).willReturn(claims);
-
-            CustomUserDetails userDetails = new CustomUserDetails(
-                USER_ID, "testerPw","tester", List.of(new SimpleGrantedAuthority("ROLE_USER"))
-            );
             
-            given(customUserDetailsService.loadUserByUsername(USER_ID)).willReturn(userDetails);
-
             Authentication result = jwtProvider.resolveAuthentication("valid-token");
 
             assertThat(result.getName()).isEqualTo(USER_ID);
             assertThat(result.getAuthorities()).hasSize(1);
+            assertThat(result.getAuthorities().iterator().next().getAuthority()).isEqualTo("ROLE_USER");
+            
+            CustomUserDetails principal = (CustomUserDetails) result.getPrincipal();
+            assertThat(principal.getNickname()).isEqualTo("tester");
         }
 
         @Test

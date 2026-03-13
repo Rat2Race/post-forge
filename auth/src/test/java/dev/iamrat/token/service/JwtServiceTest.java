@@ -45,12 +45,14 @@ class JwtServiceTest {
     @DisplayName("올바른 파라미터로 생성한 토큰을 파싱하면 subject와 roles가 일치한다")
     void generateToken_validParams_claimsMatch() {
         String userId = "MockUserId";
+        String userNickname = "MockUserNickname";
         List<GrantedAuthority> authorities = List.of(new SimpleGrantedAuthority("ROLE_USER"));
         
-        String accessToken = jwtService.generateAccessToken(userId, authorities);
+        String accessToken = jwtService.generateAccessToken(userId, userNickname, authorities);
         Claims claims = jwtService.parseClaims(accessToken);
         
         assertThat(claims.getSubject()).isEqualTo(userId);
+        assertThat(claims.get("nickname")).isEqualTo(userNickname);
         assertThat(claims.get("roles", List.class))
             .isEqualTo(List.of("ROLE_USER"));
     }
@@ -58,7 +60,7 @@ class JwtServiceTest {
     @Test
     @DisplayName("잘못된 파라미터로 토큰 생성하면 INVALID_TOKEN 예외가 발생한다")
     void generateToken_blankSubject_throwsInvalidToken() {
-        assertThatThrownBy(() -> jwtService.generateAccessToken(null, List.of()))
+        assertThatThrownBy(() -> jwtService.generateAccessToken(null, null, List.of()))
             .isInstanceOf(CustomException.class)
             .satisfies(exception ->
                 assertThat(((CustomException)exception).getErrorCode())
@@ -87,7 +89,7 @@ class JwtServiceTest {
         expiredProperties.setRefreshTokenValidity(0L);
         
         JwtService expiredJwtService = new JwtService(expiredProperties, refreshTokenRepository);
-        String expiredToken = expiredJwtService.generateAccessToken("MockUserId", List.of());
+        String expiredToken = expiredJwtService.generateAccessToken("MockUserId", "MockUserNickname", List.of());
         
         assertThatThrownBy(() -> jwtService.parseClaims(expiredToken))
             .isInstanceOf(CustomException.class)
@@ -105,7 +107,7 @@ class JwtServiceTest {
         tamperedProperties.setRefreshTokenValidity(7L);
         
         JwtService tamperedJwtService = new JwtService(tamperedProperties, refreshTokenRepository);
-        String tamperedToken = tamperedJwtService.generateAccessToken("user", List.of());
+        String tamperedToken = tamperedJwtService.generateAccessToken("user", "nickname",List.of());
         
         assertThatThrownBy(() -> jwtService.parseClaims(tamperedToken))
             .isInstanceOf(CustomException.class)
