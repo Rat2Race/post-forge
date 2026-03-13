@@ -33,12 +33,14 @@ public class JwtService {
         secretKey = Keys.hmacShaKeyFor(jwtProperties.getSecret().getBytes(StandardCharsets.UTF_8));
     }
     
-    public String generateAccessToken(String userId, Collection<? extends GrantedAuthority> authorities) {
+    public String generateAccessToken(String userId, String nickname, Collection<? extends GrantedAuthority> authorities) {
         Map<String, Object> claims = new HashMap<>();
         
         claims.put("roles", authorities.stream()
             .map(GrantedAuthority::getAuthority)
             .collect(Collectors.toList()));
+        
+        claims.put("nickname", nickname);
         
         return generateToken(userId, claims, Duration.ofMinutes(jwtProperties.getAccessTokenValidity()));
     }
