@@ -1,0 +1,9 @@
+@host = http://localhost:8080
+
+POST {{host}}/ai/chat
+Content-Type: application/json
+
+{
+  "message": "AI 요청 테스트"
+}
+

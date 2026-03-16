@@ -70,6 +70,10 @@ public class SecurityConfig {
                 .requestMatchers("/login/oauth2/**").permitAll()
                 
                 
+                // ===== AI API (인증 필요) =====
+//                .requestMatchers("/ai/**").hasAnyRole("USER", "ADMIN")
+                .requestMatchers("/ai/**").permitAll()
+
                 // ===== 인증 필요 API =====
                 .requestMatchers("/user/**").hasAnyRole("USER", "ADMIN")
                 .requestMatchers(HttpMethod.POST, "/auth/logout").hasAnyRole("USER", "ADMIN")
