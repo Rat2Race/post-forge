@@ -2,6 +2,13 @@ spring:
   profiles:
     active: s3
 
+  ai:
+    openai:
+      api-key: ${OPENAI_API_KEY}
+      chat:
+        options:
+          model: gpt-4o-mini
+
   jpa:
     database-platform: org.hibernate.dialect.PostgreSQLDialect
     hibernate:
