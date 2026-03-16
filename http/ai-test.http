@@ -7,3 +7,26 @@ Content-Type: application/json
   "message": "AI 요청 테스트"
 }
 
+### 문서 저장
+POST {{host}}/ai/documents
+Content-Type: application/json
+
+
+[
+  {
+    "content": "PostForge는 Spring Boot 기반의 커뮤니티 게시판 서비스입니다.",
+    "source": "https://example.com/about",
+    "metadata": {
+      "category": "서비스소개",
+      "author": "admin"
+    }
+  },
+  {
+    "content": "게시글 작성 시 이미지와 PDF 파일을 첨부할 수 있습니다.",
+    "source": "https://example.com/guide",
+    "metadata": {
+      "category": "사용가이드"
+    }
+  }
+]
+
