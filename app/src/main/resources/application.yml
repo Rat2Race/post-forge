@@ -8,6 +8,10 @@ spring:
       chat:
         options:
           model: gpt-4o-mini
+    vectorstore:
+      pgvector:
+        initialize-schema: true
+        dimensions: 1536
 
   jpa:
     database-platform: org.hibernate.dialect.PostgreSQLDialect
