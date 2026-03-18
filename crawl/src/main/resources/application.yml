@@ -1,0 +1,39 @@
+server:
+  port: 8090
+
+spring:
+  application:
+    name: crawl
+
+  datasource:
+    url: jdbc:h2:file:./data/crawl
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    database-platform: org.hibernate.dialect.H2Dialect
+
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+
+crawl:
+  naver-news:
+    client-id: ${NAVER_NEWS_CLIENT_ID}
+    client-secret: ${NAVER_NEWS_CLIENT_SECRET}
+    keywords: "주식,경제,코스피,금리"
+    display: 10
+    cron: "0 0 */2 * * *"
+
+  dart:
+    api-key: ${DART_API_KEY}
+    page-count: 100
+    cron: "0 30 */2 * * *"
+
+ai:
+  api:
+    base-url: ${AI_API_BASE_URL:http://localhost:8080}
