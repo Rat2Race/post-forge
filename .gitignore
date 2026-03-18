@@ -31,5 +31,8 @@ dist/
 # env
 .env
 !.env.example
+
+# H2 DB
+**/data/*.db
 # Gemini CLI internal files
 .omx/

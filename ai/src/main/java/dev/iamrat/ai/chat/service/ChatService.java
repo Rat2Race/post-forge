@@ -55,22 +55,18 @@ public class ChatService {
     }
     
     private String getResponse(Prompt prompt) {
-        String response = chatModel.call(prompt)
+        return chatModel.call(prompt)
             .getResult()
             .getOutput()
             .getText();
-        return response;
     }
     
     private List<Document> getDocuments(String message) {
-        List<Document> relevantDocs = vectorStore.similaritySearch(
+        return vectorStore.similaritySearch(
             SearchRequest.builder()
                 .query(message)
                 .topK(5)
                 .build()
         );
-        return relevantDocs;
     }
-    
-    
 }
