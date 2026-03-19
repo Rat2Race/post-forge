@@ -7,6 +7,9 @@ import lombok.Builder;
 public record MemberResponse(
     Long id,
     String userId,
+    String nickname,
+    String provider,
+    boolean isOAuthUser,
     List<String> roles
 ) {
 
