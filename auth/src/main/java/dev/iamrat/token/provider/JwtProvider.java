@@ -5,6 +5,7 @@ import dev.iamrat.global.exception.ErrorCode;
 import dev.iamrat.login.dto.CustomUserDetails;
 import dev.iamrat.member.entity.Member;
 import dev.iamrat.member.service.MemberService;
+import dev.iamrat.security.dto.UserPrincipal;
 import dev.iamrat.token.dto.JwtResponse;
 import dev.iamrat.token.service.JwtService;
 import io.jsonwebtoken.Claims;
@@ -26,7 +27,8 @@ public class JwtProvider {
     private final MemberService memberService;
 
     public JwtResponse createToken(Authentication authentication) {
-        CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
+        
+        UserPrincipal userDetails = (UserPrincipal) authentication.getPrincipal();
         String nickname = userDetails.getNickname();
         
         String accessToken = jwtService.generateAccessToken(authentication.getName(), nickname, authentication.getAuthorities());
