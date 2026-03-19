@@ -11,8 +11,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import dev.iamrat.security.dto.UserPrincipal;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -41,9 +41,9 @@ public class LoginController {
 
     @PostMapping("/logout")
     @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
-    public ResponseEntity<String> logout(@AuthenticationPrincipal UserDetails userDetails,
+    public ResponseEntity<String> logout(@AuthenticationPrincipal UserPrincipal userDetails,
                                          HttpServletResponse response) {
-        loginService.logout(userDetails.getUsername());
+        loginService.logout(userDetails.getUserId());
         cookieProvider.removeRefreshTokenCookie(response);
         return ResponseEntity.ok("로그아웃되었습니다.");
     }

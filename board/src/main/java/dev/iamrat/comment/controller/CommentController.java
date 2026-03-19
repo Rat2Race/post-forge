@@ -15,8 +15,8 @@ import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import dev.iamrat.security.dto.UserPrincipal;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -32,13 +32,13 @@ public class CommentController {
     public ResponseEntity<CommentSummaryResponse> createComment(
         @PathVariable("postId") Long postId,
         @RequestBody @Valid CommentRequest commentRequest,
-        @AuthenticationPrincipal UserDetails user
+        @AuthenticationPrincipal UserPrincipal user
     ) {
         CommentSummaryResponse savedComment = commentService.saveComment(
             postId,
             commentRequest.parentId(),
             commentRequest.content(),
-            user.getUsername()
+            user.getUserId()
         );
 
         return ResponseEntity
@@ -50,9 +50,9 @@ public class CommentController {
     public ResponseEntity<Page<CommentDetailResponse>> getComments(
         @PathVariable("postId") Long postId,
         @PageableDefault(size = 50, sort = "createdAt", direction = Direction.ASC) Pageable pageable,
-        @AuthenticationPrincipal UserDetails user
+        @AuthenticationPrincipal UserPrincipal user
     ) {
-        String userId = user != null ? user.getUsername() : null;
+        String userId = user != null ? user.getUserId() : null;
         Page<CommentDetailResponse> commentsByPost = commentService.getCommentsByPost(postId, pageable, userId);
 
         return ResponseEntity
@@ -90,9 +90,9 @@ public class CommentController {
     @PreAuthorize("hasRole('USER')")
     public ResponseEntity<LikeResponse> toggleLike(
         @PathVariable("commentId") Long commentId,
-        @AuthenticationPrincipal UserDetails user
+        @AuthenticationPrincipal UserPrincipal user
     ) {
-        LikeResponse likeStatus = commentLikeService.toggleLike(commentId, user.getUsername());
+        LikeResponse likeStatus = commentLikeService.toggleLike(commentId, user.getUserId());
 
         return ResponseEntity.ok(likeStatus);
     }

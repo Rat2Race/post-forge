@@ -19,8 +19,8 @@ import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import dev.iamrat.security.dto.UserPrincipal;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -36,12 +36,12 @@ public class PostController {
     @PreAuthorize("hasRole('USER')")
     public ResponseEntity<PostSummaryResponse> createPost(
         @RequestBody @Valid PostRequest postRequest,
-        @AuthenticationPrincipal UserDetails user
+        @AuthenticationPrincipal UserPrincipal user
     ) {
         PostSummaryResponse savedPost = postService.savePost(
             postRequest.title(),
             postRequest.content(),
-            user.getUsername(),
+            user.getUserId(),
             postRequest.fileIds()
         );
 
@@ -54,10 +54,10 @@ public class PostController {
     public ResponseEntity<Page<PostDetailResponse>> getPosts(
         @RequestParam(required = false) String keyword,
         @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable,
-        @AuthenticationPrincipal UserDetails user
+        @AuthenticationPrincipal UserPrincipal user
     ) {
         String userId = user != null
-            ? user.getUsername()
+            ? user.getUserId()
             : null;
         
         Page<PostDetailResponse> posts = keyword != null
@@ -72,12 +72,12 @@ public class PostController {
         @PathVariable("postId") Long postId,
         HttpServletRequest servletRequest,
         HttpServletResponse servletResponse,
-        @AuthenticationPrincipal UserDetails user
+        @AuthenticationPrincipal UserPrincipal user
     ) {
         Cookie[] cookies = servletRequest.getCookies();
 
         boolean shouldIncrement = viewCountService.shouldIncrementView(postId, cookies);
-        String userId = user != null ? user.getUsername() : null;
+        String userId = user != null ? user.getUserId() : null;
 
         PostDetailResponse post = postService.getPost(postId, shouldIncrement, userId);
 
@@ -119,9 +119,9 @@ public class PostController {
     @PreAuthorize("hasRole('USER')")
     public ResponseEntity<LikeResponse> toggleLike(
         @PathVariable("postId") Long postId,
-        @AuthenticationPrincipal UserDetails user
+        @AuthenticationPrincipal UserPrincipal user
     ) {
-        LikeResponse likeStatus = postLikeService.toggleLike(postId, user.getUsername());
+        LikeResponse likeStatus = postLikeService.toggleLike(postId, user.getUserId());
 
         return ResponseEntity.ok(likeStatus);
     }
