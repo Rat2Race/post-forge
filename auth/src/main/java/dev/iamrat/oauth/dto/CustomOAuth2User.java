@@ -1,5 +1,6 @@
 package dev.iamrat.oauth.dto;
 
+import dev.iamrat.security.dto.UserPrincipal;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 
@@ -11,7 +12,7 @@ public record CustomOAuth2User(
     String nickname,
     Map<String, Object> attributes,
     Collection<? extends GrantedAuthority> authorities
-) implements OAuth2User {
+) implements OAuth2User, UserPrincipal {
     
     @Override
     public Map<String, Object> getAttributes() {
@@ -28,4 +29,13 @@ public record CustomOAuth2User(
         return userId;
     }
     
+    @Override
+    public String getUserId() {
+        return userId;
+    }
+    
+    @Override
+    public String getNickname() {
+        return nickname;
+    }
 }
