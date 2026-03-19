@@ -8,7 +8,7 @@ plugins {
 }
 rootProject.name = "postforge"
 include(
-        "ai",
+        ":ai",
         ":app",
         ":core",
         ":auth",

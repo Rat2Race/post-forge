@@ -4,6 +4,7 @@ WORKDIR /workspace
 COPY build.gradle settings.gradle ./
 COPY gradle ./gradle
 
+COPY ai/build.gradle ./ai/
 COPY app/build.gradle ./app/
 COPY auth/build.gradle ./auth/
 COPY board/build.gradle ./board/
@@ -12,6 +13,7 @@ COPY core/build.gradle ./core/
 RUN --mount=type=cache,target=/root/.gradle \
     gradle dependencies --no-daemon
 
+COPY ai/src ./ai/src
 COPY app/src ./app/src
 COPY auth/src ./auth/src
 COPY board/src ./board/src
