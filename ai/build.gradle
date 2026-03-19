@@ -8,4 +8,7 @@ dependencies {
     implementation platform("org.springframework.ai:spring-ai-bom:1.0.0")
     implementation 'org.springframework.ai:spring-ai-openai'
     implementation 'org.springframework.ai:spring-ai-pgvector-store'
+
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }

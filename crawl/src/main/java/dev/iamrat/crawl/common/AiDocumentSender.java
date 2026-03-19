@@ -8,6 +8,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 
 import java.util.List;
+import java.util.Map;
 
 @Slf4j
 @Component
@@ -29,6 +30,24 @@ public class AiDocumentSender {
         } catch (Exception e) {
             log.warn("AI 모듈 전송 실패 ({}건) - {}", requests.size(), e.getMessage());
             return false;
+        }
+    }
+
+    public void triggerPostGeneration(String stockCode, String corpName) {
+        try {
+            aiRestClient.post()
+                    .uri("/ai/posts/generate")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(Map.of(
+                            "stockCode", stockCode,
+                            "corpName", corpName,
+                            "publish", true
+                    ))
+                    .retrieve()
+                    .toBodilessEntity();
+            log.info("게시글 자동 생성 완료 - {} ({})", corpName, stockCode);
+        } catch (Exception e) {
+            log.warn("게시글 자동 생성 실패 ({}) - {}", corpName, e.getMessage());
         }
     }
 }

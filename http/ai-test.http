@@ -1,32 +1,93 @@
 @host = http://localhost:8080
+@crawl-host = http://localhost:8090
 
+### AI 채팅
 POST {{host}}/ai/chat
 Content-Type: application/json
 
 {
-  "message": "AI 요청 테스트"
+  "message": "삼성전자 최근 공시 알려줘"
 }
 
 ### 문서 저장
 POST {{host}}/ai/documents
 Content-Type: application/json
 
-
 [
   {
-    "content": "PostForge는 Spring Boot 기반의 커뮤니티 게시판 서비스입니다.",
-    "source": "https://example.com/about",
+    "content": "[DART 공시] 삼성전자 (005930)\n\n보고서: 분기보고서 (2026.03)\n접수일: 20260515",
+    "source": "dart",
     "metadata": {
-      "category": "서비스소개",
-      "author": "admin"
+      "corpName": "삼성전자",
+      "stockCode": "005930",
+      "reportName": "분기보고서 (2026.03)",
+      "originalLink": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260515001234",
+      "publishedAt": "20260515"
     }
   },
   {
-    "content": "게시글 작성 시 이미지와 PDF 파일을 첨부할 수 있습니다.",
-    "source": "https://example.com/guide",
+    "content": "## DART 재무 수치 — 삼성전자 (005930)\n\n- 보고서: 분기보고서 (2026.03)\n- 접수일: 20260515\n\n| 항목 | 당기 | 전기 | 증감률 |\n|------|------|------|--------|\n| 매출액 | 78,000,000 | 71,000,000 | +9.8% |\n| 영업이익 | 12,500,000 | 9,800,000 | +27.5% |\n| 당기순이익 | 9,200,000 | 7,100,000 | +29.6% |",
+    "source": "dart-financial",
     "metadata": {
-      "category": "사용가이드"
+      "corpName": "삼성전자",
+      "stockCode": "005930",
+      "bsnsYear": "2026",
+      "reprtCode": "11013",
+      "originalLink": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260515001234",
+      "publishedAt": "20260515"
+    }
+  },
+  {
+    "content": "삼성전자, HBM3E 양산 본격화...반도체 업황 회복 신호",
+    "source": "naver-news",
+    "metadata": {
+      "keyword": "주식",
+      "originalLink": "https://news.naver.com/article/001/1234567",
+      "publishedAt": "Mon, 14 May 2026 09:00:00 +0900"
+    }
+  },
+  {
+    "content": "외국인 삼성전자 5거래일 연속 순매수...코스피 상승 견인",
+    "source": "naver-news",
+    "metadata": {
+      "keyword": "코스피",
+      "originalLink": "https://news.naver.com/article/001/1234568",
+      "publishedAt": "Mon, 13 May 2026 10:00:00 +0900"
     }
   }
 ]
 
+### 게시글 생성 (미리보기만)
+POST {{host}}/ai/posts/generate
+Content-Type: application/json
+
+{
+  "stockCode": "005930",
+  "corpName": "삼성전자",
+  "publish": false
+}
+
+### 게시글 생성 + Board 등록
+POST {{host}}/ai/posts/generate
+Content-Type: application/json
+
+{
+  "stockCode": "005930",
+  "corpName": "삼성전자",
+  "publish": true
+}
+
+### 게시글 생성 (종목코드만 — 회사명은 벡터DB에서 자동 추출)
+POST {{host}}/ai/posts/generate
+Content-Type: application/json
+
+{
+  "stockCode": "005930",
+  "publish": false
+}
+
+### 크롤링 수동 트리거 — 네이버 뉴스
+POST {{crawl-host}}/crawl/naver-news
+
+### 크롤링 수동 트리거 — DART 공시
+POST {{crawl-host}}/crawl/dart
