@@ -18,8 +18,8 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
+import dev.iamrat.security.WithMockUserPrincipal;
 import org.springframework.security.authentication.BadCredentialsException;
-import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -149,7 +149,7 @@ class LoginControllerTest {
         
         @Test
         @DisplayName("인증된 사용자가 로그아웃하면 200을 반환한다")
-        @WithMockUser(username = "testuser1", roles = {"USER"})
+        @WithMockUserPrincipal(userId = "testuser1", roles = {"USER"})
         void logout_authenticatedUser_returns200() throws Exception {
             willDoNothing().given(loginService).logout(anyString());
             
