@@ -45,6 +45,9 @@ public class Comment extends AuditingFields {
     @Column(name = "user_id", nullable = false, updatable = false, length = 100)
     private String userId;
 
+    @Column(name = "nickname", length = 50)
+    private String nickname;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "parent_id")
     @OnDelete(action = OnDeleteAction.CASCADE)

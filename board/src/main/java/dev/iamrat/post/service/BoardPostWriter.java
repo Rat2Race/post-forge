@@ -15,11 +15,12 @@ public class BoardPostWriter implements PostWriter {
 
     @Override
     @Transactional
-    public Long write(String title, String content, String userId) {
+    public Long write(String title, String content, String userId, String nickname) {
         Post post = Post.builder()
                 .title(title)
                 .content(content)
                 .userId(userId)
+                .nickname(nickname)
                 .build();
         return postRepository.save(post).getId();
     }

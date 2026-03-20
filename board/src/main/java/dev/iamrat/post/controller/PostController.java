@@ -42,6 +42,7 @@ public class PostController {
             postRequest.title(),
             postRequest.content(),
             user.getUserId(),
+            user.getNickname(),
             postRequest.fileIds()
         );
 

@@ -37,3 +37,4 @@ crawl:
 ai:
   api:
     base-url: ${AI_API_BASE_URL:http://localhost:8080}
+    key: ${INTERNAL_API_KEY}

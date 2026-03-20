@@ -8,6 +8,7 @@ public record PostSummaryResponse(
     String title,
     String content,
     String userId,
+    String nickname,
     LocalDateTime createdAt,
     LocalDateTime modifiedAt
 ) {
@@ -18,6 +19,7 @@ public record PostSummaryResponse(
             post.getTitle(),
             post.getContent(),
             post.getUserId(),
+            post.getNickname(),
             post.getCreatedAt(),
             post.getModifiedAt()
         );

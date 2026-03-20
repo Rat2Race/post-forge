@@ -41,6 +41,9 @@ public class Post extends AuditingFields {
 	@Column(name = "user_id", nullable = false, updatable = false, length = 100)
 	private String userId;
 
+	@Column(name = "nickname", length = 50)
+	private String nickname;
+
 	@ToString.Exclude
 	@OrderBy("createdAt DESC")
 	@OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)

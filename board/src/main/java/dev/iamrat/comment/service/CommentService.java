@@ -10,6 +10,7 @@ import dev.iamrat.global.exception.ErrorCode;
 import dev.iamrat.post.repository.PostRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,7 +26,7 @@ public class CommentService {
 
     @Transactional
     public CommentSummaryResponse saveComment(Long postId, Long parentId, String content,
-        String userId) {
+        String userId, String nickname) {
         Post post = postRepository.findById(postId)
             .orElseThrow(() -> new CustomException(ErrorCode.POST_NOT_FOUND));
 
@@ -47,6 +48,7 @@ public class CommentService {
             .post(post)
             .content(content)
             .userId(userId)
+            .nickname(nickname)
             .parent(parent)
             .build();
 
@@ -63,8 +65,15 @@ public class CommentService {
 
     public Page<CommentDetailResponse> getCommentsByPost(Long postId, Pageable pageable,
         String userId) {
-        return commentRepository.findByPostId(postId, pageable)
-            .map(comment -> getCommentDetailResponse(comment, userId));
+        Page<Comment> comments = commentRepository.findByPostId(postId, pageable);
+
+        return new PageImpl<>(
+            comments.getContent().stream()
+                .map(comment -> getCommentDetailResponse(comment, userId))
+                .toList(),
+            pageable,
+            comments.getTotalElements()
+        );
     }
 
     public CommentDetailResponse getComment(Long commentId, String userId) {
