@@ -4,10 +4,12 @@ import dev.iamrat.oauth.service.CustomOAuth2UserService;
 import dev.iamrat.oauth.handler.OAuth2SuccessHandler;
 import dev.iamrat.token.handler.JwtAccessDeniedHandler;
 import dev.iamrat.token.handler.JwtAuthenticationEntryPoint;
+import dev.iamrat.security.filter.InternalApiKeyFilter;
 import dev.iamrat.token.filter.JwtAuthenticationFilter;
 import dev.iamrat.token.provider.JwtProvider;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -37,6 +39,9 @@ public class SecurityConfig {
     private final JwtAccessDeniedHandler jwtAccessDeniedHandler;
     private final CustomOAuth2UserService customOAuth2UserService;
     private final OAuth2SuccessHandler oAuth2SuccessHandler;
+
+    @Value("${internal.api-key}")
+    private String internalApiKey;
 
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration) throws Exception {
@@ -70,9 +75,8 @@ public class SecurityConfig {
                 .requestMatchers("/login/oauth2/**").permitAll()
                 
                 
-                // ===== AI API (인증 필요) =====
-//                .requestMatchers("/ai/**").hasAnyRole("USER", "ADMIN")
-                .requestMatchers("/ai/**").permitAll()
+                // ===== AI API (JWT 인증 유저 또는 내부 API 키) =====
+                .requestMatchers("/ai/**").hasAnyRole("USER", "ADMIN")
 
                 // ===== 인증 필요 API =====
                 .requestMatchers("/user/**").hasAnyRole("USER", "ADMIN")
@@ -91,9 +95,8 @@ public class SecurityConfig {
                 .requestMatchers("/admin/**").hasRole("ADMIN")
                 
                 .anyRequest().authenticated())
-            .addFilterBefore(
-        new JwtAuthenticationFilter(jwtProvider),
-        UsernamePasswordAuthenticationFilter.class);
+            .addFilterBefore(new InternalApiKeyFilter(internalApiKey), UsernamePasswordAuthenticationFilter.class)
+            .addFilterBefore(new JwtAuthenticationFilter(jwtProvider), UsernamePasswordAuthenticationFilter.class);
         
         http
             .oauth2Login(oauth2 -> oauth2

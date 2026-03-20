@@ -17,6 +17,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 
 @Service
@@ -30,11 +31,12 @@ public class PostService {
     private final FileRepository fileRepository;
 
     @Transactional
-    public PostSummaryResponse savePost(String title, String content, String userId, List<Long> fileIds) {
+    public PostSummaryResponse savePost(String title, String content, String userId, String nickname, List<Long> fileIds) {
         Post newPost = Post.builder()
             .title(title)
             .content(content)
             .userId(userId)
+            .nickname(nickname)
             .build();
 
         postRepository.save(newPost);
@@ -46,15 +48,27 @@ public class PostService {
     public Page<PostDetailResponse> getPosts(Pageable pageable, String userId) {
         Page<Post> posts = postRepository.findAll(pageable);
         Set<Long> likedPostIds = getLikedPostIds(posts, userId);
-
-        return posts.map(post -> PostDetailResponse.from(post, likedPostIds.contains(post.getId()), post.getLikeCount()));
+        
+        return new PageImpl<>(
+            posts.getContent().stream()
+                .map(post -> PostDetailResponse.from(post, likedPostIds.contains(post.getId()), post.getLikeCount()))
+                .toList(),
+            pageable,
+            posts.getTotalElements()
+        );
     }
 
     public Page<PostDetailResponse> searchPosts(String keyword, Pageable pageable, String userId) {
         Page<Post> posts = postRepository.findByKeyword(keyword, pageable);
         Set<Long> likedPostIds = getLikedPostIds(posts, userId);
 
-        return posts.map(post -> PostDetailResponse.from(post, likedPostIds.contains(post.getId()), post.getLikeCount()));
+        return new PageImpl<>(
+            posts.getContent().stream()
+                .map(post -> PostDetailResponse.from(post, likedPostIds.contains(post.getId()), post.getLikeCount()))
+                .toList(),
+            pageable,
+            posts.getTotalElements()
+        );
     }
 
     @Transactional

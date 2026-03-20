@@ -11,10 +11,14 @@ public class AiApiConfig {
     @Value("${ai.api.base-url}")
     private String aiApiBaseUrl;
 
+    @Value("${ai.api.key}")
+    private String aiApiKey;
+
     @Bean
     public RestClient aiRestClient() {
         return RestClient.builder()
                 .baseUrl(aiApiBaseUrl)
+                .defaultHeader("X-Internal-Api-Key", aiApiKey)
                 .build();
     }
 }

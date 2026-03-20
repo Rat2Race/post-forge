@@ -38,7 +38,8 @@ public class CommentController {
             postId,
             commentRequest.parentId(),
             commentRequest.content(),
-            user.getUserId()
+            user.getUserId(),
+            user.getNickname()
         );
 
         return ResponseEntity

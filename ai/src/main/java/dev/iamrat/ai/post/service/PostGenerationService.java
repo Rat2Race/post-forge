@@ -23,6 +23,7 @@ import java.util.stream.Collectors;
 public class PostGenerationService {
 
     private static final String AI_USER_ID = "ai-post-generator";
+    private static final String AI_NICKNAME = "AI 분석가";
 
     private final ChatModel chatModel;
     private final VectorStore vectorStore;
@@ -103,7 +104,7 @@ public class PostGenerationService {
     }
 
     public Long publish(GeneratedPost post) {
-        Long postId = postWriter.write(post.title(), post.content(), AI_USER_ID);
+        Long postId = postWriter.write(post.title(), post.content(), AI_USER_ID, AI_NICKNAME);
         log.info("게시글 Board에 등록 완료 - postId: {}", postId);
         return postId;
     }
