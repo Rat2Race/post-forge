@@ -12,10 +12,10 @@ import org.springframework.ai.chat.messages.UserMessage;
 import org.springframework.ai.document.Document;
 import org.springframework.ai.vectorstore.SearchRequest;
 import org.springframework.ai.vectorstore.VectorStore;
+import org.springframework.ai.vectorstore.filter.FilterExpressionBuilder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -24,6 +24,10 @@ public class PostGenerationService {
 
     private static final String AI_USER_ID = "ai-post-generator";
     private static final String AI_NICKNAME = "AI 분석가";
+
+    private static final String SOURCE_DART = "dart";
+    private static final String SOURCE_DART_FINANCIAL = "dart-financial";
+    private static final String SOURCE_NAVER_NEWS = "naver-news";
 
     private final ChatModel chatModel;
     private final VectorStore vectorStore;
@@ -61,32 +65,22 @@ public class PostGenerationService {
     public GeneratedPost generate(String stockCode, String corpName) {
         log.info("게시글 생성 시작 - 종목코드: {}", stockCode);
 
-        // 1. DART 공시 검색
-        List<Document> disclosures = searchByFilter(
-                stockCode, "source == 'dart' && stockCode == '" + stockCode + "'", 5);
+        List<Document> disclosures = searchBySourceAndStock(SOURCE_DART, stockCode, 5);
 
-        // 2. corpName이 없으면 공시 메타데이터에서 추출
         if (corpName == null && !disclosures.isEmpty()) {
-            Object name = disclosures.get(0).getMetadata().get("corpName");
+            Object name = disclosures.getFirst().getMetadata().get("corpName");
             if (name != null) corpName = name.toString();
         }
 
-        // 3. 재무 수치 검색
-        List<Document> financials = searchByFilter(
-                stockCode, "source == 'dart-financial' && stockCode == '" + stockCode + "'", 3);
+        List<Document> financials = searchBySourceAndStock(SOURCE_DART_FINANCIAL, stockCode, 3);
 
-        // 4. 관련 뉴스 검색 (회사명으로 유사도 검색)
         String newsQuery = corpName != null ? corpName : stockCode;
-        List<Document> news = searchByFilter(
-                newsQuery, "source == 'naver-news'", 10);
+        List<Document> news = searchBySource(SOURCE_NAVER_NEWS, newsQuery, 10);
 
-        // 5. 과거 유사 데이터 검색
         List<Document> history = searchSimilar(newsQuery + " 실적 공시 분석", 5);
 
-        // 6. 프롬프트 조립
         String userPrompt = buildUserPrompt(stockCode, corpName, disclosures, financials, news, history);
 
-        // 7. LLM 호출
         Prompt prompt = new Prompt(List.of(
                 new SystemMessage(SYSTEM_PROMPT),
                 new UserMessage(userPrompt)
@@ -104,22 +98,49 @@ public class PostGenerationService {
     }
 
     public Long publish(GeneratedPost post) {
-        Long postId = postWriter.write(post.title(), post.content(), AI_USER_ID, AI_NICKNAME);
+        Long postId = postWriter.write(
+                post.title(), post.content(), post.summary(), post.tags(),
+                AI_USER_ID, AI_NICKNAME
+        );
         log.info("게시글 Board에 등록 완료 - postId: {}", postId);
         return postId;
     }
 
-    private List<Document> searchByFilter(String query, String filterExpression, int topK) {
+    private List<Document> searchBySourceAndStock(String source, String stockCode, int topK) {
         try {
+            FilterExpressionBuilder b = new FilterExpressionBuilder();
+            var filter = b.and(
+                    b.eq("source", source),
+                    b.eq("stockCode", stockCode)
+            ).build();
+
+            return vectorStore.similaritySearch(
+                    SearchRequest.builder()
+                            .query(stockCode)
+                            .topK(topK)
+                            .filterExpression(filter)
+                            .build()
+            );
+        } catch (Exception e) {
+            log.warn("벡터 검색 실패 (source={}, stockCode={}): {}", source, stockCode, e.getMessage());
+            return List.of();
+        }
+    }
+
+    private List<Document> searchBySource(String source, String query, int topK) {
+        try {
+            FilterExpressionBuilder b = new FilterExpressionBuilder();
+            var filter = b.eq("source", source).build();
+
             return vectorStore.similaritySearch(
                     SearchRequest.builder()
                             .query(query)
                             .topK(topK)
-                            .filterExpression(filterExpression)
+                            .filterExpression(filter)
                             .build()
             );
         } catch (Exception e) {
-            log.warn("벡터 검색 실패 (filter={}): {}", filterExpression, e.getMessage());
+            log.warn("벡터 검색 실패 (source={}): {}", source, e.getMessage());
             return List.of();
         }
     }
@@ -151,36 +172,22 @@ public class PostGenerationService {
         }
         sb.append("\n");
 
-        if (!disclosures.isEmpty()) {
-            sb.append("## 공시 정보\n");
-            for (Document doc : disclosures) {
-                sb.append(doc.getText()).append("\n\n");
-            }
-        }
-
-        if (!financials.isEmpty()) {
-            sb.append("## 재무 수치\n");
-            for (Document doc : financials) {
-                sb.append(doc.getText()).append("\n\n");
-            }
-        }
-
-        if (!news.isEmpty()) {
-            sb.append("## 관련 뉴스\n");
-            for (Document doc : news) {
-                sb.append(doc.getText()).append("\n\n");
-            }
-        }
-
-        if (!history.isEmpty()) {
-            sb.append("## 과거 연관 데이터\n");
-            for (Document doc : history) {
-                sb.append(doc.getText()).append("\n\n");
-            }
-        }
+        appendSection(sb, "## 공시 정보", disclosures);
+        appendSection(sb, "## 재무 수치", financials);
+        appendSection(sb, "## 관련 뉴스", news);
+        appendSection(sb, "## 과거 연관 데이터", history);
 
         sb.append("위 데이터를 종합 분석하여 시장 분석 글을 작성해주세요.");
         return sb.toString();
+    }
+
+    private void appendSection(StringBuilder sb, String header, List<Document> docs) {
+        if (!docs.isEmpty()) {
+            sb.append(header).append("\n");
+            for (Document doc : docs) {
+                sb.append(doc.getText()).append("\n\n");
+            }
+        }
     }
 
     private GeneratedPost parseResponse(String responseText) {
@@ -188,7 +195,7 @@ public class PostGenerationService {
             String json = extractJson(responseText);
             return objectMapper.readValue(json, GeneratedPost.class);
         } catch (Exception e) {
-            log.warn("AI 응답 JSON 파싱 실패, 기본 형식으로 변환", e);
+            log.warn("AI 응답 JSON 파싱 실패, 기본 형식으로 변환: {}", e.getMessage());
             return new GeneratedPost(
                     "시장 분석",
                     responseText.length() > 100 ? responseText.substring(0, 100) + "..." : responseText,
@@ -200,6 +207,14 @@ public class PostGenerationService {
 
     private String extractJson(String text) {
         text = text.trim();
+
+        int jsonStart = text.indexOf('{');
+        int jsonEnd = text.lastIndexOf('}');
+
+        if (jsonStart >= 0 && jsonEnd > jsonStart) {
+            return text.substring(jsonStart, jsonEnd + 1);
+        }
+
         if (text.startsWith("```json")) {
             text = text.substring(7);
         } else if (text.startsWith("```")) {

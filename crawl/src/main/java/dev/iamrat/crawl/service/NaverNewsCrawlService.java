@@ -135,6 +135,12 @@ public class NaverNewsCrawlService implements DataSourceCrawler {
         }
         return text
                 .replaceAll("<[^>]*>", "")
+                .replace("&amp;", "&")
+                .replace("&lt;", "<")
+                .replace("&gt;", ">")
+                .replace("&quot;", "\"")
+                .replace("&apos;", "'")
+                .replaceAll("&#\\d+;", "")
                 .replaceAll("&[a-zA-Z]+;", " ")
                 .trim();
     }

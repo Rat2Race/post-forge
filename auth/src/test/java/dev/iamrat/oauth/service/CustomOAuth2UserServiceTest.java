@@ -128,7 +128,6 @@ class CustomOAuth2UserServiceTest {
     
     private Member member(String userId, String nickname) {
         Member member = Member.builder()
-            .userName("홍길동")
             .userId(userId)
             .nickname(nickname)
             .email(userId + "@test.com")

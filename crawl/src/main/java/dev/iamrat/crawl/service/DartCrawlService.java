@@ -32,12 +32,22 @@ public class DartCrawlService implements DataSourceCrawler {
 
     private static final String SOURCE_NAME = "dart";
     private static final String FINANCIAL_SOURCE_NAME = "dart-financial";
+    private static final String DART_API_SUCCESS_STATUS = "000";
     private static final DateTimeFormatter DATE_FMT = DateTimeFormatter.ofPattern("yyyyMMdd");
     private static final String DART_VIEWER_URL = "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=";
     private static final Pattern REPORT_DATE_PATTERN = Pattern.compile("\\((\\d{4})\\.(\\d{2})\\)");
 
-    /** 주요사항보고(B), 정기공시(A), 지분공시(D) */
-    private static final String[] DISCLOSURE_TYPES = {"B", "A", "D"};
+    private static final String DISCLOSURE_TYPE_MAJOR = "B";
+    private static final String DISCLOSURE_TYPE_PERIODIC = "A";
+    private static final String DISCLOSURE_TYPE_EQUITY = "D";
+    private static final String[] DISCLOSURE_TYPES = {
+            DISCLOSURE_TYPE_MAJOR, DISCLOSURE_TYPE_PERIODIC, DISCLOSURE_TYPE_EQUITY
+    };
+
+    private static final String REPORT_CODE_ANNUAL = "11011";
+    private static final String REPORT_CODE_SEMI_ANNUAL = "11012";
+    private static final String REPORT_CODE_Q1 = "11013";
+    private static final String REPORT_CODE_Q3 = "11014";
 
     private final RestClient dartRestClient;
     private final DartConfig dartConfig;
@@ -54,7 +64,7 @@ public class DartCrawlService implements DataSourceCrawler {
             List<DartDisclosureItem> newItems = crawlByType(type, weekAgo, today);
             totalNew += newItems.size();
 
-            if ("A".equals(type) && !newItems.isEmpty()) {
+            if (DISCLOSURE_TYPE_PERIODIC.equals(type) && !newItems.isEmpty()) {
                 crawlFinancials(newItems);
                 triggerPostGeneration(newItems);
             }
@@ -108,7 +118,7 @@ public class DartCrawlService implements DataSourceCrawler {
             return Collections.emptyList();
         }
 
-        if (response == null || !"000".equals(response.status()) || response.list() == null) {
+        if (response == null || !DART_API_SUCCESS_STATUS.equals(response.status()) || response.list() == null) {
             log.debug("[{}] 공시 없음 또는 오류 (type={}, status={})",
                     SOURCE_NAME, pblntfTy, response != null ? response.status() : "null");
             return Collections.emptyList();
@@ -223,12 +233,12 @@ public class DartCrawlService implements DataSourceCrawler {
 
         String reprtCode;
         if (reportNm.contains("사업보고서")) {
-            reprtCode = "11011";
+            reprtCode = REPORT_CODE_ANNUAL;
         } else if (reportNm.contains("반기")) {
-            reprtCode = "11012";
+            reprtCode = REPORT_CODE_SEMI_ANNUAL;
         } else if (reportNm.contains("분기")) {
             int m = Integer.parseInt(month);
-            reprtCode = (m <= 6) ? "11013" : "11014";
+            reprtCode = (m <= 6) ? REPORT_CODE_Q1 : REPORT_CODE_Q3;
         } else {
             return null;
         }
@@ -254,7 +264,7 @@ public class DartCrawlService implements DataSourceCrawler {
             return Collections.emptyList();
         }
 
-        if (response == null || !"000".equals(response.status()) || response.list() == null) {
+        if (response == null || !DART_API_SUCCESS_STATUS.equals(response.status()) || response.list() == null) {
             return Collections.emptyList();
         }
 

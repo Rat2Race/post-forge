@@ -1,5 +1,6 @@
 package dev.iamrat.post.service;
 
+import dev.iamrat.comment.repository.CommentRepository;
 import dev.iamrat.file.entity.PostFile;
 import dev.iamrat.file.repository.FileRepository;
 import dev.iamrat.post.dto.PostDetailResponse;
@@ -28,6 +29,7 @@ public class PostService {
     private final PostRepository postRepository;
     private final PostLikeService postLikeService;
     private final PostLikeRepository postLikeRepository;
+    private final CommentRepository commentRepository;
     private final FileRepository fileRepository;
 
     @Transactional
@@ -48,10 +50,10 @@ public class PostService {
     public Page<PostDetailResponse> getPosts(Pageable pageable, String userId) {
         Page<Post> posts = postRepository.findAll(pageable);
         Set<Long> likedPostIds = getLikedPostIds(posts, userId);
-        
+
         return new PageImpl<>(
             posts.getContent().stream()
-                .map(post -> PostDetailResponse.from(post, likedPostIds.contains(post.getId()), post.getLikeCount()))
+                .map(post -> toDetailResponse(post, likedPostIds.contains(post.getId())))
                 .toList(),
             pageable,
             posts.getTotalElements()
@@ -64,7 +66,7 @@ public class PostService {
 
         return new PageImpl<>(
             posts.getContent().stream()
-                .map(post -> PostDetailResponse.from(post, likedPostIds.contains(post.getId()), post.getLikeCount()))
+                .map(post -> toDetailResponse(post, likedPostIds.contains(post.getId())))
                 .toList(),
             pageable,
             posts.getTotalElements()
@@ -80,7 +82,9 @@ public class PostService {
             post.updateViews(post.getViews() + 1);
         }
 
-        return getPostDetailResponse(post, userId);
+        boolean isLiked = postLikeService.isLiked(post.getId(), userId);
+        int commentCount = commentRepository.countByPostId(postId);
+        return PostDetailResponse.from(post, isLiked, post.getLikeCount(), commentCount);
     }
 
     @Transactional
@@ -89,7 +93,7 @@ public class PostService {
             .orElseThrow(() -> new CustomException(ErrorCode.POST_NOT_FOUND));
 
         post.update(title, content);
-        
+
         List<PostFile> existingFiles = fileRepository.findAllByPost(post);
         existingFiles.forEach(PostFile::unassignPost);
 
@@ -132,8 +136,8 @@ public class PostService {
         return Set.copyOf(postLikeRepository.findLikedPostIds(postIds, userId));
     }
 
-    private PostDetailResponse getPostDetailResponse(Post post, String userId) {
-        boolean isLiked = postLikeService.isLiked(post.getId(), userId);
-        return PostDetailResponse.from(post, isLiked, post.getLikeCount());
+    private PostDetailResponse toDetailResponse(Post post, boolean isLiked) {
+        int commentCount = commentRepository.countByPostId(post.getId());
+        return PostDetailResponse.from(post, isLiked, post.getLikeCount(), commentCount);
     }
 }

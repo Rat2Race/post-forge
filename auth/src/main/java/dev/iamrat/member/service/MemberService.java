@@ -19,20 +19,20 @@ public class MemberService {
     private final MemberRepository memberRepository;
     private final PasswordEncoder passwordEncoder;
     
-    public Member createMember(String name, String id, String pw,
+    @Transactional
+    public Member createMember(String userId, String rawPassword,
                                String email, String nickname, String provider, String providerId) {
         Member member = Member.builder()
-            .userName(name)
-            .userId(id)
-            .userPw(pw != null ? passwordEncoder.encode(pw) : null)
+            .userId(userId)
+            .userPw(rawPassword != null ? passwordEncoder.encode(rawPassword) : null)
             .email(email)
             .nickname(nickname)
             .provider(provider)
             .providerId(providerId)
             .build();
-        
+
         member.addRole(Role.USER);
-        
+
         return memberRepository.save(member);
     }
     
@@ -45,7 +45,4 @@ public class MemberService {
         return memberRepository.existsByUserId(userId);
     }
     
-    public boolean existsByUserName(String userName) {
-        return memberRepository.existsByUserName(userName);
-    }
 }

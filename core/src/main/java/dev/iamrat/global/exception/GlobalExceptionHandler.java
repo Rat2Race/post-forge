@@ -85,8 +85,8 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(IOException.class)
     public ResponseEntity<ErrorResponse> handleIOException(IOException e) {
-        log.error("IOException: {}", e.getMessage());
-        return buildErrorResponse(ErrorCode.FILE_STORAGE_ERROR);
+        log.error("IOException: {}", e.getMessage(), e);
+        return buildErrorResponse(ErrorCode.INTERNAL_SERVER_ERROR);
     }
 
     @ExceptionHandler(Exception.class)

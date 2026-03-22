@@ -9,6 +9,8 @@ public record PostDetailResponse(
     Long id,
     String title,
     String content,
+    String summary,
+    List<String> tags,
     String userId,
     String nickname,
     Long views,
@@ -19,7 +21,7 @@ public record PostDetailResponse(
     LocalDateTime createdAt,
     LocalDateTime modifiedAt
 ) {
-    public static PostDetailResponse from(Post post, boolean isLiked, Long likeCount) {
+    public static PostDetailResponse from(Post post, boolean isLiked, Long likeCount, int commentCount) {
         List<FileInfoResponse> files = post.getFiles().stream()
             .map(FileInfoResponse::from)
             .toList();
@@ -28,10 +30,12 @@ public record PostDetailResponse(
             post.getId(),
             post.getTitle(),
             post.getContent(),
+            post.getSummary(),
+            post.getTags(),
             post.getUserId(),
             post.getNickname(),
             post.getViews(),
-            post.getComments().size(),
+            commentCount,
             likeCount,
             isLiked,
             files,

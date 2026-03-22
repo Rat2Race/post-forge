@@ -25,7 +25,7 @@ public class ProfileService {
     @Transactional
     public void updateNickname(String userId, String nickname) {
         if (memberRepository.existsByNickname(nickname)) {
-            throw new CustomException(ErrorCode.DUPLICATE_USERNAME);
+            throw new CustomException(ErrorCode.DUPLICATE_NICKNAME);
         }
         Member member = getMember(userId);
         member.updateProfile(nickname);
@@ -36,7 +36,7 @@ public class ProfileService {
         Member member = getMember(userId);
 
         if (member.getUserPw() == null) {
-            throw new CustomException(ErrorCode.INVALID_PASSWORD, "소셜 로그인 계정은 비밀번호를 변경할 수 없습니다");
+            throw new CustomException(ErrorCode.OAUTH_PASSWORD_CHANGE_NOT_ALLOWED);
         }
 
         if (!passwordEncoder.matches(currentPassword, member.getUserPw())) {

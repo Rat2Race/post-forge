@@ -4,7 +4,9 @@ import dev.iamrat.common.entity.AuditingFields;
 import dev.iamrat.comment.entity.Comment;
 import dev.iamrat.file.entity.PostFile;
 import jakarta.persistence.*;
+import java.util.ArrayList;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Set;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -29,6 +31,15 @@ public class Post extends AuditingFields {
 
 	@Column(nullable = false, length = 10000)
 	private String content;
+
+	@Column(length = 500)
+	private String summary;
+
+	@ElementCollection
+	@CollectionTable(name = "post_tags", joinColumns = @JoinColumn(name = "post_id"))
+	@Column(name = "tag", length = 50)
+	@Builder.Default
+	private List<String> tags = new ArrayList<>();
 
 	@Column(name = "views", nullable = false)
 	@Builder.Default
@@ -69,26 +80,12 @@ public class Post extends AuditingFields {
 	}
 
 	public void incrementLikeCount() {
-		if (this.likeCount == null) {
-			this.likeCount = 0L;
-		}
 		this.likeCount++;
 	}
 
 	public void decrementLikeCount() {
-		if (this.likeCount == null) {
-			this.likeCount = 0L;
-		}
 		if (this.likeCount > 0) {
 			this.likeCount--;
 		}
-	}
-
-	public Long getViews() {
-		return this.views == null ? 0L : this.views;
-	}
-
-	public Long getLikeCount() {
-		return this.likeCount == null ? 0L : this.likeCount;
 	}
 }

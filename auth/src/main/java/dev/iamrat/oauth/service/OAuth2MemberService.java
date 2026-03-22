@@ -8,21 +8,21 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.UUID;
+import java.util.concurrent.ThreadLocalRandom;
 
 @RequiredArgsConstructor
 @Service
 public class OAuth2MemberService {
     private final MemberRepository memberRepository;
     private final MemberService memberService;
-    
+
     public Member getOrCreateMember(String provider, OAuth2UserInfo userInfo) {
         String providerId = userInfo.getId();
-        
+
         return memberRepository.findByProviderAndProviderId(provider, providerId)
             .orElseGet(() ->
                 memberService.createMember(
-                    userInfo.getName(),
-                    providerId,
+                    provider.toLowerCase() + "_" + providerId,
                     null,
                     userInfo.getEmail(),
                     generateUniqueNickname(),
@@ -31,17 +31,15 @@ public class OAuth2MemberService {
                 )
             );
     }
-    
+
     private String generateUniqueNickname() {
-        int maxRetries = 100;
-        
-        for (int i = 0; i < maxRetries; i++) {
+        for (int i = 0; i < 10; i++) {
             String nickname = "user_" + UUID.randomUUID().toString().substring(0, 8);
             if (!memberRepository.existsByNickname(nickname)) {
                 return nickname;
             }
         }
-        
-        return "user_" + UUID.randomUUID().toString().replace("-", "").substring(0, 14);
+        // 10회 실패 시 타임스탬프 기반으로 유일성 보장
+        return "user_" + System.currentTimeMillis() + ThreadLocalRandom.current().nextInt(100);
     }
 }

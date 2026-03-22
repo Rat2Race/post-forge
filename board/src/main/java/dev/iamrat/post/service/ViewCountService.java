@@ -17,26 +17,13 @@ public class ViewCountService {
 
 	public boolean shouldIncrementView(Long postId, Cookie[] cookies) {
 		if (cookies == null) {
-			log.info("[ViewCount] postId={}, cookies=null, shouldIncrement=true", postId);
 			return true;
 		}
 
 		String cookieName = getCookieName(postId);
-		log.info("[ViewCount] postId={}, cookieName={}", postId, cookieName);
 
-		Arrays.stream(cookies).forEach(cookie ->
-			log.info("[ViewCount] Found cookie: name={}, value={}", cookie.getName(), cookie.getValue())
-		);
-
-		boolean shouldIncrement = Arrays.stream(cookies)
+		return Arrays.stream(cookies)
 			.noneMatch(cookie -> cookie.getName().equals(cookieName));
-
-		log.info("[ViewCount] postId={}, shouldIncrement={}", postId, shouldIncrement);
-
-		return shouldIncrement;
-
-//		return Arrays.stream(cookies)
-//			.noneMatch(cookie -> cookie.getName().equals(cookieName));
 	}
 
 	public Cookie createViewCookie(Long postId) {
@@ -44,8 +31,7 @@ public class ViewCountService {
 		Cookie cookie = new Cookie(cookieName, "true");
 		cookie.setMaxAge(COOKIE_MAX_AGE);
 		cookie.setPath("/");
-		cookie.setHttpOnly(false);
-		log.info("[ViewCount] Created cookie: name={}, path=/, maxAge={}", cookieName, COOKIE_MAX_AGE);
+		cookie.setHttpOnly(true);
 		return cookie;
 	}
 
