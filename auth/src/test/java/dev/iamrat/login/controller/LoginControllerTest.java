@@ -53,7 +53,7 @@ class LoginControllerTest {
     CookieProvider cookieProvider;
     
     private LoginRequest createValidLoginRequest() {
-        return new LoginRequest("testuser1", "Test1234!");
+        return new LoginRequest("testuser1", "Test1234!");  // userId, password
     }
     
     private JwtResponse createTokenResponse() {
@@ -115,10 +115,10 @@ class LoginControllerTest {
         
         static Stream<Arguments> loginBusinessExceptions() {
             return Stream.of(
-                Arguments.of("아이디가 빈 값이면 400을 반환한다", "id", new LoginRequest("", "Test1234!")),
-                Arguments.of("아이디가 4자 미만이면 400을 반환한다", "id", new LoginRequest("abc", "Test1234!")),
-                Arguments.of("아이디에 특수문자가 포함되면 400을 반환한다", "id", new LoginRequest("testuser1*^_^*", "Test1234!")),
-                Arguments.of("비밀번호가 빈 값이면 400을 반환한다", "pw",new LoginRequest("testuser1", ""))
+                Arguments.of("아이디가 빈 값이면 400을 반환한다", "userId", new LoginRequest("", "Test1234!")),
+                Arguments.of("아이디가 4자 미만이면 400을 반환한다", "userId", new LoginRequest("abc", "Test1234!")),
+                Arguments.of("아이디에 특수문자가 포함되면 400을 반환한다", "userId", new LoginRequest("testuser1*^_^*", "Test1234!")),
+                Arguments.of("비밀번호가 빈 값이면 400을 반환한다", "password", new LoginRequest("testuser1", ""))
             );
         }
     }

@@ -96,7 +96,6 @@ class JwtProviderTest {
 
             Member member = Member.builder()
                 .userId(USER_ID)
-                .userName("tester")
                 .email("test@test.com")
                 .nickname("tester")
                 .roles(Set.of(Role.USER))

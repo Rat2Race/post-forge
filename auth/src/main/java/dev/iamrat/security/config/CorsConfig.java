@@ -1,7 +1,8 @@
 package dev.iamrat.security.config;
 
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.cors.CorsConfiguration;
@@ -12,18 +13,18 @@ import java.util.List;
 
 @Slf4j
 @Configuration
+@RequiredArgsConstructor
+@EnableConfigurationProperties(AppProperties.class)
 public class CorsConfig {
-    @Value("${spring.cors.allowed-origins}")
-    private List<String> allowedOrigins;
-    
+    private final AppProperties appProperties;
+
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        
-        log.info("=== CORS 설정 ===");
+
+        List<String> allowedOrigins = appProperties.getCors().getAllowedOrigins();
         log.info("허용된 Origins: {}", allowedOrigins);
-        log.info("Origins 개수: {}", allowedOrigins.size());
-        
+
         configuration.setAllowedOrigins(allowedOrigins);
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
@@ -32,8 +33,7 @@ public class CorsConfig {
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
-        
-        log.info("CORS 설정 완료!");
+
         return source;
     }
 }

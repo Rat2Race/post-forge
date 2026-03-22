@@ -1,6 +1,7 @@
 package dev.iamrat.security.config;
 
 import dev.iamrat.oauth.service.CustomOAuth2UserService;
+import dev.iamrat.oauth.handler.OAuth2FailureHandler;
 import dev.iamrat.oauth.handler.OAuth2SuccessHandler;
 import dev.iamrat.token.handler.JwtAccessDeniedHandler;
 import dev.iamrat.token.handler.JwtAuthenticationEntryPoint;
@@ -39,6 +40,7 @@ public class SecurityConfig {
     private final JwtAccessDeniedHandler jwtAccessDeniedHandler;
     private final CustomOAuth2UserService customOAuth2UserService;
     private final OAuth2SuccessHandler oAuth2SuccessHandler;
+    private final OAuth2FailureHandler oAuth2FailureHandler;
 
     @Value("${internal.api-key}")
     private String internalApiKey;
@@ -102,7 +104,8 @@ public class SecurityConfig {
             .oauth2Login(oauth2 -> oauth2
                 .userInfoEndpoint(userInfo -> userInfo
                     .userService(customOAuth2UserService))
-                .successHandler(oAuth2SuccessHandler));
+                .successHandler(oAuth2SuccessHandler)
+                .failureHandler(oAuth2FailureHandler));
 
         return http.build();
     }

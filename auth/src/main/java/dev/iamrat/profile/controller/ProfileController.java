@@ -10,7 +10,6 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
@@ -27,19 +26,7 @@ public class ProfileController {
         @AuthenticationPrincipal UserPrincipal userDetails) {
 
         Member member = profileService.getMember(userDetails.getUserId());
-
-        MemberResponse response = MemberResponse.builder()
-            .id(member.getId())
-            .userId(member.getUserId())
-            .nickname(member.getNickname())
-            .provider(member.getProvider())
-            .isOAuthUser(member.getProvider() != null)
-            .roles(member.getAuthorities().stream()
-                .map(GrantedAuthority::getAuthority)
-                .toList())
-            .build();
-
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(MemberResponse.from(member));
     }
 
     @PatchMapping("/nickname")
