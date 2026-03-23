@@ -55,7 +55,7 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
     private OAuth2UserInfo getUserInfo(String registrationId, OAuth2User oAuth2User) {
         return switch (registrationId) {
             case "google" -> new GoogleUserInfo(oAuth2User.getAttributes());
-            case "naver" -> new NaverUserInfo(oAuth2User.getAttributes());
+            case "naver" -> NaverUserInfo.fromOAuth2Attributes(oAuth2User.getAttributes());
             case "kakao" -> new KakaoUserInfo(oAuth2User.getAttributes());
             default -> throw new OAuth2AuthenticationException("지원하지 않는 소셜 로그인: " + registrationId);
         };

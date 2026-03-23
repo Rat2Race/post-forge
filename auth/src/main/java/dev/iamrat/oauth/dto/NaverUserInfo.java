@@ -1,27 +1,34 @@
 package dev.iamrat.oauth.dto;
 
+import java.util.Collections;
 import java.util.Map;
+import java.util.Objects;
 
-public class NaverUserInfo implements OAuth2UserInfo{
-    private final Map<String, Object> attributes;
-    
-    public NaverUserInfo(Map<String, Object> attributes) {
-        this.attributes = (Map<String, Object>) attributes.get("response");
+public record NaverUserInfo(
+    Map<String, Object> attributes
+) implements OAuth2UserInfo {
+
+    @SuppressWarnings("unchecked")
+    public static NaverUserInfo fromOAuth2Attributes(Map<String, Object> rawAttributes) {
+        Object response = rawAttributes.get("response");
+        if (response instanceof Map<?, ?>) {
+            return new NaverUserInfo((Map<String, Object>) response);
+        }
+        return new NaverUserInfo(Collections.emptyMap());
     }
-    
+
     @Override
     public String getId() {
-        return String.valueOf(attributes.get("id"));
+        return Objects.toString(attributes.get("id"), null);
     }
-    
+
     @Override
     public String getName() {
-        return String.valueOf(attributes.get("name"));
+        return Objects.toString(attributes.get("name"), null);
     }
-    
+
     @Override
     public String getEmail() {
-        return String.valueOf(attributes.get("email"));
+        return Objects.toString(attributes.get("email"), null);
     }
-    
 }

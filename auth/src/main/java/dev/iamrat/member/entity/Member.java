@@ -40,9 +40,6 @@ public class Member {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, length = 50)
-    private String userName;
-
     @Column(nullable = false, unique = true, length = 100)
     private String userId;
 

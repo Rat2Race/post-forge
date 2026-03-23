@@ -1,23 +1,24 @@
 package dev.iamrat.oauth.dto;
 
 import java.util.Map;
+import java.util.Objects;
 
 public record GoogleUserInfo(
     Map<String, Object> attributes
 ) implements OAuth2UserInfo {
-    
+
     @Override
     public String getId() {
-        return String.valueOf(attributes.get("sub"));
+        return Objects.toString(attributes.get("sub"), null);
     }
-    
+
     @Override
     public String getEmail() {
-        return String.valueOf(attributes.get("email"));
+        return Objects.toString(attributes.get("email"), null);
     }
-    
+
     @Override
     public String getName() {
-        return String.valueOf(attributes.get("name"));
+        return Objects.toString(attributes.get("name"), null);
     }
 }

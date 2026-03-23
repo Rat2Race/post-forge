@@ -1,31 +1,50 @@
 package dev.iamrat.oauth.dto;
 
+import java.util.Collections;
 import java.util.Map;
+import java.util.Objects;
 
-public class KakaoUserInfo implements OAuth2UserInfo{
-    private final Map<String, Object> attributes;
-    private final Map<String, Object> kakaoAccount;
-    private final Map<String, Object> profile;
-    
+public record KakaoUserInfo(
+    Map<String, Object> attributes,
+    Map<String, Object> kakaoAccount,
+    Map<String, Object> profile
+) implements OAuth2UserInfo {
+
+    @SuppressWarnings("unchecked")
     public KakaoUserInfo(Map<String, Object> attributes) {
-        this.attributes = attributes;
-        this.kakaoAccount = (Map<String, Object>) attributes.get("kakao_account");
-        this.profile = (Map<String, Object>) kakaoAccount.get("profile");
+        this(
+            attributes,
+            attributes.getOrDefault("kakao_account", Collections.emptyMap()) instanceof Map
+                ? (Map<String, Object>) attributes.get("kakao_account")
+                : Collections.emptyMap(),
+            extractProfile(attributes)
+        );
     }
-    
+
+    @SuppressWarnings("unchecked")
+    private static Map<String, Object> extractProfile(Map<String, Object> attributes) {
+        Object account = attributes.get("kakao_account");
+        if (account instanceof Map<?, ?> accountMap) {
+            Object prof = accountMap.get("profile");
+            if (prof instanceof Map<?, ?>) {
+                return (Map<String, Object>) prof;
+            }
+        }
+        return Collections.emptyMap();
+    }
+
     @Override
     public String getId() {
-        return String.valueOf(attributes.get("id"));
+        return Objects.toString(attributes.get("id"), null);
     }
-    
+
     @Override
     public String getName() {
-        return String.valueOf(profile.get("nickname"));
+        return Objects.toString(profile.get("nickname"), null);
     }
-    
+
     @Override
     public String getEmail() {
-        return String.valueOf(kakaoAccount.get("email"));
+        return Objects.toString(kakaoAccount.get("email"), null);
     }
-    
 }

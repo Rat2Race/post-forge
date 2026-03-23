@@ -75,22 +75,12 @@ public class Comment extends AuditingFields {
     }
 
     public void incrementLikeCount() {
-        if (this.likeCount == null) {
-            this.likeCount = 0L;
-        }
         this.likeCount++;
     }
 
     public void decrementLikeCount() {
-        if (this.likeCount == null) {
-            this.likeCount = 0L;
-        }
         if (this.likeCount > 0) {
             this.likeCount--;
         }
-    }
-
-    public Long getLikeCount() {
-        return this.likeCount == null ? 0L : this.likeCount;
     }
 }

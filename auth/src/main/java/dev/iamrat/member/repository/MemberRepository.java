@@ -13,7 +13,6 @@ public interface MemberRepository extends JpaRepository<Member, Long> {
 	@EntityGraph(attributePaths = "roles")
 	Optional<Member> findByUserId(String userId);
 
-	boolean existsByUserName(String name);
 	boolean existsByUserId(String userId);
 	boolean existsByEmail(String email);
     boolean existsByNickname(String nickname);

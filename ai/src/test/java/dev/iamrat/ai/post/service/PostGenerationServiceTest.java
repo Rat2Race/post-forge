@@ -180,14 +180,16 @@ class PostGenerationServiceTest {
             // given
             GeneratedPost post = new GeneratedPost(
                     "제목", "요약", "내용", List.of("태그"));
-            given(postWriter.write("제목", "내용", "ai-post-generator", "AI 분석가")).willReturn(42L);
+            given(postWriter.write("제목", "내용", "요약", List.of("태그"),
+                    "ai-post-generator", "AI 분석가")).willReturn(42L);
 
             // when
             Long postId = postGenerationService.publish(post);
 
             // then
             assertThat(postId).isEqualTo(42L);
-            verify(postWriter).write("제목", "내용", "ai-post-generator", "AI 분석가");
+            verify(postWriter).write("제목", "내용", "요약", List.of("태그"),
+                    "ai-post-generator", "AI 분석가");
         }
     }
 }

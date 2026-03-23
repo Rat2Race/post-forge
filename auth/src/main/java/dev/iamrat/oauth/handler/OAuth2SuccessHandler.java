@@ -1,5 +1,6 @@
 package dev.iamrat.oauth.handler;
 
+import dev.iamrat.security.config.AppProperties;
 import dev.iamrat.token.dto.JwtResponse;
 import dev.iamrat.token.provider.CookieProvider;
 import dev.iamrat.token.provider.JwtProvider;
@@ -8,13 +9,11 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
-import java.util.List;
 
 @Component
 @RequiredArgsConstructor
@@ -23,9 +22,7 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
     private final JwtProvider jwtProvider;
     private final JwtService jwtService;
     private final CookieProvider cookieProvider;
-
-    @Value("${spring.cors.allowed-origins:${cors.allowed-origins}}")
-    private String allowedOrigins;
+    private final AppProperties appProperties;
 
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response,
@@ -36,9 +33,11 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
 
         cookieProvider.addRefreshTokenCookie(response, jwtResponse.refreshToken());
 
-        String redirectUrl = List.of(allowedOrigins.split(",")).getFirst()
-            + "/oauth2/callback"
-            + "?accessToken=" + jwtResponse.accessToken();
+        String redirectUrl = String.format(
+                "%s?accessToken=%s",
+                appProperties.getOauth2().getRedirectUrl(),
+                jwtResponse.accessToken()
+        );
 
         response.sendRedirect(redirectUrl);
     }
