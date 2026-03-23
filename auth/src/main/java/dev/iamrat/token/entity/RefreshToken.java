@@ -8,6 +8,8 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 import java.time.LocalDateTime;
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -40,7 +42,9 @@ public class RefreshToken {
     }
 
     public void validateToken(String requestToken) {
-        if (!this.token.equals(requestToken)) {
+        byte[] stored = this.token.getBytes(StandardCharsets.UTF_8);
+        byte[] request = requestToken.getBytes(StandardCharsets.UTF_8);
+        if (!MessageDigest.isEqual(stored, request)) {
             throw new CustomException(ErrorCode.INVALID_TOKEN);
         }
     }

@@ -19,7 +19,7 @@ public class LoginService {
     
     public JwtResponse login(LoginRequest request) {
         UsernamePasswordAuthenticationToken authenticationToken =
-            UsernamePasswordAuthenticationToken.unauthenticated(request.id(), request.pw());
+            UsernamePasswordAuthenticationToken.unauthenticated(request.userId(), request.password());
         
         Authentication authentication = authenticationManager.authenticate(authenticationToken);
         log.info("사용자 로그인: {}", authentication.getName());

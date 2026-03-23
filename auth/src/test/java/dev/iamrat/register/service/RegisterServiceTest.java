@@ -5,7 +5,6 @@ import dev.iamrat.email.repository.EmailVerificationRepository;
 import dev.iamrat.global.exception.CustomException;
 import dev.iamrat.global.exception.ErrorCode;
 import dev.iamrat.member.entity.Member;
-import dev.iamrat.member.repository.MemberRepository;
 import dev.iamrat.member.service.MemberService;
 import dev.iamrat.register.dto.RegisterRequest;
 import org.junit.jupiter.api.DisplayName;
@@ -31,7 +30,7 @@ class RegisterServiceTest {
 
     @Mock
     private MemberService memberService;
-    
+
     @Mock
     private EmailVerificationRepository emailVerificationRepository;
 
@@ -39,7 +38,7 @@ class RegisterServiceTest {
     private RegisterService registerService;
 
     private RegisterRequest createValidRequest() {
-        return new RegisterRequest("홍길동", "testuser1", "Test1234!", "test@example.com", "길동이");
+        return new RegisterRequest("testuser1", "Test1234!", "test@example.com", "길동이");
     }
 
     private EmailVerification createVerifiedEmailVerification() {
@@ -72,24 +71,22 @@ class RegisterServiceTest {
 
             given(emailVerificationRepository.findByEmail("test@example.com"))
                 .willReturn(Optional.of(verification));
-            given(memberService.existsByUserName("홍길동")).willReturn(false);
             given(memberService.existsByUserId("testuser1")).willReturn(false);
 
             Member member = Member.builder()
                 .userId("testuser1")
-                .userName("홍길동")
                 .email("test@example.com")
                 .nickname("길동이")
                 .build();
-            
-            given(memberService.createMember("홍길동", "testuser1", "Test1234!",
+
+            given(memberService.createMember("testuser1", "Test1234!",
                 "test@example.com", "길동이", "LOCAL", null))
                 .willReturn(member);
 
             Long result = registerService.register(request);
 
             assertThat(result).isEqualTo(member.getId());
-            verify(memberService).createMember("홍길동", "testuser1", "Test1234!",
+            verify(memberService).createMember("testuser1", "Test1234!",
                 "test@example.com", "길동이", "LOCAL", null);
             verify(emailVerificationRepository).delete(verification);
         }
@@ -112,7 +109,7 @@ class RegisterServiceTest {
                     assertThat(((CustomException) exception).getErrorCode())
                         .isEqualTo(ErrorCode.EMAIL_CODE_NOT_FOUND));
 
-            verify(memberService, never()).createMember(any(), any(), any(), any(), any(), any(), any());
+            verify(memberService, never()).createMember(any(), any(), any(), any(), any(), any());
         }
 
         @Test
@@ -130,26 +127,7 @@ class RegisterServiceTest {
                     assertThat(((CustomException) exception).getErrorCode())
                         .isEqualTo(ErrorCode.EMAIL_NOT_VERIFIED));
 
-            verify(memberService, never()).createMember(any(), any(), any(), any(), any(), any(), any());
-        }
-
-        @Test
-        @DisplayName("이미 존재하는 사용자명이면 DUPLICATE_USERNAME 예외를 던진다")
-        void register_duplicateUsername_throwsDuplicateUsername() {
-            RegisterRequest request = createValidRequest();
-            EmailVerification verification = createVerifiedEmailVerification();
-
-            given(emailVerificationRepository.findByEmail("test@example.com"))
-                .willReturn(Optional.of(verification));
-            given(memberService.existsByUserName("홍길동")).willReturn(true);
-
-            assertThatThrownBy(() -> registerService.register(request))
-                .isInstanceOf(CustomException.class)
-                .satisfies(exception ->
-                    assertThat(((CustomException) exception).getErrorCode())
-                        .isEqualTo(ErrorCode.DUPLICATE_USERNAME));
-
-            verify(memberService, never()).createMember(any(), any(), any(), any(), any(), any(), any());
+            verify(memberService, never()).createMember(any(), any(), any(), any(), any(), any());
         }
 
         @Test
@@ -160,7 +138,6 @@ class RegisterServiceTest {
 
             given(emailVerificationRepository.findByEmail("test@example.com"))
                 .willReturn(Optional.of(verification));
-            given(memberService.existsByUserName("홍길동")).willReturn(false);
             given(memberService.existsByUserId("testuser1")).willReturn(true);
 
             assertThatThrownBy(() -> registerService.register(request))
@@ -169,7 +146,7 @@ class RegisterServiceTest {
                     assertThat(((CustomException) exception).getErrorCode())
                         .isEqualTo(ErrorCode.DUPLICATE_ID));
 
-            verify(memberService, never()).createMember(any(), any(), any(), any(), any(), any(), any());
+            verify(memberService, never()).createMember(any(), any(), any(), any(), any(), any());
         }
     }
 }

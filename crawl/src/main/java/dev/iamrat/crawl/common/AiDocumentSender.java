@@ -15,12 +15,19 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class AiDocumentSender {
 
+    private static final String DOCUMENTS_ENDPOINT = "/ai/documents";
+    private static final String POST_GENERATION_ENDPOINT = "/ai/posts/generate";
+
     private final RestClient aiRestClient;
 
     public boolean send(List<DocumentRequest> requests) {
+        if (requests == null || requests.isEmpty()) {
+            return true;
+        }
+
         try {
             aiRestClient.post()
-                    .uri("/ai/documents")
+                    .uri(DOCUMENTS_ENDPOINT)
                     .contentType(MediaType.APPLICATION_JSON)
                     .body(requests)
                     .retrieve()
@@ -28,7 +35,8 @@ public class AiDocumentSender {
             log.info("AI 모듈에 {}건의 문서 전송 완료", requests.size());
             return true;
         } catch (Exception e) {
-            log.warn("AI 모듈 전송 실패 ({}건) - {}", requests.size(), e.getMessage());
+            log.error("AI 모듈 문서 전송 실패 - {}건, endpoint={}, error={}",
+                    requests.size(), DOCUMENTS_ENDPOINT, e.getMessage(), e);
             return false;
         }
     }
@@ -36,7 +44,7 @@ public class AiDocumentSender {
     public void triggerPostGeneration(String stockCode, String corpName) {
         try {
             aiRestClient.post()
-                    .uri("/ai/posts/generate")
+                    .uri(POST_GENERATION_ENDPOINT)
                     .contentType(MediaType.APPLICATION_JSON)
                     .body(Map.of(
                             "stockCode", stockCode,
@@ -45,9 +53,9 @@ public class AiDocumentSender {
                     ))
                     .retrieve()
                     .toBodilessEntity();
-            log.info("게시글 자동 생성 완료 - {} ({})", corpName, stockCode);
+            log.info("게시글 자동 생성 요청 완료 - {} ({})", corpName, stockCode);
         } catch (Exception e) {
-            log.warn("게시글 자동 생성 실패 ({}) - {}", corpName, e.getMessage());
+            log.error("게시글 자동 생성 요청 실패 - {} ({}), error={}", corpName, stockCode, e.getMessage(), e);
         }
     }
 }

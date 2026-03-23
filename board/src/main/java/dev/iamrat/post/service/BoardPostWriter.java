@@ -7,6 +7,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+
 @Component
 @RequiredArgsConstructor
 public class BoardPostWriter implements PostWriter {
@@ -15,10 +17,13 @@ public class BoardPostWriter implements PostWriter {
 
     @Override
     @Transactional
-    public Long write(String title, String content, String userId, String nickname) {
+    public Long write(String title, String content, String summary, List<String> tags,
+                      String userId, String nickname) {
         Post post = Post.builder()
                 .title(title)
                 .content(content)
+                .summary(summary)
+                .tags(tags)
                 .userId(userId)
                 .nickname(nickname)
                 .build();

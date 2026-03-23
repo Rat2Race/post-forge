@@ -1,5 +1,7 @@
 spring:
   datasource:
+    url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    driver-class-name: org.h2.Driver
     username: sa
     password:
   jpa:
@@ -8,5 +10,4 @@ spring:
 
 logging:
   level:
-    org.apache.coyote.http11: TRACE
     org.springframework.web: DEBUG

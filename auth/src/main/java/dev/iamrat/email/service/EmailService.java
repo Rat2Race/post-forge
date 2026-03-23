@@ -2,11 +2,11 @@ package dev.iamrat.email.service;
 
 import dev.iamrat.global.exception.CustomException;
 import dev.iamrat.global.exception.ErrorCode;
+import dev.iamrat.security.config.AppProperties;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.util.List;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -22,19 +22,16 @@ import org.springframework.util.StreamUtils;
 @Slf4j
 public class EmailService {
     private final JavaMailSender mailsender;
+    private final AppProperties appProperties;
 
-    @Value("${spring.cors.allowed-origins}")
-    private String allowedOrigins;
+    @Value("${spring.mail.username:noreply@postforge.dev}")
+    private String senderEmail;
 
     public void sendVerificationEmail(String toEmail, String token) {
-        String verificationUrl = List.of(allowedOrigins.split(",")).getFirst()
-            + "/verify-email?token=" + token;
+        String verificationUrl = appProperties.getEmail().getVerificationBaseUrl() + "?token=" + token;
 
-        log.info("========================================");
-        log.info("이메일 인증 링크 (개발 모드)");
-        log.info("수신자: {}", toEmail);
-        log.info("인증 URL: {}", verificationUrl);
-        log.info("========================================");
+        log.info("이메일 인증 링크 발송 - 수신자: {}", toEmail);
+        log.debug("인증 URL: {}", verificationUrl);
 
         try {
             MimeMessage message = mailsender.createMimeMessage();
@@ -42,16 +39,15 @@ public class EmailService {
 
             helper.setTo(toEmail);
             helper.setSubject("PostForge 이메일 인증");
-            helper.setFrom("PostForge <rlaalstlr2001@gmail.com>");
+            helper.setFrom("PostForge <" + senderEmail + ">");
 
             String htmlContent = loadHtmlTemplate(verificationUrl);
-
             helper.setText(htmlContent, true);
 
             mailsender.send(message);
 
         } catch (MessagingException e) {
-            log.error("이메일 발송 실패", e);
+            log.error("이메일 발송 실패 - 수신자: {}", toEmail, e);
             throw new CustomException(ErrorCode.EMAIL_SEND_FAILED);
         }
     }
@@ -63,11 +59,10 @@ public class EmailService {
                 resource.getInputStream(),
                 StandardCharsets.UTF_8
             );
-
-            return template
-                .replace("{{VERIFICATION_URL}}", verificationUrl);
+            return template.replace("{{VERIFICATION_URL}}", verificationUrl);
 
         } catch (IOException e) {
+            log.error("이메일 템플릿 로딩 실패", e);
             throw new CustomException(ErrorCode.EMAIL_SEND_FAILED);
         }
     }

@@ -2,11 +2,13 @@ package dev.iamrat.post.dto;
 
 import dev.iamrat.post.entity.Post;
 import java.time.LocalDateTime;
+import java.util.List;
 
 public record PostSummaryResponse(
     Long id,
     String title,
-    String content,
+    String summary,
+    List<String> tags,
     String userId,
     String nickname,
     LocalDateTime createdAt,
@@ -17,7 +19,8 @@ public record PostSummaryResponse(
         return new PostSummaryResponse(
             post.getId(),
             post.getTitle(),
-            post.getContent(),
+            post.getSummary(),
+            post.getTags(),
             post.getUserId(),
             post.getNickname(),
             post.getCreatedAt(),

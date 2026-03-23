@@ -12,6 +12,9 @@ import org.springframework.jdbc.core.JdbcTemplate;
 @Configuration
 public class AiConfig {
 
+    @Value("${spring.ai.vectorstore.dimensions:1536}")
+    private int vectorDimensions;
+
     @Bean
     public OpenAiApi openAiApi(@Value("${spring.ai.openai.api-key}") String apiKey) {
         return OpenAiApi.builder()
@@ -34,7 +37,7 @@ public class AiConfig {
     @Bean
     public PgVectorStore vectorStore(JdbcTemplate jdbcTemplate, OpenAiEmbeddingModel embeddingModel) {
         return PgVectorStore.builder(jdbcTemplate, embeddingModel)
-            .dimensions(1536)
+            .dimensions(vectorDimensions)
             .initializeSchema(true)
             .build();
     }
