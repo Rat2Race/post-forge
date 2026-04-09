@@ -12,5 +12,12 @@ services:
     ports:
       - "5432:5432"
 
+  redis:
+    image: redis:7-alpine
+    container_name: postforge-redis-local
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+
 volumes:
   postgres_data:

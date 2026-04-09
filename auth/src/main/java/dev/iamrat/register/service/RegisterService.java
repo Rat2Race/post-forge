@@ -1,7 +1,6 @@
 package dev.iamrat.register.service;
 
-import dev.iamrat.email.entity.EmailVerification;
-import dev.iamrat.email.repository.EmailVerificationRepository;
+import dev.iamrat.email.service.EmailVerificationService;
 import dev.iamrat.global.exception.CustomException;
 import dev.iamrat.global.exception.ErrorCode;
 import dev.iamrat.member.entity.Member;
@@ -15,15 +14,12 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class RegisterService {
     private final MemberService memberService;
-    private final EmailVerificationRepository emailVerificationRepository;
+    private final EmailVerificationService emailVerificationService;
 
     @Transactional
     public Long register(RegisterRequest request) {
 
-        EmailVerification verification = emailVerificationRepository.findByEmail(request.email())
-            .orElseThrow(() -> new CustomException(ErrorCode.EMAIL_CODE_NOT_FOUND));
-
-        if (!verification.getVerified()) {
+        if (!emailVerificationService.isEmailVerified(request.email())) {
             throw new CustomException(ErrorCode.EMAIL_NOT_VERIFIED);
         }
 
@@ -40,7 +36,7 @@ public class RegisterService {
             null
         );
 
-        emailVerificationRepository.delete(verification);
+        emailVerificationService.removeVerifiedEmail(request.email());
 
         return member.getId();
     }
