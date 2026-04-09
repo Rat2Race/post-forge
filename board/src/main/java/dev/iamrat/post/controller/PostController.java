@@ -7,9 +7,7 @@ import dev.iamrat.post.dto.PostRequest;
 import dev.iamrat.common.dto.LikeResponse;
 import dev.iamrat.post.dto.PostDetailResponse;
 import dev.iamrat.post.dto.PostSummaryResponse;
-import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -72,20 +70,14 @@ public class PostController {
     public ResponseEntity<PostDetailResponse> getPost(
         @PathVariable("postId") Long postId,
         HttpServletRequest servletRequest,
-        HttpServletResponse servletResponse,
         @AuthenticationPrincipal UserPrincipal user
     ) {
-        Cookie[] cookies = servletRequest.getCookies();
-
-        boolean shouldIncrement = viewCountService.shouldIncrementView(postId, cookies);
         String userId = user != null ? user.getUserId() : null;
+        String visitorId = userId != null ? userId : servletRequest.getRemoteAddr();
 
-        PostDetailResponse post = postService.getPost(postId, shouldIncrement, userId);
+        viewCountService.incrementIfNew(postId, visitorId);
 
-        if(shouldIncrement) {
-            Cookie cookie = viewCountService.createViewCookie(postId);
-            servletResponse.addCookie(cookie);
-        }
+        PostDetailResponse post = postService.getPost(postId, userId);
 
         return ResponseEntity.ok(post);
     }

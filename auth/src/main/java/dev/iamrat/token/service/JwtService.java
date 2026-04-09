@@ -2,34 +2,35 @@ package dev.iamrat.token.service;
 
 import dev.iamrat.global.exception.CustomException;
 import dev.iamrat.global.exception.ErrorCode;
-import dev.iamrat.token.entity.RefreshToken;
-import dev.iamrat.token.repository.RefreshTokenRepository;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
 import io.jsonwebtoken.security.SecurityException;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 import java.time.Duration;
 import java.time.Instant;
-import java.time.LocalDateTime;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 @Slf4j
 @Service
 public class JwtService {
+    private static final String REFRESH_TOKEN_PREFIX = "refresh_token:";
+
     private final JwtProperties jwtProperties;
-    private final RefreshTokenRepository refreshTokenRepository;
+    private final RedisTemplate<String, String> redisTemplate;
     private final SecretKey secretKey;
-    
-    public JwtService(JwtProperties jwtProperties, RefreshTokenRepository refreshTokenRepository) {
+
+    public JwtService(JwtProperties jwtProperties, RedisTemplate<String, String> redisTemplate) {
         this.jwtProperties = jwtProperties;
-        this.refreshTokenRepository = refreshTokenRepository;
+        this.redisTemplate = redisTemplate;
         secretKey = Keys.hmacShaKeyFor(jwtProperties.getSecret().getBytes(StandardCharsets.UTF_8));
     }
     
@@ -49,34 +50,29 @@ public class JwtService {
         return generateToken(userId, Collections.emptyMap(), Duration.ofDays(jwtProperties.getRefreshTokenValidity()));
     }
     
-    public RefreshToken getRefreshToken(String userId) {
-        return refreshTokenRepository.findByUserId(userId)
-            .orElseThrow(() -> new CustomException(ErrorCode.INVALID_TOKEN));
-    }
-    
-    public void saveOrUpdateRefreshToken(String userId, String newRefreshToken) {
-        LocalDateTime expiryDate = LocalDateTime.now()
-                .plusDays(jwtProperties.getRefreshTokenValidity());
-        
-        RefreshToken refreshToken = refreshTokenRepository.findByUserId(userId)
-                .orElse(null);
-        
-        if(refreshToken == null) {
-            refreshToken = RefreshToken.builder()
-                .userId(userId)
-                .token(newRefreshToken)
-                .expiryDate(expiryDate)
-                .build();
-        } else {
-            refreshToken.updateToken(newRefreshToken, expiryDate);
+    public void validateRefreshToken(String userId, String requestToken) {
+        String storedToken = redisTemplate.opsForValue().get(REFRESH_TOKEN_PREFIX + userId);
+        if (storedToken == null) {
+            throw new CustomException(ErrorCode.INVALID_TOKEN);
         }
-        
-        refreshTokenRepository.save(refreshToken);
+        byte[] stored = storedToken.getBytes(StandardCharsets.UTF_8);
+        byte[] request = requestToken.getBytes(StandardCharsets.UTF_8);
+        if (!MessageDigest.isEqual(stored, request)) {
+            throw new CustomException(ErrorCode.INVALID_TOKEN);
+        }
     }
-    
-    @Transactional
+
+    public void saveRefreshToken(String userId, String refreshToken) {
+        redisTemplate.opsForValue().set(
+                REFRESH_TOKEN_PREFIX + userId,
+                refreshToken,
+                jwtProperties.getRefreshTokenValidity(),
+                TimeUnit.DAYS
+        );
+    }
+
     public void deleteRefreshToken(String userId) {
-        refreshTokenRepository.deleteByUserId(userId);
+        redisTemplate.delete(REFRESH_TOKEN_PREFIX + userId);
     }
     
     public Claims parseClaims(String token) {
