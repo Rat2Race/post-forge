@@ -3,6 +3,7 @@ package dev.iamrat.integration;
 import dev.iamrat.post.dto.PostDetailResponse;
 import dev.iamrat.post.dto.PostSummaryResponse;
 import dev.iamrat.post.repository.PostRepository;
+import dev.iamrat.post.service.ViewCountService;
 import dev.iamrat.integration.security.WithMockMember;
 import dev.iamrat.post.service.PostService;
 import jakarta.transaction.Transactional;
@@ -40,6 +41,9 @@ public class PostIntegrationTest {
     @Autowired
     private PostService postService;
 
+    @Autowired
+    private ViewCountService viewCountService;
+
     @Test
     @WithMockMember
     @DisplayName("게시글 목록을 페이지네이션으로 조회한다")
@@ -63,7 +67,7 @@ public class PostIntegrationTest {
                 "테스트 제목", "테스트 내용입니다. 10자 이상.", "testuser", "테스터", List.of());
 
         // when
-        PostDetailResponse detail = postService.getPost(saved.id(), false, "testuser");
+        PostDetailResponse detail = postService.getPost(saved.id(), "testuser");
 
         // then
         assertThat(detail.id()).isEqualTo(saved.id());
@@ -82,11 +86,11 @@ public class PostIntegrationTest {
                 "조회수 테스트", "조회수 증가 테스트 내용입니다.", "testuser", "테스터", List.of());
 
         // when
-        PostDetailResponse firstView = postService.getPost(saved.id(), true, null);
-        PostDetailResponse secondView = postService.getPost(saved.id(), true, null);
+        viewCountService.incrementIfNew(saved.id(), "visitor1");
+        viewCountService.incrementIfNew(saved.id(), "visitor2");
 
         // then
-        assertThat(firstView.views()).isEqualTo(1L);
-        assertThat(secondView.views()).isEqualTo(2L);
+        long views = viewCountService.getViewCount(saved.id());
+        assertThat(views).isEqualTo(2L);
     }
 }

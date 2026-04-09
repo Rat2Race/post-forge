@@ -34,26 +34,26 @@ public class JwtProvider {
         String accessToken = jwtService.generateAccessToken(authentication.getName(), nickname, authentication.getAuthorities());
         String refreshToken = jwtService.generateRefreshToken(authentication.getName());
         
-        jwtService.saveOrUpdateRefreshToken(authentication.getName(), refreshToken);
-        
+        jwtService.saveRefreshToken(authentication.getName(), refreshToken);
+
         return JwtResponse.builder()
             .grantType("Bearer")
             .accessToken(accessToken)
             .refreshToken(refreshToken)
             .build();
     }
-    
+
     public JwtResponse reissueToken(String refreshToken) {
         String userId = jwtService.parseClaims(refreshToken).getSubject();
-        
-        jwtService.getRefreshToken(userId).validateToken(refreshToken);
-        
+
+        jwtService.validateRefreshToken(userId, refreshToken);
+
         Member member = memberService.findByUserId(userId);
-        
+
         String newAccessToken = jwtService.generateAccessToken(userId, member.getNickname(), member.getAuthorities());
         String newRefreshToken = jwtService.generateRefreshToken(userId);
-        
-        jwtService.saveOrUpdateRefreshToken(userId, newRefreshToken);
+
+        jwtService.saveRefreshToken(userId, newRefreshToken);
         
         return JwtResponse.builder()
             .grantType("Bearer")

@@ -3,12 +3,10 @@ package dev.iamrat.token.provider;
 import dev.iamrat.global.exception.CustomException;
 import dev.iamrat.global.exception.ErrorCode;
 import dev.iamrat.login.dto.CustomUserDetails;
-import dev.iamrat.login.service.CustomUserDetailsService;
 import dev.iamrat.member.entity.Member;
 import dev.iamrat.member.entity.Role;
 import dev.iamrat.member.service.MemberService;
 import dev.iamrat.token.dto.JwtResponse;
-import dev.iamrat.token.entity.RefreshToken;
 import dev.iamrat.token.service.JwtService;
 import io.jsonwebtoken.Claims;
 import org.junit.jupiter.api.DisplayName;
@@ -21,7 +19,6 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.core.Authentication;
 
-import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
@@ -30,8 +27,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.BDDMockito.given;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.*;
 
 @Tag("unit")
 @ExtendWith(MockitoExtension.class)
@@ -72,7 +68,7 @@ class JwtProviderTest {
             assertThat(result.refreshToken()).isEqualTo("refresh-token");
             verify(jwtService).generateAccessToken(eq(USER_ID), eq("tester"), any());
             verify(jwtService).generateRefreshToken(eq(USER_ID));
-            verify(jwtService).saveOrUpdateRefreshToken(eq(USER_ID), eq("refresh-token"));
+            verify(jwtService).saveRefreshToken(eq(USER_ID), eq("refresh-token"));
         }
     }
 
@@ -87,12 +83,7 @@ class JwtProviderTest {
             given(claims.getSubject()).willReturn(USER_ID);
             given(jwtService.parseClaims("old-refresh-token")).willReturn(claims);
 
-            RefreshToken storedToken = RefreshToken.builder()
-                .userId(USER_ID)
-                .token("old-refresh-token")
-                .expiryDate(LocalDateTime.now().plusDays(7))
-                .build();
-            given(jwtService.getRefreshToken(USER_ID)).willReturn(storedToken);
+            doNothing().when(jwtService).validateRefreshToken(USER_ID, "old-refresh-token");
 
             Member member = Member.builder()
                 .userId(USER_ID)
@@ -100,9 +91,9 @@ class JwtProviderTest {
                 .nickname("tester")
                 .roles(Set.of(Role.USER))
                 .build();
-            
+
             given(memberService.findByUserId(USER_ID)).willReturn(member);
-            
+
             given(jwtService.generateAccessToken(eq(USER_ID), any(), any())).willReturn("new-access-token");
             given(jwtService.generateRefreshToken(USER_ID)).willReturn("new-refresh-token");
 
@@ -111,7 +102,7 @@ class JwtProviderTest {
             assertThat(result.grantType()).isEqualTo("Bearer");
             assertThat(result.accessToken()).isEqualTo("new-access-token");
             assertThat(result.refreshToken()).isEqualTo("new-refresh-token");
-            verify(jwtService).saveOrUpdateRefreshToken(eq(USER_ID), eq("new-refresh-token"));
+            verify(jwtService).saveRefreshToken(eq(USER_ID), eq("new-refresh-token"));
         }
 
         @Test
@@ -121,13 +112,8 @@ class JwtProviderTest {
             given(claims.getSubject()).willReturn(USER_ID);
             given(jwtService.parseClaims("wrong-refresh-token")).willReturn(claims);
 
-            RefreshToken storedToken = RefreshToken.builder()
-                .userId(USER_ID)
-                .token("correct-refresh-token")
-                .expiryDate(LocalDateTime.now().plusDays(7))
-                .build();
-            
-            given(jwtService.getRefreshToken(USER_ID)).willReturn(storedToken);
+            doThrow(new CustomException(ErrorCode.INVALID_TOKEN))
+                .when(jwtService).validateRefreshToken(USER_ID, "wrong-refresh-token");
 
             assertThatThrownBy(() -> jwtProvider.reissueToken("wrong-refresh-token"))
                 .isInstanceOf(CustomException.class)
@@ -173,13 +159,13 @@ class JwtProviderTest {
             given(claims.get("nickname", String.class)).willReturn("tester");
             given(claims.get("roles", List.class)).willReturn(List.of("ROLE_USER"));
             given(jwtService.parseClaims("valid-token")).willReturn(claims);
-            
+
             Authentication result = jwtProvider.resolveAuthentication("valid-token");
 
             assertThat(result.getName()).isEqualTo(USER_ID);
             assertThat(result.getAuthorities()).hasSize(1);
             assertThat(result.getAuthorities().iterator().next().getAuthority()).isEqualTo("ROLE_USER");
-            
+
             CustomUserDetails principal = (CustomUserDetails) result.getPrincipal();
             assertThat(principal.getNickname()).isEqualTo("tester");
         }

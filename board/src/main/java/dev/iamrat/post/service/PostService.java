@@ -31,6 +31,7 @@ public class PostService {
     private final PostLikeRepository postLikeRepository;
     private final CommentRepository commentRepository;
     private final FileRepository fileRepository;
+    private final ViewCountService viewCountService;
 
     @Transactional
     public PostSummaryResponse savePost(String title, String content, String userId, String nickname, List<Long> fileIds) {
@@ -73,18 +74,15 @@ public class PostService {
         );
     }
 
-    @Transactional
-    public PostDetailResponse getPost(Long postId, boolean incrementView, String userId) {
+    public PostDetailResponse getPost(Long postId, String userId) {
         Post post = postRepository.findById(postId)
             .orElseThrow(() -> new CustomException(ErrorCode.POST_NOT_FOUND));
 
-        if (incrementView) {
-            post.updateViews(post.getViews() + 1);
-        }
-
+        long views = viewCountService.getViewCount(postId);
+        long likeCount = postLikeService.getLikeCount(postId);
         boolean isLiked = postLikeService.isLiked(post.getId(), userId);
         int commentCount = commentRepository.countByPostId(postId);
-        return PostDetailResponse.from(post, isLiked, post.getLikeCount(), commentCount);
+        return PostDetailResponse.from(post, isLiked, likeCount, commentCount, views);
     }
 
     @Transactional
@@ -137,7 +135,8 @@ public class PostService {
     }
 
     private PostDetailResponse toDetailResponse(Post post, boolean isLiked) {
+        long likeCount = postLikeService.getLikeCount(post.getId());
         int commentCount = commentRepository.countByPostId(post.getId());
-        return PostDetailResponse.from(post, isLiked, post.getLikeCount(), commentCount);
+        return PostDetailResponse.from(post, isLiked, likeCount, commentCount);
     }
 }

@@ -1,7 +1,6 @@
 package dev.iamrat.register.service;
 
-import dev.iamrat.email.entity.EmailVerification;
-import dev.iamrat.email.repository.EmailVerificationRepository;
+import dev.iamrat.email.service.EmailVerificationService;
 import dev.iamrat.global.exception.CustomException;
 import dev.iamrat.global.exception.ErrorCode;
 import dev.iamrat.member.entity.Member;
@@ -15,8 +14,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-
-import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -32,31 +29,13 @@ class RegisterServiceTest {
     private MemberService memberService;
 
     @Mock
-    private EmailVerificationRepository emailVerificationRepository;
+    private EmailVerificationService emailVerificationService;
 
     @InjectMocks
     private RegisterService registerService;
 
     private RegisterRequest createValidRequest() {
         return new RegisterRequest("testuser1", "Test1234!", "test@example.com", "길동이");
-    }
-
-    private EmailVerification createVerifiedEmailVerification() {
-        return EmailVerification.builder()
-            .email("test@example.com")
-            .token("valid-token")
-            .expiryDate(java.time.LocalDateTime.now().plusMinutes(30))
-            .verified(true)
-            .build();
-    }
-
-    private EmailVerification createUnverifiedEmailVerification() {
-        return EmailVerification.builder()
-            .email("test@example.com")
-            .token("valid-token")
-            .expiryDate(java.time.LocalDateTime.now().plusMinutes(30))
-            .verified(false)
-            .build();
     }
 
     @Nested
@@ -67,10 +46,8 @@ class RegisterServiceTest {
         @DisplayName("모든 조건을 만족하면 회원을 생성하고 ID를 반환한다")
         void register_allConditionsMet_returnsMemberId() {
             RegisterRequest request = createValidRequest();
-            EmailVerification verification = createVerifiedEmailVerification();
 
-            given(emailVerificationRepository.findByEmail("test@example.com"))
-                .willReturn(Optional.of(verification));
+            given(emailVerificationService.isEmailVerified("test@example.com")).willReturn(true);
             given(memberService.existsByUserId("testuser1")).willReturn(false);
 
             Member member = Member.builder()
@@ -88,7 +65,7 @@ class RegisterServiceTest {
             assertThat(result).isEqualTo(member.getId());
             verify(memberService).createMember("testuser1", "Test1234!",
                 "test@example.com", "길동이", "LOCAL", null);
-            verify(emailVerificationRepository).delete(verification);
+            verify(emailVerificationService).removeVerifiedEmail("test@example.com");
         }
     }
 
@@ -97,29 +74,11 @@ class RegisterServiceTest {
     class RegisterFail {
 
         @Test
-        @DisplayName("이메일 인증 기록이 없으면 EMAIL_CODE_NOT_FOUND 예외를 던진다")
-        void register_emailVerificationMissing_throwsEmailCodeNotFound() {
-            RegisterRequest request = createValidRequest();
-            given(emailVerificationRepository.findByEmail("test@example.com"))
-                .willReturn(Optional.empty());
-
-            assertThatThrownBy(() -> registerService.register(request))
-                .isInstanceOf(CustomException.class)
-                .satisfies(exception ->
-                    assertThat(((CustomException) exception).getErrorCode())
-                        .isEqualTo(ErrorCode.EMAIL_CODE_NOT_FOUND));
-
-            verify(memberService, never()).createMember(any(), any(), any(), any(), any(), any());
-        }
-
-        @Test
         @DisplayName("이메일 인증이 완료되지 않았으면 EMAIL_NOT_VERIFIED 예외를 던진다")
         void register_emailNotVerified_throwsEmailNotVerified() {
             RegisterRequest request = createValidRequest();
-            EmailVerification verification = createUnverifiedEmailVerification();
 
-            given(emailVerificationRepository.findByEmail("test@example.com"))
-                .willReturn(Optional.of(verification));
+            given(emailVerificationService.isEmailVerified("test@example.com")).willReturn(false);
 
             assertThatThrownBy(() -> registerService.register(request))
                 .isInstanceOf(CustomException.class)
@@ -134,10 +93,8 @@ class RegisterServiceTest {
         @DisplayName("이미 존재하는 아이디이면 DUPLICATE_ID 예외를 던진다")
         void register_duplicateUserId_throwsDuplicateId() {
             RegisterRequest request = createValidRequest();
-            EmailVerification verification = createVerifiedEmailVerification();
 
-            given(emailVerificationRepository.findByEmail("test@example.com"))
-                .willReturn(Optional.of(verification));
+            given(emailVerificationService.isEmailVerified("test@example.com")).willReturn(true);
             given(memberService.existsByUserId("testuser1")).willReturn(true);
 
             assertThatThrownBy(() -> registerService.register(request))
