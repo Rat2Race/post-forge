@@ -1,4 +1,4 @@
-package dev.iamrat.post.entity;
+package dev.iamrat.like.post.entity;
 
 import dev.iamrat.common.entity.AuditingFields;
 import jakarta.persistence.Column;
@@ -15,6 +15,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import dev.iamrat.post.entity.Post;
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
 

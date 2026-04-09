@@ -73,14 +73,4 @@ public class Comment extends AuditingFields {
     public void removeReply(Comment comment) {
         this.replies.remove(comment);
     }
-
-    public void incrementLikeCount() {
-        this.likeCount++;
-    }
-
-    public void decrementLikeCount() {
-        if (this.likeCount > 0) {
-            this.likeCount--;
-        }
-    }
 }

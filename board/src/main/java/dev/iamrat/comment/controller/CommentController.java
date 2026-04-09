@@ -1,11 +1,10 @@
 package dev.iamrat.comment.controller;
 
-import dev.iamrat.comment.service.CommentLikeService;
+import dev.iamrat.like.dto.LikeResponse;
 import dev.iamrat.comment.service.CommentService;
 import dev.iamrat.comment.dto.CommentRequest;
 import dev.iamrat.comment.dto.CommentDetailResponse;
 import dev.iamrat.comment.dto.CommentSummaryResponse;
-import dev.iamrat.common.dto.LikeResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -25,7 +24,6 @@ import org.springframework.web.bind.annotation.*;
 public class CommentController {
 
     private final CommentService commentService;
-    private final CommentLikeService commentLikeService;
 
     @PostMapping
     @PreAuthorize("hasRole('USER')")
@@ -56,9 +54,7 @@ public class CommentController {
         String userId = user != null ? user.getUserId() : null;
         Page<CommentDetailResponse> commentsByPost = commentService.getCommentsByPost(postId, pageable, userId);
 
-        return ResponseEntity
-            .status(HttpStatus.OK)
-            .body(commentsByPost);
+        return ResponseEntity.ok(commentsByPost);
     }
 
     @PutMapping("/{commentId:\\d+}")
@@ -72,9 +68,7 @@ public class CommentController {
             commentRequest.content()
         );
 
-        return ResponseEntity
-            .status(HttpStatus.OK)
-            .body(modifiedComment);
+        return ResponseEntity.ok(modifiedComment);
     }
 
     @DeleteMapping("/{commentId:\\d+}")
@@ -89,11 +83,22 @@ public class CommentController {
 
     @PostMapping("/{commentId:\\d+}/like")
     @PreAuthorize("hasRole('USER')")
-    public ResponseEntity<LikeResponse> toggleLike(
+    public ResponseEntity<LikeResponse> likeComment(
         @PathVariable("commentId") Long commentId,
         @AuthenticationPrincipal UserPrincipal user
     ) {
-        LikeResponse likeStatus = commentLikeService.toggleLike(commentId, user.getUserId());
+        LikeResponse likeStatus = commentService.likeComment(commentId, user.getUserId());
+
+        return ResponseEntity.ok(likeStatus);
+    }
+
+    @DeleteMapping("/{commentId:\\d+}/like")
+    @PreAuthorize("hasRole('USER')")
+    public ResponseEntity<LikeResponse> unlikeComment(
+        @PathVariable("commentId") Long commentId,
+        @AuthenticationPrincipal UserPrincipal user
+    ) {
+        LikeResponse likeStatus = commentService.unlikeComment(commentId, user.getUserId());
 
         return ResponseEntity.ok(likeStatus);
     }
