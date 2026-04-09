@@ -1,17 +1,19 @@
 package dev.iamrat.post.service;
 
-import dev.iamrat.comment.repository.CommentRepository;
+import dev.iamrat.comment.service.CommentService;
 import dev.iamrat.file.entity.PostFile;
 import dev.iamrat.file.repository.FileRepository;
+import dev.iamrat.like.dto.LikeResponse;
+import dev.iamrat.like.post.service.PostLikeService;
+import dev.iamrat.like.support.LikeRequestGuard;
 import dev.iamrat.post.dto.PostDetailResponse;
 import dev.iamrat.post.dto.PostSummaryResponse;
 import dev.iamrat.post.entity.Post;
 import dev.iamrat.global.exception.CustomException;
 import dev.iamrat.global.exception.ErrorCode;
-import dev.iamrat.post.repository.PostLikeRepository;
 import dev.iamrat.post.repository.PostRepository;
-import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -28,8 +30,8 @@ public class PostService {
 
     private final PostRepository postRepository;
     private final PostLikeService postLikeService;
-    private final PostLikeRepository postLikeRepository;
-    private final CommentRepository commentRepository;
+    private final LikeRequestGuard likeRequestGuard;
+    private final CommentService commentService;
     private final FileRepository fileRepository;
     private final ViewCountService viewCountService;
 
@@ -50,28 +52,12 @@ public class PostService {
 
     public Page<PostDetailResponse> getPosts(Pageable pageable, String userId) {
         Page<Post> posts = postRepository.findAll(pageable);
-        Set<Long> likedPostIds = getLikedPostIds(posts, userId);
-
-        return new PageImpl<>(
-            posts.getContent().stream()
-                .map(post -> toDetailResponse(post, likedPostIds.contains(post.getId())))
-                .toList(),
-            pageable,
-            posts.getTotalElements()
-        );
+        return toDetailPage(posts, pageable, userId);
     }
 
     public Page<PostDetailResponse> searchPosts(String keyword, Pageable pageable, String userId) {
         Page<Post> posts = postRepository.findByKeyword(keyword, pageable);
-        Set<Long> likedPostIds = getLikedPostIds(posts, userId);
-
-        return new PageImpl<>(
-            posts.getContent().stream()
-                .map(post -> toDetailResponse(post, likedPostIds.contains(post.getId())))
-                .toList(),
-            pageable,
-            posts.getTotalElements()
-        );
+        return toDetailPage(posts, pageable, userId);
     }
 
     public PostDetailResponse getPost(Long postId, String userId) {
@@ -79,10 +65,32 @@ public class PostService {
             .orElseThrow(() -> new CustomException(ErrorCode.POST_NOT_FOUND));
 
         long views = viewCountService.getViewCount(postId);
-        long likeCount = postLikeService.getLikeCount(postId);
-        boolean isLiked = postLikeService.isLiked(post.getId(), userId);
-        int commentCount = commentRepository.countByPostId(postId);
-        return PostDetailResponse.from(post, isLiked, likeCount, commentCount, views);
+        LikeResponse likeInfo = postLikeService.getLikeInfo(postId, userId);
+        int commentCount = commentService.getCommentCount(postId);
+        return PostDetailResponse.from(post, likeInfo.isLiked(), likeInfo.likeCount(), commentCount, views);
+    }
+
+    public PostDetailResponse readPost(Long postId, String userId) {
+        viewCountService.incrementIfNew(postId, userId);
+        return getPost(postId, userId);
+    }
+
+    public LikeResponse likePost(Long postId, String userId) {
+        if (!postRepository.existsById(postId)) {
+            throw new CustomException(ErrorCode.POST_NOT_FOUND);
+        }
+
+        likeRequestGuard.guardPostLike(postId, userId);
+        return postLikeService.like(postId, userId);
+    }
+
+    public LikeResponse unlikePost(Long postId, String userId) {
+        if (!postRepository.existsById(postId)) {
+            throw new CustomException(ErrorCode.POST_NOT_FOUND);
+        }
+
+        likeRequestGuard.guardPostUnlike(postId, userId);
+        return postLikeService.unlike(postId, userId);
     }
 
     @Transactional
@@ -108,6 +116,8 @@ public class PostService {
         List<PostFile> files = fileRepository.findAllByPost(post);
         files.forEach(PostFile::unassignPost);
 
+        viewCountService.deleteViewCount(postId);
+
         postRepository.delete(post);
     }
 
@@ -126,17 +136,30 @@ public class PostService {
         files.forEach(file -> file.assignPost(post));
     }
 
-    private Set<Long> getLikedPostIds(Page<Post> posts, String userId) {
-        if (userId == null) {
-            return Collections.emptySet();
+    private Page<PostDetailResponse> toDetailPage(Page<Post> posts, Pageable pageable, String userId) {
+        List<Post> content = posts.getContent();
+        if (content.isEmpty()) {
+            return new PageImpl<>(List.of(), pageable, posts.getTotalElements());
         }
-        List<Long> postIds = posts.getContent().stream().map(Post::getId).toList();
-        return Set.copyOf(postLikeRepository.findLikedPostIds(postIds, userId));
+
+        List<Long> postIds = content.stream().map(Post::getId).toList();
+
+        Set<Long> likedPostIds = postLikeService.getLikedPostIds(postIds, userId);
+        Map<Long, Long> viewCounts = viewCountService.getViewCounts(postIds);
+        Map<Long, Long> likeCounts = postLikeService.getLikeCounts(postIds);
+        Map<Long, Integer> commentCounts = commentService.getCommentCounts(postIds);
+
+        List<PostDetailResponse> responses = content.stream()
+            .map(post -> PostDetailResponse.from(
+                post,
+                likedPostIds.contains(post.getId()),
+                likeCounts.getOrDefault(post.getId(), 0L),
+                commentCounts.getOrDefault(post.getId(), 0),
+                viewCounts.getOrDefault(post.getId(), 0L)
+            ))
+            .toList();
+
+        return new PageImpl<>(responses, pageable, posts.getTotalElements());
     }
 
-    private PostDetailResponse toDetailResponse(Post post, boolean isLiked) {
-        long likeCount = postLikeService.getLikeCount(post.getId());
-        int commentCount = commentRepository.countByPostId(post.getId());
-        return PostDetailResponse.from(post, isLiked, likeCount, commentCount);
-    }
 }

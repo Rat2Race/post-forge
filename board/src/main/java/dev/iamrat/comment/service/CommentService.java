@@ -7,7 +7,14 @@ import dev.iamrat.comment.entity.Comment;
 import dev.iamrat.comment.repository.CommentRepository;
 import dev.iamrat.global.exception.CustomException;
 import dev.iamrat.global.exception.ErrorCode;
+import dev.iamrat.like.comment.service.CommentLikeService;
+import dev.iamrat.like.dto.LikeResponse;
+import dev.iamrat.like.support.LikeRequestGuard;
 import dev.iamrat.post.repository.PostRepository;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -23,6 +30,7 @@ public class CommentService {
     private final PostRepository postRepository;
     private final CommentRepository commentRepository;
     private final CommentLikeService commentLikeService;
+    private final LikeRequestGuard likeRequestGuard;
 
     @Transactional
     public CommentSummaryResponse saveComment(Long postId, Long parentId, String content,
@@ -66,21 +74,23 @@ public class CommentService {
     public Page<CommentDetailResponse> getCommentsByPost(Long postId, Pageable pageable,
         String userId) {
         Page<Comment> comments = commentRepository.findByPostId(postId, pageable);
+        List<Comment> commentList = comments.getContent();
+        List<Long> commentIds = commentList.stream().map(Comment::getId).toList();
+
+        Map<Long, Long> likeCounts = commentLikeService.getLikeCounts(commentIds);
+        Set<Long> likedIds = commentLikeService.getLikedCommentIds(commentIds, userId);
 
         return new PageImpl<>(
-            comments.getContent().stream()
-                .map(comment -> getCommentDetailResponse(comment, userId))
+            commentList.stream()
+                .map(comment -> CommentDetailResponse.from(
+                    comment,
+                    likeCounts.getOrDefault(comment.getId(), 0L),
+                    likedIds.contains(comment.getId())
+                ))
                 .toList(),
             pageable,
             comments.getTotalElements()
         );
-    }
-
-    public CommentDetailResponse getComment(Long commentId, String userId) {
-        Comment comment = commentRepository.findById(commentId)
-            .orElseThrow(() -> new CustomException(ErrorCode.COMMENT_NOT_FOUND));
-
-        return getCommentDetailResponse(comment, userId);
     }
 
     @Transactional
@@ -97,8 +107,38 @@ public class CommentService {
     public void deleteComment(Long commentId) {
         Comment comment = commentRepository.findById(commentId)
             .orElseThrow(() -> new CustomException(ErrorCode.COMMENT_NOT_FOUND));
-        
+
         commentRepository.delete(comment);
+    }
+
+    @Transactional
+    public LikeResponse likeComment(Long commentId, String userId) {
+        commentRepository.findById(commentId)
+            .orElseThrow(() -> new CustomException(ErrorCode.COMMENT_NOT_FOUND));
+
+        likeRequestGuard.guardCommentLike(commentId, userId);
+        return commentLikeService.like(commentId, userId);
+    }
+
+    @Transactional
+    public LikeResponse unlikeComment(Long commentId, String userId) {
+        commentRepository.findById(commentId)
+            .orElseThrow(() -> new CustomException(ErrorCode.COMMENT_NOT_FOUND));
+
+        likeRequestGuard.guardCommentUnlike(commentId, userId);
+        return commentLikeService.unlike(commentId, userId);
+    }
+
+    public int getCommentCount(Long postId) {
+        return commentRepository.countByPostId(postId);
+    }
+
+    public Map<Long, Integer> getCommentCounts(List<Long> postIds) {
+        return commentRepository.countByPostIds(postIds).stream()
+            .collect(Collectors.toMap(
+                row -> (Long) row[0],
+                row -> ((Long) row[1]).intValue()
+            ));
     }
 
     public boolean isCommentOwner(Long commentId, String userId) {
@@ -106,13 +146,6 @@ public class CommentService {
             .orElseThrow(() -> new CustomException(ErrorCode.COMMENT_NOT_FOUND));
 
         return comment.getUserId().equals(userId);
-    }
-
-    private CommentDetailResponse getCommentDetailResponse(Comment comment, String userId) {
-        Long likeCount = commentLikeService.getLikeCount(comment.getId());
-        boolean isLiked = commentLikeService.isLiked(comment.getId(), userId);
-
-        return CommentDetailResponse.from(comment, likeCount, isLiked);
     }
 
 }

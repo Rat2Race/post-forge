@@ -1,13 +1,10 @@
 package dev.iamrat.post.controller;
 
-import dev.iamrat.post.service.PostLikeService;
+import dev.iamrat.like.dto.LikeResponse;
 import dev.iamrat.post.service.PostService;
-import dev.iamrat.post.service.ViewCountService;
 import dev.iamrat.post.dto.PostRequest;
-import dev.iamrat.common.dto.LikeResponse;
 import dev.iamrat.post.dto.PostDetailResponse;
 import dev.iamrat.post.dto.PostSummaryResponse;
-import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -27,8 +24,6 @@ import org.springframework.web.bind.annotation.*;
 public class PostController {
 
     private final PostService postService;
-    private final PostLikeService postLikeService;
-    private final ViewCountService viewCountService;
 
     @PostMapping
     @PreAuthorize("hasRole('USER')")
@@ -67,17 +62,12 @@ public class PostController {
     }
 
     @GetMapping("/{postId:\\d+}")
+    @PreAuthorize("hasRole('USER')")
     public ResponseEntity<PostDetailResponse> getPost(
         @PathVariable("postId") Long postId,
-        HttpServletRequest servletRequest,
         @AuthenticationPrincipal UserPrincipal user
     ) {
-        String userId = user != null ? user.getUserId() : null;
-        String visitorId = userId != null ? userId : servletRequest.getRemoteAddr();
-
-        viewCountService.incrementIfNew(postId, visitorId);
-
-        PostDetailResponse post = postService.getPost(postId, userId);
+        PostDetailResponse post = postService.readPost(postId, user.getUserId());
 
         return ResponseEntity.ok(post);
     }
@@ -110,11 +100,22 @@ public class PostController {
 
     @PostMapping("/{postId:\\d+}/like")
     @PreAuthorize("hasRole('USER')")
-    public ResponseEntity<LikeResponse> toggleLike(
+    public ResponseEntity<LikeResponse> likePost(
         @PathVariable("postId") Long postId,
         @AuthenticationPrincipal UserPrincipal user
     ) {
-        LikeResponse likeStatus = postLikeService.toggleLike(postId, user.getUserId());
+        LikeResponse likeStatus = postService.likePost(postId, user.getUserId());
+
+        return ResponseEntity.ok(likeStatus);
+    }
+
+    @DeleteMapping("/{postId:\\d+}/like")
+    @PreAuthorize("hasRole('USER')")
+    public ResponseEntity<LikeResponse> unlikePost(
+        @PathVariable("postId") Long postId,
+        @AuthenticationPrincipal UserPrincipal user
+    ) {
+        LikeResponse likeStatus = postService.unlikePost(postId, user.getUserId());
 
         return ResponseEntity.ok(likeStatus);
     }
