@@ -41,13 +41,11 @@ public class EmailVerificationService {
 
     public String verifyEmail(String token) {
         String key = TOKEN_TO_EMAIL_PREFIX + token;
-        String email = redisTemplate.opsForValue().get(key);
+        String email = redisTemplate.opsForValue().getAndDelete(key);
 
         if (email == null) {
             throw new CustomException(ErrorCode.EMAIL_CODE_NOT_FOUND);
         }
-
-        redisTemplate.delete(key);
 
         redisTemplate.opsForValue().set(
                 EMAIL_VERIFIED_PREFIX + email,

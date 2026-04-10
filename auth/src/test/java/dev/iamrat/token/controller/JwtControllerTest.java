@@ -3,6 +3,8 @@ package dev.iamrat.token.controller;
 import dev.iamrat.global.exception.CustomException;
 import dev.iamrat.global.exception.ErrorCode;
 import dev.iamrat.global.exception.GlobalExceptionHandler;
+import dev.iamrat.member.service.MemberService;
+import dev.iamrat.oauth.service.OAuth2CodeService;
 import dev.iamrat.token.dto.JwtResponse;
 import dev.iamrat.token.provider.CookieProvider;
 import dev.iamrat.token.provider.JwtProvider;
@@ -39,6 +41,12 @@ class JwtControllerTest {
 
     @MockitoBean
     CookieProvider cookieProvider;
+
+    @MockitoBean
+    OAuth2CodeService oAuth2CodeService;
+
+    @MockitoBean
+    MemberService memberService;
 
     @Nested
     @DisplayName("토큰 재발급 성공")
