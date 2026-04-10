@@ -1,4 +1,4 @@
-package dev.iamrat.post.service;
+package dev.iamrat.port.post;
 
 import dev.iamrat.post.PostWriter;
 import dev.iamrat.post.entity.Post;
