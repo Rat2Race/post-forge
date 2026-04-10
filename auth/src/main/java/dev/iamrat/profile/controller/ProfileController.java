@@ -23,7 +23,7 @@ public class ProfileController {
 
     @GetMapping
     public ResponseEntity<MemberResponse> getMyProfile(
-        @AuthenticationPrincipal UserPrincipal userDetails) {
+            @AuthenticationPrincipal UserPrincipal userDetails) {
 
         Member member = profileService.getMember(userDetails.getUserId());
         return ResponseEntity.ok(MemberResponse.from(member));
@@ -31,8 +31,8 @@ public class ProfileController {
 
     @PatchMapping("/nickname")
     public ResponseEntity<String> updateNickname(
-        @AuthenticationPrincipal UserPrincipal userDetails,
-        @RequestBody @Valid ProfileUpdateRequest request) {
+            @AuthenticationPrincipal UserPrincipal userDetails,
+            @RequestBody @Valid ProfileUpdateRequest request) {
 
         profileService.updateNickname(userDetails.getUserId(), request.nickname());
         return ResponseEntity.ok("닉네임 변경 완료");
@@ -40,14 +40,13 @@ public class ProfileController {
 
     @PatchMapping("/password")
     public ResponseEntity<String> changePassword(
-        @AuthenticationPrincipal UserPrincipal userDetails,
-        @RequestBody @Valid PasswordChangeRequest request) {
+            @AuthenticationPrincipal UserPrincipal userDetails,
+            @RequestBody @Valid PasswordChangeRequest request) {
 
         profileService.changePassword(
-            userDetails.getUserId(),
-            request.currentPassword(),
-            request.newPassword()
-        );
+                userDetails.getUserId(),
+                request.currentPassword(),
+                request.newPassword());
         return ResponseEntity.ok("비밀번호 변경 완료");
     }
 }

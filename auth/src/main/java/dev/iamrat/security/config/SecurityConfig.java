@@ -63,10 +63,12 @@ public class SecurityConfig {
                 .authenticationEntryPoint(jwtAuthenticationEntryPoint)
                 .accessDeniedHandler(jwtAccessDeniedHandler))
             .authorizeHttpRequests(auth -> auth
+                .requestMatchers("/", "/index.html", "/favicon.ico").permitAll()
                 // ===== 공개 API =====
                 .requestMatchers(HttpMethod.POST, "/auth/register").permitAll()
                 .requestMatchers(HttpMethod.POST, "/auth/login").permitAll()
                 .requestMatchers(HttpMethod.POST, "/auth/token/reissue").permitAll()
+                .requestMatchers(HttpMethod.POST, "/auth/token/exchange").permitAll()
                 .requestMatchers(HttpMethod.POST, "/auth/email/send").permitAll()
                 .requestMatchers(HttpMethod.GET, "/auth/email/verify").permitAll()
                 .requestMatchers(HttpMethod.GET, "/posts").permitAll()

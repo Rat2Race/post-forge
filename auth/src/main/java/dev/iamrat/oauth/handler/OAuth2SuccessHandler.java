@@ -1,10 +1,8 @@
 package dev.iamrat.oauth.handler;
 
+import dev.iamrat.oauth.service.OAuth2CodeService;
 import dev.iamrat.security.config.AppProperties;
-import dev.iamrat.token.dto.JwtResponse;
-import dev.iamrat.token.provider.CookieProvider;
-import dev.iamrat.token.provider.JwtProvider;
-import dev.iamrat.token.service.JwtService;
+import dev.iamrat.security.dto.UserPrincipal;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -14,31 +12,38 @@ import org.springframework.security.web.authentication.SimpleUrlAuthenticationSu
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 
 @Component
 @RequiredArgsConstructor
 @Slf4j
 public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler {
-    private final JwtProvider jwtProvider;
-    private final JwtService jwtService;
-    private final CookieProvider cookieProvider;
+    private final OAuth2CodeService oAuth2CodeService;
     private final AppProperties appProperties;
 
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response,
                                         Authentication authentication) throws IOException {
-        JwtResponse jwtResponse = jwtProvider.createToken(authentication);
+        try {
+            UserPrincipal principal = (UserPrincipal) authentication.getPrincipal();
+            log.info("OAuth2 로그인 성공: userId={}", principal.getUserId());
 
-        log.info("OAuth2 로그인 성공, JWT 발급: userId={}", jwtService.parseClaims(jwtResponse.accessToken()).getId());
+            String code = oAuth2CodeService.createCode(principal.getUserId());
 
-        cookieProvider.addRefreshTokenCookie(response, jwtResponse.refreshToken());
+            String redirectUrl = String.format(
+                    "%s?code=%s",
+                    appProperties.getOauth2().getRedirectUrl(),
+                    code
+            );
 
-        String redirectUrl = String.format(
-                "%s?accessToken=%s",
-                appProperties.getOauth2().getRedirectUrl(),
-                jwtResponse.accessToken()
-        );
-
-        response.sendRedirect(redirectUrl);
+            response.sendRedirect(redirectUrl);
+        } catch (Exception e) {
+            log.error("OAuth2 로그인 처리 실패", e);
+            String errorRedirect = String.format("%s?error=%s",
+                    appProperties.getOauth2().getRedirectUrl(),
+                    URLEncoder.encode("로그인 처리에 실패했습니다.", StandardCharsets.UTF_8));
+            response.sendRedirect(errorRedirect);
+        }
     }
 }

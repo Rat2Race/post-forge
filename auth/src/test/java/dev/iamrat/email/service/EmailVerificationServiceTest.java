@@ -17,6 +17,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.verify;
 
 @Tag("unit")
 @ExtendWith(MockitoExtension.class)
@@ -57,7 +58,7 @@ class EmailVerificationServiceTest {
         String token = "쓰레기-토큰-입니다";
 
         given(redisTemplate.opsForValue()).willReturn(valueOperations);
-        given(valueOperations.get("email_verify_token:" + token)).willReturn(null);
+        given(valueOperations.getAndDelete("email_verify_token:" + token)).willReturn(null);
 
         assertThatThrownBy(() -> emailVerificationService.verifyEmail(token))
             .isInstanceOf(CustomException.class)
@@ -73,11 +74,11 @@ class EmailVerificationServiceTest {
         String email = "tester@test.com";
 
         given(redisTemplate.opsForValue()).willReturn(valueOperations);
-        given(valueOperations.get("email_verify_token:" + token)).willReturn(email);
-        given(redisTemplate.delete("email_verify_token:" + token)).willReturn(true);
+        given(valueOperations.getAndDelete("email_verify_token:" + token)).willReturn(email);
 
         String result = emailVerificationService.verifyEmail(token);
 
         assertThat(result).isEqualTo(email);
+        verify(valueOperations).set("email_verified:" + email, "true", 1L, java.util.concurrent.TimeUnit.HOURS);
     }
 }

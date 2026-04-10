@@ -9,6 +9,9 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+
+import org.springframework.http.CacheControl;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import dev.iamrat.security.dto.UserPrincipal;
@@ -23,28 +26,31 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 @Slf4j
 public class LoginController {
-    private final LoginService loginService;
-    private final CookieProvider cookieProvider;
+	private final LoginService loginService;
+	private final CookieProvider cookieProvider;
 
-    @PostMapping("/login")
-    public ResponseEntity<AccessTokenResponse> login(@Valid @RequestBody LoginRequest request,
-                                                     HttpServletResponse response) {
-        JwtResponse jwtResponse = loginService.login(request);
+	@PostMapping("/login")
+	public ResponseEntity<AccessTokenResponse> login(@Valid @RequestBody LoginRequest request,
+			HttpServletResponse response) {
+		JwtResponse jwtResponse = loginService.login(request);
 
-        cookieProvider.addRefreshTokenCookie(response, jwtResponse.refreshToken());
+		cookieProvider.addRefreshTokenCookie(response, jwtResponse.refreshToken());
 
-        return ResponseEntity.ok(AccessTokenResponse.builder()
-            .grantType(jwtResponse.grantType())
-            .accessToken(jwtResponse.accessToken())
-            .build());
-    }
+		return ResponseEntity.ok()
+				.cacheControl(CacheControl.noStore())
+				.header(HttpHeaders.PRAGMA, "no-cache")
+				.body(AccessTokenResponse.builder()
+						.grantType(jwtResponse.grantType())
+						.accessToken(jwtResponse.accessToken())
+						.build());
+	}
 
-    @PostMapping("/logout")
-    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
-    public ResponseEntity<String> logout(@AuthenticationPrincipal UserPrincipal userDetails,
-                                         HttpServletResponse response) {
-        loginService.logout(userDetails.getUserId());
-        cookieProvider.removeRefreshTokenCookie(response);
-        return ResponseEntity.ok("로그아웃되었습니다.");
-    }
+	@PostMapping("/logout")
+	@PreAuthorize("hasAnyRole('USER', 'ADMIN')")
+	public ResponseEntity<String> logout(@AuthenticationPrincipal UserPrincipal userDetails,
+			HttpServletResponse response) {
+		loginService.logout(userDetails.getUserId());
+		cookieProvider.removeRefreshTokenCookie(response);
+		return ResponseEntity.ok("로그아웃되었습니다.");
+	}
 }
