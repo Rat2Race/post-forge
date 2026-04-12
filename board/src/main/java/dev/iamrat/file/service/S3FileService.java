@@ -3,6 +3,7 @@ package dev.iamrat.file.service;
 import dev.iamrat.file.dto.FileUploadResponse;
 import dev.iamrat.file.entity.PostFile;
 import dev.iamrat.file.repository.FileRepository;
+import dev.iamrat.file.support.FileTypePolicy;
 import dev.iamrat.global.exception.CustomException;
 import dev.iamrat.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
@@ -34,11 +35,13 @@ public class S3FileService {
 
     private final S3Presigner s3Presigner;
     private final FileRepository fileRepository;
+    private final FileTypePolicy fileTypePolicy;
 
     public FileUploadResponse createPresignedUrl(String fileName, String contentType) {
-        String extension = extractExtension(fileName);
+        String extension = fileTypePolicy.extractAllowedExtension(fileName);
+        String validatedContentType = fileTypePolicy.validateDeclaredContentType(fileName, contentType);
 
-        String folder = determineFolder(contentType);
+        String folder = determineFolder(validatedContentType);
         String datePath = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
         String savedFileName = UUID.randomUUID() + extension;
         String s3Key = folder + "/" + datePath + "/" + savedFileName;
@@ -47,14 +50,14 @@ public class S3FileService {
             .originalFileName(fileName)
             .savedFileName(savedFileName)
             .filePath(s3Key)
-            .fileType(contentType)
+            .fileType(validatedContentType)
             .build();
         PostFile saved = fileRepository.save(fileEntity);
 
         PutObjectRequest objectRequest = PutObjectRequest.builder()
             .bucket(bucketName)
             .key(s3Key)
-            .contentType(contentType)
+            .contentType(validatedContentType)
             .build();
 
         PutObjectPresignRequest presignRequest = PutObjectPresignRequest.builder()
@@ -90,12 +93,5 @@ public class S3FileService {
         if (contentType.startsWith("video/")) return "videos";
         if (contentType.equals("application/pdf")) return "documents";
         return "others";
-    }
-
-    private String extractExtension(String fileName) {
-        if (fileName == null || !fileName.contains(".")) {
-            return "";
-        }
-        return fileName.substring(fileName.lastIndexOf("."));
     }
 }

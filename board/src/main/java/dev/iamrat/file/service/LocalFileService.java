@@ -4,11 +4,11 @@ import dev.iamrat.file.dto.FileDownloadResponse;
 import dev.iamrat.file.dto.FileUploadResponse;
 import dev.iamrat.file.entity.PostFile;
 import dev.iamrat.file.repository.FileRepository;
+import dev.iamrat.file.support.FileTypePolicy;
 import dev.iamrat.global.exception.CustomException;
 import dev.iamrat.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.tika.Tika;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Profile;
 import org.springframework.core.io.Resource;
@@ -24,7 +24,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
-import java.util.Map;
 import java.util.UUID;
 
 @Slf4j
@@ -34,19 +33,10 @@ import java.util.UUID;
 public class LocalFileService {
 
     private final FileRepository fileRepository;
+    private final FileTypePolicy fileTypePolicy;
 
     @Value("${spring.file.upload-dir}")
     private String uploadDir;
-
-    private static final Tika TIKA = new Tika();
-
-    private static final Map<String, String> EXTENSION_MIME_MAP = Map.of(
-            ".jpg", "image/jpeg",
-            ".jpeg", "image/jpeg",
-            ".png", "image/png",
-            ".gif", "image/gif",
-            ".pdf", "application/pdf"
-    );
 
     @Transactional
     public FileUploadResponse uploadFile(MultipartFile file) throws IOException {
@@ -55,8 +45,8 @@ public class LocalFileService {
         }
 
         String fileName = file.getOriginalFilename();
-        String extension = extractExtension(fileName);
-        String detectedMimeType = validateMimeType(file, extension);
+        String extension = fileTypePolicy.extractAllowedExtension(fileName);
+        String detectedMimeType = fileTypePolicy.validateDetectedMimeType(file, extension);
         Path storagePath = buildStoragePath(extension);
 
         Files.createDirectories(storagePath.getParent());
@@ -105,32 +95,6 @@ public class LocalFileService {
                 fileEntity.getOriginalFileName(),
                 fileEntity.getFileType()
         );
-    }
-
-    private String extractExtension(String fileName) {
-        String extension = "";
-        
-        if (fileName != null && fileName.contains(".")) {
-            extension = fileName.substring(fileName.lastIndexOf(".")).toLowerCase();
-        }
-        
-        if (!EXTENSION_MIME_MAP.containsKey(extension)) {
-            throw new CustomException(ErrorCode.FILE_EXTENSION_NOT_ALLOWED);
-        }
-        
-        return extension;
-    }
-    
-    private String validateMimeType(MultipartFile file, String extension) throws IOException {
-        String detectedMimeType = TIKA.detect(file.getInputStream());
-        String expectedMimeType = EXTENSION_MIME_MAP.get(extension);
-
-        if (!detectedMimeType.equals(expectedMimeType)) {
-            log.warn("파일 위조 의심! 확장자: {}, 실제 타입: {}", extension, detectedMimeType);
-            throw new CustomException(ErrorCode.FILE_TYPE_MISMATCH);
-        }
-
-        return detectedMimeType;
     }
 
     private Path buildStoragePath(String extension) {

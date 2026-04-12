@@ -3,12 +3,15 @@ package dev.iamrat.file.service;
 import dev.iamrat.file.dto.FileUploadResponse;
 import dev.iamrat.file.entity.PostFile;
 import dev.iamrat.file.repository.FileRepository;
+import dev.iamrat.file.support.FileTypePolicy;
 import dev.iamrat.global.exception.CustomException;
+import dev.iamrat.global.exception.ErrorCode;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import software.amazon.awssdk.services.s3.presigner.S3Presigner;
 import software.amazon.awssdk.services.s3.presigner.model.GetObjectPresignRequest;
@@ -39,6 +42,9 @@ class S3FileServiceTest {
     @Mock
     private FileRepository fileRepository;
 
+    @Spy
+    private FileTypePolicy fileTypePolicy;
+
     @Test
     @DisplayName("Presigned Upload URL 생성 시 파일 저장 후 URL 반환")
     void testCreatePresignedUrl() throws MalformedURLException {
@@ -60,6 +66,24 @@ class S3FileServiceTest {
         assertThat(response.savedName()).endsWith(".png");
         assertThat(response.url()).isEqualTo("https://s3.example.com/presigned");
         verify(fileRepository).save(any(PostFile.class));
+    }
+
+    @Test
+    @DisplayName("허용되지 않은 확장자는 Presigned URL을 발급하지 않는다")
+    void testCreatePresignedUrl_rejectsUnsupportedExtension() {
+        assertThatThrownBy(() -> s3FileService.createPresignedUrl("script.exe", "application/octet-stream"))
+                .isInstanceOf(CustomException.class)
+                .extracting(ex -> ((CustomException) ex).getErrorCode())
+                .isEqualTo(ErrorCode.FILE_EXTENSION_NOT_ALLOWED);
+    }
+
+    @Test
+    @DisplayName("확장자와 contentType이 다르면 Presigned URL을 발급하지 않는다")
+    void testCreatePresignedUrl_rejectsMismatchedContentType() {
+        assertThatThrownBy(() -> s3FileService.createPresignedUrl("photo.png", "image/jpeg"))
+                .isInstanceOf(CustomException.class)
+                .extracting(ex -> ((CustomException) ex).getErrorCode())
+                .isEqualTo(ErrorCode.FILE_TYPE_MISMATCH);
     }
 
     @Test
