@@ -1,11 +1,11 @@
 package dev.iamrat.post.service;
 
 import dev.iamrat.post.repository.PostRepository;
-import java.util.Collections;
-import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.redis.core.SetOperations;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
@@ -24,14 +24,23 @@ public class ViewCountSyncScheduler {
     @Scheduled(fixedRate = 300_000)
     @Transactional
     public void syncViewCountsToDb() {
-        Set<Long> dirtyIds = popDirtyIds();
-        if (dirtyIds.isEmpty()) {
+        String processingKey = claimProcessingKey();
+        if (processingKey == null) {
             return;
         }
 
+        SetOperations<String, String> setOperations = redisTemplate.opsForSet();
+        Set<String> processingMembers = setOperations.members(processingKey);
+        if (processingMembers == null || processingMembers.isEmpty()) {
+            redisTemplate.delete(processingKey);
+            return;
+        }
+
+        Set<String> processedMembers = new LinkedHashSet<>();
         int synced = 0;
-        for (Long postId : dirtyIds) {
+        for (String member : processingMembers) {
             try {
+                Long postId = Long.parseLong(member);
                 String countStr = redisTemplate.opsForValue()
                     .get(VIEW_COUNT_PREFIX + postId);
                 if (countStr != null) {
@@ -39,39 +48,50 @@ public class ViewCountSyncScheduler {
                     postRepository.updateViews(postId, views);
                     synced++;
                 }
+                processedMembers.add(member);
             } catch (NumberFormatException e) {
-                log.warn("조회수 동기화 파싱 실패: postId={}", postId);
+                log.warn("조회수 dirty ID 파싱 실패: {}", member);
+                processedMembers.add(member);
+            } catch (Exception e) {
+                log.warn("조회수 동기화 재시도 예정: dirtyId={}", member, e);
             }
         }
+
+        removeProcessedMembers(processingKey, processedMembers);
 
         if (synced > 0) {
             log.info("조회수 DB 동기화 완료: {}건", synced);
         }
     }
 
-    private Set<Long> popDirtyIds() {
+    private String claimProcessingKey() {
         String processingKey = VIEW_DIRTY_KEY + ":processing";
+        Set<String> processingMembers = redisTemplate.opsForSet().members(processingKey);
+        if (processingMembers != null && !processingMembers.isEmpty()) {
+            return processingKey;
+        }
+
+        if (Boolean.TRUE.equals(redisTemplate.hasKey(processingKey))) {
+            redisTemplate.delete(processingKey);
+        }
+
         try {
             redisTemplate.rename(VIEW_DIRTY_KEY, processingKey);
+            return processingKey;
         } catch (Exception e) {
-            return Collections.emptySet();
+            return null;
+        }
+    }
+
+    private void removeProcessedMembers(String processingKey, Set<String> processedMembers) {
+        if (processedMembers.isEmpty()) {
+            return;
         }
 
-        Set<String> members = redisTemplate.opsForSet().members(processingKey);
-        redisTemplate.delete(processingKey);
-
-        if (members == null || members.isEmpty()) {
-            return Collections.emptySet();
+        redisTemplate.opsForSet().remove(processingKey, processedMembers.toArray());
+        Long remaining = redisTemplate.opsForSet().size(processingKey);
+        if (remaining == null || remaining == 0L) {
+            redisTemplate.delete(processingKey);
         }
-
-        Set<Long> ids = new HashSet<>();
-        for (String member : members) {
-            try {
-                ids.add(Long.parseLong(member));
-            } catch (NumberFormatException e) {
-                log.warn("조회수 dirty ID 파싱 실패: {}", member);
-            }
-        }
-        return ids;
     }
 }

@@ -12,8 +12,9 @@ dependencies {
     implementation project(':auth')
     implementation project(':board')
     implementation project(':ai')
+    implementation project(':ingest')
 
-    implementation 'org.springframework.boot:spring-boot-starter'
+    implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'org.springframework.boot:spring-boot-starter-actuator'
     implementation 'io.micrometer:micrometer-registry-prometheus'
     runtimeOnly "org.postgresql:postgresql"
