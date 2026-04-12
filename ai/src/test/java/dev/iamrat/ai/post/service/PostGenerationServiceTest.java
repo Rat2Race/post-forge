@@ -2,7 +2,7 @@ package dev.iamrat.ai.post.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.iamrat.ai.post.dto.GeneratedPost;
-import dev.iamrat.post.PostWriter;
+import dev.iamrat.board.post.PostWriter;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -41,6 +41,9 @@ class PostGenerationServiceTest {
     @Mock
     private PostWriter postWriter;
 
+    @Spy
+    private OutputGuardrail outputGuardrail = new OutputGuardrail();
+
     @InjectMocks
     private PostGenerationService postGenerationService;
 
@@ -71,6 +74,7 @@ class PostGenerationServiceTest {
             given(vectorStore.similaritySearch(any(SearchRequest.class)))
                     .willReturn(List.of(dartDoc))       // dart
                     .willReturn(List.of(financialDoc))   // dart-financial
+                    .willReturn(List.of())
                     .willReturn(List.of(newsDoc))        // naver-news
                     .willReturn(List.of());              // history
 
@@ -84,7 +88,8 @@ class PostGenerationServiceTest {
             assertThat(result.title()).isEqualTo("삼성전자 2025년 사업보고서 분석");
             assertThat(result.summary()).contains("매출액");
             assertThat(result.tags()).containsExactly("삼성전자", "실적분석", "DART");
-            verify(vectorStore, times(4)).similaritySearch(any(SearchRequest.class));
+            assertThat(result.content()).contains("투자의 책임은 본인에게 있습니다");
+            verify(vectorStore, times(5)).similaritySearch(any(SearchRequest.class));
         }
 
         @Test
@@ -96,6 +101,7 @@ class PostGenerationServiceTest {
 
             given(vectorStore.similaritySearch(any(SearchRequest.class)))
                     .willReturn(List.of(dartDoc))
+                    .willReturn(List.of())
                     .willReturn(List.of())
                     .willReturn(List.of())
                     .willReturn(List.of());
@@ -147,8 +153,41 @@ class PostGenerationServiceTest {
 
             // then
             assertThat(result.title()).isEqualTo("시장 분석");
-            assertThat(result.content()).isEqualTo(invalidResponse);
+            assertThat(result.content()).contains(invalidResponse);
             assertThat(result.tags()).isEmpty();
+        }
+
+        @Test
+        @DisplayName("금지 표현이 있으면 가드레일이 완화 표현으로 치환한다")
+        void generate_bannedPhrase_sanitizesContent() {
+            // given
+            String aggressiveResponse = """
+                    {
+                      "title": "삼성전자 급등 확실",
+                      "summary": "지금 사야 한다",
+                      "content": "매수 추천. 수익 보장.",
+                      "tags": ["삼성전자"]
+                    }
+                    """;
+
+            given(vectorStore.similaritySearch(any(SearchRequest.class)))
+                    .willReturn(List.of())
+                    .willReturn(List.of())
+                    .willReturn(List.of())
+                    .willReturn(List.of())
+                    .willReturn(List.of());
+
+            given(chatModel.call(any(Prompt.class))
+                    .getResult().getOutput().getText()).willReturn(aggressiveResponse);
+
+            // when
+            GeneratedPost result = postGenerationService.generate("005930", "삼성전자");
+
+            // then
+            assertThat(result.title()).doesNotContain("급등 확실");
+            assertThat(result.summary()).doesNotContain("지금 사야 한다");
+            assertThat(result.content()).contains("투자의 책임은 본인에게 있습니다");
+            assertThat(result.content()).doesNotContain("수익 보장");
         }
 
         @Test

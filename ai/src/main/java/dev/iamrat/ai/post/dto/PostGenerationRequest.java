@@ -4,7 +4,6 @@ import jakarta.validation.constraints.NotBlank;
 
 public record PostGenerationRequest(
         @NotBlank String stockCode,
-        String corpName,
-        boolean publish
+        String corpName
 ) {
 }

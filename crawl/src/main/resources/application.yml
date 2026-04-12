@@ -18,12 +18,17 @@ spring:
 
   h2:
     console:
-      enabled: true
+      enabled: ${CRAWL_H2_CONSOLE_ENABLED:false}
       path: /h2-console
-      settings:
-        web-allow-others: true
 
 crawl:
+  krx:
+    enabled: ${KRX_ENABLED:false}
+    api-key: ${KRX_API_KEY:}
+    kospi-endpoint: https://data-dbg.krx.co.kr/svc/apis/sto/stk_bydd_trd
+    kosdaq-endpoint: https://data-dbg.krx.co.kr/svc/apis/sto/ksq_bydd_trd
+    cron: "0 0 18 * * MON-FRI"
+
   naver-news:
     client-id: ${NAVER_NEWS_CLIENT_ID}
     client-secret: ${NAVER_NEWS_CLIENT_SECRET}
@@ -36,7 +41,24 @@ crawl:
     page-count: 100
     cron: "0 30 */2 * * *"
 
-ai:
+  candidate:
+    disclosure-lookback-hours: 18
+    price-change-threshold: 3.0
+    volume-ratio-threshold: 2.0
+    trading-value-threshold: 30000000000
+    top-trading-value-rank-threshold: 20
+    news-burst-threshold: 3
+    theme-keyword-min-hits: 2
+    large-cap-market-cap-threshold: 10000000000000
+
+  pipeline:
+    enabled: true
+    kill-switch: false
+    daily-cap: 10
+    candidate-cron: "0 0 7 * * MON-FRI"
+    publish-cron: "0 30 8 * * MON-FRI"
+
+internal:
   api:
-    base-url: ${AI_API_BASE_URL:http://localhost:8080}
+    base-url: ${INTERNAL_API_BASE_URL:http://localhost:8080}
     key: ${INTERNAL_API_KEY}
