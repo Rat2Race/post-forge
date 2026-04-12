@@ -1,0 +1,13 @@
+spring:
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+
+  file:
+    upload-dir: ${SPRING_FILE_UPLOAD_DIR:uploads}
+
+logging:
+  level:
+    org.springframework.security: DEBUG
+    org.springframework.security.oauth2: TRACE
