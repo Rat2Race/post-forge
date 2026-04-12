@@ -71,7 +71,9 @@ public class PostService {
     }
 
     public PostDetailResponse readPost(Long postId, String userId) {
-        viewCountService.incrementIfNew(postId, userId);
+        if (userId != null && !userId.isBlank()) {
+            viewCountService.incrementIfNew(postId, userId);
+        }
         return getPost(postId, userId);
     }
 

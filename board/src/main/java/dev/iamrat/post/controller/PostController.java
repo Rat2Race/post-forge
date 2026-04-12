@@ -14,7 +14,7 @@ import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import dev.iamrat.security.dto.UserPrincipal;
+import dev.iamrat.auth.security.dto.UserPrincipal;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
@@ -62,12 +62,12 @@ public class PostController {
     }
 
     @GetMapping("/{postId:\\d+}")
-    @PreAuthorize("hasRole('USER')")
     public ResponseEntity<PostDetailResponse> getPost(
         @PathVariable("postId") Long postId,
         @AuthenticationPrincipal UserPrincipal user
     ) {
-        PostDetailResponse post = postService.readPost(postId, user.getUserId());
+        String userId = user != null ? user.getUserId() : null;
+        PostDetailResponse post = postService.readPost(postId, userId);
 
         return ResponseEntity.ok(post);
     }
