@@ -1,89 +1,73 @@
 package dev.iamrat.like.comment.service;
 
 import dev.iamrat.comment.repository.CommentRepository;
-import dev.iamrat.global.exception.CustomException;
-import dev.iamrat.global.exception.ErrorCode;
 import dev.iamrat.like.dto.LikeResponse;
 import dev.iamrat.like.comment.entity.CommentLike;
 import dev.iamrat.like.comment.repository.CommentLikeRepository;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import dev.iamrat.like.service.AbstractLikeService;
 
 @Service
 @RequiredArgsConstructor
-public class CommentLikeService {
+public class CommentLikeService extends AbstractLikeService {
     private final CommentLikeRepository commentLikeRepository;
     private final CommentRepository commentRepository;
 
     @Transactional
     public LikeResponse like(Long commentId, String userId) {
-        if (commentId == null || userId == null || userId.isBlank()) {
-            throw new CustomException(ErrorCode.INVALID_INPUT);
-        }
-
-        if (!commentLikeRepository.existsByComment_IdAndUserId(commentId, userId)) {
-            try {
-                commentLikeRepository.save(CommentLike.of(commentRepository.getReferenceById(commentId), userId));
-            } catch (DataIntegrityViolationException e) {
-                // Another concurrent request inserted the row first.
-            }
-        }
-
-        long likeCount = commentLikeRepository.countByComment_Id(commentId);
-        commentRepository.updateLikeCount(commentId, likeCount);
-
-        return new LikeResponse(true, likeCount);
+        return likeTarget(commentId, userId);
     }
 
     @Transactional
     public LikeResponse unlike(Long commentId, String userId) {
-        if (commentId == null || userId == null || userId.isBlank()) {
-            throw new CustomException(ErrorCode.INVALID_INPUT);
-        }
-
-        commentLikeRepository.deleteByComment_IdAndUserId(commentId, userId);
-
-        long likeCount = commentLikeRepository.countByComment_Id(commentId);
-        commentRepository.updateLikeCount(commentId, likeCount);
-
-        return new LikeResponse(false, likeCount);
+        return unlikeTarget(commentId, userId);
     }
 
     public Map<Long, Long> getLikeCounts(List<Long> commentIds) {
-        if (commentIds == null) {
-            throw new CustomException(ErrorCode.INVALID_INPUT);
-        }
-
-        if (commentIds.isEmpty()) {
-            return Collections.emptyMap();
-        }
-
-        Map<Long, Long> result = new HashMap<>();
-        for (Long commentId : commentIds) {
-            result.put(commentId, 0L);
-        }
-        for (Object[] row : commentLikeRepository.countByCommentIds(commentIds)) {
-            result.put((Long) row[0], (Long) row[1]);
-        }
-        return result;
+        return getLikeCountMap(commentIds);
     }
 
     public Set<Long> getLikedCommentIds(List<Long> commentIds, String userId) {
-        if (commentIds == null) {
-            throw new CustomException(ErrorCode.INVALID_INPUT);
-        }
-        
-        if (userId == null || commentIds.isEmpty()) {
-            return Collections.emptySet();
-        }
+        return getLikedTargetIds(commentIds, userId);
+    }
 
-        return commentLikeRepository.findLikedCommentIdsByUserIdAndCommentIds(userId, commentIds);
+    @Override
+    protected boolean existsByTargetIdAndUserId(Long targetId, String userId) {
+        return commentLikeRepository.existsByComment_IdAndUserId(targetId, userId);
+    }
+
+    @Override
+    protected void saveLike(Long targetId, String userId) {
+        commentLikeRepository.save(CommentLike.of(commentRepository.getReferenceById(targetId), userId));
+    }
+
+    @Override
+    protected long countByTargetId(Long targetId) {
+        return commentLikeRepository.countByComment_Id(targetId);
+    }
+
+    @Override
+    protected void updateLikeCount(Long targetId, long likeCount) {
+        commentRepository.updateLikeCount(targetId, likeCount);
+    }
+
+    @Override
+    protected void deleteByTargetIdAndUserId(Long targetId, String userId) {
+        commentLikeRepository.deleteByComment_IdAndUserId(targetId, userId);
+    }
+
+    @Override
+    protected List<Object[]> countByTargetIds(List<Long> targetIds) {
+        return commentLikeRepository.countByCommentIds(targetIds);
+    }
+
+    @Override
+    protected Set<Long> findLikedTargetIds(String userId, List<Long> targetIds) {
+        return commentLikeRepository.findLikedCommentIdsByUserIdAndCommentIds(userId, targetIds);
     }
 }
