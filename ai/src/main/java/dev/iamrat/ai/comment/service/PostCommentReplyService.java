@@ -9,6 +9,8 @@ import dev.iamrat.global.exception.ErrorCode;
 import dev.iamrat.board.post.PostContext;
 import dev.iamrat.board.post.PostReader;
 import java.util.List;
+
+import lombok.RequiredArgsConstructor;
 import org.springframework.ai.chat.messages.SystemMessage;
 import org.springframework.ai.chat.messages.UserMessage;
 import org.springframework.ai.chat.model.ChatModel;
@@ -16,6 +18,7 @@ import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.stereotype.Service;
 
 @Service
+@RequiredArgsConstructor
 public class PostCommentReplyService {
 
     private static final String AI_USER_ID = "ai-post-generator";
@@ -32,18 +35,6 @@ public class PostCommentReplyService {
     private final PostReader postReader;
     private final CommentReader commentReader;
     private final CommentWriter commentWriter;
-
-    public PostCommentReplyService(
-        ChatModel chatModel,
-        PostReader postReader,
-        CommentReader commentReader,
-        CommentWriter commentWriter
-    ) {
-        this.chatModel = chatModel;
-        this.postReader = postReader;
-        this.commentReader = commentReader;
-        this.commentWriter = commentWriter;
-    }
 
     public AiCommentReplyResponse reply(Long postId, Long commentId) {
         PostContext post = postReader.read(postId);

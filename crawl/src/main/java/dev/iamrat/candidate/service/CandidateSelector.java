@@ -1,30 +1,24 @@
-package dev.iamrat.crawl.candidate.service;
+package dev.iamrat.candidate.service;
 
-import dev.iamrat.crawl.candidate.config.CandidateConfig;
-import dev.iamrat.crawl.candidate.entity.CandidateSelection;
-import dev.iamrat.crawl.candidate.repository.CandidateSelectionRepository;
-import dev.iamrat.crawl.common.entity.CrawledArticle;
-import dev.iamrat.crawl.common.repository.CrawledArticleRepository;
-import dev.iamrat.crawl.price.entity.StockPrice;
-import dev.iamrat.crawl.price.repository.StockPriceRepository;
-import dev.iamrat.crawl.stock.entity.StockMaster;
-import dev.iamrat.crawl.stock.repository.StockMasterRepository;
+import dev.iamrat.candidate.config.CandidateConfig;
+import dev.iamrat.candidate.entity.CandidateSelection;
+import dev.iamrat.candidate.repository.CandidateSelectionRepository;
+import dev.iamrat.common.entity.CrawledArticle;
+import dev.iamrat.common.repository.CrawledArticleRepository;
+import dev.iamrat.price.entity.StockPrice;
+import dev.iamrat.price.repository.StockPriceRepository;
+import dev.iamrat.stock.entity.StockMaster;
+import dev.iamrat.stock.repository.StockMasterRepository;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.Clock;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Optional;
-import java.util.stream.Collectors;
-import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
@@ -296,3 +290,4 @@ public class CandidateSelector {
         private static final NewsSignal EMPTY = new NewsSignal(0, 0);
     }
 }
+

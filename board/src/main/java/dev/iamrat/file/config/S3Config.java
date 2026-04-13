@@ -1,6 +1,8 @@
 package dev.iamrat.file.config;
 
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
@@ -11,7 +13,11 @@ import software.amazon.awssdk.services.s3.presigner.S3Presigner;
 
 @Configuration
 @Profile("s3")
+@RequiredArgsConstructor
+@EnableConfigurationProperties(S3Properties.class)
 public class S3Config {
+    
+    private final S3Properties s3Properties;
 
     @Bean
     public S3Client s3Client(Region region, DefaultCredentialsProvider credentialsProvider) {
@@ -30,8 +36,8 @@ public class S3Config {
     }
 
     @Bean
-    public Region awsRegion(@Value("${cloud.aws.region.static}") String region) {
-        return Region.of(region);
+    public Region awsRegion() {
+        return Region.of(s3Properties.region());
     }
 
     @Bean

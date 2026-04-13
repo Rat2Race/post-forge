@@ -1,4 +1,4 @@
-package dev.iamrat.crawl.price.config;
+package dev.iamrat.price.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -18,3 +18,4 @@ public class KrxApiConfig {
         return builder.build();
     }
 }
+

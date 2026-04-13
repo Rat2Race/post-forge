@@ -1,9 +1,9 @@
-package dev.iamrat.crawl.common.scheduler;
+package dev.iamrat.common.scheduler;
 
-import dev.iamrat.crawl.common.DataSourceCrawler;
-import dev.iamrat.crawl.dart.service.DartCrawlService;
-import dev.iamrat.crawl.news.service.NaverNewsCrawlService;
-import dev.iamrat.crawl.price.service.KrxPriceCrawlService;
+import dev.iamrat.common.DataSourceCrawler;
+import dev.iamrat.dart.service.DartCrawlService;
+import dev.iamrat.news.service.NaverNewsCrawlService;
+import dev.iamrat.price.service.KrxPriceCrawlService;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -44,3 +44,4 @@ public class NewsCrawlScheduler {
         }
     }
 }
+

@@ -1,4 +1,4 @@
-package dev.iamrat.crawl.price.config;
+package dev.iamrat.price.config;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -18,3 +18,4 @@ public class KrxConfig {
     private String cron;
 
 }
+

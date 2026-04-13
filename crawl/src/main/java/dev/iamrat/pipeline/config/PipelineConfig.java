@@ -1,4 +1,4 @@
-package dev.iamrat.crawl.pipeline.config;
+package dev.iamrat.pipeline.config;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -18,3 +18,4 @@ public class PipelineConfig {
     private String publishCron;
 
 }
+

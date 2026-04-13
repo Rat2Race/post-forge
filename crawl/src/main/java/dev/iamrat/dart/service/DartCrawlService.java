@@ -1,28 +1,30 @@
-package dev.iamrat.crawl.dart.service;
+package dev.iamrat.dart.service;
 
-import dev.iamrat.crawl.common.AiDocumentSender;
-import dev.iamrat.crawl.common.DataSourceCrawler;
-import dev.iamrat.crawl.common.dto.DocumentRequest;
-import dev.iamrat.crawl.common.entity.CrawledArticle;
-import dev.iamrat.crawl.common.repository.CrawledArticleRepository;
-import dev.iamrat.crawl.dart.config.DartConfig;
-import dev.iamrat.crawl.dart.dto.DartDisclosureItem;
-import dev.iamrat.crawl.dart.dto.DartDisclosureResponse;
-import dev.iamrat.crawl.dart.dto.DartFinancialItem;
-import dev.iamrat.crawl.dart.dto.DartFinancialResponse;
+import dev.iamrat.common.InternalCrawlClient;
+import dev.iamrat.common.DataSourceCrawler;
+import dev.iamrat.common.dto.InternalDocumentPayload;
+import dev.iamrat.common.entity.CrawledArticle;
+import dev.iamrat.common.repository.CrawledArticleRepository;
+import dev.iamrat.dart.config.DartConfig;
+import dev.iamrat.dart.dto.DartDisclosureItem;
+import dev.iamrat.dart.dto.DartDisclosureResponse;
+import dev.iamrat.dart.dto.DartFinancialItem;
+import dev.iamrat.dart.dto.DartFinancialResponse;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestClient;
+
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.Collections;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestClient;
 
 @Slf4j
 @Service
@@ -42,20 +44,31 @@ public class DartCrawlService implements DataSourceCrawler {
     private final RestClient dartRestClient;
     private final DartConfig dartConfig;
     private final CrawledArticleRepository crawledArticleRepository;
-    private final AiDocumentSender aiDocumentSender;
+    private final InternalCrawlClient internalCrawlClient;
 
     @Override
     public void crawl() {
+        if (dartConfig.getApiKey() == null || dartConfig.getApiKey().isBlank()) {
+            log.warn("[{}] DART_API_KEY가 없어 크롤링을 건너뜁니다.", SourceNames.DART);
+            return;
+        }
+
         String today = LocalDate.now().format(DATE_FMT);
         String weekAgo = LocalDate.now().minusDays(7).format(DATE_FMT);
         int totalNew = 0;
 
         for (String type : DISCLOSURE_TYPES) {
-            List<DartDisclosureItem> newItems = crawlByType(type, weekAgo, today);
+            CrawlBatchResult batch = crawlByType(type, weekAgo, today);
+            List<DartDisclosureItem> newItems = batch.newItems();
             totalNew += newItems.size();
 
             if (DisclosureTypes.PERIODIC.equals(type) && !newItems.isEmpty()) {
                 crawlFinancials(newItems);
+                if (batch.documentsForwarded()) {
+                    requestPostGeneration(newItems);
+                } else {
+                    log.warn("[{}] 정기공시 문서 전송이 실패해 자동 게시글 생성은 건너뜁니다.", SourceNames.DART);
+                }
             }
         }
 
@@ -67,20 +80,21 @@ public class DartCrawlService implements DataSourceCrawler {
         return SourceNames.DART;
     }
 
-    private List<DartDisclosureItem> crawlByType(String pblntfTy, String beginDate, String endDate) {
+    private CrawlBatchResult crawlByType(String pblntfTy, String beginDate, String endDate) {
         List<DartDisclosureItem> items = fetchDisclosures(pblntfTy, beginDate, endDate);
-        if (items.isEmpty()) return Collections.emptyList();
+        if (items.isEmpty()) return CrawlBatchResult.empty();
 
         List<DartDisclosureItem> newItems = filterNewItems(items);
-        if (newItems.isEmpty()) return Collections.emptyList();
+        if (newItems.isEmpty()) return CrawlBatchResult.empty();
 
         crawledArticleRepository.saveAll(toArticles(newItems));
-        if (!aiDocumentSender.send(toDocumentRequests(newItems))) {
+        boolean documentsForwarded = internalCrawlClient.sendDocuments(toDocumentRequests(newItems));
+        if (!documentsForwarded) {
             log.warn("[{}] 공시유형 {} - 메인 앱 전송 실패, H2 저장 상태만 유지", SourceNames.DART, pblntfTy);
         }
 
         log.info("[{}] 공시유형 {} - {}건 새 공시 저장", SourceNames.DART, pblntfTy, newItems.size());
-        return newItems;
+        return new CrawlBatchResult(newItems, documentsForwarded);
     }
 
     private List<DartDisclosureItem> fetchDisclosures(String pblntfTy, String beginDate, String endDate) {
@@ -142,9 +156,9 @@ public class DartCrawlService implements DataSourceCrawler {
                 .toList();
     }
 
-    private List<DocumentRequest> toDocumentRequests(List<DartDisclosureItem> items) {
+    private List<InternalDocumentPayload> toDocumentRequests(List<DartDisclosureItem> items) {
         return items.stream()
-                .map(item -> new DocumentRequest(
+                .map(item -> new InternalDocumentPayload(
                         buildContent(item),
                         SourceNames.DART,
                         Map.of(
@@ -171,6 +185,12 @@ public class DartCrawlService implements DataSourceCrawler {
 
     private record ReportInfo(String bsnsYear, String reprtCode) {}
 
+    private record CrawlBatchResult(List<DartDisclosureItem> newItems, boolean documentsForwarded) {
+        private static CrawlBatchResult empty() {
+            return new CrawlBatchResult(List.of(), false);
+        }
+    }
+
     private void crawlFinancials(List<DartDisclosureItem> periodicDisclosures) {
         int count = 0;
         for (DartDisclosureItem item : periodicDisclosures) {
@@ -181,7 +201,7 @@ public class DartCrawlService implements DataSourceCrawler {
                     item.corpCode(), info.bsnsYear(), info.reprtCode());
             if (financials.isEmpty()) continue;
 
-            DocumentRequest request = new DocumentRequest(
+            InternalDocumentPayload request = new InternalDocumentPayload(
                     buildFinancialContent(item, financials),
                     SourceNames.DART_FINANCIAL,
                     Map.of(
@@ -194,7 +214,7 @@ public class DartCrawlService implements DataSourceCrawler {
                     )
             );
 
-            if (aiDocumentSender.send(List.of(request))) {
+            if (internalCrawlClient.sendDocuments(List.of(request))) {
                 count++;
             } else {
                 log.warn("[{}] {} ({}) 재무 수치 전송 실패", SourceNames.DART_FINANCIAL, item.corpName(), item.stockCode());
@@ -203,6 +223,24 @@ public class DartCrawlService implements DataSourceCrawler {
         if (count > 0) {
             log.info("[{}] {}건의 재무 수치 저장", SourceNames.DART_FINANCIAL, count);
         }
+    }
+
+    private void requestPostGeneration(List<DartDisclosureItem> periodicDisclosures) {
+        if (periodicDisclosures.isEmpty()) {
+            return;
+        }
+        int requested = 0;
+        Set<String> requestedTickers = new LinkedHashSet<>();
+        for (DartDisclosureItem item : periodicDisclosures) {
+            if (item.stockCode() == null || item.stockCode().isBlank() || !requestedTickers.add(item.stockCode())) {
+                continue;
+            }
+            if (internalCrawlClient.requestPostGeneration(item.stockCode(), item.corpName())) {
+                requested++;
+            }
+        }
+
+        log.info("[{}] 정기공시 자동 게시글 생성 요청 완료 - {}건", SourceNames.DART, requested);
     }
 
     private ReportInfo parseReportInfo(String reportNm) {
@@ -358,3 +396,4 @@ public class DartCrawlService implements DataSourceCrawler {
         }
     }
 }
+

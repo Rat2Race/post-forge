@@ -1,4 +1,4 @@
-package dev.iamrat.crawl.stock.dto;
+package dev.iamrat.stock.dto;
 
 import jakarta.validation.constraints.NotBlank;
 
@@ -16,3 +16,4 @@ public record StockMasterUpsertRequest(
     boolean isSuspended
 ) {
 }
+

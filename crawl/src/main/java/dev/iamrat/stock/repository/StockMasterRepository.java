@@ -1,10 +1,12 @@
-package dev.iamrat.crawl.stock.repository;
+package dev.iamrat.stock.repository;
 
-import dev.iamrat.crawl.stock.entity.StockMaster;
-import java.util.List;
+import dev.iamrat.stock.entity.StockMaster;
 import org.springframework.data.jpa.repository.JpaRepository;
+
+import java.util.List;
 
 public interface StockMasterRepository extends JpaRepository<StockMaster, String> {
 
     List<StockMaster> findByIsEtfFalseAndIsPreferredFalseAndIsSpacFalseAndIsSuspendedFalseOrderByMarketCapDesc();
 }
+

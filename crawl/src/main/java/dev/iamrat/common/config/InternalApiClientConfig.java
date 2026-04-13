@@ -1,4 +1,4 @@
-package dev.iamrat.crawl.common.config;
+package dev.iamrat.common.config;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -15,10 +15,11 @@ public class InternalApiClientConfig {
     private String internalApiKey;
 
     @Bean
-    public RestClient aiRestClient() {
+    public RestClient internalApiRestClient() {
         return RestClient.builder()
                 .baseUrl(internalApiBaseUrl)
                 .defaultHeader("X-Internal-Api-Key", internalApiKey)
                 .build();
     }
 }
+

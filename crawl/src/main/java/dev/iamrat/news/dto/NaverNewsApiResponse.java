@@ -1,4 +1,4 @@
-package dev.iamrat.crawl.news.dto;
+package dev.iamrat.news.dto;
 
 import java.util.List;
 
@@ -10,3 +10,4 @@ public record NaverNewsApiResponse(
         List<NaverNewsItem> items
 ) {
 }
+

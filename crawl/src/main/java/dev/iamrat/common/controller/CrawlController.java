@@ -1,14 +1,15 @@
-package dev.iamrat.crawl.common.controller;
+package dev.iamrat.common.controller;
 
-import dev.iamrat.crawl.common.DataSourceCrawler;
-import java.util.List;
-import java.util.Map;
+import dev.iamrat.common.DataSourceCrawler;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/crawl")

@@ -1,15 +1,16 @@
-package dev.iamrat.crawl.common.config;
+package dev.iamrat.common.config;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import java.io.IOException;
-import java.util.List;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
+
+import java.io.IOException;
+import java.util.List;
 
 @Component
 public class InternalApiKeyFilter extends OncePerRequestFilter {
@@ -50,3 +51,4 @@ public class InternalApiKeyFilter extends OncePerRequestFilter {
         filterChain.doFilter(request, response);
     }
 }
+

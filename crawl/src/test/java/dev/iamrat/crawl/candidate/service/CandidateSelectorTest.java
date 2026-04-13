@@ -1,4 +1,4 @@
-package dev.iamrat.crawl.candidate.service;
+package dev.iamrat.candidate.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -6,15 +6,15 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
 
-import dev.iamrat.crawl.candidate.config.CandidateConfig;
-import dev.iamrat.crawl.candidate.entity.CandidateSelection;
-import dev.iamrat.crawl.candidate.repository.CandidateSelectionRepository;
-import dev.iamrat.crawl.common.entity.CrawledArticle;
-import dev.iamrat.crawl.common.repository.CrawledArticleRepository;
-import dev.iamrat.crawl.price.entity.StockPrice;
-import dev.iamrat.crawl.price.repository.StockPriceRepository;
-import dev.iamrat.crawl.stock.entity.StockMaster;
-import dev.iamrat.crawl.stock.repository.StockMasterRepository;
+import dev.iamrat.candidate.config.CandidateConfig;
+import dev.iamrat.candidate.entity.CandidateSelection;
+import dev.iamrat.candidate.repository.CandidateSelectionRepository;
+import dev.iamrat.common.entity.CrawledArticle;
+import dev.iamrat.common.repository.CrawledArticleRepository;
+import dev.iamrat.price.entity.StockPrice;
+import dev.iamrat.price.repository.StockPriceRepository;
+import dev.iamrat.stock.entity.StockMaster;
+import dev.iamrat.stock.repository.StockMasterRepository;
 import java.math.BigDecimal;
 import java.time.Clock;
 import java.time.Instant;
@@ -217,3 +217,4 @@ class CandidateSelectorTest {
         );
     }
 }
+

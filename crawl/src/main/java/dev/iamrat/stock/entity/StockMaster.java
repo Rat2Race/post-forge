@@ -1,13 +1,9 @@
-package dev.iamrat.crawl.stock.entity;
+package dev.iamrat.stock.entity;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.PrePersist;
-import jakarta.persistence.PreUpdate;
-import jakarta.persistence.Table;
-import java.time.LocalDateTime;
+import jakarta.persistence.*;
 import lombok.NoArgsConstructor;
+
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "stock_master")
@@ -127,3 +123,4 @@ public class StockMaster {
         updatedAt = LocalDateTime.now();
     }
 }
+

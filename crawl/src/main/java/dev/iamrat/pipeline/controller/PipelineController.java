@@ -1,22 +1,19 @@
-package dev.iamrat.crawl.pipeline.controller;
+package dev.iamrat.pipeline.controller;
 
-import dev.iamrat.crawl.candidate.entity.CandidateSelection;
-import dev.iamrat.crawl.candidate.service.CandidateSelector;
-import dev.iamrat.crawl.pipeline.service.CandidatePostPublisher;
+import dev.iamrat.candidate.entity.CandidateSelection;
+import dev.iamrat.candidate.service.CandidateSelector;
+import dev.iamrat.pipeline.service.CandidatePostPublisher;
 import jakarta.validation.constraints.PositiveOrZero;
-import java.time.Clock;
-import java.time.LocalDate;
-import java.util.List;
-import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+
+import java.time.Clock;
+import java.time.LocalDate;
+import java.util.List;
+import java.util.Map;
 
 @Validated
 @RestController
@@ -55,3 +52,4 @@ public class PipelineController {
         return ResponseEntity.ok(Map.of("requestedPosts", count));
     }
 }
+

@@ -1,4 +1,4 @@
-package dev.iamrat.crawl.candidate.config;
+package dev.iamrat.candidate.config;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -19,3 +19,4 @@ public class CandidateConfig {
     private int themeKeywordMinHits = 2;
     private long largeCapMarketCapThreshold = 10_000_000_000_000L;
 }
+

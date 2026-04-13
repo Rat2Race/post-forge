@@ -1,12 +1,14 @@
-package dev.iamrat.crawl.news.service;
+package dev.iamrat.news.service;
 
-import dev.iamrat.crawl.common.AiDocumentSender;
-import dev.iamrat.crawl.common.dto.DocumentRequest;
-import dev.iamrat.crawl.common.entity.CrawledArticle;
-import dev.iamrat.crawl.common.repository.CrawledArticleRepository;
-import dev.iamrat.crawl.news.config.NaverNewsConfig;
-import dev.iamrat.crawl.news.dto.NaverNewsApiResponse;
-import dev.iamrat.crawl.news.dto.NaverNewsItem;
+import dev.iamrat.common.InternalCrawlClient;
+import dev.iamrat.common.dto.InternalDocumentPayload;
+import dev.iamrat.common.entity.CrawledArticle;
+import dev.iamrat.common.repository.CrawledArticleRepository;
+import dev.iamrat.news.config.NaverNewsConfig;
+import dev.iamrat.news.dto.NaverNewsApiResponse;
+import dev.iamrat.news.dto.NaverNewsItem;
+import java.util.List;
+import java.util.Set;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -17,13 +19,15 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.web.client.RestClient;
 
-import java.util.List;
-import java.util.Set;
-
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.BDDMockito.given;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.inOrder;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
 class NaverNewsCrawlServiceTest {
@@ -38,7 +42,7 @@ class NaverNewsCrawlServiceTest {
     private CrawledArticleRepository crawledArticleRepository;
 
     @Mock
-    private AiDocumentSender aiDocumentSender;
+    private InternalCrawlClient internalCrawlClient;
 
     @InjectMocks
     private NaverNewsCrawlService naverNewsCrawlService;
@@ -51,6 +55,8 @@ class NaverNewsCrawlServiceTest {
     @Test
     @DisplayName("새 뉴스가 있으면 DB에 먼저 저장하고 메인 앱으로 전송한다")
     void crawl_newNews_savesThenSends() {
+        given(naverNewsConfig.getClientId()).willReturn("client-id");
+        given(naverNewsConfig.getClientSecret()).willReturn("client-secret");
         given(naverNewsConfig.getKeywords()).willReturn("주식");
         given(naverNewsConfig.getDisplay()).willReturn(10);
 
@@ -63,18 +69,20 @@ class NaverNewsCrawlServiceTest {
                 .uri(anyString(), any(), any())
                 .retrieve().body(NaverNewsApiResponse.class)).willReturn(response);
         given(crawledArticleRepository.findByOriginalLinkIn(any(Set.class))).willReturn(List.of());
-        given(aiDocumentSender.send(org.mockito.ArgumentMatchers.<DocumentRequest>anyList())).willReturn(true);
+        given(internalCrawlClient.sendDocuments(org.mockito.ArgumentMatchers.<InternalDocumentPayload>anyList())).willReturn(true);
 
         naverNewsCrawlService.crawl();
 
-        InOrder inOrder = inOrder(crawledArticleRepository, aiDocumentSender);
+        InOrder inOrder = inOrder(crawledArticleRepository, internalCrawlClient);
         inOrder.verify(crawledArticleRepository).saveAll(anyList());
-        inOrder.verify(aiDocumentSender).send(org.mockito.ArgumentMatchers.<DocumentRequest>anyList());
+        inOrder.verify(internalCrawlClient).sendDocuments(org.mockito.ArgumentMatchers.<InternalDocumentPayload>anyList());
     }
 
     @Test
     @DisplayName("메인 앱 전송 실패 시에도 H2 저장은 유지한다")
     void crawl_sendFails_keepsSavedArticles() {
+        given(naverNewsConfig.getClientId()).willReturn("client-id");
+        given(naverNewsConfig.getClientSecret()).willReturn("client-secret");
         given(naverNewsConfig.getKeywords()).willReturn("주식");
         given(naverNewsConfig.getDisplay()).willReturn(10);
 
@@ -87,17 +95,19 @@ class NaverNewsCrawlServiceTest {
                 .uri(anyString(), any(), any())
                 .retrieve().body(NaverNewsApiResponse.class)).willReturn(response);
         given(crawledArticleRepository.findByOriginalLinkIn(any(Set.class))).willReturn(List.of());
-        given(aiDocumentSender.send(org.mockito.ArgumentMatchers.<DocumentRequest>anyList())).willReturn(false);
+        given(internalCrawlClient.sendDocuments(org.mockito.ArgumentMatchers.<InternalDocumentPayload>anyList())).willReturn(false);
 
         naverNewsCrawlService.crawl();
 
         verify(crawledArticleRepository).saveAll(anyList());
-        verify(aiDocumentSender).send(org.mockito.ArgumentMatchers.<DocumentRequest>anyList());
+        verify(internalCrawlClient).sendDocuments(org.mockito.ArgumentMatchers.<InternalDocumentPayload>anyList());
     }
 
     @Test
     @DisplayName("이미 저장된 기사는 필터링한다")
     void crawl_duplicateArticles_filtered() {
+        given(naverNewsConfig.getClientId()).willReturn("client-id");
+        given(naverNewsConfig.getClientSecret()).willReturn("client-secret");
         given(naverNewsConfig.getKeywords()).willReturn("주식");
         given(naverNewsConfig.getDisplay()).willReturn(10);
 
@@ -116,13 +126,15 @@ class NaverNewsCrawlServiceTest {
 
         naverNewsCrawlService.crawl();
 
-        verify(aiDocumentSender, never()).send(anyList());
+        verify(internalCrawlClient, never()).sendDocuments(anyList());
         verify(crawledArticleRepository, never()).saveAll(anyList());
     }
 
     @Test
     @DisplayName("여러 키워드를 순회하며 크롤링한다")
     void crawl_multipleKeywords_crawlsAll() {
+        given(naverNewsConfig.getClientId()).willReturn("client-id");
+        given(naverNewsConfig.getClientSecret()).willReturn("client-secret");
         given(naverNewsConfig.getKeywords()).willReturn("주식,코스피");
         given(naverNewsConfig.getDisplay()).willReturn(10);
 
@@ -142,17 +154,19 @@ class NaverNewsCrawlServiceTest {
                 .willReturn(response1)
                 .willReturn(response2);
         given(crawledArticleRepository.findByOriginalLinkIn(any(Set.class))).willReturn(List.of());
-        given(aiDocumentSender.send(org.mockito.ArgumentMatchers.<DocumentRequest>anyList())).willReturn(true);
+        given(internalCrawlClient.sendDocuments(org.mockito.ArgumentMatchers.<InternalDocumentPayload>anyList())).willReturn(true);
 
         naverNewsCrawlService.crawl();
 
-        verify(aiDocumentSender, times(2)).send(org.mockito.ArgumentMatchers.<DocumentRequest>anyList());
+        verify(internalCrawlClient, times(2)).sendDocuments(org.mockito.ArgumentMatchers.<InternalDocumentPayload>anyList());
         verify(crawledArticleRepository, times(2)).saveAll(anyList());
     }
 
     @Test
     @DisplayName("API 호출 실패 시 예외 없이 빈 결과를 반환한다")
     void crawl_apiFailure_handlesGracefully() {
+        given(naverNewsConfig.getClientId()).willReturn("client-id");
+        given(naverNewsConfig.getClientSecret()).willReturn("client-secret");
         given(naverNewsConfig.getKeywords()).willReturn("주식");
         given(naverNewsConfig.getDisplay()).willReturn(10);
 
@@ -163,13 +177,15 @@ class NaverNewsCrawlServiceTest {
 
         naverNewsCrawlService.crawl();
 
-        verify(aiDocumentSender, never()).send(org.mockito.ArgumentMatchers.<DocumentRequest>anyList());
+        verify(internalCrawlClient, never()).sendDocuments(org.mockito.ArgumentMatchers.<InternalDocumentPayload>anyList());
         verify(crawledArticleRepository, never()).saveAll(anyList());
     }
 
     @Test
     @DisplayName("빈 키워드는 무시하고 유효한 키워드만 크롤링한다")
     void crawl_blankKeywords_areSkipped() {
+        given(naverNewsConfig.getClientId()).willReturn("client-id");
+        given(naverNewsConfig.getClientSecret()).willReturn("client-secret");
         given(naverNewsConfig.getKeywords()).willReturn("주식, ,코스피,,");
         given(naverNewsConfig.getDisplay()).willReturn(10);
 
@@ -184,11 +200,24 @@ class NaverNewsCrawlServiceTest {
                 .willReturn(response1)
                 .willReturn(response2);
         given(crawledArticleRepository.findByOriginalLinkIn(any(Set.class))).willReturn(List.of());
-        given(aiDocumentSender.send(org.mockito.ArgumentMatchers.<DocumentRequest>anyList())).willReturn(true);
+        given(internalCrawlClient.sendDocuments(org.mockito.ArgumentMatchers.<InternalDocumentPayload>anyList())).willReturn(true);
 
         naverNewsCrawlService.crawl();
 
-        verify(aiDocumentSender, times(2)).send(org.mockito.ArgumentMatchers.<DocumentRequest>anyList());
+        verify(internalCrawlClient, times(2)).sendDocuments(org.mockito.ArgumentMatchers.<InternalDocumentPayload>anyList());
         verify(crawledArticleRepository, times(2)).saveAll(anyList());
     }
+
+    @Test
+    @DisplayName("설정이 비어 있으면 네이버 뉴스 크롤링을 건너뛴다")
+    void crawl_missingCredentials_skips() {
+        given(naverNewsConfig.getClientId()).willReturn("");
+
+        naverNewsCrawlService.crawl();
+
+        verify(naverNewsRestClient, never()).get();
+        verify(internalCrawlClient, never()).sendDocuments(org.mockito.ArgumentMatchers.<InternalDocumentPayload>anyList());
+        verify(crawledArticleRepository, never()).saveAll(anyList());
+    }
 }
+

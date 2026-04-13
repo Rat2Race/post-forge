@@ -1,17 +1,18 @@
-package dev.iamrat.crawl.pipeline.scheduler;
+package dev.iamrat.pipeline.scheduler;
 
-import dev.iamrat.crawl.candidate.entity.CandidateSelection;
-import dev.iamrat.crawl.candidate.service.CandidateSelector;
-import dev.iamrat.crawl.pipeline.config.PipelineConfig;
-import dev.iamrat.crawl.pipeline.service.CandidatePostPublisher;
-import java.time.Clock;
-import java.time.LocalDate;
-import java.util.List;
+import dev.iamrat.candidate.entity.CandidateSelection;
+import dev.iamrat.candidate.service.CandidateSelector;
+import dev.iamrat.pipeline.config.PipelineConfig;
+import dev.iamrat.pipeline.service.CandidatePostPublisher;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
+
+import java.time.Clock;
+import java.time.LocalDate;
+import java.util.List;
 
 @Component
 @RequiredArgsConstructor
@@ -47,3 +48,4 @@ public class PreMarketPipelineScheduler {
         log.info("[pipeline] publish requests completed - {} posts", count);
     }
 }
+

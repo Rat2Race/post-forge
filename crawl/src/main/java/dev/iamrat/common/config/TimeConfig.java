@@ -1,8 +1,9 @@
-package dev.iamrat.crawl.common.config;
+package dev.iamrat.common.config;
 
-import java.time.Clock;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+
+import java.time.Clock;
 
 @Configuration
 public class TimeConfig {
@@ -11,3 +12,4 @@ public class TimeConfig {
         return Clock.systemDefaultZone();
     }
 }
+

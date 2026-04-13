@@ -1,12 +1,13 @@
-package dev.iamrat.crawl.stock.service;
+package dev.iamrat.stock.service;
 
-import dev.iamrat.crawl.stock.dto.StockMasterUpsertRequest;
-import dev.iamrat.crawl.stock.entity.StockMaster;
-import dev.iamrat.crawl.stock.repository.StockMasterRepository;
-import java.util.List;
+import dev.iamrat.stock.dto.StockMasterUpsertRequest;
+import dev.iamrat.stock.entity.StockMaster;
+import dev.iamrat.stock.repository.StockMasterRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -50,3 +51,4 @@ public class StockMasterService {
             .toList();
     }
 }
+

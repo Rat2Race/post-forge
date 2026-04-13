@@ -6,7 +6,6 @@ app:
   email:
     verification-base-url: ${APP_EMAIL_VERIFICATION_BASE_URL}
 
-
 spring:
   profiles:
     default: s3
@@ -29,6 +28,10 @@ spring:
 
   jpa:
     database-platform: org.hibernate.dialect.PostgreSQLDialect
+#    hibernate:
+#      ddl-auto: create
+    hibernate:
+      ddl-auto: update
     properties:
       hibernate:
         format_sql: true
@@ -66,20 +69,20 @@ spring:
           google:
             client-id: ${GOOGLE_CLIENT_ID}
             client-secret: ${GOOGLE_CLIENT_SECRET}
-            redirect-uri: http://localhost:8080/login/oauth2/code/google
+            redirect-uri: https://api.iamrat.dev/login/oauth2/code/google
             scope: profile, email
           naver:
             authorization-grant-type: authorization_code
             client-id: ${NAVER_CLIENT_ID}
             client-secret: ${NAVER_CLIENT_SECRET}
-            redirect-uri: http://localhost:8080/login/oauth2/code/naver
+            redirect-uri: https://api.iamrat.dev/login/oauth2/code/naver
             scope: name, email, nickname
             client-authentication-method: client_secret_post
           kakao:
             authorization-grant-type: authorization_code
             client-id: ${KAKAO_CLIENT_ID}
             client-secret: ${KAKAO_CLIENT_SECRET}
-            redirect-uri: http://localhost:8080/login/oauth2/code/kakao
+            redirect-uri: https://api.iamrat.dev/login/oauth2/code/kakao
             scope: profile_nickname, account_email
             client-authentication-method: client_secret_post
         provider:
@@ -121,9 +124,7 @@ logging:
     org.springframework.security.oauth2: ${LOG_LEVEL_SPRING_SECURITY_OAUTH2:INFO}
     dev.iamrat: ${LOG_LEVEL_APP:INFO}
 
-cloud:
-  aws:
-    s3:
-      bucket: postforge-uploads
-    region:
-      static: ap-northeast-2
+aws:
+  s3:
+    bucket: ${APP_AWS_S3_BUCKET}
+    region: ${AWS_S3_REGION}

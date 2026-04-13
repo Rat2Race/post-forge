@@ -1,10 +1,10 @@
-package dev.iamrat.crawl.common.repository;
+package dev.iamrat.common.repository;
 
-import dev.iamrat.crawl.common.entity.CrawledArticle;
-import java.time.LocalDateTime;
+import dev.iamrat.common.entity.CrawledArticle;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Set;
 
@@ -23,3 +23,4 @@ public interface CrawledArticleRepository extends JpaRepository<CrawledArticle, 
         LocalDateTime end
     );
 }
+

@@ -1,4 +1,4 @@
-package dev.iamrat.crawl.dart.dto;
+package dev.iamrat.dart.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
@@ -14,3 +14,4 @@ public record DartDisclosureItem(
         String rm
 ) {
 }
+

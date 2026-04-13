@@ -1,10 +1,11 @@
-package dev.iamrat.crawl.price.repository;
+package dev.iamrat.price.repository;
 
-import dev.iamrat.crawl.price.entity.StockPrice;
+import dev.iamrat.price.entity.StockPrice;
+import org.springframework.data.jpa.repository.JpaRepository;
+
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
-import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface StockPriceRepository extends JpaRepository<StockPrice, Long> {
 
@@ -14,3 +15,4 @@ public interface StockPriceRepository extends JpaRepository<StockPrice, Long> {
 
     List<StockPrice> findTop20ByTickerAndTradeDateBeforeOrderByTradeDateDesc(String ticker, LocalDate tradeDate);
 }
+

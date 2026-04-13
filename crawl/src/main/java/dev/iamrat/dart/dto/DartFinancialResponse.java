@@ -1,4 +1,4 @@
-package dev.iamrat.crawl.dart.dto;
+package dev.iamrat.dart.dto;
 
 import java.util.List;
 
@@ -8,3 +8,4 @@ public record DartFinancialResponse(
         List<DartFinancialItem> list
 ) {
 }
+

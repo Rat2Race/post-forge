@@ -1,31 +1,27 @@
-package dev.iamrat.crawl.price.service;
+package dev.iamrat.price.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import dev.iamrat.crawl.common.AiDocumentSender;
-import dev.iamrat.crawl.common.DataSourceCrawler;
-import dev.iamrat.crawl.common.dto.DocumentRequest;
-import dev.iamrat.crawl.price.config.KrxConfig;
-import dev.iamrat.crawl.price.dto.KrxDailyPriceSnapshot;
-import dev.iamrat.crawl.price.entity.StockPrice;
-import dev.iamrat.crawl.price.repository.StockPriceRepository;
-import dev.iamrat.crawl.stock.entity.StockMaster;
-import dev.iamrat.crawl.stock.repository.StockMasterRepository;
+import dev.iamrat.common.InternalCrawlClient;
+import dev.iamrat.common.DataSourceCrawler;
+import dev.iamrat.common.dto.InternalDocumentPayload;
+import dev.iamrat.price.config.KrxConfig;
+import dev.iamrat.price.dto.KrxDailyPriceSnapshot;
+import dev.iamrat.price.entity.StockPrice;
+import dev.iamrat.price.repository.StockPriceRepository;
+import dev.iamrat.stock.entity.StockMaster;
+import dev.iamrat.stock.repository.StockMasterRepository;
+import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestClient;
+
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.Clock;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
-import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestClient;
 
 @Service
 public class KrxPriceCrawlService implements DataSourceCrawler {
@@ -39,7 +35,7 @@ public class KrxPriceCrawlService implements DataSourceCrawler {
     private final ObjectMapper objectMapper;
     private final StockMasterRepository stockMasterRepository;
     private final StockPriceRepository stockPriceRepository;
-    private final AiDocumentSender aiDocumentSender;
+    private final InternalCrawlClient internalCrawlClient;
     private final Clock clock;
 
     public KrxPriceCrawlService(
@@ -48,7 +44,7 @@ public class KrxPriceCrawlService implements DataSourceCrawler {
         ObjectMapper objectMapper,
         StockMasterRepository stockMasterRepository,
         StockPriceRepository stockPriceRepository,
-        AiDocumentSender aiDocumentSender,
+        InternalCrawlClient internalCrawlClient,
         Clock clock
     ) {
         this.krxRestClient = krxRestClient;
@@ -56,7 +52,7 @@ public class KrxPriceCrawlService implements DataSourceCrawler {
         this.objectMapper = objectMapper != null ? objectMapper : new ObjectMapper();
         this.stockMasterRepository = stockMasterRepository;
         this.stockPriceRepository = stockPriceRepository;
-        this.aiDocumentSender = aiDocumentSender;
+        this.internalCrawlClient = internalCrawlClient;
         this.clock = clock != null ? clock : Clock.systemDefaultZone();
     }
 
@@ -104,7 +100,7 @@ public class KrxPriceCrawlService implements DataSourceCrawler {
             persisted.add(stockPriceRepository.save(price));
         }
 
-        if (!persisted.isEmpty() && !aiDocumentSender.send(toDocumentRequests(persisted, stockMap))) {
+        if (!persisted.isEmpty() && !internalCrawlClient.sendDocuments(toDocumentRequests(persisted, stockMap))) {
             throw new IllegalStateException("메인 앱에 KRX 가격 문서를 전송하지 못했습니다.");
         }
     }
@@ -194,8 +190,8 @@ public class KrxPriceCrawlService implements DataSourceCrawler {
         return snapshots;
     }
 
-    private List<DocumentRequest> toDocumentRequests(List<StockPrice> prices, Map<String, StockMaster> stockMap) {
-        List<DocumentRequest> requests = new ArrayList<>();
+    private List<InternalDocumentPayload> toDocumentRequests(List<StockPrice> prices, Map<String, StockMaster> stockMap) {
+        List<InternalDocumentPayload> requests = new ArrayList<>();
         for (StockPrice price : prices) {
             BigDecimal volumeRatio = calculateVolumeRatio(price);
             StockMaster stock = stockMap.get(price.getTicker());
@@ -210,7 +206,7 @@ public class KrxPriceCrawlService implements DataSourceCrawler {
             if (stock != null && stock.getDartCorpCode() != null) {
                 metadata.put("dartCorpCode", stock.getDartCorpCode());
             }
-            requests.add(new DocumentRequest(buildPriceContent(price, volumeRatio), SOURCE_NAME, metadata));
+            requests.add(new InternalDocumentPayload(buildPriceContent(price, volumeRatio), SOURCE_NAME, metadata));
         }
         return requests;
     }
@@ -358,3 +354,4 @@ public class KrxPriceCrawlService implements DataSourceCrawler {
     }
 
 }
+

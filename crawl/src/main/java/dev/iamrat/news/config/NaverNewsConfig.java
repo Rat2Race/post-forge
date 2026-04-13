@@ -1,4 +1,4 @@
-package dev.iamrat.crawl.news.config;
+package dev.iamrat.news.config;
 
 import lombok.Getter;
 import org.springframework.beans.factory.annotation.Value;
@@ -31,3 +31,4 @@ public class NaverNewsConfig {
                 .build();
     }
 }
+

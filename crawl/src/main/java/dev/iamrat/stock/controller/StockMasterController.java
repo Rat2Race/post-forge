@@ -1,17 +1,14 @@
-package dev.iamrat.crawl.stock.controller;
+package dev.iamrat.stock.controller;
 
-import dev.iamrat.crawl.stock.dto.StockMasterUpsertRequest;
-import dev.iamrat.crawl.stock.entity.StockMaster;
-import dev.iamrat.crawl.stock.service.StockMasterService;
+import dev.iamrat.stock.dto.StockMasterUpsertRequest;
+import dev.iamrat.stock.entity.StockMaster;
+import dev.iamrat.stock.service.StockMasterService;
 import jakarta.validation.Valid;
-import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/stocks")
@@ -40,3 +37,4 @@ public class StockMasterController {
         return ResponseEntity.ok(stockMasterService.bulkUpsert(requests));
     }
 }
+

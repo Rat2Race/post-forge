@@ -1,4 +1,4 @@
-package dev.iamrat.crawl.dart.dto;
+package dev.iamrat.dart.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
@@ -19,3 +19,4 @@ public record DartFinancialItem(
         @JsonProperty("ord") String ord
 ) {
 }
+

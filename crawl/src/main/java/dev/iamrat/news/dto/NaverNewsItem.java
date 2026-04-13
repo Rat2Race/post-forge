@@ -1,4 +1,4 @@
-package dev.iamrat.crawl.news.dto;
+package dev.iamrat.news.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
@@ -10,3 +10,4 @@ public record NaverNewsItem(
         String pubDate
 ) {
 }
+

@@ -3,6 +3,7 @@ package dev.iamrat.ai.post.service;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.iamrat.ai.post.dto.GeneratedPost;
 import dev.iamrat.board.post.PostWriter;
+import lombok.RequiredArgsConstructor;
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.ai.chat.messages.SystemMessage;
@@ -18,6 +19,7 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 
 @Service
+@RequiredArgsConstructor
 public class PostGenerationService {
 
     private static final Logger log = LoggerFactory.getLogger(PostGenerationService.class);
@@ -35,20 +37,6 @@ public class PostGenerationService {
     private final ObjectMapper objectMapper;
     private final PostWriter postWriter;
     private final OutputGuardrail outputGuardrail;
-
-    public PostGenerationService(
-            ChatModel chatModel,
-            VectorStore vectorStore,
-            ObjectMapper objectMapper,
-            PostWriter postWriter,
-            OutputGuardrail outputGuardrail
-    ) {
-        this.chatModel = chatModel;
-        this.vectorStore = vectorStore;
-        this.objectMapper = objectMapper;
-        this.postWriter = postWriter;
-        this.outputGuardrail = outputGuardrail;
-    }
 
     private static final String SYSTEM_PROMPT = """
             당신은 주식 시장 분석가입니다.

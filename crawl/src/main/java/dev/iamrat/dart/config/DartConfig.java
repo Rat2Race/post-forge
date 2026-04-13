@@ -1,4 +1,4 @@
-package dev.iamrat.crawl.dart.config;
+package dev.iamrat.dart.config;
 
 import lombok.Getter;
 import org.springframework.beans.factory.annotation.Value;
@@ -24,3 +24,4 @@ public class DartConfig {
     }
     
 }
+

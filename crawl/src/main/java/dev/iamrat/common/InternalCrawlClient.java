@@ -1,53 +1,52 @@
-package dev.iamrat.crawl.common;
+package dev.iamrat.common;
 
-import dev.iamrat.crawl.common.dto.DocumentRequest;
+import dev.iamrat.common.dto.InternalDocumentPayload;
+import java.util.List;
+import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 
-import java.util.List;
-import java.util.Map;
-
 @Component
-public class AiDocumentSender {
+public class InternalCrawlClient {
 
-    private static final Logger log = LoggerFactory.getLogger(AiDocumentSender.class);
+    private static final Logger log = LoggerFactory.getLogger(InternalCrawlClient.class);
 
     private static final String DOCUMENTS_ENDPOINT = "/internal/crawl/documents";
     private static final String POST_GENERATION_ENDPOINT = "/internal/crawl/posts/generate";
 
-    private final RestClient aiRestClient;
+    private final RestClient internalApiRestClient;
 
-    public AiDocumentSender(RestClient aiRestClient) {
-        this.aiRestClient = aiRestClient;
+    public InternalCrawlClient(RestClient internalApiRestClient) {
+        this.internalApiRestClient = internalApiRestClient;
     }
 
-    public boolean send(List<DocumentRequest> requests) {
-        if (requests == null || requests.isEmpty()) {
+    public boolean sendDocuments(List<InternalDocumentPayload> payloads) {
+        if (payloads == null || payloads.isEmpty()) {
             return true;
         }
 
         try {
-            aiRestClient.post()
+            internalApiRestClient.post()
                     .uri(DOCUMENTS_ENDPOINT)
                     .contentType(MediaType.APPLICATION_JSON)
-                    .body(requests)
+                    .body(payloads)
                     .retrieve()
                     .toBodilessEntity();
-            log.info("메인 앱 internal API에 {}건의 문서 전송 완료", requests.size());
+            log.info("메인 앱 internal API에 {}건의 문서 전송 완료", payloads.size());
             return true;
         } catch (Exception e) {
             log.error("메인 앱 internal 문서 전송 실패 - {}건, endpoint={}, error={}",
-                    requests.size(), DOCUMENTS_ENDPOINT, e.getMessage(), e);
+                    payloads.size(), DOCUMENTS_ENDPOINT, e.getMessage(), e);
             return false;
         }
     }
 
-    public boolean triggerPostGeneration(String stockCode, String corpName) {
+    public boolean requestPostGeneration(String stockCode, String corpName) {
         try {
-            aiRestClient.post()
+            internalApiRestClient.post()
                     .uri(POST_GENERATION_ENDPOINT)
                     .contentType(MediaType.APPLICATION_JSON)
                     .body(Map.of(
@@ -64,3 +63,4 @@ public class AiDocumentSender {
         }
     }
 }
+

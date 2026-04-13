@@ -1,4 +1,4 @@
-package dev.iamrat.crawl.common.config;
+package dev.iamrat.common.config;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -43,3 +43,4 @@ class InternalApiKeyFilterTest {
         assertThat(response.getStatus()).isEqualTo(200);
     }
 }
+

@@ -1,4 +1,4 @@
-package dev.iamrat.crawl.price.dto;
+package dev.iamrat.price.dto;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -17,3 +17,4 @@ public record KrxDailyPriceSnapshot(
     BigDecimal changeRate
 ) {
 }
+

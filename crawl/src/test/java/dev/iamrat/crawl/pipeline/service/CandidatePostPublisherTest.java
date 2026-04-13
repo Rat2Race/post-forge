@@ -1,12 +1,7 @@
-package dev.iamrat.crawl.pipeline.service;
+package dev.iamrat.pipeline.service;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.BDDMockito.given;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-
-import dev.iamrat.crawl.candidate.entity.CandidateSelection;
-import dev.iamrat.crawl.common.AiDocumentSender;
+import dev.iamrat.candidate.entity.CandidateSelection;
+import dev.iamrat.common.InternalCrawlClient;
 import java.time.LocalDate;
 import java.util.List;
 import org.junit.jupiter.api.DisplayName;
@@ -16,11 +11,16 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+
 @ExtendWith(MockitoExtension.class)
 class CandidatePostPublisherTest {
 
     @Mock
-    private AiDocumentSender aiDocumentSender;
+    private InternalCrawlClient internalCrawlClient;
 
     @InjectMocks
     private CandidatePostPublisher candidatePostPublisher;
@@ -33,16 +33,16 @@ class CandidatePostPublisherTest {
             selection("000660", "SK하이닉스"),
             selection("035420", "NAVER")
         );
-        given(aiDocumentSender.triggerPostGeneration("005930", "삼성전자")).willReturn(true);
-        given(aiDocumentSender.triggerPostGeneration("000660", "SK하이닉스")).willReturn(false);
-        given(aiDocumentSender.triggerPostGeneration("035420", "NAVER")).willReturn(true);
+        given(internalCrawlClient.requestPostGeneration("005930", "삼성전자")).willReturn(true);
+        given(internalCrawlClient.requestPostGeneration("000660", "SK하이닉스")).willReturn(false);
+        given(internalCrawlClient.requestPostGeneration("035420", "NAVER")).willReturn(true);
 
         int published = candidatePostPublisher.publish(selections, 10);
 
         assertThat(published).isEqualTo(2);
-        verify(aiDocumentSender).triggerPostGeneration("005930", "삼성전자");
-        verify(aiDocumentSender).triggerPostGeneration("000660", "SK하이닉스");
-        verify(aiDocumentSender).triggerPostGeneration("035420", "NAVER");
+        verify(internalCrawlClient).requestPostGeneration("005930", "삼성전자");
+        verify(internalCrawlClient).requestPostGeneration("000660", "SK하이닉스");
+        verify(internalCrawlClient).requestPostGeneration("035420", "NAVER");
     }
 
     @Test
@@ -51,7 +51,7 @@ class CandidatePostPublisherTest {
         int published = candidatePostPublisher.publish(List.of(selection("005930", "삼성전자")), -1);
 
         assertThat(published).isZero();
-        verify(aiDocumentSender, times(0)).triggerPostGeneration("005930", "삼성전자");
+        verify(internalCrawlClient, times(0)).requestPostGeneration("005930", "삼성전자");
     }
 
     private CandidateSelection selection(String ticker, String stockName) {
@@ -73,3 +73,4 @@ class CandidatePostPublisherTest {
         );
     }
 }
+

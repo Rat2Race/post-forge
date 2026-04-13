@@ -1,23 +1,19 @@
-package dev.iamrat.crawl.news.service;
+package dev.iamrat.news.service;
 
-import dev.iamrat.crawl.common.AiDocumentSender;
-import dev.iamrat.crawl.common.DataSourceCrawler;
-import dev.iamrat.crawl.common.dto.DocumentRequest;
-import dev.iamrat.crawl.common.entity.CrawledArticle;
-import dev.iamrat.crawl.common.repository.CrawledArticleRepository;
-import dev.iamrat.crawl.news.config.NaverNewsConfig;
-import dev.iamrat.crawl.news.dto.NaverNewsApiResponse;
-import dev.iamrat.crawl.news.dto.NaverNewsItem;
+import dev.iamrat.common.InternalCrawlClient;
+import dev.iamrat.common.DataSourceCrawler;
+import dev.iamrat.common.dto.InternalDocumentPayload;
+import dev.iamrat.common.entity.CrawledArticle;
+import dev.iamrat.common.repository.CrawledArticleRepository;
+import dev.iamrat.news.config.NaverNewsConfig;
+import dev.iamrat.news.dto.NaverNewsApiResponse;
+import dev.iamrat.news.dto.NaverNewsItem;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -30,10 +26,15 @@ public class NaverNewsCrawlService implements DataSourceCrawler {
     private final RestClient naverNewsRestClient;
     private final NaverNewsConfig naverNewsConfig;
     private final CrawledArticleRepository crawledArticleRepository;
-    private final AiDocumentSender aiDocumentSender;
+    private final InternalCrawlClient internalCrawlClient;
 
     @Override
     public void crawl() {
+        if (!isConfigured()) {
+            log.warn("[{}] NAVER_NEWS_CLIENT_ID / NAVER_NEWS_CLIENT_SECRET 또는 키워드가 없어 크롤링을 건너뜁니다.", SOURCE_NAME);
+            return;
+        }
+
         int totalNewArticles = 0;
 
         for (String keyword : resolveKeywords()) {
@@ -60,7 +61,7 @@ public class NaverNewsCrawlService implements DataSourceCrawler {
         }
 
         crawledArticleRepository.saveAll(toArticles(keyword, newItems));
-        if (!aiDocumentSender.send(toDocumentRequests(keyword, newItems))) {
+        if (!internalCrawlClient.sendDocuments(toDocumentRequests(keyword, newItems))) {
             log.warn("[{}] '{}' 키워드 - 메인 앱 전송 실패, H2 저장 상태만 유지", SOURCE_NAME, keyword);
         }
 
@@ -74,6 +75,12 @@ public class NaverNewsCrawlService implements DataSourceCrawler {
             .filter(keyword -> !keyword.isEmpty())
             .distinct()
             .toList();
+    }
+
+    private boolean isConfigured() {
+        return naverNewsConfig.getClientId() != null && !naverNewsConfig.getClientId().isBlank()
+            && naverNewsConfig.getClientSecret() != null && !naverNewsConfig.getClientSecret().isBlank()
+            && !resolveKeywords().isEmpty();
     }
 
     private List<NaverNewsItem> fetchNews(String keyword) {
@@ -122,9 +129,9 @@ public class NaverNewsCrawlService implements DataSourceCrawler {
                 .toList();
     }
 
-    private List<DocumentRequest> toDocumentRequests(String keyword, List<NaverNewsItem> items) {
+    private List<InternalDocumentPayload> toDocumentRequests(String keyword, List<NaverNewsItem> items) {
         return items.stream()
-                .map(item -> new DocumentRequest(
+                .map(item -> new InternalDocumentPayload(
                         stripHtmlTags(item.title()) + "\n\n" + stripHtmlTags(item.description()),
                         SOURCE_NAME,
                         Map.of(
@@ -152,3 +159,4 @@ public class NaverNewsCrawlService implements DataSourceCrawler {
                 .trim();
     }
 }
+
