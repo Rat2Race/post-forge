@@ -1,6 +1,6 @@
 package dev.iamrat.port.comment;
 
-import dev.iamrat.comment.CommentWriter;
+import dev.iamrat.board.comment.CommentWriter;
 import dev.iamrat.comment.dto.CommentSummaryResponse;
 import dev.iamrat.comment.service.CommentService;
 import org.springframework.stereotype.Component;

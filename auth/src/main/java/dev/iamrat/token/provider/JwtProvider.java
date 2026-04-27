@@ -5,11 +5,12 @@ import dev.iamrat.global.exception.ErrorCode;
 import dev.iamrat.login.dto.CustomUserDetails;
 import dev.iamrat.member.entity.Member;
 import dev.iamrat.member.service.MemberService;
-import dev.iamrat.security.dto.UserPrincipal;
 import dev.iamrat.token.dto.JwtResponse;
 import dev.iamrat.token.service.JwtService;
 import io.jsonwebtoken.Claims;
-import java.util.*;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -26,15 +27,12 @@ public class JwtProvider {
     private final JwtService jwtService;
     private final MemberService memberService;
 
-    public JwtResponse createToken(Authentication authentication) {
-        
-        UserPrincipal userDetails = (UserPrincipal) authentication.getPrincipal();
-        String nickname = userDetails.getNickname();
-        
-        String accessToken = jwtService.generateAccessToken(authentication.getName(), nickname, authentication.getAuthorities());
-        String refreshToken = jwtService.generateRefreshToken(authentication.getName());
-        
-        jwtService.saveRefreshToken(authentication.getName(), refreshToken);
+    public JwtResponse createToken(String userId, String nickname,
+                                   Collection<? extends GrantedAuthority> authorities) {
+        String accessToken = jwtService.generateAccessToken(userId, nickname, authorities);
+        String refreshToken = jwtService.generateRefreshToken(userId);
+
+        jwtService.saveRefreshToken(userId, refreshToken);
 
         return JwtResponse.builder()
             .grantType("Bearer")

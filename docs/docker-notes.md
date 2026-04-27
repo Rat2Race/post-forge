@@ -81,3 +81,45 @@ ENTRYPOINT ["java", "-jar", "app.jar"]
 
 - 똑같은 네트워크 속도로 측정한 것이 아니여서 정확한 측정이 불가능 했음
 - 확실한건 용량 감소와 재빌드시 속도향상이 되는걸 느낄 수 있었음
+
+---
+### hyperfine 사용해서 재측정
+
+#### 캐시 100퍼 빌드
+> hyperfine --warmup 3 --runs 20 'DOCKER_BUILDKIT=1 docker build --progress=plain --target runtime -t postforge:local .'
+
+Time (mean ± σ):     589.4 ms ±  21.0 ms    [User: 107.7 ms, System: 88.0 ms]   
+Range (min … max):   560.0 ms … 638.3 ms    20 runs
+
+수정 후
+
+Time (mean ± σ):     606.4 ms ±  24.7 ms    [User: 105.8 ms, System: 85.4 ms]   
+Range (min … max):   574.4 ms … 664.6 ms    20 runs
+
+#### 리소스 변경 후 측정
+> hyperfine --warmup 2 --runs 20 --prepare 'date +%s%N > app/src/main/resources/docker-build-benchmark.txt' 'DOCKER_BUILDKIT=1 docker build --progress=plain --target runtime -t postforge:local .'
+
+Time (mean ± σ):     11.643 s ±  0.094 s    [User: 0.111 s, System: 0.095 s]   
+Range (min … max):   11.489 s … 11.862 s    20 runs
+
+수정 후
+
+Time (mean ± σ):      8.269 s ±  0.138 s    [User: 0.110 s, System: 0.093 s]   
+Range (min … max):    8.021 s …  8.482 s    20 runs
+
+#### 캐시 없이 빌드
+> hyperfine --runs 3 'DOCKER_BUILDKIT=1 docker build --no-cache --progress=plain --target runtime -t postforge:local .'
+
+Time (mean ± σ):     46.320 s ±  1.181 s    [User: 0.130 s, System: 0.118 s]   
+Range (min … max):   45.413 s … 47.655 s    3 runs
+
+수정 후
+
+Time (mean ± σ):     43.608 s ±  1.176 s    [User: 0.133 s, System: 0.123 s]   
+Range (min … max):   42.265 s … 44.456 s    3 runs
+
+|      측정 항목      | 수정 전    |  수정 후   |             변화             |
+|:---------------:|:--------|:-------:|:--------------------------:|
+|   캐시 100% 빌드    | 589.4ms | 606.4ms |    약 **+17ms**, 사실상 동일     |
+|   리소스 변경 후 빌드   | 11.643s | 8.269s  | 약 **-3.374s**, **29% 개선**  |
+| `--no-cache` 빌드 | 46.320s | 43.608s | 약 **-2.712s**, **5.9% 개선** |

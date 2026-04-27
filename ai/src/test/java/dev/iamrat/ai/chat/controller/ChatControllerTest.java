@@ -42,14 +42,14 @@ class ChatControllerTest {
         @Test
         @DisplayName("유효한 메시지로 채팅하면 200과 응답을 반환한다")
         void chat_validMessage_returns200() throws Exception {
-            ChatRequest request = new ChatRequest("삼성전자 실적 분석해줘");
-            given(chatService.chat(anyString())).willReturn("삼성전자 실적 분석 결과입니다.");
+            ChatRequest request = new ChatRequest("오늘 테크 트렌드 요약해줘");
+            given(chatService.chat(anyString())).willReturn("오늘의 테크 트렌드 요약입니다.");
 
             mockMvc.perform(post("/ai/chat")
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.answer").value("삼성전자 실적 분석 결과입니다."));
+                .andExpect(jsonPath("$.answer").value("오늘의 테크 트렌드 요약입니다."));
         }
     }
 

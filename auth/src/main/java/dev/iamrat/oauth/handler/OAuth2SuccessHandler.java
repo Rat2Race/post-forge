@@ -1,8 +1,8 @@
 package dev.iamrat.oauth.handler;
 
+import dev.iamrat.auth.security.dto.UserPrincipal;
 import dev.iamrat.oauth.service.OAuth2CodeService;
 import dev.iamrat.security.config.AppProperties;
-import dev.iamrat.security.dto.UserPrincipal;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;

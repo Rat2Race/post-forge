@@ -18,25 +18,18 @@ spring:
 
   h2:
     console:
-      enabled: true
+      enabled: ${CRAWL_H2_CONSOLE_ENABLED:false}
       path: /h2-console
-      settings:
-        web-allow-others: true
 
 crawl:
   naver-news:
     client-id: ${NAVER_NEWS_CLIENT_ID}
     client-secret: ${NAVER_NEWS_CLIENT_SECRET}
-    keywords: "주식,경제,코스피,금리"
+    keywords: "AI,테크,스타트업,정책"
     display: 10
     cron: "0 0 */2 * * *"
 
-  dart:
-    api-key: ${DART_API_KEY}
-    page-count: 100
-    cron: "0 30 */2 * * *"
-
-ai:
+internal:
   api:
-    base-url: ${AI_API_BASE_URL:http://localhost:8080}
+    base-url: ${INTERNAL_API_BASE_URL:http://localhost:8080}
     key: ${INTERNAL_API_KEY}

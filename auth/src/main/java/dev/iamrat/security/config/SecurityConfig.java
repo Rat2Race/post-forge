@@ -1,6 +1,7 @@
 package dev.iamrat.security.config;
 
 import dev.iamrat.oauth.service.CustomOAuth2UserService;
+import dev.iamrat.login.service.CustomUserDetailsService;
 import dev.iamrat.oauth.handler.OAuth2FailureHandler;
 import dev.iamrat.oauth.handler.OAuth2SuccessHandler;
 import dev.iamrat.token.handler.JwtAccessDeniedHandler;
@@ -15,15 +16,17 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplicat
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.config.Customizer;
-import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
+import org.springframework.security.authentication.AuthenticationProvider;
+import org.springframework.security.authentication.ProviderManager;
+import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.http.HttpMethod;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
-
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
@@ -46,12 +49,26 @@ public class SecurityConfig {
     private String internalApiKey;
 
     @Bean
-    public AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration) throws Exception {
-        return authenticationConfiguration.getAuthenticationManager();
+    public AuthenticationProvider authenticationProvider(
+        CustomUserDetailsService customUserDetailsService,
+        PasswordEncoder passwordEncoder
+    ) {
+        DaoAuthenticationProvider authenticationProvider = new DaoAuthenticationProvider();
+        authenticationProvider.setUserDetailsService(customUserDetailsService);
+        authenticationProvider.setPasswordEncoder(passwordEncoder);
+        return authenticationProvider;
     }
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    public AuthenticationManager authenticationManager(AuthenticationProvider authenticationProvider) {
+        return new ProviderManager(authenticationProvider);
+    }
+
+    @Bean
+    public SecurityFilterChain securityFilterChain(
+        HttpSecurity http,
+        AuthenticationProvider authenticationProvider
+    ) throws Exception {
         http
             .cors(Customizer.withDefaults())
             .csrf(AbstractHttpConfigurer::disable)
@@ -68,6 +85,7 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.POST, "/auth/register").permitAll()
                 .requestMatchers(HttpMethod.POST, "/auth/login").permitAll()
                 .requestMatchers(HttpMethod.POST, "/auth/token/reissue").permitAll()
+                .requestMatchers(HttpMethod.POST, "/auth/oauth2/exchange").permitAll()
                 .requestMatchers(HttpMethod.POST, "/auth/token/exchange").permitAll()
                 .requestMatchers(HttpMethod.POST, "/auth/email/send").permitAll()
                 .requestMatchers(HttpMethod.GET, "/auth/email/verify").permitAll()
@@ -78,27 +96,14 @@ public class SecurityConfig {
                 .requestMatchers("/oauth2/**").permitAll()
                 .requestMatchers("/login/oauth2/**").permitAll()
                 
-                
                 // ===== AI API (JWT 인증 유저 또는 내부 API 키) =====
                 .requestMatchers("/ai/**").hasAnyRole("USER", "ADMIN")
-
-                // ===== 인증 필요 API =====
-                .requestMatchers("/user/**").hasAnyRole("USER", "ADMIN")
-                .requestMatchers(HttpMethod.POST, "/auth/logout").hasAnyRole("USER", "ADMIN")
-                .requestMatchers(HttpMethod.POST, "/posts").hasRole("USER")
-                .requestMatchers(HttpMethod.PUT, "/posts/*").hasAnyRole("USER", "ADMIN")
-                .requestMatchers(HttpMethod.DELETE, "/posts/*").hasAnyRole("USER", "ADMIN")
-                .requestMatchers(HttpMethod.POST, "/posts/*/like").hasRole("USER")
-                .requestMatchers(HttpMethod.POST, "/posts/*/comments").hasRole("USER")
-                .requestMatchers(HttpMethod.PUT, "/posts/*/comments/*").hasAnyRole("USER", "ADMIN")
-                .requestMatchers(HttpMethod.DELETE, "/posts/*/comments/*").hasAnyRole("USER", "ADMIN")
-                .requestMatchers(HttpMethod.POST, "/posts/*/comments/*/like").hasRole("USER")
-                .requestMatchers("/files/**").hasAnyRole("USER", "ADMIN")
 
                 // ===== 관리자 전용 API =====
                 .requestMatchers("/admin/**").hasRole("ADMIN")
                 
                 .anyRequest().authenticated())
+            .authenticationProvider(authenticationProvider)
             .addFilterBefore(new InternalApiKeyFilter(internalApiKey), UsernamePasswordAuthenticationFilter.class)
             .addFilterBefore(new JwtAuthenticationFilter(jwtProvider), UsernamePasswordAuthenticationFilter.class);
         

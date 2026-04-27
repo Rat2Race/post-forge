@@ -2,7 +2,7 @@ package dev.iamrat.login.dto;
 
 import java.util.Collection;
 
-import dev.iamrat.security.dto.UserPrincipal;
+import dev.iamrat.auth.security.dto.UserPrincipal;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
