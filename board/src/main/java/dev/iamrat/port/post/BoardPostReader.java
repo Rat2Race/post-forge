@@ -1,9 +1,9 @@
 package dev.iamrat.port.post;
 
+import dev.iamrat.board.post.PostContext;
+import dev.iamrat.board.post.PostReader;
 import dev.iamrat.global.exception.CustomException;
 import dev.iamrat.global.exception.ErrorCode;
-import dev.iamrat.post.PostContext;
-import dev.iamrat.post.PostReader;
 import dev.iamrat.post.entity.Post;
 import dev.iamrat.post.repository.PostRepository;
 import lombok.RequiredArgsConstructor;

@@ -1,7 +1,7 @@
 package dev.iamrat.port.comment;
 
-import dev.iamrat.comment.CommentContext;
-import dev.iamrat.comment.CommentReader;
+import dev.iamrat.board.comment.CommentContext;
+import dev.iamrat.board.comment.CommentReader;
 import dev.iamrat.comment.entity.Comment;
 import dev.iamrat.comment.repository.CommentRepository;
 import dev.iamrat.global.exception.CustomException;

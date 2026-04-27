@@ -1,6 +1,6 @@
 package dev.iamrat.port.post;
 
-import dev.iamrat.post.PostWriter;
+import dev.iamrat.board.post.PostWriter;
 import dev.iamrat.post.entity.Post;
 import dev.iamrat.post.repository.PostRepository;
 import lombok.RequiredArgsConstructor;

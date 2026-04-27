@@ -1,5 +1,6 @@
 package dev.iamrat.login.controller;
 
+import dev.iamrat.auth.security.dto.UserPrincipal;
 import dev.iamrat.login.service.LoginService;
 import dev.iamrat.login.dto.LoginRequest;
 import dev.iamrat.token.dto.AccessTokenResponse;
@@ -14,7 +15,6 @@ import org.springframework.http.CacheControl;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import dev.iamrat.security.dto.UserPrincipal;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;

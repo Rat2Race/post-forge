@@ -1,5 +1,6 @@
 package dev.iamrat.login.service;
 
+import dev.iamrat.auth.security.dto.UserPrincipal;
 import dev.iamrat.login.dto.LoginRequest;
 import dev.iamrat.token.dto.JwtResponse;
 import dev.iamrat.token.provider.JwtProvider;
@@ -24,7 +25,9 @@ public class LoginService {
         Authentication authentication = authenticationManager.authenticate(authenticationToken);
         log.info("사용자 로그인: {}", authentication.getName());
         
-        return jwtProvider.createToken(authentication);
+        UserPrincipal userDetails = (UserPrincipal) authentication.getPrincipal();
+        
+        return jwtProvider.createToken(authentication.getName(), userDetails.getNickname(), authentication.getAuthorities());
     }
     
     public void logout(String userId) {

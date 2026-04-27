@@ -1,11 +1,11 @@
 package dev.iamrat.profile.controller;
 
+import dev.iamrat.auth.security.dto.UserPrincipal;
 import dev.iamrat.member.dto.MemberResponse;
 import dev.iamrat.member.entity.Member;
 import dev.iamrat.profile.dto.PasswordChangeRequest;
 import dev.iamrat.profile.dto.ProfileUpdateRequest;
 import dev.iamrat.profile.service.ProfileService;
-import dev.iamrat.security.dto.UserPrincipal;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;

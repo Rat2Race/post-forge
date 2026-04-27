@@ -1,5 +1,6 @@
 package dev.iamrat.file.service;
 
+import dev.iamrat.file.config.S3Properties;
 import dev.iamrat.file.dto.FileUploadResponse;
 import dev.iamrat.file.entity.PostFile;
 import dev.iamrat.file.repository.FileRepository;
@@ -30,9 +31,7 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class S3FileService {
 
-    @Value("${cloud.aws.s3.bucket}")
-    private String bucketName;
-
+    private final S3Properties s3Properties;
     private final S3Presigner s3Presigner;
     private final FileRepository fileRepository;
     private final FileTypePolicy fileTypePolicy;
@@ -55,7 +54,7 @@ public class S3FileService {
         PostFile saved = fileRepository.save(fileEntity);
 
         PutObjectRequest objectRequest = PutObjectRequest.builder()
-            .bucket(bucketName)
+            .bucket(s3Properties.bucket())
             .key(s3Key)
             .contentType(validatedContentType)
             .build();
@@ -74,7 +73,7 @@ public class S3FileService {
             .orElseThrow(() -> new CustomException(ErrorCode.FILE_NOT_FOUND));
         
         GetObjectRequest objectRequest = GetObjectRequest.builder()
-            .bucket(bucketName)
+            .bucket(s3Properties.bucket())
             .key(file.getFilePath())
             .build();
         
