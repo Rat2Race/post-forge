@@ -9,8 +9,6 @@ import dev.iamrat.global.exception.CustomException;
 import dev.iamrat.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
@@ -27,7 +25,6 @@ import java.util.UUID;
 
 @Slf4j
 @Service
-@Profile("s3")
 @RequiredArgsConstructor
 public class S3FileService {
 

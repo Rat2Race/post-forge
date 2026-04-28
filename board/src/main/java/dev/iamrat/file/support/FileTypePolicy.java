@@ -2,17 +2,12 @@ package dev.iamrat.file.support;
 
 import dev.iamrat.global.exception.CustomException;
 import dev.iamrat.global.exception.ErrorCode;
-import org.apache.tika.Tika;
 import org.springframework.stereotype.Component;
-import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
 import java.util.Map;
 
 @Component
 public class FileTypePolicy {
-    private static final Tika TIKA = new Tika();
-
     private static final Map<String, String> EXTENSION_MIME_MAP = Map.of(
         ".jpg", "image/jpeg",
         ".jpeg", "image/jpeg",
@@ -33,11 +28,6 @@ public class FileTypePolicy {
         }
 
         return extension;
-    }
-
-    public String validateDetectedMimeType(MultipartFile file, String extension) throws IOException {
-        String detectedMimeType = TIKA.detect(file.getInputStream());
-        return validateExpectedMimeType(extension, detectedMimeType);
     }
 
     public String validateDeclaredContentType(String fileName, String contentType) {
