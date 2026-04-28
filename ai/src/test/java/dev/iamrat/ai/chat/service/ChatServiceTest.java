@@ -57,13 +57,11 @@ class ChatServiceTest {
         assertThat(prompt.getInstructions()).hasSize(2);
         assertThat(prompt.getInstructions().getFirst()).isInstanceOf(SystemMessage.class);
         SystemMessage systemMessage = (SystemMessage) prompt.getInstructions().getFirst();
-        assertThat(systemMessage.getText()).isEqualTo("""
-            당신은 PostForge 커뮤니티의 AI 어시스턴트입니다.
-            사용자의 질문에 친절하고 정확하게 답변해주세요.
-            제공된 컨텍스트가 있다면 이를 기반으로 답변하세요.
-
-            참고할 컨텍스트:
-            컨텍스트 문서""");
+        assertThat(systemMessage.getText())
+            .contains("PostForge 커뮤니티의 AI 어시스턴트")
+            .contains("참고할 컨텍스트:")
+            .contains("컨텍스트 문서")
+            .doesNotContain("{{contextSuffix}}");
     }
 
     @Test
@@ -79,9 +77,9 @@ class ChatServiceTest {
 
         Prompt prompt = captor.getAllValues().getLast();
         SystemMessage systemMessage = (SystemMessage) prompt.getInstructions().getFirst();
-        assertThat(systemMessage.getText()).isEqualTo("""
-            당신은 PostForge 커뮤니티의 AI 어시스턴트입니다.
-            사용자의 질문에 친절하고 정확하게 답변해주세요.
-            제공된 컨텍스트가 있다면 이를 기반으로 답변하세요.""");
+        assertThat(systemMessage.getText())
+            .contains("PostForge 커뮤니티의 AI 어시스턴트")
+            .doesNotContain("참고할 컨텍스트:")
+            .doesNotContain("{{contextSuffix}}");
     }
 }

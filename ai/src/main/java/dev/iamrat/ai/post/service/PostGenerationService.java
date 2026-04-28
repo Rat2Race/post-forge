@@ -39,9 +39,6 @@ public class PostGenerationService {
     private final OutputGuardrail outputGuardrail;
     private final PromptTemplateLoader promptTemplateLoader;
 
-    /**
-     * 신규 뉴스 문서 1건과 관련 뉴스 문맥을 이용해 트렌드 해설형 AI 분석 글을 만든다.
-     */
     public GeneratedPost generateNewsAnalysis(String keyword, String articleTitle, String articleContent, String originalLink) {
         log.info("뉴스 분석 게시글 생성 시작 - keyword={}, link={}", keyword, originalLink);
 

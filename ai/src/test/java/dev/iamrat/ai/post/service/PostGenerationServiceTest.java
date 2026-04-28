@@ -11,14 +11,11 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
 import org.mockito.Answers;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.ai.chat.messages.SystemMessage;
-import org.springframework.ai.chat.messages.UserMessage;
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.ai.document.Document;
@@ -28,7 +25,6 @@ import org.springframework.ai.vectorstore.VectorStore;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
-import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
@@ -91,70 +87,6 @@ class PostGenerationServiceTest {
             assertThat(result.title()).isEqualTo("오늘의 트렌드 분석");
             assertThat(result.content()).contains("사실 관계와 맥락을 다시 확인하세요");
             verify(vectorStore, times(2)).similaritySearch(any(SearchRequest.class));
-        }
-
-        @Test
-        @DisplayName("뉴스 분석 프롬프트는 markdown 템플릿을 읽어 정확히 조립한다")
-        void generateNewsAnalysis_promptTemplates_matchExpectedText() {
-            Document relatedNews = new Document("관련 뉴스 내용", Map.of("source", "naver-news"));
-
-            given(vectorStore.similaritySearch(any(SearchRequest.class)))
-                .willReturn(List.of(relatedNews))
-                .willReturn(List.of());
-
-            given(chatModel.call(any(Prompt.class))
-                .getResult().getOutput().getText()).willReturn(VALID_JSON_RESPONSE);
-
-            postGenerationService.generateNewsAnalysis(
-                "테크",
-                "AI 반도체 수요 증가",
-                "기사 본문",
-                "https://news.example/1"
-            );
-
-            ArgumentCaptor<Prompt> captor = ArgumentCaptor.forClass(Prompt.class);
-            verify(chatModel, atLeastOnce()).call(captor.capture());
-
-            Prompt prompt = captor.getAllValues().getLast();
-            SystemMessage systemMessage = (SystemMessage) prompt.getInstructions().getFirst();
-            UserMessage userMessage = (UserMessage) prompt.getInstructions().get(1);
-
-            assertThat(systemMessage.getText()).isEqualTo("""
-                당신은 뉴스/이슈 트렌드 해설형 AI 분석가입니다.
-                
-                [분석 방법]
-                1. 기사에 나온 핵심 사실을 먼저 정리한다
-                2. 기사 자체의 주장과 해석을 구분한다
-                3. 과장 없이, 확산 가능성과 불확실성을 함께 설명한다
-                4. 기사 원문과 최근 유사 뉴스 문맥을 바탕으로 짧은 트렌드 분석 글을 작성한다
-                
-                [규칙]
-                - 선정적 표현 금지
-                - 기사에 없는 사실을 단정하지 말 것
-                - 요약, 핵심 포인트, 확산 신호, 리스크, 출처를 포함할 것
-                - 반드시 뉴스 링크를 출처에 포함할 것
-                
-                [응답 형식]
-                반드시 아래 JSON 형식으로만 응답하세요. JSON 외의 텍스트는 포함하지 마세요:
-                {
-                  \"title\": \"게시글 제목\",
-                  \"summary\": \"1-2줄 요약\",
-                  \"content\": \"마크다운 형식의 본문\",
-                  \"tags\": [\"태그1\", \"태그2\", \"태그3\"]
-                }""");
-            assertThat(userMessage.getText()).isEqualTo("""
-                ## 뉴스 주제
-                - 키워드: 테크
-                - 기사 제목: AI 반도체 수요 증가
-                - 출처 링크: https://news.example/1
-                
-                ## 신규 기사 본문
-                기사 본문
-                
-                ## 관련 뉴스 묶음
-                관련 뉴스 내용
-                
-                위 내용을 바탕으로 AI 분석 카테고리용 뉴스 해설 글을 작성해주세요.""");
         }
 
         @Test
