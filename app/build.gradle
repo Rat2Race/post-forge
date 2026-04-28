@@ -22,10 +22,6 @@ dependencies {
     testImplementation "org.springframework.boot:spring-boot-starter-test"
 }
 
-//tasks.named('bootJar') {
-//    archiveFileName = 'app.jar'
-//}
-//
-//tasks.named('jar') {
-//    enabled = false
-//}
+tasks.named('bootJar') {
+    archiveFileName = 'app.jar'
+}
