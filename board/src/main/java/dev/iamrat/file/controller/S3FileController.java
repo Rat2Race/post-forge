@@ -3,14 +3,12 @@ package dev.iamrat.file.controller;
 import dev.iamrat.file.dto.FileUploadResponse;
 import dev.iamrat.file.service.S3FileService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.context.annotation.Profile;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/files/s3")
-@Profile("s3")
 @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
 @RequiredArgsConstructor
 public class S3FileController {
