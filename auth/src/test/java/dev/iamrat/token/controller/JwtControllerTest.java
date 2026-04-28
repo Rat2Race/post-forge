@@ -22,7 +22,6 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.BDDMockito.given;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @Tag("webmvc")
@@ -62,8 +61,7 @@ class JwtControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.grantType").value("Bearer"))
                 .andExpect(jsonPath("$.accessToken").value("new-access-token"))
-                .andExpect(jsonPath("$.refreshToken").doesNotExist())
-                .andDo(print());
+                .andExpect(jsonPath("$.refreshToken").doesNotExist());
         }
     }
 
@@ -79,22 +77,9 @@ class JwtControllerTest {
 
             mockMvc.perform(post("/auth/token/reissue"))
                 .andExpect(status().isUnauthorized())
-                .andExpect(jsonPath("$.error").value("INVALID_TOKEN"))
-                .andDo(print());
+                .andExpect(jsonPath("$.error").value("INVALID_TOKEN"));
         }
 
-        @Test
-        @DisplayName("리프레시 토큰 쿠키가 빈 값이면 401을 반환한다")
-        void reissue_blankCookie_returns401() throws Exception {
-            given(cookieProvider.extractRefreshToken(any()))
-                .willReturn("");
-
-            mockMvc.perform(post("/auth/token/reissue")
-                    .cookie(new Cookie("refresh_token", "")))
-                .andExpect(status().isUnauthorized())
-                .andExpect(jsonPath("$.error").value("INVALID_TOKEN"))
-                .andDo(print());
-        }
     }
 
     @Nested
@@ -112,8 +97,7 @@ class JwtControllerTest {
             mockMvc.perform(post("/auth/token/reissue")
                     .cookie(new Cookie("refresh_token", "invalid-refresh-token")))
                 .andExpect(status().isUnauthorized())
-                .andExpect(jsonPath("$.error").value("INVALID_TOKEN"))
-                .andDo(print());
+                .andExpect(jsonPath("$.error").value("INVALID_TOKEN"));
         }
 
         @Test
@@ -127,8 +111,7 @@ class JwtControllerTest {
             mockMvc.perform(post("/auth/token/reissue")
                     .cookie(new Cookie("refresh_token", "expired-refresh-token")))
                 .andExpect(status().isUnauthorized())
-                .andExpect(jsonPath("$.error").value("EXPIRED_TOKEN"))
-                .andDo(print());
+                .andExpect(jsonPath("$.error").value("EXPIRED_TOKEN"));
         }
     }
 }

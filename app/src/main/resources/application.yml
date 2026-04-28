@@ -7,9 +7,6 @@ app:
     verification-base-url: ${APP_EMAIL_VERIFICATION_BASE_URL}
 
 spring:
-  profiles:
-    default: s3
-
   ai:
     openai:
       api-key: ${OPENAI_API_KEY}
@@ -42,9 +39,6 @@ spring:
       enabled: true
       max-file-size: 10MB
       max-request-size: 10MB
-
-#  file:
-#    upload-dir: C:/SpringWorkspace/post-forge/app/src/main/resources/static/uploads
 
   mail:
     host: smtp.gmail.com
@@ -126,5 +120,5 @@ logging:
 
 aws:
   s3:
-    bucket: ${APP_AWS_S3_BUCKET}
+    bucket: ${AWS_S3_BUCKET}
     region: ${AWS_S3_REGION}
