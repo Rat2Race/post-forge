@@ -1,5 +1,6 @@
 package dev.iamrat.file.service;
 
+import dev.iamrat.file.config.S3Properties;
 import dev.iamrat.file.dto.FileUploadResponse;
 import dev.iamrat.file.entity.PostFile;
 import dev.iamrat.file.repository.FileRepository;
@@ -42,12 +43,17 @@ class S3FileServiceTest {
     @Mock
     private FileRepository fileRepository;
 
+    @Mock
+    private S3Properties s3Properties;
+
     @Spy
     private FileTypePolicy fileTypePolicy;
 
     @Test
     @DisplayName("Presigned Upload URL 생성 시 파일 저장 후 URL 반환")
     void testCreatePresignedUrl() throws MalformedURLException {
+        given(s3Properties.bucket()).willReturn("postforge-uploads");
+
         PostFile savedFile = PostFile.builder()
                 .originalFileName("photo.png")
                 .savedFileName("uuid.png")
@@ -89,6 +95,8 @@ class S3FileServiceTest {
     @Test
     @DisplayName("Presigned Download URL 생성 시 파일 조회 후 URL 반환")
     void testCreateDownloadUrl() throws MalformedURLException {
+        given(s3Properties.bucket()).willReturn("postforge-uploads");
+
         PostFile file = PostFile.builder()
                 .originalFileName("photo.png")
                 .savedFileName("uuid.png")

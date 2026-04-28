@@ -1,5 +1,6 @@
 package dev.iamrat.post.dto;
 
+import dev.iamrat.board.post.PostCategory;
 import dev.iamrat.post.entity.Post;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -9,6 +10,7 @@ public record PostSummaryResponse(
     String title,
     String summary,
     List<String> tags,
+    PostCategory category,
     String userId,
     String nickname,
     LocalDateTime createdAt,
@@ -21,6 +23,7 @@ public record PostSummaryResponse(
             post.getTitle(),
             post.getSummary(),
             post.getTags(),
+            post.getCategory(),
             post.getUserId(),
             post.getNickname(),
             post.getCreatedAt(),

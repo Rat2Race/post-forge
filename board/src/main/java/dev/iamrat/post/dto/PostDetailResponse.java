@@ -1,5 +1,6 @@
 package dev.iamrat.post.dto;
 
+import dev.iamrat.board.post.PostCategory;
 import dev.iamrat.file.dto.FileInfoResponse;
 import dev.iamrat.post.entity.Post;
 import java.time.LocalDateTime;
@@ -11,6 +12,7 @@ public record PostDetailResponse(
     String content,
     String summary,
     List<String> tags,
+    PostCategory category,
     String userId,
     String nickname,
     Long views,
@@ -36,6 +38,7 @@ public record PostDetailResponse(
             post.getContent(),
             post.getSummary(),
             post.getTags(),
+            post.getCategory(),
             post.getUserId(),
             post.getNickname(),
             views,

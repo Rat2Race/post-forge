@@ -1,5 +1,6 @@
 package dev.iamrat.post.service;
 
+import dev.iamrat.board.post.PostCategory;
 import dev.iamrat.comment.service.CommentService;
 import dev.iamrat.file.entity.PostFile;
 import dev.iamrat.file.repository.FileRepository;
@@ -40,6 +41,7 @@ public class PostService {
         Post newPost = Post.builder()
             .title(title)
             .content(content)
+            .category(PostCategory.GENERAL)
             .userId(userId)
             .nickname(nickname)
             .build();

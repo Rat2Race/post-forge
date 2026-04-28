@@ -8,6 +8,7 @@ public record PostContext(
     String content,
     String summary,
     List<String> tags,
+    PostCategory category,
     String userId,
     String nickname
 ) {

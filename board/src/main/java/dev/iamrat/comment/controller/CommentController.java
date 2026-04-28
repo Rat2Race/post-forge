@@ -28,28 +28,28 @@ public class CommentController {
     @PostMapping
     @PreAuthorize("hasRole('USER')")
     public ResponseEntity<CommentSummaryResponse> createComment(
-        @PathVariable("postId") Long postId,
-        @RequestBody @Valid CommentRequest commentRequest,
-        @AuthenticationPrincipal UserPrincipal user
+            @PathVariable Long postId,
+            @RequestBody @Valid CommentRequest commentRequest,
+            @AuthenticationPrincipal UserPrincipal user
     ) {
         CommentSummaryResponse savedComment = commentService.saveComment(
-            postId,
-            commentRequest.parentId(),
-            commentRequest.content(),
-            user.getUserId(),
-            user.getNickname()
+                postId,
+                commentRequest.parentId(),
+                commentRequest.content(),
+                user.getUserId(),
+                user.getNickname()
         );
 
         return ResponseEntity
-            .status(HttpStatus.CREATED)
-            .body(savedComment);
+                .status(HttpStatus.CREATED)
+                .body(savedComment);
     }
 
     @GetMapping
     public ResponseEntity<Page<CommentDetailResponse>> getComments(
-        @PathVariable("postId") Long postId,
-        @PageableDefault(size = 50, sort = "createdAt", direction = Direction.ASC) Pageable pageable,
-        @AuthenticationPrincipal UserPrincipal user
+            @PathVariable Long postId,
+            @PageableDefault(size = 50, sort = "createdAt", direction = Direction.ASC) Pageable pageable,
+            @AuthenticationPrincipal UserPrincipal user
     ) {
         String userId = user != null ? user.getUserId() : null;
         Page<CommentDetailResponse> commentsByPost = commentService.getCommentsByPost(postId, pageable, userId);
@@ -60,12 +60,12 @@ public class CommentController {
     @PutMapping("/{commentId:\\d+}")
     @PreAuthorize("hasRole('ADMIN') or hasRole('USER') and @commentService.isCommentOwner(#commentId, authentication.name)")
     public ResponseEntity<CommentSummaryResponse> updateComment(
-        @PathVariable("commentId") Long commentId,
-        @RequestBody @Valid CommentRequest commentRequest
+            @PathVariable Long commentId,
+            @RequestBody @Valid CommentRequest commentRequest
     ) {
         CommentSummaryResponse modifiedComment = commentService.updateComment(
-            commentId,
-            commentRequest.content()
+                commentId,
+                commentRequest.content()
         );
 
         return ResponseEntity.ok(modifiedComment);
@@ -74,7 +74,7 @@ public class CommentController {
     @DeleteMapping("/{commentId:\\d+}")
     @PreAuthorize("hasRole('ADMIN') or hasRole('USER') and @commentService.isCommentOwner(#commentId, authentication.name)")
     public ResponseEntity<String> deleteComment(
-        @PathVariable("commentId") Long commentId
+            @PathVariable Long commentId
     ) {
         commentService.deleteComment(commentId);
 
@@ -84,8 +84,8 @@ public class CommentController {
     @PostMapping("/{commentId:\\d+}/like")
     @PreAuthorize("hasRole('USER')")
     public ResponseEntity<LikeResponse> likeComment(
-        @PathVariable("commentId") Long commentId,
-        @AuthenticationPrincipal UserPrincipal user
+            @PathVariable Long commentId,
+            @AuthenticationPrincipal UserPrincipal user
     ) {
         LikeResponse likeStatus = commentService.likeComment(commentId, user.getUserId());
 
@@ -95,8 +95,8 @@ public class CommentController {
     @DeleteMapping("/{commentId:\\d+}/like")
     @PreAuthorize("hasRole('USER')")
     public ResponseEntity<LikeResponse> unlikeComment(
-        @PathVariable("commentId") Long commentId,
-        @AuthenticationPrincipal UserPrincipal user
+            @PathVariable Long commentId,
+            @AuthenticationPrincipal UserPrincipal user
     ) {
         LikeResponse likeStatus = commentService.unlikeComment(commentId, user.getUserId());
 

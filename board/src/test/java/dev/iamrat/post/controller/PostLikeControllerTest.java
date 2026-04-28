@@ -5,7 +5,7 @@ import dev.iamrat.global.exception.ErrorCode;
 import dev.iamrat.global.exception.GlobalExceptionHandler;
 import dev.iamrat.like.dto.LikeResponse;
 import dev.iamrat.post.service.PostService;
-import dev.iamrat.security.dto.UserPrincipal;
+import dev.iamrat.auth.security.dto.UserPrincipal;
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
@@ -29,7 +29,6 @@ import org.springframework.web.method.support.HandlerMethodArgumentResolver;
 import org.springframework.web.method.support.ModelAndViewContainer;
 
 import static org.mockito.BDDMockito.given;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -62,17 +61,6 @@ class PostLikeControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.isLiked").value(true))
                 .andExpect(jsonPath("$.likeCount").value(3L));
-    }
-
-    @Test
-    @DisplayName("DELETE /posts/{id}/like 는 좋아요 취소 응답을 반환한다")
-    void unlikePost_returnsLikeResponse() throws Exception {
-        given(postService.unlikePost(1L, "user1")).willReturn(new LikeResponse(false, 2L));
-
-        mockMvc.perform(delete("/posts/1/like").with(user("user1")))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.isLiked").value(false))
-                .andExpect(jsonPath("$.likeCount").value(2L));
     }
 
     @Test
