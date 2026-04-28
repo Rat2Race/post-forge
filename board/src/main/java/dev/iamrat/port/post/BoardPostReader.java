@@ -28,6 +28,7 @@ public class BoardPostReader implements PostReader {
             post.getContent(),
             post.getSummary(),
             post.getTags(),
+            post.getCategory(),
             post.getUserId(),
             post.getNickname()
         );

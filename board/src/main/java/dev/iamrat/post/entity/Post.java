@@ -1,5 +1,6 @@
 package dev.iamrat.post.entity;
 
+import dev.iamrat.board.post.PostCategory;
 import dev.iamrat.common.entity.AuditingFields;
 import dev.iamrat.comment.entity.Comment;
 import dev.iamrat.file.entity.PostFile;
@@ -40,6 +41,11 @@ public class Post extends AuditingFields {
 	@Column(name = "tag", length = 50)
 	@Builder.Default
 	private List<String> tags = new ArrayList<>();
+
+	@Enumerated(EnumType.STRING)
+	@Column(name = "category", nullable = false, length = 30)
+	@Builder.Default
+	private PostCategory category = PostCategory.GENERAL;
 
 	@Column(name = "views", nullable = false)
 	@Builder.Default

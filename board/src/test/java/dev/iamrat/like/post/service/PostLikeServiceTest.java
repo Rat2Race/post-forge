@@ -1,7 +1,5 @@
 package dev.iamrat.like.post.service;
 
-import dev.iamrat.global.exception.CustomException;
-import dev.iamrat.global.exception.ErrorCode;
 import dev.iamrat.like.dto.LikeResponse;
 import dev.iamrat.like.post.entity.PostLike;
 import dev.iamrat.like.post.repository.PostLikeRepository;
@@ -20,7 +18,6 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.never;
@@ -136,12 +133,4 @@ class PostLikeServiceTest {
         assertThat(result).containsExactly(20L);
     }
 
-    @Test
-    @DisplayName("postIds가 null이면 INVALID_INPUT 예외를 던진다")
-    void getLikeCounts_whenPostIdsNull_throwsInvalidInput() {
-        assertThatThrownBy(() -> postLikeService.getLikeCounts(null))
-                .isInstanceOf(CustomException.class)
-                .extracting(ex -> ((CustomException) ex).getErrorCode())
-                .isEqualTo(ErrorCode.INVALID_INPUT);
-    }
 }

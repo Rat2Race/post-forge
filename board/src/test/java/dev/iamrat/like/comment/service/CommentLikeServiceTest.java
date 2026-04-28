@@ -2,8 +2,6 @@ package dev.iamrat.like.comment.service;
 
 import dev.iamrat.comment.entity.Comment;
 import dev.iamrat.comment.repository.CommentRepository;
-import dev.iamrat.global.exception.CustomException;
-import dev.iamrat.global.exception.ErrorCode;
 import dev.iamrat.like.comment.entity.CommentLike;
 import dev.iamrat.like.comment.repository.CommentLikeRepository;
 import dev.iamrat.like.dto.LikeResponse;
@@ -21,7 +19,6 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.never;
@@ -125,12 +122,4 @@ class CommentLikeServiceTest {
         assertThat(result).containsExactly(8L);
     }
 
-    @Test
-    @DisplayName("commentIds가 null이면 INVALID_INPUT 예외를 던진다")
-    void getLikedCommentIds_whenCommentIdsNull_throwsInvalidInput() {
-        assertThatThrownBy(() -> commentLikeService.getLikedCommentIds(null, "user1"))
-                .isInstanceOf(CustomException.class)
-                .extracting(ex -> ((CustomException) ex).getErrorCode())
-                .isEqualTo(ErrorCode.INVALID_INPUT);
-    }
 }

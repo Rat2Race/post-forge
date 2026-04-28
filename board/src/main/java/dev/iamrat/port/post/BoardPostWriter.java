@@ -1,5 +1,6 @@
 package dev.iamrat.port.post;
 
+import dev.iamrat.board.post.PostCategory;
 import dev.iamrat.board.post.PostWriter;
 import dev.iamrat.post.entity.Post;
 import dev.iamrat.post.repository.PostRepository;
@@ -18,12 +19,13 @@ public class BoardPostWriter implements PostWriter {
     @Override
     @Transactional
     public Long write(String title, String content, String summary, List<String> tags,
-                      String userId, String nickname) {
+                      String userId, String nickname, PostCategory category) {
         Post post = Post.builder()
                 .title(title)
                 .content(content)
                 .summary(summary)
                 .tags(tags)
+                .category(category)
                 .userId(userId)
                 .nickname(nickname)
                 .build();

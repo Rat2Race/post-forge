@@ -7,18 +7,15 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import static org.mockito.BDDMockito.given;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(S3FileController.class)
 @AutoConfigureMockMvc(addFilters = false)
-@ActiveProfiles("s3")
 class S3FileControllerTest {
 
     @Autowired
@@ -39,8 +36,7 @@ class S3FileControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.fileId").value(1))
                 .andExpect(jsonPath("$.savedName").value("uuid.jpg"))
-                .andExpect(jsonPath("$.url").value("https://s3.presigned-url.example.com"))
-                .andDo(print());
+                .andExpect(jsonPath("$.url").value("https://s3.presigned-url.example.com"));
     }
 
     @Test
@@ -50,7 +46,6 @@ class S3FileControllerTest {
 
         mockMvc.perform(get("/files/s3/1/download-url"))
                 .andExpect(status().isOk())
-                .andExpect(content().string("https://s3.download-url.example.com"))
-                .andDo(print());
+                .andExpect(content().string("https://s3.download-url.example.com"));
     }
 }
