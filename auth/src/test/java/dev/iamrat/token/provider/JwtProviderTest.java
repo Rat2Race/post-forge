@@ -18,8 +18,8 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
@@ -39,9 +39,6 @@ class JwtProviderTest {
     @Mock
     private MemberService memberService;
 
-    @Mock
-    private Authentication authentication;
-
     @InjectMocks
     private JwtProvider jwtProvider;
 
@@ -52,21 +49,25 @@ class JwtProviderTest {
     class CreateToken {
 
         @Test
-        @DisplayName("인증 정보로 토큰을 생성한다")
-        void createToken_validAuthentication_returnsJwtResponse() {
+        @DisplayName("사용자 식별자와 권한으로 토큰을 생성한다")
+        void createToken_validUserContext_returnsJwtResponse() {
             given(jwtService.generateAccessToken(any(), any(), any())).willReturn("access-token");
             given(jwtService.generateRefreshToken(any())).willReturn("refresh-token");
-            given(authentication.getName()).willReturn(USER_ID);
-            CustomUserDetails userDetails = new CustomUserDetails(USER_ID, "pw", "tester", Collections.emptyList());
-            given(authentication.getPrincipal()).willReturn(userDetails);
-            given(authentication.getAuthorities()).willReturn(Collections.emptyList());
 
-            JwtResponse result = jwtProvider.createToken(authentication);
+            JwtResponse result = jwtProvider.createToken(
+                USER_ID,
+                "tester",
+                List.of(new SimpleGrantedAuthority("ROLE_USER"))
+            );
 
             assertThat(result.grantType()).isEqualTo("Bearer");
             assertThat(result.accessToken()).isEqualTo("access-token");
             assertThat(result.refreshToken()).isEqualTo("refresh-token");
-            verify(jwtService).generateAccessToken(eq(USER_ID), eq("tester"), any());
+            verify(jwtService).generateAccessToken(
+                eq(USER_ID),
+                eq("tester"),
+                eq(List.of(new SimpleGrantedAuthority("ROLE_USER")))
+            );
             verify(jwtService).generateRefreshToken(eq(USER_ID));
             verify(jwtService).saveRefreshToken(eq(USER_ID), eq("refresh-token"));
         }

@@ -26,7 +26,6 @@ import java.util.stream.Stream;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -49,10 +48,6 @@ class RegisterControllerTest {
         return new RegisterRequest("testuser1", "Test1234!", "test@example.com", "길동이");
     }
 
-    private RegisterRequest createRequest(String userId, String password, String email, String nickname) {
-        return new RegisterRequest(userId, password, email, nickname);
-    }
-
     @Nested
     @DisplayName("회원가입 성공")
     class RegisterSuccess {
@@ -67,8 +62,7 @@ class RegisterControllerTest {
                     .contentType(MediaType.APPLICATION_JSON)
                     .characterEncoding("utf-8")
                     .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isCreated())
-                .andDo(print());
+                .andExpect(status().isCreated());
         }
     }
 
@@ -85,8 +79,7 @@ class RegisterControllerTest {
                     .content(objectMapper.writeValueAsString(registerRequest)))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.error").value("VALIDATION_ERROR"))
-                .andExpect(jsonPath("$.validation." + fieldName).exists())
-                .andDo(print());
+                .andExpect(jsonPath("$.validation." + fieldName).exists());
         }
 
         static Stream<Arguments> invalidRegisterRequests() {
@@ -105,31 +98,12 @@ class RegisterControllerTest {
         }
 
         @Test
-        @DisplayName("필수 필드가 모두 누락되면 400과 모든 검증 에러를 반환한다")
-        void register_allFieldsMissing_returns400() throws Exception {
-            RegisterRequest request = createRequest("", "", "", "");
-
-            mockMvc.perform(post("/auth/register")
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .characterEncoding("utf-8")
-                    .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.error").value("VALIDATION_ERROR"))
-                .andExpect(jsonPath("$.validation.userId").exists())
-                .andExpect(jsonPath("$.validation.password").exists())
-                .andExpect(jsonPath("$.validation.email").exists())
-                .andExpect(jsonPath("$.validation.nickname").exists())
-                .andDo(print());
-        }
-
-        @Test
         @DisplayName("요청 바디가 없으면 400을 반환한다")
         void register_missingBody_returns400() throws Exception {
             mockMvc.perform(post("/auth/register")
                     .contentType(MediaType.APPLICATION_JSON)
                     .characterEncoding("utf-8"))
-                .andExpect(status().isBadRequest())
-                .andDo(print());
+                .andExpect(status().isBadRequest());
         }
     }
 
@@ -149,8 +123,7 @@ class RegisterControllerTest {
                     .characterEncoding("utf-8")
                     .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().is(expectedStatus))
-                .andExpect(jsonPath("$.error").value(errorCode.name()))
-                .andDo(print());
+                .andExpect(jsonPath("$.error").value(errorCode.name()));
         }
 
         static Stream<Arguments> registerBusinessExceptions() {

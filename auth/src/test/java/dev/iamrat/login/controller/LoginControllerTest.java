@@ -2,10 +2,13 @@ package dev.iamrat.login.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.iamrat.global.exception.GlobalExceptionHandler;
+import dev.iamrat.login.dto.CustomUserDetails;
 import dev.iamrat.login.dto.LoginRequest;
 import dev.iamrat.login.service.LoginService;
 import dev.iamrat.token.dto.JwtResponse;
 import dev.iamrat.token.provider.CookieProvider;
+import java.util.List;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Tag;
@@ -18,19 +21,18 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
-import dev.iamrat.security.WithMockUserPrincipal;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
-
-import java.util.stream.Stream;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.willDoNothing;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -82,8 +84,7 @@ class LoginControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.grantType").value("Bearer"))
                 .andExpect(jsonPath("$.accessToken").value("mock-access-token"))
-                .andExpect(jsonPath("$.refreshToken").doesNotExist())
-                .andDo(print());
+                .andExpect(jsonPath("$.refreshToken").doesNotExist());
         }
     }
     
@@ -100,8 +101,7 @@ class LoginControllerTest {
                     .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.error").value("VALIDATION_ERROR"))
-                .andExpect(jsonPath("$.validation." + fieldName).exists())
-                .andDo(print());
+                .andExpect(jsonPath("$.validation." + fieldName).exists());
         }
         
         @Test
@@ -109,8 +109,7 @@ class LoginControllerTest {
         void login_missingBody_returns400() throws Exception {
             mockMvc.perform(post("/auth/login")
                     .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isBadRequest())
-                .andDo(print());
+                .andExpect(status().isBadRequest());
         }
         
         static Stream<Arguments> loginBusinessExceptions() {
@@ -138,8 +137,7 @@ class LoginControllerTest {
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isUnauthorized())
-                .andExpect(jsonPath("$.error").value("INVALID_CREDENTIALS"))
-                .andDo(print());
+                .andExpect(jsonPath("$.error").value("INVALID_CREDENTIALS"));
         }
     }
     
@@ -149,13 +147,25 @@ class LoginControllerTest {
         
         @Test
         @DisplayName("인증된 사용자가 로그아웃하면 200을 반환한다")
-        @WithMockUserPrincipal(userId = "testuser1", roles = {"USER"})
         void logout_authenticatedUser_returns200() throws Exception {
             willDoNothing().given(loginService).logout(anyString());
-            
-            mockMvc.perform(post("/auth/logout"))
-                .andExpect(status().isOk())
-                .andDo(print());
+            SecurityContextHolder.getContext().setAuthentication(userAuthentication("testuser1"));
+
+            try {
+                mockMvc.perform(post("/auth/logout"))
+                    .andExpect(status().isOk());
+            } finally {
+                SecurityContextHolder.clearContext();
+            }
         }
+    }
+
+    private UsernamePasswordAuthenticationToken userAuthentication(String userId) {
+        List<SimpleGrantedAuthority> authorities = List.of(new SimpleGrantedAuthority("ROLE_USER"));
+        return UsernamePasswordAuthenticationToken.authenticated(
+            new CustomUserDetails(userId, "", "테스트유저", authorities),
+            "",
+            authorities
+        );
     }
 }

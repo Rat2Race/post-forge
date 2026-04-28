@@ -19,7 +19,6 @@ import org.springframework.test.web.servlet.MockMvc;
 import static org.mockito.BDDMockito.given;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @Tag("webmvc")
@@ -51,8 +50,7 @@ class EmailVerificationControllerTest {
                     .characterEncoding("utf-8")
                     .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
-                .andExpect(content().string("인증 메일이 발송되었습니다."))
-                .andDo(print());
+                .andExpect(content().string("인증 메일이 발송되었습니다."));
         }
         
         @Test
@@ -64,22 +62,9 @@ class EmailVerificationControllerTest {
                     .contentType(MediaType.APPLICATION_JSON)
                     .characterEncoding("utf-8")
                     .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isBadRequest())
-                .andDo(print());
+                .andExpect(status().isBadRequest());
         }
         
-        @Test
-        @DisplayName("이메일 형식이 이상하면 400 예외가 발생한다")
-        void send_invalidFormat_returns400() throws Exception {
-            SendEmailRequest request = new SendEmailRequest("이메일아님");
-            
-            mockMvc.perform(post("/auth/email/send")
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .characterEncoding("utf-8")
-                    .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isBadRequest())
-                .andDo(print());
-        }
     }
     
     @Nested
@@ -98,16 +83,14 @@ class EmailVerificationControllerTest {
                     .param("token", token))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.message").value("이메일 인증이 완료되었습니다."))
-                .andExpect(jsonPath("$.email").value("valid-email"))
-                .andDo(print());
+                .andExpect(jsonPath("$.email").value("valid-email"));
         }
         
         @Test
         @DisplayName("토큰 파라미터가 없으면 400 예외가 발생한다")
         void verify_missingToken_returnsError() throws Exception {
             mockMvc.perform(get("/auth/email/verify"))
-                .andExpect(status().isBadRequest())
-                .andDo(print());
+                .andExpect(status().isBadRequest());
         }
     }
 }

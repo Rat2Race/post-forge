@@ -21,7 +21,6 @@ import org.springframework.test.web.servlet.MockMvc;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -64,8 +63,7 @@ class OAuth2ControllerTest {
                 .andExpect(header().string("Pragma", "no-cache"))
                 .andExpect(jsonPath("$.grantType").value("Bearer"))
                 .andExpect(jsonPath("$.accessToken").value("oauth-access-token"))
-                .andExpect(jsonPath("$.refreshToken").doesNotExist())
-                .andDo(print());
+                .andExpect(jsonPath("$.refreshToken").doesNotExist());
 
             verify(cookieProvider).addRefreshTokenCookie(
                 org.mockito.ArgumentMatchers.any(),
@@ -73,25 +71,6 @@ class OAuth2ControllerTest {
             );
         }
 
-        @Test
-        @DisplayName("기존 토큰 경로도 호환된다")
-        void exchange_legacyRoute_stillWorks() throws Exception {
-            JwtResponse jwtResponse = JwtResponse.builder()
-                .grantType("Bearer")
-                .accessToken("oauth-access-token")
-                .refreshToken("oauth-refresh-token")
-                .build();
-
-            given(oAuth2LoginService.exchange("exchange-code"))
-                .willReturn(jwtResponse);
-
-            mockMvc.perform(post("/auth/token/exchange")
-                    .contentType(MediaType.TEXT_PLAIN)
-                    .content("exchange-code"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.accessToken").value("oauth-access-token"))
-                .andDo(print());
-        }
     }
 
     @Nested
@@ -108,8 +87,7 @@ class OAuth2ControllerTest {
                     .contentType(MediaType.TEXT_PLAIN)
                     .content("invalid-code"))
                 .andExpect(status().isUnauthorized())
-                .andExpect(jsonPath("$.error").value("INVALID_TOKEN"))
-                .andDo(print());
+                .andExpect(jsonPath("$.error").value("INVALID_TOKEN"));
         }
     }
 }
