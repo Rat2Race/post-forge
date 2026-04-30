@@ -40,7 +40,6 @@ jobs:
 
       - name: Test and build jar
         run: |
-#          ./gradlew clean check :app:bootJar \
           ./gradlew :app:bootJar \
             -PexcludeTags=integration \
             --build-cache \
@@ -70,8 +69,6 @@ jobs:
           tags: |
             ${{ env.IMAGE_NAME }}:latest
             ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
-#          cache-from: type=gha
-#          cache-to: type=gha,mode=max
 
       - name: Build summary
         if: always()
@@ -83,16 +80,3 @@ jobs:
           echo "| Image latest | \`${{ env.IMAGE_NAME }}:latest\` |" >> $GITHUB_STEP_SUMMARY
           echo "| Image sha | \`${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}\` |" >> $GITHUB_STEP_SUMMARY
           echo "| Runtime jar | \`docker-build/app.jar\` |" >> $GITHUB_STEP_SUMMARY
-
-
-#      - name: Deploy to Oracle Cloud
-#        uses: appleboy/ssh-action@v1
-#        with:
-#          host: ${{ secrets.SERVER_HOST }}
-#          username: ${{ secrets.SERVER_USER }}
-#          key: ${{ secrets.SERVER_SSH_KEY }}
-#          script: |
-#            cd ~/postforge
-#            docker compose pull
-#            docker compose up -d
-

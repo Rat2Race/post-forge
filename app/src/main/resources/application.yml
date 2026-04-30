@@ -7,6 +7,16 @@ app:
     verification-base-url: ${APP_EMAIL_VERIFICATION_BASE_URL}
 
 spring:
+  datasource:
+    url: jdbc:postgresql://postgres:5432/${POSTGRES_DB}
+    username: ${POSTGRES_USER}
+    password: ${POSTGRES_PASSWORD:}
+
+  data:
+    redis:
+      host: ${REDIS_HOST}
+      port: ${REDIS_PORT}
+
   ai:
     openai:
       api-key: ${OPENAI_API_KEY}
@@ -17,11 +27,6 @@ spring:
       pgvector:
         initialize-schema: true
         dimensions: 1536
-
-  data:
-    redis:
-      host: ${REDIS_HOST:localhost}
-      port: ${REDIS_PORT:6379}
 
   jpa:
     database-platform: org.hibernate.dialect.PostgreSQLDialect
@@ -120,5 +125,5 @@ logging:
 
 aws:
   s3:
-    bucket: ${AWS_S3_BUCKET}
-    region: ${AWS_S3_REGION}
+    bucket: ${AWS_BUCKET}
+    region: ${AWS_REGION}
