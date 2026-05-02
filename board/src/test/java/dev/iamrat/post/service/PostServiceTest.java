@@ -14,7 +14,10 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.transaction.annotation.AnnotationTransactionAttributeSource;
+import org.springframework.transaction.interceptor.TransactionAttribute;
 
+import java.lang.reflect.Method;
 import java.util.List;
 import java.util.Optional;
 
@@ -71,5 +74,29 @@ class PostServiceTest {
         assertThat(response.views()).isEqualTo(3L);
         assertThat(response.isLiked()).isFalse();
         verify(viewCountService, never()).incrementIfNew(postId, null);
+    }
+
+    @Test
+    @DisplayName("게시글 좋아요 요청은 read-only가 아닌 쓰기 트랜잭션을 사용한다")
+    void likePost_usesReadWriteTransaction() throws NoSuchMethodException {
+        TransactionAttribute transactionAttribute = getTransactionAttribute("likePost");
+
+        assertThat(transactionAttribute).isNotNull();
+        assertThat(transactionAttribute.isReadOnly()).isFalse();
+    }
+
+    @Test
+    @DisplayName("게시글 좋아요 취소 요청은 read-only가 아닌 쓰기 트랜잭션을 사용한다")
+    void unlikePost_usesReadWriteTransaction() throws NoSuchMethodException {
+        TransactionAttribute transactionAttribute = getTransactionAttribute("unlikePost");
+
+        assertThat(transactionAttribute).isNotNull();
+        assertThat(transactionAttribute.isReadOnly()).isFalse();
+    }
+
+    private TransactionAttribute getTransactionAttribute(String methodName) throws NoSuchMethodException {
+        Method method = PostService.class.getMethod(methodName, Long.class, String.class);
+        return new AnnotationTransactionAttributeSource()
+            .getTransactionAttribute(method, PostService.class);
     }
 }

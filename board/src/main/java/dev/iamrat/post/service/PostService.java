@@ -79,6 +79,7 @@ public class PostService {
         return getPost(postId, userId);
     }
 
+    @Transactional
     public LikeResponse likePost(Long postId, String userId) {
         if (!postRepository.existsById(postId)) {
             throw new CustomException(ErrorCode.POST_NOT_FOUND);
@@ -88,6 +89,7 @@ public class PostService {
         return postLikeService.like(postId, userId);
     }
 
+    @Transactional
     public LikeResponse unlikePost(Long postId, String userId) {
         if (!postRepository.existsById(postId)) {
             throw new CustomException(ErrorCode.POST_NOT_FOUND);
