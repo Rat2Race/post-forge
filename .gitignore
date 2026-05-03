@@ -33,6 +33,23 @@ dist/
 .env.*
 !.env.example
 
+# Bruno local environments
+tests/bruno/**/environments/local.bru
+tests/bruno/**/.env
+
+# k6 local outputs
+tests/k6/results/
+tests/k6/*.summary.json
+
+# Generated testing artifacts
+tests/
+
+# setup run state
+setup/state/*
+!setup/state/.gitkeep
+setup/reports/*.md
+!setup/reports/.gitkeep
+
 # DB
 docker/
 redis/

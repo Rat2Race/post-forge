@@ -57,7 +57,11 @@ import static org.mockito.BDDMockito.willAnswer;
 
 @SpringBootTest(classes = SecurityConfigRegressionTest.TestApp.class)
 @AutoConfigureMockMvc
-@TestPropertySource(properties = "internal.api-key=test-internal-key")
+@TestPropertySource(properties = {
+    "internal.api-key=test-internal-key",
+    "monitoring.username=monitor",
+    "monitoring.password=monitor-secret"
+})
 class SecurityConfigRegressionTest {
 
     @Autowired
@@ -188,15 +192,26 @@ class SecurityConfigRegressionTest {
             .andExpect(content().string("comment-updated"));
     }
 
+    @Test
+    @DisplayName("AI API는 내부 API 키로 접근을 허용한다")
+    void aiApi_allowsInternalApiKey() throws Exception {
+        mockMvc.perform(get("/ai/ping")
+                .header("X-Internal-Api-Key", "test-internal-key"))
+            .andExpect(status().isOk())
+            .andExpect(content().string("ai"));
+    }
+
     @EnableAutoConfiguration
     @Import({
         SecurityConfig.class,
+        ActuatorSecurityConfig.class,
         PasswordEncoderConfig.class,
         JwtAuthenticationEntryPoint.class,
         JwtAccessDeniedHandler.class,
         DummyPostController.class,
         DummyCommentController.class,
-        DummyProfileController.class
+        DummyProfileController.class,
+        DummyAiController.class
     })
     static class TestApp {
 
@@ -297,6 +312,16 @@ class SecurityConfigRegressionTest {
         @GetMapping
         String getProfile() {
             return "profile";
+        }
+    }
+
+    @RestController
+    @RequestMapping("/ai")
+    static class DummyAiController {
+
+        @GetMapping("/ping")
+        String ping() {
+            return "ai";
         }
     }
 }
