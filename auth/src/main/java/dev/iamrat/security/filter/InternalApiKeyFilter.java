@@ -24,16 +24,15 @@ public class InternalApiKeyFilter extends OncePerRequestFilter {
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
-                                    FilterChain filterChain) throws ServletException, IOException {
+        FilterChain filterChain) throws ServletException, IOException {
         String apiKey = request.getHeader(HEADER_NAME);
 
         if (apiKey != null && MessageDigest.isEqual(
-                apiKey.getBytes(), expectedKey.getBytes())) {
-            UsernamePasswordAuthenticationToken authentication =
-                UsernamePasswordAuthenticationToken.authenticated(
-                    "internal-service", null,
-                    List.of(new SimpleGrantedAuthority("ROLE_ADMIN"))
-                );
+            apiKey.getBytes(), expectedKey.getBytes())) {
+            UsernamePasswordAuthenticationToken authentication = UsernamePasswordAuthenticationToken.authenticated(
+                "internal-service", null,
+                List.of(new SimpleGrantedAuthority("ROLE_ADMIN"))
+            );
             SecurityContextHolder.getContext().setAuthentication(authentication);
         }
 

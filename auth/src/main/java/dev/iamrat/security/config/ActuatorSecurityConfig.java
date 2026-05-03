@@ -4,7 +4,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.core.userdetails.User;
@@ -15,7 +14,6 @@ import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
 
 @Configuration
-@Order(1)
 public class ActuatorSecurityConfig {
     @Value("${monitoring.username}")
     private String username;
@@ -24,10 +22,10 @@ public class ActuatorSecurityConfig {
     private String password;
     
     @Bean
+    @Order(0)
     public SecurityFilterChain actuatorSecurityFilterChain(
         HttpSecurity http,
-        @Qualifier("actuatorUserDetailsService")
-        UserDetailsService actuatorUserDetailsService
+        PasswordEncoder passwordEncoder
     ) throws Exception {
         http
             .securityMatcher("/actuator/**")
@@ -36,11 +34,10 @@ public class ActuatorSecurityConfig {
                 .requestMatchers("/actuator/**").authenticated()
             )
             .httpBasic(Customizer.withDefaults())
-            .userDetailsService(actuatorUserDetailsService);
+            .userDetailsService(actuatorUserDetailsService(passwordEncoder));
         return http.build();
     }
 
-    @Bean
     public UserDetailsService actuatorUserDetailsService(PasswordEncoder passwordEncoder) {
         UserDetails userDetails = User.withUsername(username)
             .password(passwordEncoder.encode(password))

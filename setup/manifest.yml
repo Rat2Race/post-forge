@@ -1,0 +1,94 @@
+schemaVersion: 1
+name: generic-testing-tool-setup
+description: Testing tool setup for Unix-like shells on Linux, WSL, and macOS.
+
+agent:
+  router: setup/AGENTS.md
+  principle: Assess the environment first, route to tool modules, execute scripts only as declared, and record state.
+
+stages:
+  linux:
+    match:
+      uname: Linux
+    description: Linux and WSL Linux shell tool setup.
+    tools:
+      - bruno
+      - k6
+    packageManagers:
+      - apt
+      - npm
+    riskNotes:
+      - k6 may add an apt repository and use sudo.
+
+  macos:
+    match:
+      uname: Darwin
+    description: macOS tool setup.
+    tools:
+      - bruno
+      - k6
+    packageManagers:
+      - brew
+      - npm
+    riskNotes:
+      - k6 uses Homebrew when available.
+
+state:
+  directory: setup/state
+  assessResult: setup/state/assess-result.json
+  projectInventory: setup/state/project-inventory.json
+  policySyncResult: setup/state/policy-sync-result.json
+  generatedTestsResult: setup/state/generated-tests-result.json
+  smokeRunResult: setup/state/smoke-run-result.json
+  installResult: setup/state/install-result.json
+  verifyResult: setup/state/verify-result.json
+
+reports:
+  testingSetup: setup/reports/testing-setup-report.md
+  testingRun: setup/reports/testing-run-report.md
+
+policy:
+  file: tests/testing-policy.yml
+  schema: tests/testing-policy.schema.json
+  sync: setup/run.sh sync-policy
+  generate: setup/run.sh generate-tests
+  runSmoke: setup/run.sh run-smoke
+  sourcePriority:
+    - openapi
+    - controllers
+    - dto-schema
+    - existing-tests
+    - live-server
+  generatedOnly:
+    - tests/bruno/api/generated
+    - tests/k6/generated
+  manualProtected:
+    - tests/bruno/api/manual
+    - tests/k6/manual
+
+tools:
+  bruno:
+    enabled: true
+    path: setup/tools/bruno
+    type: api-client
+    install: setup/tools/bruno/install.sh
+    verify: setup/tools/bruno/verify.sh
+    risk: global-npm-install
+    outputs:
+      - tests/bruno/AGENTS.md
+      - tests/bruno/api
+      - tests/bruno/api/generated
+      - tests/bruno/api/manual
+      - tests/bruno/api/generated/scenario
+
+  k6:
+    enabled: true
+    path: setup/tools/k6
+    type: performance-test
+    install: setup/tools/k6/install.sh
+    verify: setup/tools/k6/verify.sh
+    risk: sudo-apt-or-brew-install
+    outputs:
+      - tests/k6/AGENTS.md
+      - tests/k6/generated/smoke.js
+      - tests/k6/manual
