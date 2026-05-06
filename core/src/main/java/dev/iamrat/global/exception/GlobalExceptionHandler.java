@@ -13,6 +13,7 @@ import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 @Slf4j
 @RestControllerAdvice
@@ -81,6 +82,16 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleMissingServletRequestParameterException(MissingServletRequestParameterException e) {
         log.warn("Missing required parameter: {}", e.getParameterName());
         return buildErrorResponse(ErrorCode.INVALID_INPUT);
+    }
+
+    @ExceptionHandler(NoResourceFoundException.class)
+    public ResponseEntity<ErrorResponse> handleNoResourceFoundException(NoResourceFoundException e) {
+        if ("/favicon.ico".equals(e.getResourcePath()) || "favicon.ico".equals(e.getResourcePath())) {
+            log.debug("No favicon resource found");
+        } else {
+            log.warn("No resource found: {}", e.getResourcePath());
+        }
+        return buildErrorResponse(ErrorCode.RESOURCE_NOT_FOUND);
     }
 
     @ExceptionHandler(IOException.class)

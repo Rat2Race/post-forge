@@ -153,7 +153,7 @@ relative_path() {
 
 find_openapi_files() {
   find "$ROOT_DIR" \
-    \( -type d \( -name .git -o -name .gradle -o -name .omx -o -name build -o -name out -o -name node_modules \) -prune \) -o \
+    \( -type d \( -name .git -o -name .gradle -o -name .omx -o -name .codex_tmp -o -name build -o -name out -o -name node_modules \) -prune \) -o \
     -type f \( \
       -iname 'openapi.yml' -o \
       -iname 'openapi.yaml' -o \
@@ -192,7 +192,7 @@ find_route_files() {
     fi
   done < <(
     find "$ROOT_DIR" \
-      \( -type d \( -name .git -o -name .gradle -o -name .omx -o -name build -o -name out -o -name node_modules \) -prune \) -o \
+      \( -type d \( -name .git -o -name .gradle -o -name .omx -o -name .codex_tmp -o -name build -o -name out -o -name node_modules \) -prune \) -o \
       -type f \( \
         -name '*.java' -o \
         -name '*.kt' -o \
@@ -244,6 +244,13 @@ extract_path_from_line() {
 write_project_inventory() {
   mkdir -p "$STATE_DIR"
   local path="$STATE_DIR/project-inventory.json"
+  local openapi_files=()
+  local file
+
+  while IFS= read -r file; do
+    [[ -z "$file" ]] && continue
+    openapi_files+=("$file")
+  done < <(find_openapi_files)
 
   {
     printf '{\n'
@@ -253,49 +260,55 @@ write_project_inventory() {
     printf '  "timestamp": "%s",\n' "$(timestamp)"
     printf '  "policy": "%s",\n' "$(relative_path "$POLICY_FILE")"
     printf '  "sourcePriority": ["openapi","controllers","dto-schema","existing-tests","live-server"],\n'
+    if [[ "${#openapi_files[@]}" -gt 0 ]]; then
+      printf '  "discoveryMode": "openapi",\n'
+    else
+      printf '  "discoveryMode": "controllers",\n'
+    fi
     printf '  "openapiFiles": [\n'
 
     local first=1
-    local file
-    while IFS= read -r file; do
+    for file in "${openapi_files[@]}"; do
       if [[ "$first" -eq 0 ]]; then
         printf ',\n'
       fi
       first=0
       printf '    { "type": "openapi", "path": "%s" }' "$(json_string "$(relative_path "$file")")"
-    done < <(find_openapi_files)
+    done
 
     printf '\n'
     printf '  ],\n'
     printf '  "routeCandidates": [\n'
 
     first=1
-    while IFS= read -r file; do
-      local pattern
-      pattern="$(route_pattern_for_file "$file")"
-      [[ -z "$pattern" ]] && continue
+    if [[ "${#openapi_files[@]}" -eq 0 ]]; then
+      while IFS= read -r file; do
+        local pattern
+        pattern="$(route_pattern_for_file "$file")"
+        [[ -z "$pattern" ]] && continue
 
-      local line
-      while IFS=: read -r line_number line; do
-        [[ -z "$line_number" || -z "$line" ]] && continue
+        local line
+        while IFS=: read -r line_number line; do
+          [[ -z "$line_number" || -z "$line" ]] && continue
 
-        local method
-        local route_path
-        method="$(detect_method_from_line "$line")"
-        route_path="$(extract_path_from_line "$line")"
+          local method
+          local route_path
+          method="$(detect_method_from_line "$line")"
+          route_path="$(extract_path_from_line "$line")"
 
-        if [[ "$first" -eq 0 ]]; then
-          printf ',\n'
-        fi
-        first=0
-        printf '    { "type": "route-candidate", "file": "%s", "line": %s, "method": "%s", "pathHint": "%s", "raw": "%s" }' \
-          "$(json_string "$(relative_path "$file")")" \
-          "$line_number" \
-          "$(json_string "$method")" \
-          "$(json_string "$route_path")" \
-          "$(json_string "$line")"
-      done < <(grep -nE "$pattern" "$file" 2>/dev/null || true)
-    done < <(find_route_files)
+          if [[ "$first" -eq 0 ]]; then
+            printf ',\n'
+          fi
+          first=0
+          printf '    { "type": "route-candidate", "file": "%s", "line": %s, "method": "%s", "pathHint": "%s", "raw": "%s" }' \
+            "$(json_string "$(relative_path "$file")")" \
+            "$line_number" \
+            "$(json_string "$method")" \
+            "$(json_string "$route_path")" \
+            "$(json_string "$line")"
+        done < <(grep -nE "$pattern" "$file" 2>/dev/null || true)
+      done < <(find_route_files)
+    fi
 
     printf '\n'
     printf '  ]\n'
@@ -311,17 +324,21 @@ write_project_report() {
   local report="$REPORT_DIR/testing-setup-report.md"
   local openapi_count
   local route_count
+  local discovery_mode
 
   openapi_count="$(grep -c '"type": "openapi"' "$inventory" 2>/dev/null || true)"
   route_count="$(grep -c '"type": "route-candidate"' "$inventory" 2>/dev/null || true)"
+  discovery_mode="$(sed -nE 's/.*"discoveryMode": "([^"]+)".*/\1/p' "$inventory" | head -1)"
   openapi_count="${openapi_count:-0}"
   route_count="${route_count:-0}"
+  discovery_mode="${discovery_mode:-controllers}"
 
   {
     printf '# Testing Setup Report\n\n'
     printf '%s\n' "- Generated at: \`$(timestamp)\`"
     printf '%s\n' "- Inventory: \`$(relative_path "$inventory")\`"
     printf '%s\n' "- Policy: \`$(relative_path "$POLICY_FILE")\`"
+    printf '%s\n' "- Discovery mode: \`$discovery_mode\`"
     printf '%s\n' "- OpenAPI files found: \`$openapi_count\`"
     printf '%s\n\n' "- Route candidates found: \`$route_count\`"
     printf '## Next Agent Step\n\n'

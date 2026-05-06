@@ -6,6 +6,7 @@ import dev.iamrat.comment.service.CommentService;
 import dev.iamrat.comment.dto.CommentRequest;
 import dev.iamrat.comment.dto.CommentDetailResponse;
 import dev.iamrat.comment.dto.CommentSummaryResponse;
+import dev.iamrat.global.dto.PageResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -46,7 +47,7 @@ public class CommentController {
     }
 
     @GetMapping
-    public ResponseEntity<Page<CommentDetailResponse>> getComments(
+    public ResponseEntity<PageResponse<CommentDetailResponse>> getComments(
             @PathVariable Long postId,
             @PageableDefault(size = 50, sort = "createdAt", direction = Direction.ASC) Pageable pageable,
             @AuthenticationPrincipal UserPrincipal user
@@ -54,7 +55,7 @@ public class CommentController {
         String userId = user != null ? user.getUserId() : null;
         Page<CommentDetailResponse> commentsByPost = commentService.getCommentsByPost(postId, pageable, userId);
 
-        return ResponseEntity.ok(commentsByPost);
+        return ResponseEntity.ok(PageResponse.from(commentsByPost));
     }
 
     @PutMapping("/{commentId:\\d+}")

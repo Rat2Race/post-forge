@@ -21,5 +21,7 @@ risk:
 outputs:
   - tests/bruno/AGENTS.md
   - tests/bruno/api
+  - tests/bruno/api/bruno.json
+  - tests/bruno/api/collection.bru
   - tests/bruno/api/generated
   - tests/bruno/api/manual

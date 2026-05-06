@@ -5,19 +5,24 @@ import https from "node:https";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
 
-const [rootDir, resultPath, reportPath] = process.argv.slice(2);
+const [rootDirArg, resultPathArg, reportPathArg] = process.argv.slice(2);
 
-if (!rootDir || !resultPath || !reportPath) {
+if (!rootDirArg || !resultPathArg || !reportPathArg) {
   console.error("Usage: run-smoke.mjs <rootDir> <resultPath> <reportPath>");
   process.exit(1);
 }
 
+const rootDir = path.resolve(rootDirArg);
+const resultPath = path.resolve(rootDir, resultPathArg);
+const reportPath = path.resolve(rootDir, reportPathArg);
 const stateDir = path.dirname(resultPath);
 const baseUrl = process.env.BASE_URL || "http://localhost:8080";
 const failOnError = process.env.SMOKE_FAIL_ON_ERROR === "true";
+const brunoVerbose = process.env.BRUNO_VERBOSE === "true";
 const brunoCollectionDir = path.join(rootDir, "tests/bruno/api");
 const k6ScriptPath = path.join(rootDir, "tests/k6/generated/smoke.js");
 const brunoEnvPath = path.join(stateDir, "bruno-smoke-env.bru");
+const brunoReportJsonPath = path.join(stateDir, "bruno-smoke-report.json");
 const k6SummaryPath = path.join(stateDir, "k6-smoke-summary.json");
 
 function now() {
@@ -306,10 +311,23 @@ let bruno = {
 
 if (bruPath && fs.existsSync(brunoCollectionDir)) {
   writeBrunoEnv();
+  fs.rmSync(brunoReportJsonPath, { force: true });
+  const brunoArgs = [
+    "run",
+    "--tags=smoke",
+    "--exclude-tags=draft",
+    "--env-file",
+    brunoEnvPath,
+    "--reporter-json",
+    brunoReportJsonPath,
+  ];
+  if (brunoVerbose) {
+    brunoArgs.push("--verbose");
+  }
   bruno = runCommand(
     "bruno",
     bruPath,
-    ["run", "--tags=smoke", "--exclude-tags=draft", "--env-file", brunoEnvPath],
+    brunoArgs,
     { cwd: brunoCollectionDir },
   );
   bruno.status = bruno.exitCode === 0 ? "passed" : "failed";
@@ -357,6 +375,7 @@ const result = {
     durationMs: bruno.durationMs,
     command: bruno.command,
     cwd: bruno.cwd,
+    reporterJson: fs.existsSync(brunoReportJsonPath) ? path.relative(rootDir, brunoReportJsonPath) : null,
     stdout: bruno.stdout,
     stderr: bruno.stderr,
   },

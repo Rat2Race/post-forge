@@ -1,6 +1,7 @@
 package dev.iamrat.post.controller;
 
 import dev.iamrat.like.dto.LikeResponse;
+import dev.iamrat.global.dto.PageResponse;
 import dev.iamrat.post.service.PostService;
 import dev.iamrat.post.dto.PostRequest;
 import dev.iamrat.post.dto.PostDetailResponse;
@@ -45,7 +46,7 @@ public class PostController {
     }
 
     @GetMapping
-    public ResponseEntity<Page<PostDetailResponse>> getPosts(
+    public ResponseEntity<PageResponse<PostDetailResponse>> getPosts(
         @RequestParam(required = false) String keyword,
         @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable,
         @AuthenticationPrincipal UserPrincipal user
@@ -58,7 +59,7 @@ public class PostController {
             ? postService.searchPosts(keyword, pageable, userId)
             : postService.getPosts(pageable, userId);
 
-        return ResponseEntity.ok(posts);
+        return ResponseEntity.ok(PageResponse.from(posts));
     }
 
     @GetMapping("/{postId:\\d+}")
