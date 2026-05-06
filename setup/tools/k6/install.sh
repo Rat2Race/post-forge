@@ -26,7 +26,7 @@ Rules for files under tests/k6/**.
 
 - Keep smoke performance scripts light.
 - Do not run destructive or high-load tests against production without explicit approval.
-- Use BASE_URL for target selection.
+- Use tests/k6/env.js for default target settings, and BASE_URL for one-off overrides.
 - Separate smoke, baseline, and stress scripts.
 - Generated scripts belong under generated.
 - Manual scripts belong under manual and must not be overwritten automatically.
@@ -34,33 +34,197 @@ Rules for files under tests/k6/**.
 
 write_if_missing "$ROOT_DIR/tests/k6/manual/.gitkeep" ''
 
-write_if_missing "$ROOT_DIR/tests/k6/generated/smoke.js" 'import http from "k6/http";
+write_if_missing "$ROOT_DIR/tests/k6/env.js" 'const defaults = {
+  baseUrl: "http://localhost:8080",
+  smokePath: "/",
+  vusCount: 1,
+  iterations: 1,
+  targetName: "local",
+  scenarioName: "smoke",
+  reportDir: "docs/performance",
+  summaryDir: "docs/performance/k6",
+  reportName: "",
+  appImageTag: "",
+  appCommit: "",
+};
+
+export function envValue(name, fallback) {
+  const value = __ENV[name];
+  return value === undefined || value === "" ? fallback : value;
+}
+
+export function envNumber(name, fallback) {
+  const value = envValue(name, fallback);
+  const numberValue = Number(value);
+  return Number.isFinite(numberValue) ? numberValue : fallback;
+}
+
+export const BASE_URL = envValue("BASE_URL", defaults.baseUrl);
+export const SMOKE_PATH = envValue("SMOKE_PATH", defaults.smokePath);
+export const VUS_COUNT = envNumber("VUS_COUNT", defaults.vusCount);
+export const ITERATIONS = envNumber("ITERATIONS", defaults.iterations);
+export const TARGET_NAME = envValue("K6_TARGET_NAME", defaults.targetName);
+export const SCENARIO_NAME = envValue("K6_SCENARIO_NAME", defaults.scenarioName);
+export const REPORT_DIR = envValue("K6_REPORT_DIR", defaults.reportDir);
+export const SUMMARY_DIR = envValue("K6_SUMMARY_DIR", defaults.summaryDir);
+export const REPORT_NAME = envValue("K6_REPORT_NAME", defaults.reportName);
+export const APP_IMAGE_TAG = envValue("APP_IMAGE_TAG", defaults.appImageTag);
+export const APP_COMMIT = envValue("APP_COMMIT", defaults.appCommit);'
+
+write_if_missing "$ROOT_DIR/tests/k6/report.js" 'import {
+  APP_COMMIT,
+  APP_IMAGE_TAG,
+  ITERATIONS,
+  REPORT_DIR,
+  REPORT_NAME,
+  SCENARIO_NAME,
+  SUMMARY_DIR,
+  TARGET_NAME,
+  VUS_COUNT,
+} from "./env.js";
+
+function pad(value) {
+  return String(value).padStart(2, "0");
+}
+
+function slug(value) {
+  return String(value || "unknown")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "") || "unknown";
+}
+
+function metricValues(data, name) {
+  return data.metrics?.[name]?.values || {};
+}
+
+function formatMs(value) {
+  return Number.isFinite(value) ? `${value.toFixed(2)} ms` : "-";
+}
+
+function formatRate(value) {
+  return Number.isFinite(value) ? `${(value * 100).toFixed(2)}%` : "-";
+}
+
+function thresholdStatus(data) {
+  const failed = [];
+  for (const [metricName, metric] of Object.entries(data.metrics || {})) {
+    for (const [threshold, result] of Object.entries(metric.thresholds || {})) {
+      if (result?.ok === false) failed.push(`${metricName} ${threshold}`);
+    }
+  }
+  return failed;
+}
+
+function reportBaseName(now) {
+  if (REPORT_NAME) return slug(REPORT_NAME);
+  const date = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+  const time = `${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
+  return `${date}-${time}-${slug(TARGET_NAME)}-${slug(SCENARIO_NAME)}`;
+}
+
+export function createPerformanceSummary(data) {
+  const now = new Date();
+  const baseName = reportBaseName(now);
+  const mdPath = `${REPORT_DIR}/${baseName}.md`;
+  const jsonPath = `${SUMMARY_DIR}/${baseName}-summary.json`;
+  const failed = thresholdStatus(data);
+  const checks = metricValues(data, "checks");
+  const duration = metricValues(data, "http_req_duration");
+  const reqs = metricValues(data, "http_reqs").count || 0;
+  const seconds = (data.state?.testRunDurationMs || 0) / 1000;
+  const rps = seconds > 0 ? reqs / seconds : 0;
+
+  const markdown = `# ${TARGET_NAME} ${SCENARIO_NAME} 성능 테스트 리포트
+
+## 요약
+
+| 항목 | 값 |
+|---|---|
+| 결론 | ${failed.length === 0 ? "pass" : "fail"} |
+| 실행 일시 | \`${now.toISOString()}\` |
+| 테스트 ID | \`${baseName}\` |
+| 대상 환경 | \`${TARGET_NAME}\` |
+| 앱 image tag | \`${APP_IMAGE_TAG || "-"}\` |
+| 앱 commit | \`${APP_COMMIT || "-"}\` |
+
+## 부하 조건
+
+| 항목 | 값 |
+|---|---:|
+| VUs | ${VUS_COUNT} |
+| iterations | ${ITERATIONS} |
+| duration | ${seconds.toFixed(2)} s |
+
+## k6 결과
+
+| 지표 | 값 |
+|---|---:|
+| checks | ${checks.passes ?? 0}/${(checks.passes ?? 0) + (checks.fails ?? 0)} |
+| http_reqs | ${reqs} |
+| requests/sec | ${rps.toFixed(2)} |
+| http_req_failed | ${formatRate(metricValues(data, "http_req_failed").rate ?? 0)} |
+| http_req_duration avg | ${formatMs(duration.avg)} |
+| http_req_duration med | ${formatMs(duration.med)} |
+| http_req_duration p95 | ${formatMs(duration["p(95)"])} |
+| http_req_duration p99 | ${formatMs(duration["p(99)"])} |
+| http_req_duration max | ${formatMs(duration.max)} |
+
+## Artifact
+
+| 종류 | 경로 |
+|---|---|
+| k6 summary JSON | \`${jsonPath}\` |
+| k6 markdown report | \`${mdPath}\` |
+
+## 결론
+
+${failed.length === 0 ? "Threshold 기준으로 통과했다." : `Threshold 실패: ${failed.join(", ")}`}
+`;
+
+  return {
+    stdout: `\n[k6-report] markdown: ${mdPath}\n[k6-report] summary: ${jsonPath}\n\n`,
+    [mdPath]: markdown,
+    [jsonPath]: JSON.stringify(data, null, 2),
+  };
+}'
+
+write_if_missing "$ROOT_DIR/tests/k6/generated/smoke.js" 'import { BASE_URL, SMOKE_PATH, VUS_COUNT, ITERATIONS } from "../env.js";
+import { createPerformanceSummary } from "../report.js";
+import http from "k6/http";
 import { check, sleep } from "k6";
 
 export const options = {
-  vus: 1,
-  iterations: 1,
+  vus: VUS_COUNT,
+  iterations: ITERATIONS,
   thresholds: {
     http_req_failed: ["rate<0.01"],
     http_req_duration: ["p(95)<1000"],
+    "http_req_duration{name:GET smoke path}": ["p(95)<1000"],
   },
 };
 
-const BASE_URL = __ENV.BASE_URL;
-const SMOKE_PATH = __ENV.SMOKE_PATH || "/";
-
 if (!BASE_URL) {
-  throw new Error("BASE_URL is required. Example: BASE_URL=http://localhost:8080 k6 run tests/k6/generated/smoke.js");
+  throw new Error("BASE_URL is empty. Set tests/k6/env.js or run with BASE_URL=http://localhost:8080 k6 run tests/k6/generated/smoke.js");
 }
 
 export default function () {
-  const res = http.get(`${BASE_URL}${SMOKE_PATH}`);
+  const res = http.get(`${BASE_URL}${SMOKE_PATH}`, {
+    tags: { name: "GET smoke path" },
+  });
 
   check(res, {
     "status is 2xx or 3xx": (r) => r.status >= 200 && r.status < 400,
   });
 
   sleep(1);
+}
+
+export function handleSummary(data) {
+  return createPerformanceSummary(data, {
+    purpose: "generated smoke",
+    script: "tests/k6/generated/smoke.js",
+  });
 }'
 
 k6_bin() {

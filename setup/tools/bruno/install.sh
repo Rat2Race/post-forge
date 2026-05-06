@@ -21,6 +21,20 @@ write_if_missing() {
   printf '[bruno] create %s\n' "${path#$ROOT_DIR/}"
 }
 
+remove_if_default() {
+  local path="$1"
+  local expected="$2"
+
+  if [[ ! -f "$path" ]]; then
+    return
+  fi
+
+  if [[ "$(tr -d '\r' < "$path" | sed -e '${/^$/d;}')" == "$(printf '%s\n' "$expected" | tr -d '\r' | sed -e '${/^$/d;}')" ]]; then
+    rm -f "$path"
+    printf '[bruno] remove legacy %s\n' "${path#$ROOT_DIR/}"
+  fi
+}
+
 bruno_bin() {
   local cli_path
 
@@ -42,7 +56,7 @@ Rules for files under tests/bruno/**.
 
 - Do not commit secrets, JWTs, OAuth secrets, API keys, or local passwords.
 - Treat environments/local.bru as local-only.
-- Keep environments/local.example.bru empty or safe.
+- Keep environments/local.example.bru on the safe default http://localhost:8080.
 - Use smoke only for fast, stable requests.
 - Use draft for unstable requests or data-heavy prerequisites.
 - Generated requests belong under api/generated.
@@ -53,47 +67,95 @@ write_if_missing "$COLLECTION_DIR/.gitignore" 'environments/local.bru
 .env
 node_modules/'
 
-write_if_missing "$COLLECTION_DIR/opencollection.yml" 'info:
+remove_if_default "$COLLECTION_DIR/opencollection.yml" 'info:
   name: API Test Collection
   type: collection
   version: 1'
 
+write_if_missing "$COLLECTION_DIR/bruno.json" '{
+  "version": "1",
+  "name": "API Test Collection",
+  "type": "collection",
+  "ignore": [
+    "node_modules",
+    ".git"
+  ]
+}'
+
+write_if_missing "$COLLECTION_DIR/collection.bru" 'meta {
+  type: collection
+}
+
+auth {
+  mode: none
+}'
+
 write_if_missing "$COLLECTION_DIR/environments/local.example.bru" 'vars {
-  baseUrl:
+  baseUrl: http://localhost:8080
   accessToken:
   refreshToken:
 }'
 
 write_if_missing "$COLLECTION_DIR/environments/local.bru" 'vars {
-  baseUrl:
+  baseUrl: http://localhost:8080
   accessToken:
   refreshToken:
 }'
 
-write_if_missing "$COLLECTION_DIR/generated/folder.yml" 'info:
+remove_if_default "$COLLECTION_DIR/generated/folder.yml" 'info:
   name: generated
   type: folder
   seq: 1'
 
-write_if_missing "$COLLECTION_DIR/generated/smoke/folder.yml" 'info:
+write_if_missing "$COLLECTION_DIR/generated/folder.bru" 'meta {
+  name: generated
+  type: folder
+  seq: 1
+}'
+
+remove_if_default "$COLLECTION_DIR/generated/smoke/folder.yml" 'info:
   name: smoke
   type: folder
   seq: 1'
 
-write_if_missing "$COLLECTION_DIR/generated/draft/folder.yml" 'info:
+write_if_missing "$COLLECTION_DIR/generated/smoke/folder.bru" 'meta {
+  name: smoke
+  type: folder
+  seq: 1
+}'
+
+remove_if_default "$COLLECTION_DIR/generated/draft/folder.yml" 'info:
   name: draft
   type: folder
   seq: 2'
 
-write_if_missing "$COLLECTION_DIR/generated/scenario/folder.yml" 'info:
+write_if_missing "$COLLECTION_DIR/generated/draft/folder.bru" 'meta {
+  name: draft
+  type: folder
+  seq: 2
+}'
+
+remove_if_default "$COLLECTION_DIR/generated/scenario/folder.yml" 'info:
   name: scenario
   type: folder
   seq: 3'
 
-write_if_missing "$COLLECTION_DIR/manual/folder.yml" 'info:
+write_if_missing "$COLLECTION_DIR/generated/scenario/folder.bru" 'meta {
+  name: scenario
+  type: folder
+  seq: 3
+}'
+
+remove_if_default "$COLLECTION_DIR/manual/folder.yml" 'info:
   name: manual
   type: folder
   seq: 2'
+
+write_if_missing "$COLLECTION_DIR/manual/folder.bru" 'meta {
+  name: manual
+  type: folder
+  seq: 2
+}'
 
 write_if_missing "$COLLECTION_DIR/manual/exploratory/.gitkeep" ''
 

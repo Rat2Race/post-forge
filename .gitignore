@@ -14,7 +14,6 @@ out/
 **/src/main/resources/application-secret.yml
 **/src/main/resources/application-local.yml
 **/src/main/resources/application-dev.yml
-**/src/main/resources/application-prod.yml
 
 # Logs
 logs/
@@ -42,9 +41,19 @@ tests/k6/results/
 tests/k6/*.summary.json
 
 # Generated testing artifacts
+# Intentionally ignored: setup can recreate policy/Bruno/k6 generated outputs.
 tests/
+!tests/
+tests/*
+!tests/k6/
+tests/k6/*
+!tests/k6/manual/
+tests/k6/manual/*
+!tests/k6/manual/.gitkeep
+!tests/k6/manual/*.js
 
 # setup run state
+# Intentionally ignored: setup execution state and reports are local run outputs.
 setup/state/*
 !setup/state/.gitkeep
 setup/reports/*.md
@@ -59,3 +68,4 @@ redis/
 # Gemini CLI internal files
 .omx/
 .codex-review/
+.codex_tmp/

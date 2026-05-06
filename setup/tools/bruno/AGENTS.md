@@ -33,6 +33,7 @@
 | 대상 환경 | Unix 계열 shell PATH에서 `bru`가 실행 가능해야 한다. |
 | 버전 | `BRUNO_CLI_VERSION`이 있으면 해당 버전을 설치하고, 없으면 `latest`를 사용한다. |
 | 산출물 | collection 산출물은 `tests/bruno/api` 아래에 둔다. |
+| 저장 형식 | Bruno native 형식인 `bruno.json`, `collection.bru`, `folder.bru`, `*.bru` request를 사용한다. |
 | Policy 우선 | request 생성/분류 전 `tests/testing-policy.yml`을 먼저 읽는다. |
 | generated 보호 | 자동 생성/갱신은 `tests/bruno/api/generated` 아래에서만 수행한다. |
 | manual 보호 | `tests/bruno/api/manual` 아래 파일은 자동으로 덮어쓰지 않는다. |
@@ -53,6 +54,9 @@
 | 기준 | 필요 여부 |
 |---|---|
 | `bru` CLI가 Unix shell PATH에서 실행 가능 | 필수 |
+| `tests/bruno/api/bruno.json` 존재 | 필수 |
+| `tests/bruno/api/collection.bru` 존재 | 필수 |
+| `tests/bruno/api/opencollection.yml` 없음 | 필수 |
 | `tests/bruno/api` 존재 | 필수 |
 | `tests/bruno/api/generated` 존재 | 필수 |
 | `tests/bruno/api/manual` 존재 | 필수 |

@@ -24,6 +24,25 @@ else
   status=1
 fi
 
+if [[ -f "$COLLECTION_DIR/bruno.json" ]]; then
+  printf '[ok] Bruno native collection config found\n'
+else
+  printf '[warn] Bruno native collection config missing: bruno.json\n'
+  status=1
+fi
+
+if [[ -f "$COLLECTION_DIR/collection.bru" ]]; then
+  printf '[ok] Bruno native collection root found\n'
+else
+  printf '[warn] Bruno native collection root missing: collection.bru\n'
+  status=1
+fi
+
+if [[ -f "$COLLECTION_DIR/opencollection.yml" ]]; then
+  printf '[warn] Legacy opencollection.yml is present. Bruno CLI will prefer YAML mode over native .bru requests.\n'
+  status=1
+fi
+
 if [[ -f "$COLLECTION_DIR/environments/local.example.bru" ]]; then
   printf '[ok] Bruno example environment found\n'
 else
@@ -35,6 +54,13 @@ if [[ -d "$COLLECTION_DIR/generated/smoke" ]]; then
   printf '[ok] Bruno generated smoke area found\n'
 else
   printf '[warn] Bruno generated smoke area missing. Run: ./setup/tools/bruno/install.sh\n'
+  status=1
+fi
+
+if [[ -f "$COLLECTION_DIR/generated/smoke/folder.bru" ]]; then
+  printf '[ok] Bruno generated smoke folder metadata found\n'
+else
+  printf '[warn] Bruno generated smoke folder metadata missing: folder.bru\n'
   status=1
 fi
 

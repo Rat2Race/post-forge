@@ -21,10 +21,24 @@ k6는 API의 성능 테스트와 부하 테스트를 위한 도구다.
 
 ## 예시 실행
 
-대상 앱이 실행 중일 때 `BASE_URL`을 지정해서 실행한다. 필요하면 `SMOKE_PATH`도 지정한다.
+k6 script는 `tests/k6/env.js`에서 기본값을 import한다. 기본 `baseUrl`은 `http://localhost:8080`이다.
 
 ```bash
-BASE_URL=http://localhost:8080 SMOKE_PATH=/ k6 run tests/k6/generated/smoke.js
+k6 run tests/k6/generated/smoke.js
+```
+
+다른 주소를 계속 쓰려면 `tests/k6/env.js`의 `baseUrl`을 수정한다. 일회성 실행에서는 shell env가 `env.js` 기본값보다 우선한다. 필요하면 `SMOKE_PATH`, `VUS_COUNT`, `ITERATIONS`도 같은 방식으로 넘긴다.
+
+```bash
+BASE_URL=http://127.0.0.1:18080 SMOKE_PATH=/ VUS_COUNT=1 ITERATIONS=3 k6 run tests/k6/generated/smoke.js
 ```
 
 `generated/` 아래 script는 `tests/testing-policy.yml`을 기준으로 Agent가 갱신할 수 있다. 사람이 직접 다듬는 baseline/stress script는 `manual/` 아래에 둔다.
+
+k6 script는 `handleSummary()`로 테스트 종료 후 markdown 리포트와 summary JSON을 자동 생성한다. 기본 위치는 `docs/performance/`와 `docs/performance/k6/`이다. 파일명을 고정하려면 `K6_REPORT_NAME`을 지정한다.
+
+```bash
+K6_TARGET_NAME=staging K6_SCENARIO_NAME=smoke K6_REPORT_NAME=2026-05-04-staging-smoke k6 run tests/k6/generated/smoke.js
+```
+
+Git에 남길 성능 리포트는 `docs/performance/performance-report-template.md` 포맷을 기준으로 수동 해석을 보강한다. 원본 로그 전체보다 요약 수치, 실행 조건, artifact 경로, 결론을 남긴다.
