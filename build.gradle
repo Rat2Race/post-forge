@@ -5,6 +5,7 @@ plugins {
 ext {
     springBootVersion = '3.5.4'
     lombokVersion = '1.18.34'
+    springdocOpenapiVersion = '2.8.17'
 }
 
 allprojects {

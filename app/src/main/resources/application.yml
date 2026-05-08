@@ -127,3 +127,15 @@ aws:
   s3:
     bucket: ${AWS_BUCKET}
     region: ${AWS_REGION}
+
+springdoc:
+  api-docs:
+    enabled: true
+    path: /v3/api-docs
+  swagger-ui:
+    enabled: true
+    path: /swagger-ui.html
+    display-request-duration: true
+    operations-sorter: method
+    tags-sorter: alpha
+  writer-with-order-by-keys: true
