@@ -24,6 +24,8 @@ const k6ScriptPath = path.join(rootDir, "tests/k6/generated/smoke.js");
 const brunoEnvPath = path.join(stateDir, "bruno-smoke-env.bru");
 const brunoReportJsonPath = path.join(stateDir, "bruno-smoke-report.json");
 const k6SummaryPath = path.join(stateDir, "k6-smoke-summary.json");
+const k6ReportDir = path.join(path.dirname(reportPath), "k6");
+const k6GeneratedSummaryDir = path.join(stateDir, "k6");
 
 function now() {
   return new Date().toISOString();
@@ -347,11 +349,20 @@ let k6 = {
 
 if (k6Path && fs.existsSync(k6ScriptPath)) {
   fs.rmSync(k6SummaryPath, { force: true });
+  fs.mkdirSync(k6ReportDir, { recursive: true });
+  fs.mkdirSync(k6GeneratedSummaryDir, { recursive: true });
   k6 = runCommand(
     "k6",
     k6Path,
     ["run", "--summary-export", k6SummaryPath, k6ScriptPath],
-    { env: { BASE_URL: baseUrl } },
+    {
+      env: {
+        BASE_URL: baseUrl,
+        K6_REPORT_DIR: path.relative(rootDir, k6ReportDir),
+        K6_SUMMARY_DIR: path.relative(rootDir, k6GeneratedSummaryDir),
+        K6_REPORT_NAME: "setup-smoke",
+      },
+    },
   );
   k6.status = k6.exitCode === 0 ? "passed" : "failed";
   k6.analysis = analyzeK6(readJsonIfExists(k6SummaryPath));

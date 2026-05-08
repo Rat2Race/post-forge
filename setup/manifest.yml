@@ -62,6 +62,9 @@ policy:
   generatedOnly:
     - tests/bruno/api/generated
     - tests/k6/generated
+    - tests/sql
+    - tests/smoke/seed.sh
+  fixtureConfig: testing-fixtures.json
   manualProtected:
     - tests/bruno/api/manual
     - tests/k6/manual

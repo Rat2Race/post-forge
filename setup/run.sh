@@ -192,7 +192,7 @@ find_route_files() {
     fi
   done < <(
     find "$ROOT_DIR" \
-      \( -type d \( -name .git -o -name .gradle -o -name .omx -o -name .codex_tmp -o -name build -o -name out -o -name node_modules \) -prune \) -o \
+      \( -type d \( -name .git -o -name .gradle -o -name .omx -o -name .codex_tmp -o -name build -o -name out -o -name node_modules -o -name K6 -o -name k6 \) -prune \) -o \
       -type f \( \
         -name '*.java' -o \
         -name '*.kt' -o \

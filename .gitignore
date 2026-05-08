@@ -41,22 +41,14 @@ tests/k6/results/
 tests/k6/*.summary.json
 
 # Generated testing artifacts
-# Intentionally ignored: setup can recreate policy/Bruno/k6 generated outputs.
+# Intentionally ignored: setup can recreate policy/Bruno/k6/SQL generated outputs.
 tests/
-!tests/
-tests/*
-!tests/k6/
-tests/k6/*
-!tests/k6/manual/
-tests/k6/manual/*
-!tests/k6/manual/.gitkeep
-!tests/k6/manual/*.js
 
 # setup run state
 # Intentionally ignored: setup execution state and reports are local run outputs.
-setup/state/*
+setup/state/**
 !setup/state/.gitkeep
-setup/reports/*.md
+setup/reports/**
 !setup/reports/.gitkeep
 
 # DB
