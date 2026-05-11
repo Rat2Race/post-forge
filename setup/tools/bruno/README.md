@@ -25,7 +25,7 @@ Bruno는 API 수동 탐색과, 선별된 요청을 CLI 기반 smoke/scenario 검
 
 ## 수동 실행
 
-기본 `baseUrl`은 `http://localhost:8080`이다. 새 scaffold의 `local.example.bru`와 새로 생성되는 `local.bru`는 이 값을 사용한다. 다른 주소를 계속 쓰려면 `tests/bruno/api/environments/local.bru`의 `baseUrl:`만 수정한다. 인증이 필요한 draft/scenario 요청을 실행할 때는 `accessToken`도 채운다. `local.bru`는 local-only 파일이며 commit하지 않는다.
+기본 `baseUrl`은 `http://localhost:8080`이다. 새 scaffold의 `local.example.bru`와 새로 생성되는 `local.bru`는 이 값을 사용한다. 다른 주소를 계속 쓰려면 `tests/bruno/api/environments/local.bru`의 `baseUrl:`만 수정한다. 인증이 필요한 수동 request를 만들 때는 `accessToken` 같은 로컬 전용 값을 `local.bru`에 채운다. `local.bru`는 local-only 파일이며 commit하지 않는다.
 
 설치 후 새 Unix shell에서는 `bru` 명령이 바로 잡혀야 한다. 현재 열려 있는 shell에서 아직 잡히지 않으면 repo root에서 user-local PATH를 먼저 로드한다.
 
@@ -33,6 +33,14 @@ Bruno는 API 수동 탐색과, 선별된 요청을 CLI 기반 smoke/scenario 검
 source ./setup/env.sh
 bru --version
 ```
+
+전체 setup wrapper로 generated smoke만 실행하려면 repo root에서 실행한다. 이 명령은 `tests/bruno/api/environments/local.bru`를 읽지 않고, `BASE_URL`만 담은 임시 env를 `setup/state/` 아래에 만들어 사용한다.
+
+```bash
+BASE_URL=http://127.0.0.1:8080 ./setup/run.sh run-smoke
+```
+
+Bruno CLI를 직접 실행하려면 먼저 `./setup/run.sh generate-tests`로 generated request를 최신화한 뒤 collection root에서 실행한다.
 
 ```bash
 cd tests/bruno/api
@@ -46,12 +54,19 @@ cd tests/bruno/api
 bru run generated/smoke/001-get-posts.bru --env-file ./environments/local.bru
 ```
 
-review가 필요한 draft/scenario 요청을 수동으로 확인한다.
+review가 필요한 draft/scenario 요청을 수동으로 확인한다. generated request는 기본적으로 `auth: none`으로 생성되므로, 인증이 필요한 API는 `manual/` 아래에 별도 request를 만들고 로컬 env 값을 연결한다.
 
 ```bash
 cd tests/bruno/api
 bru run generated/draft -r --env-file ./environments/local.bru
 bru run generated/scenario -r --env-file ./environments/local.bru
+```
+
+사람이 관리하는 manual request만 실행한다.
+
+```bash
+cd tests/bruno/api
+bru run manual -r --env-file ./environments/local.bru
 ```
 
 로컬 서버 주소만 임시로 바꿔 실행하려면 환경 파일을 수정하지 않고 override할 수 있다.
@@ -82,4 +97,4 @@ cd tests/bruno/api
 bru run --tags=smoke --exclude-tags=draft --env-file ./environments/local.bru --reporter-html ../../../setup/reports/bruno-smoke-report.html
 ```
 
-`generated/` 아래 request는 `tests/testing-policy.yml`을 기준으로 Agent가 갱신할 수 있다. 사람이 직접 다듬는 request는 `manual/` 아래에 둔다.
+`generated/` 아래 request는 `tests/testing-policy.yml`을 기준으로 Agent가 갱신할 수 있다. 사람이 직접 다듬는 request는 `manual/` 아래에 둔다. `tests`를 통째로 삭제하고 setup을 다시 돌리면 manual 파일도 사라지므로, 보존해야 하는 수동 request는 커밋하거나 별도 백업한 뒤 재생성한다.
