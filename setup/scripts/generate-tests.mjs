@@ -14,12 +14,8 @@ const brunoCollectionDir = path.join(rootDir, "tests/bruno/api");
 const k6GeneratedDir = path.join(rootDir, "tests/k6/generated");
 const k6EnvPath = path.join(rootDir, "tests/k6/env.js");
 const k6ReportPath = path.join(rootDir, "tests/k6/report.js");
-const sqlDir = path.join(rootDir, "tests/sql");
-const seedScriptPath = path.join(rootDir, "tests/smoke/seed.sh");
-const fixtureConfigCandidates = [
-  path.join(rootDir, "testing-fixtures.json"),
-  path.join(rootDir, "tests/testing-fixtures.json"),
-];
+const sqlGeneratedDir = path.join(rootDir, "tests/sql/generated");
+const sqlManualDir = path.join(rootDir, "tests/sql/manual");
 const defaultOpenCollection = `info:
   name: API Test Collection
   type: collection
@@ -152,6 +148,17 @@ auth {
   mode: none
 }
 `);
+
+  writeIfMissing(path.join(brunoCollectionDir, "manual/folder.bru"), renderFolder("manual", 4));
+  writeIfMissing(path.join(brunoCollectionDir, "manual/exploratory/.gitkeep"), "");
+}
+
+function ensureK6ManualArea() {
+  writeIfMissing(path.join(rootDir, "tests/k6/manual/.gitkeep"), "\n");
+}
+
+function ensureSqlManualArea() {
+  writeIfMissing(path.join(sqlManualDir, ".gitkeep"), "\n");
 }
 
 function slugFor(endpoint) {
@@ -485,33 +492,6 @@ export function createPerformanceSummary(data) {
 `;
 }
 
-function readFixtureConfig() {
-  const filePath = fixtureConfigCandidates.find((candidate) => fs.existsSync(candidate));
-  if (!filePath) return { config: null, path: "" };
-
-  try {
-    return {
-      config: JSON.parse(fs.readFileSync(filePath, "utf8")),
-      path: path.relative(rootDir, filePath),
-    };
-  } catch (error) {
-    throw new Error(`Could not parse ${path.relative(rootDir, filePath)}: ${error.message}`);
-  }
-}
-
-function safeProjectPath(relativePath, label) {
-  if (!relativePath || typeof relativePath !== "string") {
-    throw new Error(`${label} must be a non-empty relative path`);
-  }
-
-  const resolved = path.resolve(rootDir, relativePath);
-  if (!resolved.startsWith(`${path.resolve(rootDir)}${path.sep}`) && resolved !== path.resolve(rootDir)) {
-    throw new Error(`${label} escapes project root: ${relativePath}`);
-  }
-
-  return resolved;
-}
-
 function camelToSnake(value) {
   return String(value)
     .replace(/([a-z0-9])([A-Z])/g, "$1_$2")
@@ -540,10 +520,7 @@ function sqlLiteral(value) {
 
 function renderInsert(table, columns, rows) {
   if (!table || columns.length === 0 || rows.length === 0) return "";
-  const renderedRows = rows.map((row) => {
-    return `(${columns.map((column) => sqlLiteral(row[column])).join(", ")})`;
-  });
-
+  const renderedRows = rows.map((row) => `(${columns.map((column) => sqlLiteral(row[column])).join(", ")})`);
   return `INSERT INTO ${table} (${columns.join(", ")}) VALUES\n${renderedRows.join(",\n")};`;
 }
 
@@ -580,9 +557,7 @@ function gradleProjectDependencies(moduleName) {
 
 function runtimeJavaRoots() {
   const appGradle = path.join(rootDir, "app", "build.gradle");
-  if (!fs.existsSync(appGradle)) {
-    return [rootDir];
-  }
+  if (!fs.existsSync(appGradle)) return [rootDir];
 
   const modules = new Set(["app"]);
   const queue = ["app"];
@@ -621,16 +596,13 @@ function stripJavaComments(text) {
 
 function annotationAttr(annotations, annotationName, attrName = "name") {
   const escaped = annotationName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  const pattern = new RegExp(`@${escaped}\\s*\\(([^)]*)\\)`, "s");
-  const match = annotations.match(pattern);
+  const match = annotations.match(new RegExp(`@${escaped}\\s*\\(([^)]*)\\)`, "s"));
   if (!match) return "";
 
-  const body = match[1];
-  const attrPattern = new RegExp(`${attrName}\\s*=\\s*"([^"]+)"`);
-  const attrMatch = body.match(attrPattern);
+  const attrMatch = match[1].match(new RegExp(`${attrName}\\s*=\\s*"([^"]+)"`));
   if (attrMatch) return attrMatch[1];
 
-  const unnamed = body.trim().match(/^"([^"]+)"$/);
+  const unnamed = match[1].trim().match(/^"([^"]+)"$/);
   return unnamed ? unnamed[1] : "";
 }
 
@@ -648,82 +620,11 @@ function parseJavaEnums(javaFiles) {
     const values = match[2]
       .split(";")[0]
       .split(",")
-      .map((value) => value.trim())
-      .map((value) => value.match(/^([A-Z][A-Z0-9_]*)\b/)?.[1])
+      .map((value) => value.trim().match(/^([A-Z][A-Z0-9_]*)\b/)?.[1])
       .filter(Boolean);
     if (values.length > 0) enums.set(match[1], values);
   }
   return enums;
-}
-
-function parseEntityFile(filePath) {
-  const text = stripJavaComments(fs.readFileSync(filePath, "utf8"));
-  if (!/@Entity\b/.test(text)) return null;
-
-  const classMatch = text.match(/\bclass\s+([A-Za-z_][A-Za-z0-9_]*)(?:\s+extends\s+([A-Za-z_][A-Za-z0-9_]*))?/);
-  if (!classMatch) return null;
-
-  const [, className, superClass] = classMatch;
-  const beforeClass = text.slice(0, classMatch.index);
-  const tableName = annotationAttr(beforeClass, "Table", "name") || camelToSnake(className);
-  const fields = [];
-  const lines = text.split(/\r?\n/);
-  let annotations = [];
-
-  for (const rawLine of lines) {
-    const line = rawLine.trim();
-    if (!line) {
-      if (annotations.length > 0) annotations.push("");
-      continue;
-    }
-
-    if (line.startsWith("@")) {
-      annotations.push(line);
-      continue;
-    }
-
-    const fieldMatch = line.match(/private\s+(?:final\s+)?([A-Za-z0-9_<>, ?]+)\s+([A-Za-z_][A-Za-z0-9_]*)\s*(?:=.*)?;/);
-    if (fieldMatch) {
-      const [, type, name] = fieldMatch;
-      const annotationText = annotations.join("\n");
-      const isManyToOne = /@ManyToOne\b/.test(annotationText);
-      const isElementCollection = /@ElementCollection\b/.test(annotationText);
-      const joinColumn = annotationAttr(annotationText, "JoinColumn", "name");
-      const collectionTable = annotationAttr(annotationText, "CollectionTable", "name");
-      const collectionJoinColumn = annotationText.match(/joinColumns\s*=\s*@JoinColumn\s*\(\s*name\s*=\s*"([^"]+)"/s)?.[1] || "";
-      const columnName = annotationAttr(annotationText, "Column", "name") ||
-        (isManyToOne ? (joinColumn || `${camelToSnake(name)}_id`) : camelToSnake(name));
-
-      fields.push({
-        name,
-        type: type.trim().replace(/\s+/g, " "),
-        column: columnName,
-        annotations: annotationText,
-        id: hasAnnotation(annotationText, "Id"),
-        generated: hasAnnotation(annotationText, "GeneratedValue"),
-        nullableFalse: /@Column\s*\([^)]*nullable\s*=\s*false/s.test(annotationText) ||
-          /@JoinColumn\s*\([^)]*nullable\s*=\s*false/s.test(annotationText) ||
-          /@ManyToOne\s*\([^)]*optional\s*=\s*false/s.test(annotationText),
-        manyToOne: isManyToOne,
-        elementCollection: isElementCollection,
-        collectionTable,
-        collectionJoinColumn,
-        enumerated: hasAnnotation(annotationText, "Enumerated"),
-      });
-      annotations = [];
-      continue;
-    }
-
-    annotations = [];
-  }
-
-  return {
-    file: path.relative(rootDir, filePath),
-    className,
-    superClass: superClass || "",
-    table: tableName,
-    fields,
-  };
 }
 
 function parsePersistentClassFile(filePath) {
@@ -755,52 +656,48 @@ function parsePersistentClassFile(filePath) {
     }
 
     const fieldMatch = line.match(/(?:private|protected)\s+(?:final\s+)?([A-Za-z0-9_.$<>, ?\[\]]+)\s+([A-Za-z_][A-Za-z0-9_]*)\s*(?:=.*)?;/);
-    if (fieldMatch) {
-      const [, type, name] = fieldMatch;
-      const annotationText = annotations.join("\n");
-      const isManyToOne = /@ManyToOne\b/.test(annotationText);
-      const isOneToOne = /@OneToOne\b/.test(annotationText);
-      const isOneToMany = /@OneToMany\b/.test(annotationText);
-      const isManyToMany = /@ManyToMany\b/.test(annotationText);
-      const isElementCollection = /@ElementCollection\b/.test(annotationText);
-      const joinColumn = annotationAttr(annotationText, "JoinColumn", "name");
-      const collectionTable = annotationAttr(annotationText, "CollectionTable", "name");
-      const collectionJoinColumn = annotationText.match(/joinColumns\s*=\s*@JoinColumn\s*\(\s*name\s*=\s*"([^"]+)"/s)?.[1] || "";
-      const relation = isManyToOne || isOneToOne;
-      const columnName = annotationAttr(annotationText, "Column", "name") ||
-        (relation ? (joinColumn || `${camelToSnake(name)}_id`) : camelToSnake(name));
-
-      fields.push({
-        name,
-        type: type.trim().replace(/\s+/g, " "),
-        column: columnName,
-        annotations: annotationText,
-        id: hasAnnotation(annotationText, "Id"),
-        embeddedId: hasAnnotation(annotationText, "EmbeddedId"),
-        generated: hasAnnotation(annotationText, "GeneratedValue"),
-        nullableFalse: /@Column\s*\([^)]*nullable\s*=\s*false/s.test(annotationText) ||
-          /@JoinColumn\s*\([^)]*nullable\s*=\s*false/s.test(annotationText) ||
-          /@ManyToOne\s*\([^)]*optional\s*=\s*false/s.test(annotationText) ||
-          /@OneToOne\s*\([^)]*optional\s*=\s*false/s.test(annotationText),
-        relation,
-        manyToOne: isManyToOne,
-        oneToOne: isOneToOne,
-        oneToMany: isOneToMany,
-        manyToMany: isManyToMany,
-        elementCollection: isElementCollection,
-        collectionTable,
-        collectionJoinColumn,
-        enumerated: hasAnnotation(annotationText, "Enumerated"),
-        transient: hasAnnotation(annotationText, "Transient") || /\btransient\b/.test(line),
-        createdDate: hasAnnotation(annotationText, "CreatedDate"),
-        lastModifiedDate: hasAnnotation(annotationText, "LastModifiedDate"),
-        createdBy: hasAnnotation(annotationText, "CreatedBy"),
-        lastModifiedBy: hasAnnotation(annotationText, "LastModifiedBy"),
-      });
+    if (!fieldMatch) {
       annotations = [];
       continue;
     }
 
+    const [, type, name] = fieldMatch;
+    const annotationText = annotations.join("\n");
+    const isManyToOne = /@ManyToOne\b/.test(annotationText);
+    const isOneToOne = /@OneToOne\b/.test(annotationText);
+    const isOneToMany = /@OneToMany\b/.test(annotationText);
+    const isManyToMany = /@ManyToMany\b/.test(annotationText);
+    const isElementCollection = /@ElementCollection\b/.test(annotationText);
+    const relation = isManyToOne || isOneToOne;
+    const joinColumn = annotationAttr(annotationText, "JoinColumn", "name");
+    const columnName = annotationAttr(annotationText, "Column", "name") ||
+      (relation ? (joinColumn || `${camelToSnake(name)}_id`) : camelToSnake(name));
+
+    fields.push({
+      name,
+      type: type.trim().replace(/\s+/g, " "),
+      column: columnName,
+      annotations: annotationText,
+      id: hasAnnotation(annotationText, "Id"),
+      embeddedId: hasAnnotation(annotationText, "EmbeddedId"),
+      generated: hasAnnotation(annotationText, "GeneratedValue"),
+      nullableFalse: /@Column\s*\([^)]*nullable\s*=\s*false/s.test(annotationText) ||
+        /@JoinColumn\s*\([^)]*nullable\s*=\s*false/s.test(annotationText) ||
+        /@ManyToOne\s*\([^)]*optional\s*=\s*false/s.test(annotationText) ||
+        /@OneToOne\s*\([^)]*optional\s*=\s*false/s.test(annotationText),
+      relation,
+      oneToMany: isOneToMany,
+      manyToMany: isManyToMany,
+      elementCollection: isElementCollection,
+      collectionTable: annotationAttr(annotationText, "CollectionTable", "name"),
+      collectionJoinColumn: annotationText.match(/joinColumns\s*=\s*@JoinColumn\s*\(\s*name\s*=\s*"([^"]+)"/s)?.[1] || "",
+      enumerated: hasAnnotation(annotationText, "Enumerated"),
+      transient: hasAnnotation(annotationText, "Transient") || /\btransient\b/.test(line),
+      createdDate: hasAnnotation(annotationText, "CreatedDate"),
+      lastModifiedDate: hasAnnotation(annotationText, "LastModifiedDate"),
+      createdBy: hasAnnotation(annotationText, "CreatedBy"),
+      lastModifiedBy: hasAnnotation(annotationText, "LastModifiedBy"),
+    });
     annotations = [];
   }
 
@@ -834,30 +731,12 @@ function discoverJpaModel() {
     return fields;
   }
 
-  const entities = classes
-    .filter((item) => item.kind === "entity")
-    .map((entity) => ({
-      ...entity,
-      fields: [...inheritedFields(entity), ...entity.fields],
-    }));
-
   return {
-    entities,
-    mappedSuperclasses: [...mappedSuperclasses.values()],
+    entities: classes
+      .filter((item) => item.kind === "entity")
+      .map((entity) => ({ ...entity, fields: [...inheritedFields(entity), ...entity.fields] })),
     enums: parseJavaEnums(javaFiles),
   };
-}
-
-function findField(entity, namesOrColumns) {
-  if (!entity) return null;
-  const names = namesOrColumns.map((value) => String(value).toLowerCase());
-  return entity.fields.find((field) => {
-    return names.includes(field.name.toLowerCase()) || names.includes(field.column.toLowerCase());
-  }) || null;
-}
-
-function fieldColumn(entity, namesOrColumns) {
-  return findField(entity, namesOrColumns)?.column || "";
 }
 
 function idField(entity) {
@@ -881,19 +760,6 @@ function collectionValueType(type) {
   return match ? simpleTypeName(match[1]) : "String";
 }
 
-function lowerFirst(value) {
-  const text = String(value || "");
-  return text ? `${text[0].toLowerCase()}${text.slice(1)}` : text;
-}
-
-function entityVarStem(entity) {
-  return lowerFirst(entity.className.replace(/Entity$/, ""));
-}
-
-function tableVarStem(entity) {
-  return singular(String(entity.table || entity.className).replace(/_/g, ""));
-}
-
 function isStringType(type) {
   return ["String", "CharSequence", "Text"].includes(simpleTypeName(type));
 }
@@ -915,11 +781,11 @@ function isTemporalType(type) {
 }
 
 function isLocalDateType(type) {
-  return ["LocalDate"].includes(simpleTypeName(type));
+  return simpleTypeName(type) === "LocalDate";
 }
 
 function isUuidType(type) {
-  return ["UUID"].includes(simpleTypeName(type));
+  return simpleTypeName(type) === "UUID";
 }
 
 function isBasicType(type, enums) {
@@ -959,7 +825,7 @@ function enumValueForField(field, enums) {
   return preferred.find((value) => values.includes(value)) || values[0] || "TEST";
 }
 
-function stringValueForField(entity, field, index, context) {
+function stringValueForField(entity, field, index) {
   const lowerName = `${field.name} ${field.column}`.toLowerCase();
   const suffix = index > 0 ? String(index + 1) : "";
   if (/password|passwd|pwd|user_pw/.test(lowerName)) {
@@ -967,18 +833,18 @@ function stringValueForField(entity, field, index, context) {
   }
   if (/email/.test(lowerName)) return `testuser${index + 1}@example.test`;
   if (/(^|_)user_?id|userid|username|login|account/.test(lowerName)) return `testuser${index + 1}`;
-  if (/nick|display/.test(lowerName)) return `테스터${index + 1}`;
-  if (/title|subject/.test(lowerName)) return `${entity.className} fixture title${suffix}`;
-  if (/content|body|text|message/.test(lowerName)) return `${entity.className} fixture content for generated smoke and scenario tests.`;
-  if (/summary|description|desc/.test(lowerName)) return `${entity.className} fixture summary.`;
-  if (/name/.test(lowerName)) return `${entity.className} fixture name${suffix}`;
+  if (/nick|display/.test(lowerName)) return `tester${index + 1}`;
+  if (/title|subject/.test(lowerName)) return `${entity.className} draft title${suffix}`;
+  if (/content|body|text|message/.test(lowerName)) return `${entity.className} draft content for generated API tests.`;
+  if (/summary|description|desc/.test(lowerName)) return `${entity.className} draft summary.`;
+  if (/name/.test(lowerName)) return `${entity.className} draft name${suffix}`;
   if (/path|url|uri/.test(lowerName)) return `/tmp/${camelToSnake(entity.className)}-${index + 1}`;
   if (/file/.test(lowerName)) return `${camelToSnake(entity.className)}-${index + 1}.txt`;
   if (/provider/.test(lowerName)) return "local";
-  if (/source/.test(lowerName)) return "generated-seed";
+  if (/source/.test(lowerName)) return "generated-sql-draft";
   if (/key|token|code|secret/.test(lowerName)) return `test-${camelToSnake(field.name)}-${index + 1}`;
-  if (/created_by|modified_by|author|owner/.test(lowerName)) return context.loginIdentifier || "testuser1";
-  return `${entity.className}-${field.name}-fixture${suffix}`;
+  if (/created_by|modified_by|author|owner/.test(lowerName)) return "setup-generated";
+  return `${entity.className}-${field.name}-draft${suffix}`;
 }
 
 function numericValueForField(field, index) {
@@ -1000,15 +866,13 @@ function valueForField(entity, field, index, context, enums) {
   if (field.relation) {
     const target = context.entitiesByClass.get(simpleTypeName(field.type));
     if (!target) return null;
-    if (target.className === entity.className) {
-      return field.nullableFalse ? deterministicIdValue(entity, index) : null;
-    }
+    if (target.className === entity.className) return field.nullableFalse ? deterministicIdValue(entity, index) : null;
     return deterministicIdValue(target, 0);
   }
 
   const type = simpleTypeName(field.type);
   if (enums.has(type) || field.enumerated) return enumValueForField(field, enums);
-  if (isStringType(type)) return stringValueForField(entity, field, index, context);
+  if (isStringType(type)) return stringValueForField(entity, field, index);
   if (isBooleanType(type)) return booleanValueForField(field);
   if (isIntegerType(type) || isDecimalType(type)) return numericValueForField(field, index);
   if (isTemporalType(type)) return "CURRENT_TIMESTAMP";
@@ -1058,7 +922,7 @@ function buildEntityRows(entity, context, enums) {
     if (!isColumnField(field, enums)) continue;
     const value = valueForField(entity, field, 0, context, enums);
     if (value === null && field.nullableFalse) {
-      warnings.push(`Could not infer non-null value for ${entity.className}.${field.name}; generated seed may need override.`);
+      warnings.push(`Could not infer non-null value for ${entity.className}.${field.name}; review generated SQL before use.`);
     }
     uniquePush(columns, field.column);
     row[field.column] = value;
@@ -1079,7 +943,9 @@ function buildElementCollectionRows(entity, context, enums) {
     const joinColumn = field.collectionJoinColumn || `${singular(entity.table)}_id`;
     const valueColumn = annotationAttr(field.annotations, "Column", "name") || singular(camelToSnake(field.name));
     const valueType = collectionValueType(field.type);
-    const value = enums.has(valueType) ? enumValueForField(field, enums) : stringValueForField(entity, { ...field, type: valueType, name: valueColumn, column: valueColumn }, 0, context);
+    const value = enums.has(valueType)
+      ? enumValueForField(field, enums)
+      : stringValueForField(entity, { ...field, type: valueType, name: valueColumn, column: valueColumn }, 0);
     collections.push({
       table,
       columns: [joinColumn, valueColumn],
@@ -1089,72 +955,25 @@ function buildElementCollectionRows(entity, context, enums) {
   return collections;
 }
 
-function detectAuthContext(entities, context) {
-  const authEntity = entities.find((entity) => {
-    return entity.fields.some((field) => /password|passwd|pwd|user_pw/i.test(`${field.name} ${field.column}`)) &&
-      entity.fields.some((field) => /user_?id|userid|username|login|account|email/i.test(`${field.name} ${field.column}`));
-  });
-  if (!authEntity) return;
-
-  const loginField = authEntity.fields.find((field) => /user_?id|userid|username|login|account/i.test(`${field.name} ${field.column}`)) ||
-    authEntity.fields.find((field) => /email/i.test(`${field.name} ${field.column}`));
-  if (!loginField) return;
-
-  context.authSeed = true;
-  context.authEntity = authEntity.className;
-  context.loginRequestField = /email/i.test(`${loginField.name} ${loginField.column}`) ? "email" : loginField.name;
-  context.loginIdentifier = /email/i.test(`${loginField.name} ${loginField.column}`) ? "testuser1@example.test" : "testuser1";
-  context.loginUserId = context.loginIdentifier;
-  context.loginPassword = "Test1234!";
-  context.env.loginIdentifier = context.loginIdentifier;
-  context.env.loginUserId = context.loginIdentifier;
-  context.env.loginPassword = context.loginPassword;
-}
-
-function registerEntityEnvVars(entity, context) {
-  const value = deterministicIdValue(entity, 0);
-  const classStem = entityVarStem(entity);
-  const tableStem = tableVarStem(entity);
-  context.env[`${classStem}Id`] = value;
-  context.env[`${tableStem}Id`] = value;
-  if (/user|member|account/i.test(entity.className) && context.authSeed) {
-    context.env.userId = context.loginIdentifier;
-    context.env.memberId = value;
-    context.env.accountId = value;
-  }
-}
-
-function buildEntitySeedSql() {
+function buildJpaSqlDrafts() {
   const model = discoverJpaModel();
   const { entities, enums } = model;
-  const seedableEntities = entities.filter((entity) => entity.fields.some((field) => field.id || field.embeddedId));
+  const draftableEntities = entities.filter((entity) => entity.fields.some((field) => field.id || field.embeddedId));
   const warnings = [];
   const context = {
-    authSeed: false,
-    loginIdentifier: "testuser1",
-    loginUserId: "testuser1",
-    loginPassword: "Test1234!",
-    loginRequestField: "userId",
-    env: {},
-    entitiesByClass: new Map(seedableEntities.map((entity) => [entity.className, entity])),
+    entitiesByClass: new Map(draftableEntities.map((entity) => [entity.className, entity])),
   };
 
-  if (seedableEntities.length === 0) {
+  if (draftableEntities.length === 0) {
     return {
       status: "skipped",
-      reason: "no @Entity classes with @Id were found for automatic seed",
-      sqlFiles: [],
-      seedScript: "",
-      model,
-      context,
-      warnings: ["Automatic SQL seed requires @Entity classes with @Id or explicit testing-fixtures.json sql config."],
+      reason: "no @Entity classes with @Id were found for SQL draft generation",
+      files: [],
+      warnings: ["SQL draft generation requires JPA @Entity classes with @Id."],
     };
   }
 
-  detectAuthContext(seedableEntities, context);
-  const orderedEntities = sortEntitiesByDependencies(seedableEntities);
-  orderedEntities.forEach((entity) => registerEntityEnvVars(entity, context));
-
+  const orderedEntities = sortEntitiesByDependencies(draftableEntities);
   const entityInserts = [];
   const collectionInserts = [];
   for (const entity of orderedEntities) {
@@ -1165,8 +984,8 @@ function buildEntitySeedSql() {
   }
 
   const resetLines = [
-    "-- Entity-derived setup seed reset. Safe to rerun for generated smoke/scenario data only.",
-    "-- Generated from every discovered @Entity with @Id; review before using against shared or production databases.",
+    "-- Generated SQL draft reset statements.",
+    "-- Review before running against any database.",
     "",
   ];
   for (const collection of [...collectionInserts].reverse()) {
@@ -1177,575 +996,48 @@ function buildEntitySeedSql() {
     resetLines.push(`DELETE FROM ${item.entity.table} WHERE ${idCol} = ${sqlLiteral(deterministicIdValue(item.entity, 0))};`);
   }
 
-  const seedLines = [
-    "-- Entity-derived setup seed data from all discovered @Entity classes.",
-    "-- Safe test credentials are deterministic when a login-capable entity is detected.",
-    "-- Raw password for generated login-capable users: Test1234!",
-    "-- Password hash uses Spring Security delegating bcrypt format when a password column is detected.",
+  const insertLines = [
+    "-- Generated SQL draft insert statements from discovered JPA entities.",
+    "-- This file is not executed by setup; review and move/adapt SQL under tests/sql/manual when needed.",
+    "-- Password-like columns use a deterministic bcrypt sample for local-only review.",
     "",
   ];
   for (const item of entityInserts) {
-    seedLines.push(renderInsert(item.entity.table, item.columns, item.rows), "");
+    insertLines.push(renderInsert(item.entity.table, item.columns, item.rows), "");
   }
   for (const item of collectionInserts) {
-    seedLines.push(renderInsert(item.table, item.columns, item.rows), "");
+    insertLines.push(renderInsert(item.table, item.columns, item.rows), "");
   }
 
   return {
     status: "generated",
-    reason: "generic @Entity-derived JPA seed",
-    sqlFiles: [
-      { name: "00_reset.sql", content: `${resetLines.join("\n")}\n` },
-      { name: "01_entity_seed.sql", content: `${seedLines.join("\n").replace(/\n{3,}/g, "\n\n").trimEnd()}\n` },
+    reason: "JPA entity SQL draft",
+    files: [
+      { name: "001-reset-draft.sql", content: `${resetLines.join("\n").trimEnd()}\n` },
+      { name: "002-jpa-insert-draft.sql", content: `${insertLines.join("\n").replace(/\n{3,}/g, "\n\n").trimEnd()}\n` },
     ],
-    seedScript: "",
-    model,
-    context,
     warnings,
   };
 }
 
-function renderGenericSeedScript(sqlFiles) {
-  const sqlFileLines = sqlFiles.map((filePath) => `  "$ROOT_DIR/${filePath}"`).join("\n");
+function writeSqlDrafts() {
+  resetDir(sqlGeneratedDir);
+  ensureSqlManualArea();
 
-  return `#!/usr/bin/env bash
-set -euo pipefail
-
-ROOT_DIR="$(cd "$(dirname "\${BASH_SOURCE[0]}")/../.." && pwd)"
-SQL_FILES=(
-${sqlFileLines}
-)
-
-load_dotenv_file() {
-  local env_file="$1"
-  [[ -f "$env_file" ]] || return 0
-
-  local line key value
-  while IFS= read -r line || [[ -n "$line" ]]; do
-    line="\${line%$'\\r'}"
-    [[ -z "$line" || "$line" == \\#* || "$line" != *=* ]] && continue
-
-    key="\${line%%=*}"
-    value="\${line#*=}"
-    key="$(printf '%s' "$key" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
-    value="$(printf '%s' "$value" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
-
-    [[ "$key" =~ ^[A-Za-z_][A-Za-z0-9_]*$ ]] || continue
-    [[ -z "\${!key+x}" ]] || continue
-
-    if [[ "$value" == \\"*\\" && "$value" == *\\" && \${#value} -ge 2 ]]; then
-      value="\${value:1:\${#value}-2}"
-    elif [[ "$value" == \\'*\\' && "$value" == *\\' && \${#value} -ge 2 ]]; then
-      value="\${value:1:\${#value}-2}"
-    fi
-
-    export "$key=$value"
-  done < "$env_file"
-}
-
-load_default_env() {
-  [[ "\${SEED_LOAD_ENV:-true}" == "false" ]] && return 0
-  load_dotenv_file "$ROOT_DIR/.env"
-  load_dotenv_file "$ROOT_DIR/.env.local"
-}
-
-require_file() {
-  local file="$1"
-  if [[ ! -f "$file" ]]; then
-    echo "[seed] missing SQL file: $file" >&2
-    exit 1
-  fi
-}
-
-run_docker_compose_psql_file() {
-  local file="$1"
-  local user="$2"
-  local password="$3"
-  local db="\${DB_NAME:-\${POSTGRES_DB:-}}"
-  local compose_file="\${DB_DOCKER_COMPOSE_FILE:-\${POSTGRES_COMPOSE_FILE:-$ROOT_DIR/docker-compose.local.yml}}"
-  local service="\${DB_DOCKER_COMPOSE_SERVICE:-\${POSTGRES_SERVICE:-postgres}}"
-
-  command -v docker >/dev/null 2>&1 || return 1
-  docker compose version >/dev/null 2>&1 || return 1
-  [[ -f "$compose_file" ]] || return 1
-
-  local container_id
-  container_id="$(docker compose -f "$compose_file" ps -q "$service" 2>/dev/null || true)"
-  [[ -n "$container_id" ]] || return 1
-
-  local args=(-v ON_ERROR_STOP=1)
-  if [[ -n "$user" ]]; then
-    args+=(-U "$user")
-  fi
-  if [[ -n "$db" ]]; then
-    args+=(-d "$db")
-  fi
-  args+=(-f -)
-
-  echo "[seed] docker compose exec $service psql < $file"
-  if [[ -n "$password" ]]; then
-    PGPASSWORD="$password" docker compose -f "$compose_file" exec -T -e PGPASSWORD "$service" psql "\${args[@]}" < "$file"
-  else
-    docker compose -f "$compose_file" exec -T "$service" psql "\${args[@]}" < "$file"
-  fi
-}
-
-run_psql_file() {
-  local file="$1"
-  local url="\${PSQL_URL:-\${DATABASE_URL:-}}"
-  local user="\${DB_USER:-\${SPRING_DATASOURCE_USERNAME:-\${POSTGRES_USER:-}}}"
-  local password="\${DB_PASSWORD:-\${SPRING_DATASOURCE_PASSWORD:-\${POSTGRES_PASSWORD:-}}}"
-
-  if [[ -z "$url" ]]; then
-    local jdbc_url="\${SPRING_DATASOURCE_URL:-\${DB_URL:-}}"
-    if [[ "$jdbc_url" == jdbc:postgresql://* ]]; then
-      url="\${jdbc_url#jdbc:}"
-    elif [[ -n "\${POSTGRES_DB:-}" ]]; then
-      local host="\${POSTGRES_HOST:-localhost}"
-      local port="\${POSTGRES_PORT:-5432}"
-      url="postgresql://$host:$port/\${POSTGRES_DB}"
-    fi
-  fi
-
-  if [[ -z "$url" ]]; then
-    echo "[seed] no PostgreSQL URL found. Set PSQL_URL, DATABASE_URL, SPRING_DATASOURCE_URL, DB_URL, or POSTGRES_DB." >&2
-    exit 1
-  fi
-
-  if ! command -v psql >/dev/null 2>&1; then
-    if run_docker_compose_psql_file "$file" "$user" "$password"; then
-      return 0
-    fi
-    echo "[seed] psql is required for PostgreSQL seed execution, or set DB_DOCKER_COMPOSE_FILE/DB_DOCKER_COMPOSE_SERVICE for docker compose fallback." >&2
-    exit 1
-  fi
-
-  local args=("$url" -v ON_ERROR_STOP=1 -f "$file")
-  if [[ -n "$user" ]]; then
-    args=(-U "$user" "\${args[@]}")
-  fi
-
-  echo "[seed] psql < $file"
-  if [[ -n "$password" ]]; then
-    PGPASSWORD="$password" psql "\${args[@]}"
-  else
-    psql "\${args[@]}"
-  fi
-}
-
-run_h2_file() {
-  local file="$1"
-  local url="\${SPRING_DATASOURCE_URL:-\${DB_URL:-}}"
-  local user="\${DB_USER:-\${SPRING_DATASOURCE_USERNAME:-sa}}"
-  local password="\${DB_PASSWORD:-\${SPRING_DATASOURCE_PASSWORD:-}}"
-
-  if [[ -z "$url" || "$url" != jdbc:h2:* ]]; then
-    echo "[seed] H2 seed requires SPRING_DATASOURCE_URL or DB_URL starting with jdbc:h2:." >&2
-    exit 1
-  fi
-  if [[ -z "\${H2_JAR:-}" || ! -f "$H2_JAR" ]]; then
-    echo "[seed] H2 seed requires H2_JAR=/path/to/h2.jar." >&2
-    exit 1
-  fi
-
-  echo "[seed] h2 RunScript < $file"
-  java -cp "$H2_JAR" org.h2.tools.RunScript \
-    -url "$url" \
-    -user "$user" \
-    -password "$password" \
-    -script "$file"
-}
-
-main() {
-  load_default_env
-
-  for file in "\${SQL_FILES[@]}"; do
-    require_file "$file"
-  done
-
-  local client="\${DB_CLIENT:-auto}"
-  local jdbc_url="\${SPRING_DATASOURCE_URL:-\${DB_URL:-}}"
-  if [[ "$client" == "auto" ]]; then
-    if [[ "$jdbc_url" == jdbc:h2:* ]]; then
-      client="h2"
-    else
-      client="postgres"
-    fi
-  fi
-
-  for file in "\${SQL_FILES[@]}"; do
-    case "$client" in
-      postgres|postgresql) run_psql_file "$file" ;;
-      h2) run_h2_file "$file" ;;
-      *) echo "[seed] unsupported DB_CLIENT=$client (expected auto, postgres, h2)." >&2; exit 1 ;;
-    esac
-  done
-
-  echo "[seed] complete"
-}
-
-main "$@"
-`;
-}
-
-function writeSqlFixtures(fixtureConfig) {
-  const sqlConfig = fixtureConfig?.sql;
-  if (sqlConfig?.enabled === false) {
-    return {
-      status: "skipped",
-      reason: "fixture config disabled sql section",
-      sqlFiles: [],
-      seedScript: "",
-      context: null,
-      warnings: [],
-    };
+  const drafts = buildJpaSqlDrafts();
+  const files = [];
+  for (const file of drafts.files) {
+    const filePath = path.join(sqlGeneratedDir, file.name);
+    writeFile(filePath, file.content, sqlGeneratedDir);
+    files.push(path.relative(rootDir, filePath));
   }
-
-  const sourceDir = sqlConfig?.sourceDir || "testing-fixtures/sql";
-  const outputDir = sqlConfig?.outputDir || "tests/sql";
-  const files = Array.isArray(sqlConfig?.files) ? sqlConfig.files : [];
-
-  const outputRoot = safeProjectPath(outputDir, "sql.outputDir");
-  const writtenFiles = [];
-  fs.rmSync(outputRoot, { recursive: true, force: true });
-  fs.mkdirSync(outputRoot, { recursive: true });
-
-  if (sqlConfig && files.length > 0) {
-    const sourceRoot = safeProjectPath(sourceDir, "sql.sourceDir");
-    for (const fileName of files) {
-      const sourcePath = path.resolve(sourceRoot, fileName);
-      if (!sourcePath.startsWith(`${sourceRoot}${path.sep}`) && sourcePath !== sourceRoot) {
-        throw new Error(`sql file escapes sourceDir: ${fileName}`);
-      }
-      if (!fs.existsSync(sourcePath)) {
-        throw new Error(`SQL fixture source file not found: ${path.relative(rootDir, sourcePath)}`);
-      }
-
-      const relativeOutput = path.join(outputDir, fileName);
-      const outputPath = path.resolve(outputRoot, fileName);
-      writeFile(outputPath, fs.readFileSync(sourcePath, "utf8"), outputRoot);
-      writtenFiles.push(relativeOutput);
-    }
-  } else {
-    const autoSeed = buildEntitySeedSql();
-    if (autoSeed.status !== "generated") {
-      return {
-        status: autoSeed.status,
-        reason: autoSeed.reason,
-        sqlFiles: [],
-        seedScript: "",
-        context: autoSeed.context,
-        warnings: autoSeed.warnings,
-      };
-    }
-
-    for (const file of autoSeed.sqlFiles) {
-      const relativeOutput = path.join(outputDir, file.name);
-      writeFile(path.resolve(outputRoot, file.name), file.content, outputRoot);
-      writtenFiles.push(relativeOutput);
-    }
-
-    const seedConfig = fixtureConfig?.seed || {};
-    const seedPath = seedConfig.output || "tests/smoke/seed.sh";
-    writeFile(safeProjectPath(seedPath, "seed.output"), renderGenericSeedScript(writtenFiles), path.dirname(safeProjectPath(seedPath, "seed.output")));
-    fs.chmodSync(safeProjectPath(seedPath, "seed.output"), 0o755);
-
-    return {
-      status: "generated",
-      reason: autoSeed.reason,
-      sqlFiles: writtenFiles,
-      seedScript: seedPath,
-      context: autoSeed.context,
-      warnings: autoSeed.warnings,
-    };
-  }
-
-  const seedConfig = fixtureConfig.seed || {};
-  const seedPath = seedConfig.output || "tests/smoke/seed.sh";
-  writeFile(safeProjectPath(seedPath, "seed.output"), renderGenericSeedScript(writtenFiles), path.dirname(safeProjectPath(seedPath, "seed.output")));
-  fs.chmodSync(safeProjectPath(seedPath, "seed.output"), 0o755);
 
   return {
-    status: "generated",
-    reason: "fixture config sql section",
-    sqlFiles: writtenFiles,
-    seedScript: seedPath,
-    context: null,
-    warnings: [],
+    ...drafts,
+    generatedRoot: path.relative(rootDir, sqlGeneratedDir),
+    manualRoot: path.relative(rootDir, sqlManualDir),
+    files,
   };
-}
-
-function fixtureValue(value) {
-  if (value === undefined || value === null) return "";
-  if (typeof value === "string") return value;
-  return JSON.stringify(value);
-}
-
-function renderJsonBody(body) {
-  return JSON.stringify(body || {}, null, 2)
-    .split("\n")
-    .map((line) => `  ${line}`)
-    .join("\n");
-}
-
-function renderBrunoAuthRequest(request, seq, tokenVar) {
-  const method = String(request.method || "GET").toLowerCase();
-  const requestPath = request.path || "/";
-  const body = request.body || null;
-  const hasBody = body !== null && body !== undefined;
-  const docs = [
-    "Managed by setup-agent from fixture config or entity-derived defaults.",
-    "This generated request is intended for seeded/authenticated smoke coverage.",
-  ].join("\n");
-
-  return `meta {
-  name: ${request.name || `${method.toUpperCase()} ${requestPath}`}
-  type: http
-  seq: ${seq}
-  tags: [
-    generated
-    auth
-  ]
-}
-
-${method} {
-  url: {{baseUrl}}${brunoPath(requestPath)}
-  body: ${hasBody ? "json" : "none"}
-  auth: bearer
-}
-
-auth:bearer {
-  token: {{${tokenVar}}}
-}
-${hasBody ? `
-headers {
-  content-type: application/json
-}
-
-body:json {
-${renderJsonBody(body)}
-}
-` : ""}
-tests {
-  test("returns a 2xx or 3xx response", function() {
-    expect(res.getStatus()).to.be.within(200, 399);
-  });
-}
-
-settings {
-  encodeUrl: true
-  timeout: 3000
-  followRedirects: true
-}
-
-docs {
-${docs.split("\n").map((line) => `  ${line}`).join("\n")}
-}
-`;
-}
-
-function renderBrunoLoginRequest(loginConfig, tokenVar) {
-  const method = String(loginConfig.method || "POST").toLowerCase();
-  const body = loginConfig.body || {};
-  const tokenPaths = Array.isArray(loginConfig.tokenJsonPaths) && loginConfig.tokenJsonPaths.length > 0
-    ? loginConfig.tokenJsonPaths
-    : ["accessToken", "data.accessToken", "result.accessToken"];
-
-  return `meta {
-  name: ${loginConfig.name || "Login and store access token"}
-  type: http
-  seq: 1
-  tags: [
-    generated
-    auth
-    login
-  ]
-}
-
-${method} {
-  url: {{baseUrl}}${brunoPath(loginConfig.path || "/auth/login")}
-  body: json
-  auth: none
-}
-
-headers {
-  content-type: application/json
-}
-
-body:json {
-${renderJsonBody(body)}
-}
-
-script:post-response {
-  const body = res.getBody();
-  const readPath = (source, path) => String(path).split(".").reduce((value, key) => value && value[key], source);
-  const token = ${JSON.stringify(tokenPaths)}.map((path) => readPath(body, path)).find((value) => typeof value === "string" && value.length > 0);
-
-  if (token) {
-    bru.setEnvVar(${JSON.stringify(tokenVar)}, token, { persist: true });
-    bru.setVar(${JSON.stringify(tokenVar)}, token);
-  }
-}
-
-tests {
-  test("login returns access token", function() {
-    expect(res.getStatus()).to.be.within(200, 399);
-    expect(bru.getVar(${JSON.stringify(tokenVar)}) || bru.getEnvVar(${JSON.stringify(tokenVar)})).to.be.a("string").and.not.empty;
-  });
-}
-
-settings {
-  encodeUrl: true
-  timeout: 3000
-  followRedirects: true
-}
-
-docs {
-  Managed by setup-agent from fixture config or entity-derived defaults.
-  Run this request before generated/auth requests that use {{${tokenVar}}}.
-}
-`;
-}
-
-function renderBrunoEnv(vars) {
-  const lines = Object.entries(vars).map(([key, value]) => `  ${key}: ${fixtureValue(value)}`);
-  return `vars {\n${lines.join("\n")}\n}\n`;
-}
-
-function upsertBrunoEnvFile(filePath, vars) {
-  const existing = fs.existsSync(filePath) ? fs.readFileSync(filePath, "utf8") : "";
-  if (!existing.trim()) {
-    writeIfMissing(filePath, renderBrunoEnv({ baseUrl: "http://localhost:8080", accessToken: "", refreshToken: "", ...vars }));
-    return;
-  }
-
-  const lines = existing.split(/\r?\n/);
-  const present = new Set();
-  const output = [];
-  let inVars = false;
-  let inserted = false;
-
-  for (const line of lines) {
-    if (/^\s*vars\s*\{\s*$/.test(line)) {
-      inVars = true;
-      output.push(line);
-      continue;
-    }
-
-    if (inVars && /^\s*}\s*$/.test(line)) {
-      for (const [key, value] of Object.entries(vars)) {
-        if (!present.has(key)) output.push(`  ${key}: ${fixtureValue(value)}`);
-      }
-      inserted = true;
-      inVars = false;
-      output.push(line);
-      continue;
-    }
-
-    if (inVars) {
-      const match = line.match(/^\s*([A-Za-z_][A-Za-z0-9_]*):/);
-      if (match) present.add(match[1]);
-    }
-    output.push(line);
-  }
-
-  if (!inserted) {
-    output.push("");
-    output.push(renderBrunoEnv(vars).trimEnd());
-  }
-
-  fs.writeFileSync(filePath, `${output.join("\n").replace(/\n+$/, "")}\n`);
-}
-
-function defaultBrunoFixtureConfig(fixtureConfig, sqlFixtures, endpoints) {
-  if (fixtureConfig?.bruno) return fixtureConfig;
-  const context = sqlFixtures?.context;
-  if (!context?.authSeed) return fixtureConfig;
-
-  const loginEndpoint = endpoints.find((endpoint) =>
-    String(endpoint.method).toUpperCase() === "POST" &&
-    /\/(auth\/)?login$/i.test(String(endpoint.path)),
-  );
-  if (!loginEndpoint) return fixtureConfig;
-
-  const envVars = {
-    ...(context.env || {}),
-    loginIdentifier: context.loginIdentifier,
-    loginUserId: context.loginIdentifier,
-    loginPassword: context.loginPassword,
-  };
-  const placeholders = (endpointPath) => [...String(endpointPath).matchAll(/\{([^}]+)\}/g)].map((match) => match[1]);
-  const endpointVarsAreResolvable = (endpoint) => placeholders(endpoint.path).every((name) => Object.hasOwn(envVars, name));
-
-  const authorizedRequests = endpoints
-    .filter((endpoint) => String(endpoint.method).toUpperCase() === "GET")
-    .filter((endpoint) => !/(auth\/email|files?\/|presigned|download|oauth|token)/i.test(String(endpoint.path)))
-    .filter((endpoint) => {
-      const endpointPath = String(endpoint.path);
-      if (/\/(me|profile|account|user)(\/|$)/i.test(endpointPath)) return true;
-      return placeholders(endpointPath).length > 0 && endpointVarsAreResolvable(endpoint);
-    })
-    .slice(0, 6)
-    .map((endpoint) => ({
-      name: titleFor(endpoint),
-      method: endpoint.method,
-      path: endpoint.path,
-    }));
-
-  if (authorizedRequests.length === 0) return fixtureConfig;
-
-  return {
-    ...(fixtureConfig || {}),
-    bruno: {
-      enabled: true,
-      tokenVar: "accessToken",
-      env: envVars,
-      login: {
-        name: "Login generated seed user",
-        method: loginEndpoint.method,
-        path: loginEndpoint.path,
-        body: {
-          [context.loginRequestField || "userId"]: "{{loginIdentifier}}",
-          password: "{{loginPassword}}",
-        },
-        tokenJsonPaths: ["accessToken", "data.accessToken", "result.accessToken"],
-      },
-      authorizedRequests,
-    },
-  };
-}
-
-function writeBrunoFixtureTests(fixtureConfig) {
-  const brunoConfig = fixtureConfig?.bruno;
-  if (!brunoConfig || brunoConfig.enabled === false) {
-    return { status: "skipped", reason: fixtureConfig ? "fixture config has no enabled bruno section" : "fixture config not found", authRequests: 0 };
-  }
-
-  const loginConfig = brunoConfig.login;
-  const requests = Array.isArray(brunoConfig.authorizedRequests) ? brunoConfig.authorizedRequests : [];
-  if (!loginConfig || requests.length === 0) {
-    return { status: "skipped", reason: "bruno.login or bruno.authorizedRequests missing", authRequests: 0 };
-  }
-
-  const authDir = path.join(brunoGeneratedDir, "auth");
-  fs.rmSync(authDir, { recursive: true, force: true });
-  fs.mkdirSync(authDir, { recursive: true });
-  writeFile(path.join(authDir, "folder.bru"), renderFolder("auth", 4), authDir);
-
-  const tokenVar = brunoConfig.tokenVar || "accessToken";
-  const envVars = brunoConfig.env || {};
-  if (Object.keys(envVars).length > 0) {
-    upsertBrunoEnvFile(path.join(brunoCollectionDir, "environments/local.example.bru"), envVars);
-    upsertBrunoEnvFile(path.join(brunoCollectionDir, "environments/local.bru"), envVars);
-  }
-
-  writeFile(path.join(authDir, "001-login.bru"), renderBrunoLoginRequest(loginConfig, tokenVar), authDir);
-  requests.forEach((request, index) => {
-    const fileName = `${String(index + 2).padStart(3, "0")}-${slugFor(request)}.bru`;
-    writeFile(path.join(authDir, fileName), renderBrunoAuthRequest(request, index + 2, tokenVar), authDir);
-  });
-
-  return { status: "generated", reason: "fixture config bruno section", authRequests: requests.length + 1 };
 }
 
 function replaceReportSection(sectionTitle, body) {
@@ -1765,10 +1057,9 @@ const policyText = fs.readFileSync(policyPath, "utf8");
 const endpoints = parsePolicyEndpoints(policyText);
 const generatedEndpoints = endpoints.filter((endpoint) => endpoint.class !== "manual" && endpoint.class !== "forbidden");
 const k6SmokeEndpoints = endpoints.filter(isK6SafeSmoke);
-const fixtureConfigResult = readFixtureConfig();
-const fixtureConfig = fixtureConfigResult.config;
 
 ensureBrunoNativeCollection();
+ensureK6ManualArea();
 resetDir(brunoGeneratedDir);
 
 writeFile(path.join(brunoGeneratedDir, "folder.bru"), renderFolder("generated", 1), brunoGeneratedDir);
@@ -1788,9 +1079,7 @@ for (const endpoint of generatedEndpoints) {
 writeFile(path.join(k6GeneratedDir, "smoke.js"), renderK6Smoke(k6SmokeEndpoints), k6GeneratedDir);
 writeIfMissing(k6EnvPath, renderK6Env());
 writeIfMissing(k6ReportPath, renderK6Report());
-const sqlFixtures = writeSqlFixtures(fixtureConfig);
-const brunoFixtureConfig = defaultBrunoFixtureConfig(fixtureConfig, sqlFixtures, endpoints);
-const brunoFixtures = writeBrunoFixtureTests(brunoFixtureConfig);
+const sqlDrafts = writeSqlDrafts();
 
 fs.mkdirSync(path.dirname(resultPath), { recursive: true });
 fs.writeFileSync(resultPath, `${JSON.stringify({
@@ -1799,28 +1088,25 @@ fs.writeFileSync(resultPath, `${JSON.stringify({
   status: "ok",
   timestamp: new Date().toISOString(),
   policy: path.relative(rootDir, policyPath),
-  fixtureConfig: fixtureConfigResult.path || null,
   bruno: {
     generatedRoot: path.relative(rootDir, brunoGeneratedDir),
     format: "bru",
     smokeRequests: brunoCounts.smoke,
     draftRequests: brunoCounts.draft,
     scenarioRequests: brunoCounts.scenario,
-    authFixtureStatus: brunoFixtures.status,
-    authFixtureRequests: brunoFixtures.authRequests,
   },
   k6: {
     generatedRoot: path.relative(rootDir, k6GeneratedDir),
     smokeEndpoints: k6SmokeEndpoints.length,
     smokeScript: "tests/k6/generated/smoke.js",
   },
-  sqlFixtures: {
-    status: sqlFixtures.status,
-    reason: sqlFixtures.reason,
-    generatedRoot: "tests/sql",
-    files: sqlFixtures.sqlFiles,
-    seedScript: sqlFixtures.seedScript,
-    warnings: sqlFixtures.warnings || [],
+  sqlDrafts: {
+    status: sqlDrafts.status,
+    reason: sqlDrafts.reason,
+    generatedRoot: sqlDrafts.generatedRoot,
+    manualRoot: sqlDrafts.manualRoot,
+    files: sqlDrafts.files,
+    warnings: sqlDrafts.warnings || [],
   },
   skippedManualOrForbidden: endpoints.length - generatedEndpoints.length,
 }, null, 2)}\n`);
@@ -1830,29 +1116,20 @@ replaceReportSection("Generated Tests", [
   `- Bruno smoke requests: \`${brunoCounts.smoke}\``,
   `- Bruno draft requests: \`${brunoCounts.draft}\``,
   `- Bruno scenario requests: \`${brunoCounts.scenario}\``,
-  `- Bruno auth fixture status: \`${brunoFixtures.status}\``,
-  `- Bruno auth fixture requests: \`${brunoFixtures.authRequests}\``,
   `- k6 smoke endpoints: \`${k6SmokeEndpoints.length}\``,
-  `- SQL fixture status: \`${sqlFixtures.status}\``,
-  `- SQL fixture reason: \`${sqlFixtures.reason}\``,
-  `- SQL fixture files: \`${sqlFixtures.sqlFiles.length}\``,
-  `- SQL seed script: \`${sqlFixtures.seedScript || "-"}\``,
-  `- SQL fixture warnings: \`${(sqlFixtures.warnings || []).length}\``,
+  `- SQL draft status: \`${sqlDrafts.status}\``,
+  `- SQL draft reason: \`${sqlDrafts.reason}\``,
+  `- SQL draft files: \`${sqlDrafts.files.length}\``,
+  `- SQL draft warnings: \`${(sqlDrafts.warnings || []).length}\``,
   `- Skipped manual/forbidden endpoints: \`${endpoints.length - generatedEndpoints.length}\``,
   "",
   "Bruno smoke generation includes only policy smoke endpoints with `reviewRequired: false`. Other smoke candidates are generated as draft requests so the default smoke command stays runnable.",
-  "SQL fixtures are generated from explicit root `testing-fixtures.json` sql config when present; otherwise setup derives a conservative seed from JPA entities.",
-  "Authenticated Bruno requests are generated from root `testing-fixtures.json` bruno config when present; otherwise setup derives a limited auth scenario when entity seed and a login endpoint are recognizable.",
-  ...(sqlFixtures.warnings || []).map((warning) => `- SQL warning: ${warning}`),
+  "SQL draft generation reads discovered JPA entities and writes reviewable SQL under `tests/sql/generated`; setup does not execute those SQL files.",
+  ...(sqlDrafts.warnings || []).map((warning) => `- SQL draft warning: ${warning}`),
 ].join("\n"));
 
 console.log(`[generate] bruno smoke ${brunoCounts.smoke}, draft ${brunoCounts.draft}, scenario ${brunoCounts.scenario}`);
-console.log(`[generate] bruno auth fixtures ${brunoFixtures.status} (${brunoFixtures.authRequests})`);
 console.log(`[generate] k6 smoke endpoints ${k6SmokeEndpoints.length}`);
-if (sqlFixtures.status === "generated") {
-  console.log(`[generate] sql fixtures ${sqlFixtures.sqlFiles.concat(sqlFixtures.seedScript).join(", ")}`);
-} else {
-  console.log(`[generate] sql fixtures skipped: ${sqlFixtures.reason}`);
-}
+console.log(`[generate] sql drafts ${sqlDrafts.status} (${sqlDrafts.files.length})`);
 console.log(`[state] wrote ${path.relative(rootDir, resultPath)}`);
 console.log(`[report] updated ${path.relative(rootDir, reportPath)}`);

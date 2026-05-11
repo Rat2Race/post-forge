@@ -487,6 +487,7 @@ function writePolicy(policyText, endpoints) {
     ? "endpoints: []\n"
     : `endpoints:\n${endpoints.map(renderEndpoint).join("\n")}\n`;
 
+  fs.mkdirSync(path.dirname(policyPath), { recursive: true });
   fs.writeFileSync(policyPath, `${header}${body}`);
 }
 

@@ -62,12 +62,11 @@ policy:
   generatedOnly:
     - tests/bruno/api/generated
     - tests/k6/generated
-    - tests/sql
-    - tests/smoke/seed.sh
-  fixtureConfig: testing-fixtures.json
+    - tests/sql/generated
   manualProtected:
     - tests/bruno/api/manual
     - tests/k6/manual
+    - tests/sql/manual
 
 tools:
   bruno:
