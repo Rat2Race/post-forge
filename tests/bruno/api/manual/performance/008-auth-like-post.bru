@@ -1,0 +1,45 @@
+meta {
+  name: Performance - Auth Like Post
+  type: http
+  seq: 8
+  tags: [
+    manual
+    performance
+    auth
+    write
+  ]
+}
+
+post {
+  url: {{baseUrl}}/posts/{{createdPostId}}/like
+  body: none
+  auth: bearer
+}
+
+headers {
+  Accept: application/json
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+script:pre-request {
+  if (!bru.getVar("perfMaxMs")) bru.setVar("perfMaxMs", bru.getEnvVar("perfMaxMs") || "1000");
+}
+
+tests {
+  test("returns 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+
+  test("responds within performance budget", function() {
+    expect(res.getResponseTime()).to.be.below(Number(bru.getVar("perfMaxMs")));
+  });
+}
+
+settings {
+  encodeUrl: true
+  timeout: 5000
+  followRedirects: true
+}

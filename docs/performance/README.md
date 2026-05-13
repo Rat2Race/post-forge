@@ -9,7 +9,10 @@
 | 표준 리포트 | `docs/performance/YYYY-MM-DD-<scenario>.md` | 사람이 읽는 최종 기록 |
 | k6 원문 요약 | `docs/performance/k6/` | 민감정보와 과도한 raw body는 제외 |
 | Grafana 캡처 | `docs/performance/grafana/` | 중요한 대시보드 캡처만 보관 |
-| 작성 템플릿 | `docs/performance/performance-report-template.md` | 새 리포트 작성 시 복사해서 사용 |
+| 수동 실행 절차 | `docs/performance/manual-runbook.md` | 로컬/명시 대상 수동 성능 테스트 절차 |
+| 지표 해석 가이드 | `docs/performance/metrics-guide.md` | k6/Grafana 주요 지표 해석 기준 |
+| 작성 템플릿 | `docs/performance/report-template.md` | 새 리포트 작성 시 복사해서 사용 |
+| 비용/수용량 계산 | `docs/performance/cost-capacity.md` | RPS/TPS, VM/Functions/전기세, API별 부하 추정 |
 
 ## 자동 생성
 
@@ -89,7 +92,7 @@ http://10.x.x.x:8080 -> private-prod
 ## 작성 순서
 
 1. k6 실행 후 자동 생성된 markdown 리포트를 확인한다.
-2. `performance-report-template.md`를 참고해 수동 해석과 리소스 관측값을 보강한다.
+2. `report-template.md`를 참고해 수동 해석과 리소스 관측값을 보강한다.
 3. k6 summary와 Grafana 값을 필요한 만큼 표에 옮긴다.
 4. 수치만 나열하지 말고 결론과 다음 조치를 적는다.
 5. 민감정보가 없는지 확인한 뒤 Git에 포함한다.
