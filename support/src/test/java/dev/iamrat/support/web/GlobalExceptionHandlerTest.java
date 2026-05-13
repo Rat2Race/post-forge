@@ -1,7 +1,8 @@
-package dev.iamrat.global.exception;
+package dev.iamrat.support.web;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import dev.iamrat.global.exception.ErrorResponse;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpMethod;

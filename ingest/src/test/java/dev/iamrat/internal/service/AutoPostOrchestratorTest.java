@@ -1,7 +1,7 @@
 package dev.iamrat.internal.service;
 
-import dev.iamrat.ai.post.dto.GeneratedPost;
-import dev.iamrat.ai.post.service.PostGenerationService;
+import dev.iamrat.ai.post.NewsAnalysisPostPublisher;
+import dev.iamrat.ai.post.NewsAnalysisPostRequest;
 import dev.iamrat.document.dto.DocumentRequest;
 import java.util.List;
 import java.util.Map;
@@ -23,7 +23,7 @@ import static org.mockito.Mockito.verify;
 class AutoPostOrchestratorTest {
 
     @Mock
-    private PostGenerationService postGenerationService;
+    private NewsAnalysisPostPublisher newsAnalysisPostPublisher;
 
     @InjectMocks
     private AutoPostOrchestrator autoPostOrchestrator;
@@ -44,16 +44,14 @@ class AutoPostOrchestratorTest {
             "autoPostEligible", "true"
         ));
 
-        GeneratedPost generatedPost = new GeneratedPost("제목", "요약", "본문", List.of("태그"));
-        given(postGenerationService.generateNewsAnalysis("테크", "AI 반도체 수요 증가", "content", "https://news.example/1"))
-            .willReturn(generatedPost);
-        given(postGenerationService.publish(generatedPost)).willReturn(1L);
+        NewsAnalysisPostRequest expectedRequest =
+            new NewsAnalysisPostRequest("테크", "AI 반도체 수요 증가", "content", "https://news.example/1");
+        given(newsAnalysisPostPublisher.publishNewsAnalysis(expectedRequest)).willReturn(1L);
 
         int published = autoPostOrchestrator.publishEligible(List.of(first, duplicate));
 
         assertThat(published).isEqualTo(1);
-        verify(postGenerationService).generateNewsAnalysis("테크", "AI 반도체 수요 증가", "content", "https://news.example/1");
-        verify(postGenerationService).publish(generatedPost);
+        verify(newsAnalysisPostPublisher).publishNewsAnalysis(expectedRequest);
     }
 
     @Test
@@ -68,8 +66,7 @@ class AutoPostOrchestratorTest {
         int published = autoPostOrchestrator.publishEligible(List.of(request));
 
         assertThat(published).isZero();
-        verify(postGenerationService, never()).generateNewsAnalysis(any(), any(), any(), any());
-        verify(postGenerationService, never()).publish(any());
+        verify(newsAnalysisPostPublisher, never()).publishNewsAnalysis(any());
     }
 
     @Test
@@ -89,7 +86,7 @@ class AutoPostOrchestratorTest {
         int published = autoPostOrchestrator.publishEligible(List.of(request));
 
         assertThat(published).isZero();
-        verify(postGenerationService, never()).generateNewsAnalysis(any(), any(), any(), any());
+        verify(newsAnalysisPostPublisher, never()).publishNewsAnalysis(any());
     }
 
     @Test
@@ -108,19 +105,19 @@ class AutoPostOrchestratorTest {
             "autoPostEligible", "true"
         ));
 
-        GeneratedPost generatedPost = new GeneratedPost("제목", "요약", "본문", List.of("태그"));
-        given(postGenerationService.generateNewsAnalysis("테크", "AI 반도체 수요 증가", "content", "https://news.example/1"))
+        NewsAnalysisPostRequest failingRequest =
+            new NewsAnalysisPostRequest("테크", "AI 반도체 수요 증가", "content", "https://news.example/1");
+        NewsAnalysisPostRequest succeedingRequest =
+            new NewsAnalysisPostRequest("정책", "플랫폼 규제 완화", "content", "https://news.example/2");
+        given(newsAnalysisPostPublisher.publishNewsAnalysis(failingRequest))
             .willThrow(new RuntimeException("LLM timeout"));
-        given(postGenerationService.generateNewsAnalysis("정책", "플랫폼 규제 완화", "content", "https://news.example/2"))
-            .willReturn(generatedPost);
-        given(postGenerationService.publish(generatedPost)).willReturn(2L);
+        given(newsAnalysisPostPublisher.publishNewsAnalysis(succeedingRequest)).willReturn(2L);
 
         int published = autoPostOrchestrator.publishEligible(List.of(failing, succeeding));
 
         assertThat(published).isEqualTo(1);
-        verify(postGenerationService).generateNewsAnalysis("테크", "AI 반도체 수요 증가", "content", "https://news.example/1");
-        verify(postGenerationService).generateNewsAnalysis("정책", "플랫폼 규제 완화", "content", "https://news.example/2");
-        verify(postGenerationService, times(1)).publish(generatedPost);
+        verify(newsAnalysisPostPublisher).publishNewsAnalysis(failingRequest);
+        verify(newsAnalysisPostPublisher, times(1)).publishNewsAnalysis(succeedingRequest);
     }
 
     private DocumentRequest request(Map<String, String> metadata) {

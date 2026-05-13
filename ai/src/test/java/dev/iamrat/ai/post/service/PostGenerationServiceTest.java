@@ -1,6 +1,7 @@
 package dev.iamrat.ai.post.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import dev.iamrat.ai.post.NewsAnalysisPostRequest;
 import dev.iamrat.ai.post.dto.GeneratedPost;
 import dev.iamrat.ai.prompt.PromptTemplateLoader;
 import dev.iamrat.board.post.PostCategory;
@@ -24,6 +25,8 @@ import org.springframework.ai.vectorstore.VectorStore;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.contains;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -113,6 +116,34 @@ class PostGenerationServiceTest {
     @Nested
     @DisplayName("게시글 발행")
     class PublishTests {
+
+        @Test
+        @DisplayName("뉴스 분석 발행 port를 통해 생성과 게시글 등록을 완료한다")
+        void publishNewsAnalysis_generatesAndPublishesPost() {
+            given(vectorStore.similaritySearch(any(SearchRequest.class)))
+                .willReturn(List.of())
+                .willReturn(List.of());
+            given(chatModel.call(any(Prompt.class))
+                .getResult().getOutput().getText()).willReturn(VALID_JSON_RESPONSE);
+            given(postWriter.write(
+                eq("오늘의 트렌드 분석"),
+                contains("사실 관계와 맥락을 다시 확인하세요"),
+                eq("핵심 흐름 요약"),
+                eq(List.of("트렌드", "뉴스")),
+                eq("ai-post-generator"),
+                eq("AI 분석가"),
+                eq(PostCategory.AI_ANALYSIS)
+            )).willReturn(42L);
+
+            Long postId = postGenerationService.publishNewsAnalysis(new NewsAnalysisPostRequest(
+                "테크",
+                "AI 반도체 수요 증가",
+                "기사 본문",
+                "https://news.example/1"
+            ));
+
+            assertThat(postId).isEqualTo(42L);
+        }
 
         @Test
         @DisplayName("PostWriter를 통해 AI_ANALYSIS 카테고리로 게시글을 등록한다")

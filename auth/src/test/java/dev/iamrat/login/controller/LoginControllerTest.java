@@ -1,7 +1,7 @@
 package dev.iamrat.login.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import dev.iamrat.global.exception.GlobalExceptionHandler;
+import dev.iamrat.support.web.GlobalExceptionHandler;
 import dev.iamrat.login.dto.CustomUserDetails;
 import dev.iamrat.login.dto.LoginRequest;
 import dev.iamrat.login.service.LoginService;

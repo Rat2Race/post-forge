@@ -1,4 +1,4 @@
-package dev.iamrat.auth.security.dto;
+package dev.iamrat.global.security;
 
 public interface UserPrincipal {
     String getUserId();

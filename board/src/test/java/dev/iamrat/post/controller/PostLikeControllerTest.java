@@ -2,10 +2,10 @@ package dev.iamrat.post.controller;
 
 import dev.iamrat.global.exception.CustomException;
 import dev.iamrat.global.exception.ErrorCode;
-import dev.iamrat.global.exception.GlobalExceptionHandler;
+import dev.iamrat.support.web.GlobalExceptionHandler;
 import dev.iamrat.like.dto.LikeResponse;
 import dev.iamrat.post.service.PostService;
-import dev.iamrat.auth.security.dto.UserPrincipal;
+import dev.iamrat.global.security.UserPrincipal;
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;

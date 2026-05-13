@@ -3,7 +3,7 @@ package dev.iamrat.internal.controller;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.iamrat.document.dto.DocumentRequest;
 import dev.iamrat.document.service.DocumentService;
-import dev.iamrat.global.exception.GlobalExceptionHandler;
+import dev.iamrat.support.web.GlobalExceptionHandler;
 import dev.iamrat.internal.service.AutoPostOrchestrator;
 import java.util.List;
 import java.util.Map;

@@ -1,4 +1,4 @@
-package dev.iamrat.app.config;
+package dev.iamrat.support.openapi;
 
 import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;

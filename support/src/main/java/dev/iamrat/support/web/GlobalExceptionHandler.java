@@ -1,5 +1,8 @@
-package dev.iamrat.global.exception;
+package dev.iamrat.support.web;
 
+import dev.iamrat.global.exception.CustomException;
+import dev.iamrat.global.exception.ErrorCode;
+import dev.iamrat.global.exception.ErrorResponse;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.HashMap;
@@ -77,7 +80,7 @@ public class GlobalExceptionHandler {
             e.getValue(), e.getRequiredType() != null ? e.getRequiredType().getSimpleName() : "unknown");
         return buildErrorResponse(ErrorCode.INVALID_INPUT);
     }
-    
+
     @ExceptionHandler(MissingServletRequestParameterException.class)
     public ResponseEntity<ErrorResponse> handleMissingServletRequestParameterException(MissingServletRequestParameterException e) {
         log.warn("Missing required parameter: {}", e.getParameterName());

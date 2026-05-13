@@ -3,7 +3,7 @@ package dev.iamrat.ai.chat.controller;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.iamrat.ai.chat.dto.ChatRequest;
 import dev.iamrat.ai.chat.service.ChatService;
-import dev.iamrat.global.exception.GlobalExceptionHandler;
+import dev.iamrat.support.web.GlobalExceptionHandler;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;

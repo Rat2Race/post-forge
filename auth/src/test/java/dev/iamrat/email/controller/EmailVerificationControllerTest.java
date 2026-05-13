@@ -3,7 +3,7 @@ package dev.iamrat.email.controller;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.iamrat.email.dto.SendEmailRequest;
 import dev.iamrat.email.service.EmailVerificationService;
-import dev.iamrat.global.exception.GlobalExceptionHandler;
+import dev.iamrat.support.web.GlobalExceptionHandler;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Tag;
