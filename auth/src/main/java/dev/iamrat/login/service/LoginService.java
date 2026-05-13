@@ -1,6 +1,6 @@
 package dev.iamrat.login.service;
 
-import dev.iamrat.auth.security.dto.UserPrincipal;
+import dev.iamrat.global.security.UserPrincipal;
 import dev.iamrat.login.dto.LoginRequest;
 import dev.iamrat.token.dto.JwtResponse;
 import dev.iamrat.token.provider.JwtProvider;

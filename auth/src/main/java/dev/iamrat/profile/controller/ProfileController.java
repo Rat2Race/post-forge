@@ -1,6 +1,6 @@
 package dev.iamrat.profile.controller;
 
-import dev.iamrat.auth.security.dto.UserPrincipal;
+import dev.iamrat.global.security.UserPrincipal;
 import dev.iamrat.member.dto.MemberResponse;
 import dev.iamrat.member.entity.Member;
 import dev.iamrat.profile.dto.PasswordChangeRequest;

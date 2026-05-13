@@ -21,7 +21,7 @@ import org.springframework.util.StreamUtils;
 @RequiredArgsConstructor
 @Slf4j
 public class EmailService {
-    private final JavaMailSender mailsender;
+    private final JavaMailSender mailSender;
     private final AppProperties appProperties;
 
     @Value("${spring.mail.username:noreply@postforge.dev}")
@@ -34,7 +34,7 @@ public class EmailService {
         log.debug("인증 URL: {}", verificationUrl);
 
         try {
-            MimeMessage message = mailsender.createMimeMessage();
+            MimeMessage message = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
 
             helper.setTo(toEmail);
@@ -44,7 +44,7 @@ public class EmailService {
             String htmlContent = loadHtmlTemplate(verificationUrl);
             helper.setText(htmlContent, true);
 
-            mailsender.send(message);
+            mailSender.send(message);
 
         } catch (MessagingException e) {
             log.error("이메일 발송 실패 - 수신자: {}", toEmail, e);

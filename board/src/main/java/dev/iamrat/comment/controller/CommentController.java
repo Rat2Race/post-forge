@@ -1,6 +1,6 @@
 package dev.iamrat.comment.controller;
 
-import dev.iamrat.auth.security.dto.UserPrincipal;
+import dev.iamrat.global.security.UserPrincipal;
 import dev.iamrat.like.dto.LikeResponse;
 import dev.iamrat.comment.service.CommentService;
 import dev.iamrat.comment.dto.CommentRequest;

@@ -2,7 +2,7 @@ package dev.iamrat.oauth.controller;
 
 import dev.iamrat.global.exception.CustomException;
 import dev.iamrat.global.exception.ErrorCode;
-import dev.iamrat.global.exception.GlobalExceptionHandler;
+import dev.iamrat.support.web.GlobalExceptionHandler;
 import dev.iamrat.oauth.service.OAuth2LoginService;
 import dev.iamrat.token.dto.JwtResponse;
 import dev.iamrat.token.provider.CookieProvider;

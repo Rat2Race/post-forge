@@ -1,7 +1,7 @@
 package dev.iamrat.internal.service;
 
-import dev.iamrat.ai.post.dto.GeneratedPost;
-import dev.iamrat.ai.post.service.PostGenerationService;
+import dev.iamrat.ai.post.NewsAnalysisPostPublisher;
+import dev.iamrat.ai.post.NewsAnalysisPostRequest;
 import dev.iamrat.document.dto.DocumentRequest;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -22,7 +22,7 @@ public class AutoPostOrchestrator {
     private static final String METADATA_ORIGINAL_LINK = "originalLink";
     private static final String METADATA_AUTO_POST_ELIGIBLE = "autoPostEligible";
 
-    private final PostGenerationService postGenerationService;
+    private final NewsAnalysisPostPublisher newsAnalysisPostPublisher;
 
     /**
      * 문서 적재 직후 실행되는 뉴스 기반 자동 포스팅 오케스트레이션.
@@ -47,13 +47,12 @@ public class AutoPostOrchestrator {
             }
 
             try {
-                GeneratedPost post = postGenerationService.generateNewsAnalysis(
+                newsAnalysisPostPublisher.publishNewsAnalysis(new NewsAnalysisPostRequest(
                     metadataValue(request, METADATA_KEYWORD),
                     metadataValue(request, METADATA_NEWS_TITLE),
                     request.content(),
                     originalLink
-                );
-                postGenerationService.publish(post);
+                ));
                 publishedCount++;
             } catch (Exception e) {
                 log.error("문서 적재 후 뉴스 분석 게시글 생성 실패 - originalLink={}", originalLink, e);

@@ -1,6 +1,6 @@
 package dev.iamrat.oauth.dto;
 
-import dev.iamrat.auth.security.dto.UserPrincipal;
+import dev.iamrat.global.security.UserPrincipal;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 

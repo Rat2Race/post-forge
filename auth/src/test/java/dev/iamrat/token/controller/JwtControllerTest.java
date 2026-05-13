@@ -2,7 +2,7 @@ package dev.iamrat.token.controller;
 
 import dev.iamrat.global.exception.CustomException;
 import dev.iamrat.global.exception.ErrorCode;
-import dev.iamrat.global.exception.GlobalExceptionHandler;
+import dev.iamrat.support.web.GlobalExceptionHandler;
 import dev.iamrat.token.dto.JwtResponse;
 import dev.iamrat.token.provider.CookieProvider;
 import dev.iamrat.token.provider.JwtProvider;

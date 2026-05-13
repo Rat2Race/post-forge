@@ -1,6 +1,6 @@
 package dev.iamrat.login.controller;
 
-import dev.iamrat.auth.security.dto.UserPrincipal;
+import dev.iamrat.global.security.UserPrincipal;
 import dev.iamrat.login.service.LoginService;
 import dev.iamrat.login.dto.LoginRequest;
 import dev.iamrat.token.dto.AccessTokenResponse;

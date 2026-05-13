@@ -1,6 +1,8 @@
 package dev.iamrat.ai.post.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import dev.iamrat.ai.post.NewsAnalysisPostPublisher;
+import dev.iamrat.ai.post.NewsAnalysisPostRequest;
 import dev.iamrat.ai.post.dto.GeneratedPost;
 import dev.iamrat.ai.prompt.PromptTemplateLoader;
 import dev.iamrat.board.post.PostCategory;
@@ -22,7 +24,7 @@ import org.springframework.stereotype.Service;
 
 @Service
 @RequiredArgsConstructor
-public class PostGenerationService {
+public class PostGenerationService implements NewsAnalysisPostPublisher {
 
     private static final Logger log = LoggerFactory.getLogger(PostGenerationService.class);
 
@@ -38,6 +40,17 @@ public class PostGenerationService {
     private final PostWriter postWriter;
     private final OutputGuardrail outputGuardrail;
     private final PromptTemplateLoader promptTemplateLoader;
+
+    @Override
+    public Long publishNewsAnalysis(NewsAnalysisPostRequest request) {
+        GeneratedPost post = generateNewsAnalysis(
+            request.keyword(),
+            request.articleTitle(),
+            request.articleContent(),
+            request.originalLink()
+        );
+        return publish(post);
+    }
 
     public GeneratedPost generateNewsAnalysis(String keyword, String articleTitle, String articleContent, String originalLink) {
         log.info("뉴스 분석 게시글 생성 시작 - keyword={}, link={}", keyword, originalLink);

@@ -3,7 +3,7 @@ package dev.iamrat.register.controller;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.iamrat.global.exception.CustomException;
 import dev.iamrat.global.exception.ErrorCode;
-import dev.iamrat.global.exception.GlobalExceptionHandler;
+import dev.iamrat.support.web.GlobalExceptionHandler;
 import dev.iamrat.register.dto.RegisterRequest;
 import dev.iamrat.register.service.RegisterService;
 import org.junit.jupiter.api.DisplayName;
