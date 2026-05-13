@@ -42,7 +42,16 @@ tests/k6/*.summary.json
 
 # Generated testing artifacts
 # Intentionally ignored: setup can recreate policy/Bruno/k6/SQL generated outputs.
-tests/
+tests/**
+!tests/
+!tests/k6/
+!tests/k6/manual/
+!tests/k6/manual/performance.js
+!tests/bruno/
+!tests/bruno/api/
+!tests/bruno/api/manual/
+!tests/bruno/api/manual/performance/
+!tests/bruno/api/manual/performance/**
 
 # setup run state
 # Intentionally ignored: setup execution state and reports are local run outputs.
@@ -52,7 +61,7 @@ setup/reports/**
 !setup/reports/.gitkeep
 
 # DB
-docker/
+/docker/
 redis/
 
 # H2 DB
