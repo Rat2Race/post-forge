@@ -1,4 +1,4 @@
-package dev.iamrat.common.config;
+package dev.iamrat.support.jpa;
 
 import java.util.Optional;
 import org.springframework.context.annotation.Bean;
