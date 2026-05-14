@@ -1,7 +1,7 @@
 package dev.iamrat.email.service;
 
+import dev.iamrat.auth.exception.AuthErrorCode;
 import dev.iamrat.global.exception.CustomException;
-import dev.iamrat.global.exception.ErrorCode;
 import dev.iamrat.member.repository.MemberRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
@@ -49,7 +49,7 @@ class EmailVerificationServiceTest {
             .isInstanceOf(CustomException.class)
             .satisfies(exception ->
                 assertThat(((CustomException) exception).getErrorCode())
-                    .isEqualTo(ErrorCode.DUPLICATE_EMAIL));
+                    .isEqualTo(AuthErrorCode.DUPLICATE_EMAIL));
     }
 
     @Test
@@ -64,7 +64,7 @@ class EmailVerificationServiceTest {
             .isInstanceOf(CustomException.class)
             .satisfies(exception ->
                 assertThat(((CustomException) exception).getErrorCode())
-                    .isEqualTo(ErrorCode.EMAIL_CODE_NOT_FOUND));
+                    .isEqualTo(AuthErrorCode.EMAIL_CODE_NOT_FOUND));
     }
 
     @Test

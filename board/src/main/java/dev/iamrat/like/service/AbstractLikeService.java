@@ -1,7 +1,7 @@
 package dev.iamrat.like.service;
 
+import dev.iamrat.global.exception.CommonErrorCode;
 import dev.iamrat.global.exception.CustomException;
-import dev.iamrat.global.exception.ErrorCode;
 import dev.iamrat.like.dto.LikeResponse;
 import org.springframework.dao.DataIntegrityViolationException;
 
@@ -43,7 +43,7 @@ public abstract class AbstractLikeService {
 
     protected Map<Long, Long> getLikeCountMap(List<Long> targetIds) {
         if (targetIds == null) {
-            throw new CustomException(ErrorCode.INVALID_INPUT);
+            throw new CustomException(CommonErrorCode.INVALID_INPUT);
         }
 
         if (targetIds.isEmpty()) {
@@ -64,7 +64,7 @@ public abstract class AbstractLikeService {
 
     protected Set<Long> getLikedTargetIds(List<Long> targetIds, String userId) {
         if (targetIds == null) {
-            throw new CustomException(ErrorCode.INVALID_INPUT);
+            throw new CustomException(CommonErrorCode.INVALID_INPUT);
         }
 
         if (userId == null || userId.isBlank() || targetIds.isEmpty()) {
@@ -76,7 +76,7 @@ public abstract class AbstractLikeService {
 
     private void validateTargetAndUser(Long targetId, String userId) {
         if (targetId == null || userId == null || userId.isBlank()) {
-            throw new CustomException(ErrorCode.INVALID_INPUT);
+            throw new CustomException(CommonErrorCode.INVALID_INPUT);
         }
     }
 

@@ -1,8 +1,8 @@
 package dev.iamrat.comment.controller;
 
+import dev.iamrat.global.exception.CommonErrorCode;
 import dev.iamrat.comment.service.CommentService;
 import dev.iamrat.global.exception.CustomException;
-import dev.iamrat.global.exception.ErrorCode;
 import dev.iamrat.support.web.GlobalExceptionHandler;
 import dev.iamrat.like.dto.LikeResponse;
 import dev.iamrat.global.security.UserPrincipal;
@@ -66,7 +66,7 @@ class CommentLikeControllerTest {
     @Test
     @DisplayName("댓글 좋아요 요청이 rate limit 에 걸리면 429를 반환한다")
     void likeComment_whenTooManyRequests_returns429() throws Exception {
-        given(commentService.likeComment(2L, "user1")).willThrow(new CustomException(ErrorCode.TOO_MANY_REQUESTS));
+        given(commentService.likeComment(2L, "user1")).willThrow(new CustomException(CommonErrorCode.TOO_MANY_REQUESTS));
 
         mockMvc.perform(post("/posts/1/comments/2/like").with(user("user1")))
                 .andExpect(status().isTooManyRequests())

@@ -1,7 +1,7 @@
 package dev.iamrat.oauth.service;
 
+import dev.iamrat.auth.exception.AuthErrorCode;
 import dev.iamrat.global.exception.CustomException;
-import dev.iamrat.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
@@ -32,7 +32,7 @@ public class OAuth2CodeService {
         String key = CODE_PREFIX + code;
         String userId = redisTemplate.opsForValue().getAndDelete(key);
         if (userId == null) {
-            throw new CustomException(ErrorCode.INVALID_TOKEN);
+            throw new CustomException(AuthErrorCode.INVALID_TOKEN);
         }
         return userId;
     }

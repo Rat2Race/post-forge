@@ -1,12 +1,12 @@
 package dev.iamrat.file.service;
 
+import dev.iamrat.board.exception.BoardErrorCode;
 import dev.iamrat.file.config.S3Properties;
 import dev.iamrat.file.dto.FileUploadResponse;
 import dev.iamrat.file.entity.PostFile;
 import dev.iamrat.file.repository.FileRepository;
 import dev.iamrat.file.support.FileTypePolicy;
 import dev.iamrat.global.exception.CustomException;
-import dev.iamrat.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -67,7 +67,7 @@ public class S3FileService {
 
     public String createDownloadUrl(Long fileId) {
         PostFile file = fileRepository.findById(fileId)
-            .orElseThrow(() -> new CustomException(ErrorCode.FILE_NOT_FOUND));
+            .orElseThrow(() -> new CustomException(BoardErrorCode.FILE_NOT_FOUND));
         
         GetObjectRequest objectRequest = GetObjectRequest.builder()
             .bucket(s3Properties.bucket())

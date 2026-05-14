@@ -1,7 +1,8 @@
 package dev.iamrat.post.service;
 
+import dev.iamrat.board.exception.BoardErrorCode;
+import dev.iamrat.global.exception.CommonErrorCode;
 import dev.iamrat.global.exception.CustomException;
-import dev.iamrat.global.exception.ErrorCode;
 import dev.iamrat.post.entity.Post;
 import dev.iamrat.post.repository.PostRepository;
 import lombok.RequiredArgsConstructor;
@@ -26,8 +27,8 @@ public class ViewCountService {
     private final PostRepository postRepository;
 
     public void incrementIfNew(Long postId, String visitorId) {
-        if (postId == null) throw new CustomException(ErrorCode.INVALID_INPUT);
-        if (visitorId == null || visitorId.isBlank()) throw new CustomException(ErrorCode.INVALID_INPUT);
+        if (postId == null) throw new CustomException(CommonErrorCode.INVALID_INPUT);
+        if (visitorId == null || visitorId.isBlank()) throw new CustomException(CommonErrorCode.INVALID_INPUT);
         
         String guardKey = VIEW_GUARD_PREFIX + postId + ":" + visitorId;
 
@@ -46,7 +47,7 @@ public class ViewCountService {
     }
 
     public long getViewCount(Long postId) {
-        if (postId == null) throw new CustomException(ErrorCode.INVALID_INPUT);
+        if (postId == null) throw new CustomException(CommonErrorCode.INVALID_INPUT);
         String key = VIEW_COUNT_PREFIX + postId;
         String cached = redisTemplate.opsForValue().get(key);
 
@@ -59,7 +60,7 @@ public class ViewCountService {
     }
 
     public Map<Long, Long> getViewCounts(List<Long> postIds) {
-        if (postIds == null) throw new CustomException(ErrorCode.INVALID_INPUT);
+        if (postIds == null) throw new CustomException(CommonErrorCode.INVALID_INPUT);
         if (postIds.isEmpty()) {
             return Collections.emptyMap();
         }
@@ -90,14 +91,14 @@ public class ViewCountService {
     }
 
     public void deleteViewCount(Long postId) {
-        if (postId == null) throw new CustomException(ErrorCode.INVALID_INPUT);
+        if (postId == null) throw new CustomException(CommonErrorCode.INVALID_INPUT);
         redisTemplate.delete(VIEW_COUNT_PREFIX + postId);
     }
 
     private long loadFromDb(Long postId) {
         Long views = postRepository.findById(postId)
             .map(Post::getViews)
-            .orElseThrow(() -> new CustomException(ErrorCode.POST_NOT_FOUND));
+            .orElseThrow(() -> new CustomException(BoardErrorCode.POST_NOT_FOUND));
         
         redisTemplate.opsForValue().setIfAbsent(
             VIEW_COUNT_PREFIX + postId, String.valueOf(views),

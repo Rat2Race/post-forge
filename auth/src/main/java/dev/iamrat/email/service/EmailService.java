@@ -1,7 +1,7 @@
 package dev.iamrat.email.service;
 
+import dev.iamrat.auth.exception.AuthErrorCode;
 import dev.iamrat.global.exception.CustomException;
-import dev.iamrat.global.exception.ErrorCode;
 import dev.iamrat.security.config.AppProperties;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
@@ -48,7 +48,7 @@ public class EmailService {
 
         } catch (MessagingException e) {
             log.error("이메일 발송 실패 - 수신자: {}", toEmail, e);
-            throw new CustomException(ErrorCode.EMAIL_SEND_FAILED);
+            throw new CustomException(AuthErrorCode.EMAIL_SEND_FAILED);
         }
     }
 
@@ -63,7 +63,7 @@ public class EmailService {
 
         } catch (IOException e) {
             log.error("이메일 템플릿 로딩 실패", e);
-            throw new CustomException(ErrorCode.EMAIL_SEND_FAILED);
+            throw new CustomException(AuthErrorCode.EMAIL_SEND_FAILED);
         }
     }
 }

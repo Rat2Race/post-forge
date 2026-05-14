@@ -1,7 +1,7 @@
 package dev.iamrat.oauth.service;
 
+import dev.iamrat.global.exception.CommonErrorCode;
 import dev.iamrat.global.exception.CustomException;
-import dev.iamrat.global.exception.ErrorCode;
 import dev.iamrat.member.entity.Member;
 import dev.iamrat.member.service.MemberService;
 import dev.iamrat.token.dto.JwtResponse;
@@ -20,7 +20,7 @@ public class OAuth2LoginService {
 
     public JwtResponse exchange(String code) {
         if (code == null || code.isBlank()) {
-            throw new CustomException(ErrorCode.INVALID_INPUT);
+            throw new CustomException(CommonErrorCode.INVALID_INPUT);
         }
 
         String userId = oAuth2CodeService.exchangeCode(code.trim());

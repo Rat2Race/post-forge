@@ -1,7 +1,7 @@
 package dev.iamrat.email.service;
 
+import dev.iamrat.auth.exception.AuthErrorCode;
 import dev.iamrat.global.exception.CustomException;
-import dev.iamrat.global.exception.ErrorCode;
 import dev.iamrat.member.repository.MemberRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -24,7 +24,7 @@ public class EmailVerificationService {
 
     public void sendVerificationEmail(String email) {
         if (memberRepository.existsByEmail(email)) {
-            throw new CustomException(ErrorCode.DUPLICATE_EMAIL);
+            throw new CustomException(AuthErrorCode.DUPLICATE_EMAIL);
         }
 
         String token = UUID.randomUUID().toString();
@@ -44,7 +44,7 @@ public class EmailVerificationService {
         String email = redisTemplate.opsForValue().getAndDelete(key);
 
         if (email == null) {
-            throw new CustomException(ErrorCode.EMAIL_CODE_NOT_FOUND);
+            throw new CustomException(AuthErrorCode.EMAIL_CODE_NOT_FOUND);
         }
 
         redisTemplate.opsForValue().set(

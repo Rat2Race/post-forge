@@ -1,12 +1,12 @@
 package dev.iamrat.comment.service;
 
+import dev.iamrat.board.exception.BoardErrorCode;
 import dev.iamrat.comment.dto.CommentDetailResponse;
 import dev.iamrat.comment.dto.CommentSummaryResponse;
 import dev.iamrat.post.entity.Post;
 import dev.iamrat.comment.entity.Comment;
 import dev.iamrat.comment.repository.CommentRepository;
 import dev.iamrat.global.exception.CustomException;
-import dev.iamrat.global.exception.ErrorCode;
 import dev.iamrat.like.comment.service.CommentLikeService;
 import dev.iamrat.like.dto.LikeResponse;
 import dev.iamrat.like.support.LikeRequestGuard;
@@ -36,19 +36,19 @@ public class CommentService {
     public CommentSummaryResponse saveComment(Long postId, Long parentId, String content,
         String userId, String nickname) {
         Post post = postRepository.findById(postId)
-            .orElseThrow(() -> new CustomException(ErrorCode.POST_NOT_FOUND));
+            .orElseThrow(() -> new CustomException(BoardErrorCode.POST_NOT_FOUND));
 
         Comment parent = null;
         if (parentId != null) {
             parent = commentRepository.findById(parentId)
-                .orElseThrow(() -> new CustomException(ErrorCode.COMMENT_NOT_FOUND));
+                .orElseThrow(() -> new CustomException(BoardErrorCode.COMMENT_NOT_FOUND));
 
             if (!parent.getPost().getId().equals(postId)) {
-                throw new CustomException(ErrorCode.INVALID_COMMENT_PARENT);
+                throw new CustomException(BoardErrorCode.INVALID_COMMENT_PARENT);
             }
 
             if (parent.getParent() != null) {
-                throw new CustomException(ErrorCode.MAX_COMMENT_DEPTH_EXCEEDED);
+                throw new CustomException(BoardErrorCode.MAX_COMMENT_DEPTH_EXCEEDED);
             }
         }
 
@@ -96,7 +96,7 @@ public class CommentService {
     @Transactional
     public CommentSummaryResponse updateComment(Long commentId, String newContent) {
         Comment comment = commentRepository.findById(commentId)
-            .orElseThrow(() -> new CustomException(ErrorCode.COMMENT_NOT_FOUND));
+            .orElseThrow(() -> new CustomException(BoardErrorCode.COMMENT_NOT_FOUND));
 
         comment.updateContent(newContent);
 
@@ -106,7 +106,7 @@ public class CommentService {
     @Transactional
     public void deleteComment(Long commentId) {
         Comment comment = commentRepository.findById(commentId)
-            .orElseThrow(() -> new CustomException(ErrorCode.COMMENT_NOT_FOUND));
+            .orElseThrow(() -> new CustomException(BoardErrorCode.COMMENT_NOT_FOUND));
 
         commentRepository.delete(comment);
     }
@@ -114,7 +114,7 @@ public class CommentService {
     @Transactional
     public LikeResponse likeComment(Long commentId, String userId) {
         commentRepository.findById(commentId)
-            .orElseThrow(() -> new CustomException(ErrorCode.COMMENT_NOT_FOUND));
+            .orElseThrow(() -> new CustomException(BoardErrorCode.COMMENT_NOT_FOUND));
 
         likeRequestGuard.guardCommentLike(commentId, userId);
         return commentLikeService.like(commentId, userId);
@@ -123,7 +123,7 @@ public class CommentService {
     @Transactional
     public LikeResponse unlikeComment(Long commentId, String userId) {
         commentRepository.findById(commentId)
-            .orElseThrow(() -> new CustomException(ErrorCode.COMMENT_NOT_FOUND));
+            .orElseThrow(() -> new CustomException(BoardErrorCode.COMMENT_NOT_FOUND));
 
         likeRequestGuard.guardCommentUnlike(commentId, userId);
         return commentLikeService.unlike(commentId, userId);
@@ -143,7 +143,7 @@ public class CommentService {
 
     public boolean isCommentOwner(Long commentId, String userId) {
         Comment comment = commentRepository.findById(commentId)
-            .orElseThrow(() -> new CustomException(ErrorCode.COMMENT_NOT_FOUND));
+            .orElseThrow(() -> new CustomException(BoardErrorCode.COMMENT_NOT_FOUND));
 
         return comment.getUserId().equals(userId);
     }

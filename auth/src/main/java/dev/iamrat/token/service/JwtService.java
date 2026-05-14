@@ -1,7 +1,7 @@
 package dev.iamrat.token.service;
 
+import dev.iamrat.auth.exception.AuthErrorCode;
 import dev.iamrat.global.exception.CustomException;
-import dev.iamrat.global.exception.ErrorCode;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
 import io.jsonwebtoken.security.SecurityException;
@@ -53,12 +53,12 @@ public class JwtService {
     public void validateRefreshToken(String userId, String requestToken) {
         String storedToken = redisTemplate.opsForValue().get(REFRESH_TOKEN_PREFIX + userId);
         if (storedToken == null) {
-            throw new CustomException(ErrorCode.INVALID_TOKEN);
+            throw new CustomException(AuthErrorCode.INVALID_TOKEN);
         }
         byte[] stored = storedToken.getBytes(StandardCharsets.UTF_8);
         byte[] request = requestToken.getBytes(StandardCharsets.UTF_8);
         if (!MessageDigest.isEqual(stored, request)) {
-            throw new CustomException(ErrorCode.INVALID_TOKEN);
+            throw new CustomException(AuthErrorCode.INVALID_TOKEN);
         }
     }
 
@@ -84,19 +84,19 @@ public class JwtService {
                 .getPayload();
         } catch (SecurityException | MalformedJwtException e) {
             log.debug("JWT 서명 검증 실패: {}", e.getMessage());
-            throw new CustomException(ErrorCode.INVALID_TOKEN);
+            throw new CustomException(AuthErrorCode.INVALID_TOKEN);
         } catch (ExpiredJwtException e) {
             log.debug("JWT 만료: {}", e.getMessage());
-            throw new CustomException(ErrorCode.EXPIRED_TOKEN);
+            throw new CustomException(AuthErrorCode.EXPIRED_TOKEN);
         } catch (JwtException | IllegalArgumentException e) {
             log.error("JWT 검증 실패: {}", e.getMessage());
-            throw new CustomException(ErrorCode.INVALID_TOKEN);
+            throw new CustomException(AuthErrorCode.INVALID_TOKEN);
         }
     }
     
     private String generateToken(String subject, Map<String, Object> claims, Duration validity) {
         if (subject == null || subject.isBlank()) {
-            throw new CustomException(ErrorCode.INVALID_TOKEN);
+            throw new CustomException(AuthErrorCode.INVALID_TOKEN);
         }
         
         Instant now = Instant.now();

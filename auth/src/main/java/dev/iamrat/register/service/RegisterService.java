@@ -1,8 +1,8 @@
 package dev.iamrat.register.service;
 
+import dev.iamrat.auth.exception.AuthErrorCode;
 import dev.iamrat.email.service.EmailVerificationService;
 import dev.iamrat.global.exception.CustomException;
-import dev.iamrat.global.exception.ErrorCode;
 import dev.iamrat.member.entity.Member;
 import dev.iamrat.member.service.MemberService;
 import dev.iamrat.register.dto.RegisterRequest;
@@ -20,11 +20,11 @@ public class RegisterService {
     public Long register(RegisterRequest request) {
 
         if (!emailVerificationService.isEmailVerified(request.email())) {
-            throw new CustomException(ErrorCode.EMAIL_NOT_VERIFIED);
+            throw new CustomException(AuthErrorCode.EMAIL_NOT_VERIFIED);
         }
 
         if (memberService.existsByUserId(request.userId())) {
-            throw new CustomException(ErrorCode.DUPLICATE_ID);
+            throw new CustomException(AuthErrorCode.DUPLICATE_ID);
         }
 
         Member member = memberService.createMember(
