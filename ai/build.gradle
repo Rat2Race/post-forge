@@ -10,6 +10,7 @@ dependencies {
     implementation platform("org.springframework.ai:spring-ai-bom:${springAiVersion}")
     implementation 'org.springframework.ai:spring-ai-openai'
     implementation 'org.springframework.ai:spring-ai-pgvector-store'
+    implementation "org.springdoc:springdoc-openapi-starter-webmvc-api:${springdocOpenapiVersion}"
     implementation 'org.springframework.boot:spring-boot-starter-validation'
 
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
