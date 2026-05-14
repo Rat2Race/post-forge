@@ -13,7 +13,6 @@ import org.springframework.core.annotation.Order;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.ProviderManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
-import org.springframework.http.HttpMethod;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -41,6 +40,7 @@ public class SecurityConfig {
     private final AuthenticationSuccessHandler oauth2SuccessHandler;
     private final AuthenticationFailureHandler oauth2FailureHandler;
     private final CustomOAuth2UserService oauth2UserService;
+    private final HttpAuthorizationRules authorizationRules;
 
     @Bean
     @Order(1)
@@ -62,42 +62,7 @@ public class SecurityConfig {
                 .authenticationEntryPoint(authenticationEntryPoint)
                 .accessDeniedHandler(accessDeniedHandler)
             )
-            .authorizeHttpRequests(auth -> auth
-                // ===== 공개 API =====
-                .requestMatchers(
-                    "/",
-                    "/index.html",
-                    "/favicon.ico",
-                    "/images/**",
-                    "/v3/api-docs/**",
-                    "/swagger-ui.html",
-                    "/swagger-ui/**",
-                    "/webjars/**",
-                    "/oauth2/**",
-                    "/login/oauth2/**"
-                ).permitAll()
-                .requestMatchers(HttpMethod.POST,
-                    "/auth/register",
-                    "/auth/login",
-                    "/auth/token/reissue",
-                    "/auth/oauth2/exchange",
-                    "/auth/token/exchange",
-                    "/auth/email/send"
-                ).permitAll()
-                .requestMatchers(HttpMethod.GET,
-                    "/auth/email/verify",
-                    "/posts",
-                    "/posts/*",
-                    "/posts/*/comments"
-                ).permitAll()
-
-                // ===== AI API (JWT 인증 유저 또는 내부 API 키) =====
-                .requestMatchers("/ai/**").hasAnyRole("USER", "ADMIN")
-
-                // ===== 관리자 전용 API =====
-                .requestMatchers("/admin/**").hasRole("ADMIN")
-                .anyRequest().authenticated()
-            )
+            .authorizeHttpRequests(authorizationRules::customize)
             .oauth2Login(oauth2 -> oauth2
                 .userInfoEndpoint(userInfo -> userInfo
                     .userService(oauth2UserService)

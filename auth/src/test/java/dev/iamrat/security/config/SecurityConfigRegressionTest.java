@@ -16,6 +16,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -201,6 +202,15 @@ class SecurityConfigRegressionTest {
             .andExpect(content().string("ai"));
     }
 
+    @Test
+    @DisplayName("Ingest API는 내부 API 키로 접근을 허용한다")
+    void ingestApi_allowsInternalApiKey() throws Exception {
+        mockMvc.perform(get("/ingest/ping")
+                .header("X-Internal-Api-Key", "test-internal-key"))
+            .andExpect(status().isOk())
+            .andExpect(content().string("ingest"));
+    }
+
     @EnableAutoConfiguration
     @Import({
         SecurityConfig.class,
@@ -211,9 +221,44 @@ class SecurityConfigRegressionTest {
         DummyPostController.class,
         DummyCommentController.class,
         DummyProfileController.class,
-        DummyAiController.class
+        DummyAiController.class,
+        DummyIngestController.class
     })
     static class TestApp {
+
+        @Bean
+        HttpAuthorizationRules httpAuthorizationRules() {
+            return requests -> requests
+                .requestMatchers(
+                    "/",
+                    "/index.html",
+                    "/favicon.ico",
+                    "/images/**",
+                    "/v3/api-docs/**",
+                    "/swagger-ui.html",
+                    "/swagger-ui/**",
+                    "/webjars/**",
+                    "/oauth2/**",
+                    "/login/oauth2/**"
+                ).permitAll()
+                .requestMatchers(HttpMethod.POST,
+                    "/auth/register",
+                    "/auth/login",
+                    "/auth/token/reissue",
+                    "/auth/oauth2/exchange",
+                    "/auth/token/exchange",
+                    "/auth/email/send"
+                ).permitAll()
+                .requestMatchers(HttpMethod.GET,
+                    "/auth/email/verify",
+                    "/posts",
+                    "/posts/*",
+                    "/posts/*/comments"
+                ).permitAll()
+                .requestMatchers("/ai/**", "/ingest/**").hasAnyRole("USER", "ADMIN")
+                .requestMatchers("/admin/**").hasRole("ADMIN")
+                .anyRequest().authenticated();
+        }
 
         @Bean
         ClientRegistrationRepository clientRegistrationRepository() {
@@ -322,6 +367,16 @@ class SecurityConfigRegressionTest {
         @GetMapping("/ping")
         String ping() {
             return "ai";
+        }
+    }
+
+    @RestController
+    @RequestMapping("/ingest")
+    static class DummyIngestController {
+
+        @GetMapping("/ping")
+        String ping() {
+            return "ingest";
         }
     }
 }
