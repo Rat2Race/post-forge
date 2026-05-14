@@ -1,14 +1,14 @@
 plugins {
-    id 'org.springframework.boot' version '3.5.4' apply false
+    id 'org.springframework.boot' version '3.5.14' apply false
 }
 
 ext {
-    springBootVersion = '3.5.4'
-    lombokVersion = '1.18.34'
+    springBootVersion = '3.5.14'
+    lombokVersion = '1.18.46'
     springdocOpenapiVersion = '2.8.17'
-    springAiVersion = '1.0.5'
-    awsSdkVersion = '2.42.4'
-    jjwtVersion = '0.12.3'
+    springAiVersion = '1.0.7'
+    awsSdkVersion = '2.42.41'
+    jjwtVersion = '0.12.7'
 }
 
 allprojects {
