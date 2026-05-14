@@ -1,5 +1,6 @@
 package dev.iamrat.post.service;
 
+import dev.iamrat.board.exception.BoardErrorCode;
 import dev.iamrat.board.post.PostCategory;
 import dev.iamrat.comment.service.CommentService;
 import dev.iamrat.file.entity.PostFile;
@@ -11,7 +12,6 @@ import dev.iamrat.post.dto.PostDetailResponse;
 import dev.iamrat.post.dto.PostSummaryResponse;
 import dev.iamrat.post.entity.Post;
 import dev.iamrat.global.exception.CustomException;
-import dev.iamrat.global.exception.ErrorCode;
 import dev.iamrat.post.repository.PostRepository;
 import java.util.List;
 import java.util.Map;
@@ -64,7 +64,7 @@ public class PostService {
 
     public PostDetailResponse getPost(Long postId, String userId) {
         Post post = postRepository.findById(postId)
-            .orElseThrow(() -> new CustomException(ErrorCode.POST_NOT_FOUND));
+            .orElseThrow(() -> new CustomException(BoardErrorCode.POST_NOT_FOUND));
 
         long views = viewCountService.getViewCount(postId);
         LikeResponse likeInfo = postLikeService.getLikeInfo(postId, userId);
@@ -82,7 +82,7 @@ public class PostService {
     @Transactional
     public LikeResponse likePost(Long postId, String userId) {
         if (!postRepository.existsById(postId)) {
-            throw new CustomException(ErrorCode.POST_NOT_FOUND);
+            throw new CustomException(BoardErrorCode.POST_NOT_FOUND);
         }
 
         likeRequestGuard.guardPostLike(postId, userId);
@@ -92,7 +92,7 @@ public class PostService {
     @Transactional
     public LikeResponse unlikePost(Long postId, String userId) {
         if (!postRepository.existsById(postId)) {
-            throw new CustomException(ErrorCode.POST_NOT_FOUND);
+            throw new CustomException(BoardErrorCode.POST_NOT_FOUND);
         }
 
         likeRequestGuard.guardPostUnlike(postId, userId);
@@ -102,7 +102,7 @@ public class PostService {
     @Transactional
     public PostSummaryResponse updatePost(Long postId, String title, String content, List<Long> fileIds) {
         Post post = postRepository.findById(postId)
-            .orElseThrow(() -> new CustomException(ErrorCode.POST_NOT_FOUND));
+            .orElseThrow(() -> new CustomException(BoardErrorCode.POST_NOT_FOUND));
 
         post.update(title, content);
 
@@ -117,7 +117,7 @@ public class PostService {
     @Transactional
     public void deletePost(Long postId) {
         Post post = postRepository.findById(postId)
-            .orElseThrow(() -> new CustomException(ErrorCode.POST_NOT_FOUND));
+            .orElseThrow(() -> new CustomException(BoardErrorCode.POST_NOT_FOUND));
 
         List<PostFile> files = fileRepository.findAllByPost(post);
         files.forEach(PostFile::unassignPost);
@@ -129,7 +129,7 @@ public class PostService {
 
     public boolean isOwner(Long postId, String userId) {
         Post post = postRepository.findById(postId)
-            .orElseThrow(() -> new CustomException(ErrorCode.POST_NOT_FOUND));
+            .orElseThrow(() -> new CustomException(BoardErrorCode.POST_NOT_FOUND));
 
         return post.getUserId().equals(userId);
     }

@@ -1,7 +1,7 @@
 package dev.iamrat.profile.service;
 
+import dev.iamrat.auth.exception.AuthErrorCode;
 import dev.iamrat.global.exception.CustomException;
-import dev.iamrat.global.exception.ErrorCode;
 import dev.iamrat.member.entity.Member;
 import dev.iamrat.member.repository.MemberRepository;
 import lombok.RequiredArgsConstructor;
@@ -19,13 +19,13 @@ public class ProfileService {
 
     public Member getMember(String userId) {
         return memberRepository.findByUserId(userId)
-            .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+            .orElseThrow(() -> new CustomException(AuthErrorCode.USER_NOT_FOUND));
     }
 
     @Transactional
     public void updateNickname(String userId, String nickname) {
         if (memberRepository.existsByNickname(nickname)) {
-            throw new CustomException(ErrorCode.DUPLICATE_NICKNAME);
+            throw new CustomException(AuthErrorCode.DUPLICATE_NICKNAME);
         }
         Member member = getMember(userId);
         member.updateProfile(nickname);
@@ -36,11 +36,11 @@ public class ProfileService {
         Member member = getMember(userId);
 
         if (member.getUserPw() == null) {
-            throw new CustomException(ErrorCode.OAUTH_PASSWORD_CHANGE_NOT_ALLOWED);
+            throw new CustomException(AuthErrorCode.OAUTH_PASSWORD_CHANGE_NOT_ALLOWED);
         }
 
         if (!passwordEncoder.matches(currentPassword, member.getUserPw())) {
-            throw new CustomException(ErrorCode.INVALID_PASSWORD);
+            throw new CustomException(AuthErrorCode.INVALID_PASSWORD);
         }
 
         member.changePassword(newPassword, passwordEncoder);

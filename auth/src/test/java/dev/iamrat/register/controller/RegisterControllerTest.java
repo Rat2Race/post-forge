@@ -1,5 +1,6 @@
 package dev.iamrat.register.controller;
 
+import dev.iamrat.auth.exception.AuthErrorCode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.iamrat.global.exception.CustomException;
 import dev.iamrat.global.exception.ErrorCode;
@@ -128,9 +129,9 @@ class RegisterControllerTest {
 
         static Stream<Arguments> registerBusinessExceptions() {
             return Stream.of(
-                Arguments.of("이미 존재하는 아이디면 409를 반환한다", ErrorCode.DUPLICATE_ID, 409),
-                Arguments.of("이메일 인증이 완료되지 않았으면 400을 반환한다", ErrorCode.EMAIL_NOT_VERIFIED, 400),
-                Arguments.of("이메일 인증 코드를 찾을 수 없으면 404를 반환한다", ErrorCode.EMAIL_CODE_NOT_FOUND, 404)
+                Arguments.of("이미 존재하는 아이디면 409를 반환한다", AuthErrorCode.DUPLICATE_ID, 409),
+                Arguments.of("이메일 인증이 완료되지 않았으면 400을 반환한다", AuthErrorCode.EMAIL_NOT_VERIFIED, 400),
+                Arguments.of("이메일 인증 코드를 찾을 수 없으면 404를 반환한다", AuthErrorCode.EMAIL_CODE_NOT_FOUND, 404)
             );
         }
     }

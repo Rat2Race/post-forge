@@ -1,12 +1,12 @@
 package dev.iamrat.file.service;
 
+import dev.iamrat.board.exception.BoardErrorCode;
 import dev.iamrat.file.config.S3Properties;
 import dev.iamrat.file.dto.FileUploadResponse;
 import dev.iamrat.file.entity.PostFile;
 import dev.iamrat.file.repository.FileRepository;
 import dev.iamrat.file.support.FileTypePolicy;
 import dev.iamrat.global.exception.CustomException;
-import dev.iamrat.global.exception.ErrorCode;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -80,7 +80,7 @@ class S3FileServiceTest {
         assertThatThrownBy(() -> s3FileService.createPresignedUrl("script.exe", "application/octet-stream"))
                 .isInstanceOf(CustomException.class)
                 .extracting(ex -> ((CustomException) ex).getErrorCode())
-                .isEqualTo(ErrorCode.FILE_EXTENSION_NOT_ALLOWED);
+                .isEqualTo(BoardErrorCode.FILE_EXTENSION_NOT_ALLOWED);
     }
 
     @Test
@@ -89,7 +89,7 @@ class S3FileServiceTest {
         assertThatThrownBy(() -> s3FileService.createPresignedUrl("photo.png", "image/jpeg"))
                 .isInstanceOf(CustomException.class)
                 .extracting(ex -> ((CustomException) ex).getErrorCode())
-                .isEqualTo(ErrorCode.FILE_TYPE_MISMATCH);
+                .isEqualTo(BoardErrorCode.FILE_TYPE_MISMATCH);
     }
 
     @Test

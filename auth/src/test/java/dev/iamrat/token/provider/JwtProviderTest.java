@@ -1,7 +1,7 @@
 package dev.iamrat.token.provider;
 
+import dev.iamrat.auth.exception.AuthErrorCode;
 import dev.iamrat.global.exception.CustomException;
-import dev.iamrat.global.exception.ErrorCode;
 import dev.iamrat.login.dto.CustomUserDetails;
 import dev.iamrat.member.entity.Member;
 import dev.iamrat.member.entity.Role;
@@ -113,25 +113,25 @@ class JwtProviderTest {
             given(claims.getSubject()).willReturn(USER_ID);
             given(jwtService.parseClaims("wrong-refresh-token")).willReturn(claims);
 
-            doThrow(new CustomException(ErrorCode.INVALID_TOKEN))
+            doThrow(new CustomException(AuthErrorCode.INVALID_TOKEN))
                 .when(jwtService).validateRefreshToken(USER_ID, "wrong-refresh-token");
 
             assertThatThrownBy(() -> jwtProvider.reissueToken("wrong-refresh-token"))
                 .isInstanceOf(CustomException.class)
                 .satisfies(exception ->
-                    assertThat(((CustomException) exception).getErrorCode()).isEqualTo(ErrorCode.INVALID_TOKEN));
+                    assertThat(((CustomException) exception).getErrorCode()).isEqualTo(AuthErrorCode.INVALID_TOKEN));
         }
 
         @Test
         @DisplayName("파싱에 실패하면 INVALID_TOKEN 예외를 던진다")
         void reissueToken_parsingFails_throwsInvalidToken() {
             given(jwtService.parseClaims("malformed-token"))
-                .willThrow(new CustomException(ErrorCode.INVALID_TOKEN));
+                .willThrow(new CustomException(AuthErrorCode.INVALID_TOKEN));
 
             assertThatThrownBy(() -> jwtProvider.reissueToken("malformed-token"))
                 .isInstanceOf(CustomException.class)
                 .satisfies(exception ->
-                    assertThat(((CustomException) exception).getErrorCode()).isEqualTo(ErrorCode.INVALID_TOKEN));
+                    assertThat(((CustomException) exception).getErrorCode()).isEqualTo(AuthErrorCode.INVALID_TOKEN));
         }
     }
 
@@ -182,7 +182,7 @@ class JwtProviderTest {
                 .isInstanceOf(CustomException.class)
                 .satisfies(exception ->
                     assertThat(((CustomException) exception).getErrorCode())
-                        .isEqualTo(ErrorCode.INVALID_TOKEN));
+                        .isEqualTo(AuthErrorCode.INVALID_TOKEN));
         }
     }
 }

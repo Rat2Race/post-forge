@@ -1,8 +1,8 @@
 package dev.iamrat.token.filter;
 
+import dev.iamrat.auth.exception.AuthErrorCode;
 
 import dev.iamrat.global.exception.CustomException;
-import dev.iamrat.global.exception.ErrorCode;
 import dev.iamrat.token.provider.JwtProvider;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -70,7 +70,7 @@ class JwtAuthenticationFilterTest {
         mockRequest.addHeader("Authorization", "Bearer expired-token");
         
         given(jwtProvider.resolveAuthentication("expired-token"))
-            .willThrow(new CustomException(ErrorCode.EXPIRED_TOKEN));
+            .willThrow(new CustomException(AuthErrorCode.EXPIRED_TOKEN));
         
         filter.doFilterInternal(mockRequest, mockResponse, filterChain);
         

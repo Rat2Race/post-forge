@@ -1,7 +1,7 @@
 package dev.iamrat.oauth.controller;
 
+import dev.iamrat.auth.exception.AuthErrorCode;
 import dev.iamrat.global.exception.CustomException;
-import dev.iamrat.global.exception.ErrorCode;
 import dev.iamrat.support.web.GlobalExceptionHandler;
 import dev.iamrat.oauth.service.OAuth2LoginService;
 import dev.iamrat.token.dto.JwtResponse;
@@ -81,7 +81,7 @@ class OAuth2ControllerTest {
         @DisplayName("비즈니스 예외를 그대로 전달한다")
         void exchange_invalidCode_returnsExpectedStatus() throws Exception {
             given(oAuth2LoginService.exchange("invalid-code"))
-                .willThrow(new CustomException(ErrorCode.INVALID_TOKEN));
+                .willThrow(new CustomException(AuthErrorCode.INVALID_TOKEN));
 
             mockMvc.perform(post("/auth/oauth2/exchange")
                     .contentType(MediaType.TEXT_PLAIN)

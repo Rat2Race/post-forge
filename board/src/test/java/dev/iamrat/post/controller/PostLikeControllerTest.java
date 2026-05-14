@@ -1,7 +1,7 @@
 package dev.iamrat.post.controller;
 
+import dev.iamrat.global.exception.CommonErrorCode;
 import dev.iamrat.global.exception.CustomException;
-import dev.iamrat.global.exception.ErrorCode;
 import dev.iamrat.support.web.GlobalExceptionHandler;
 import dev.iamrat.like.dto.LikeResponse;
 import dev.iamrat.post.service.PostService;
@@ -66,7 +66,7 @@ class PostLikeControllerTest {
     @Test
     @DisplayName("좋아요 요청이 rate limit 에 걸리면 429를 반환한다")
     void likePost_whenTooManyRequests_returns429() throws Exception {
-        given(postService.likePost(1L, "user1")).willThrow(new CustomException(ErrorCode.TOO_MANY_REQUESTS));
+        given(postService.likePost(1L, "user1")).willThrow(new CustomException(CommonErrorCode.TOO_MANY_REQUESTS));
 
         mockMvc.perform(post("/posts/1/like").with(user("user1")))
                 .andExpect(status().isTooManyRequests())

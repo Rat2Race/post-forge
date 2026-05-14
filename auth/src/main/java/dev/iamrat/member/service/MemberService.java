@@ -1,10 +1,10 @@
 package dev.iamrat.member.service;
 
+import dev.iamrat.auth.exception.AuthErrorCode;
 import dev.iamrat.member.entity.Member;
 import dev.iamrat.member.entity.Role;
 import dev.iamrat.member.repository.MemberRepository;
 import dev.iamrat.global.exception.CustomException;
-import dev.iamrat.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -38,7 +38,7 @@ public class MemberService {
     
     public Member findByUserId(String userId) {
         return memberRepository.findByUserId(userId)
-            .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+            .orElseThrow(() -> new CustomException(AuthErrorCode.USER_NOT_FOUND));
     }
     
     public boolean existsByUserId(String userId) {

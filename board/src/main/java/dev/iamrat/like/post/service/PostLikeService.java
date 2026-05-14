@@ -1,7 +1,7 @@
 package dev.iamrat.like.post.service;
 
+import dev.iamrat.global.exception.CommonErrorCode;
 import dev.iamrat.global.exception.CustomException;
-import dev.iamrat.global.exception.ErrorCode;
 import dev.iamrat.like.dto.LikeResponse;
 import dev.iamrat.like.post.entity.PostLike;
 import dev.iamrat.like.post.repository.PostLikeRepository;
@@ -32,7 +32,7 @@ public class PostLikeService extends AbstractLikeService {
 
     public LikeResponse getLikeInfo(Long postId, String userId) {
         if (postId == null) {
-            throw new CustomException(ErrorCode.INVALID_INPUT);
+            throw new CustomException(CommonErrorCode.INVALID_INPUT);
         }
 
         long likeCount = postLikeRepository.countByPost_Id(postId);

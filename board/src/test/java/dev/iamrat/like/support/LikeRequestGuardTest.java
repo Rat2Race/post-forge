@@ -1,7 +1,7 @@
 package dev.iamrat.like.support;
 
+import dev.iamrat.global.exception.CommonErrorCode;
 import dev.iamrat.global.exception.CustomException;
-import dev.iamrat.global.exception.ErrorCode;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
@@ -57,7 +57,7 @@ class LikeRequestGuardTest {
         assertThatThrownBy(() -> likeRequestGuard.guardPostLike(1L, "user1"))
                 .isInstanceOf(CustomException.class)
                 .extracting(ex -> ((CustomException) ex).getErrorCode())
-                .isEqualTo(ErrorCode.TOO_MANY_REQUESTS);
+                .isEqualTo(CommonErrorCode.TOO_MANY_REQUESTS);
     }
 
     @Test
@@ -69,7 +69,7 @@ class LikeRequestGuardTest {
         assertThatThrownBy(() -> likeRequestGuard.guardPostUnlike(1L, "user1"))
                 .isInstanceOf(CustomException.class)
                 .extracting(ex -> ((CustomException) ex).getErrorCode())
-                .isEqualTo(ErrorCode.TOO_MANY_REQUESTS);
+                .isEqualTo(CommonErrorCode.TOO_MANY_REQUESTS);
     }
 
     @Test

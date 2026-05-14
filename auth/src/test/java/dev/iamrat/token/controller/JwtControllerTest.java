@@ -1,7 +1,7 @@
 package dev.iamrat.token.controller;
 
+import dev.iamrat.auth.exception.AuthErrorCode;
 import dev.iamrat.global.exception.CustomException;
-import dev.iamrat.global.exception.ErrorCode;
 import dev.iamrat.support.web.GlobalExceptionHandler;
 import dev.iamrat.token.dto.JwtResponse;
 import dev.iamrat.token.provider.CookieProvider;
@@ -92,7 +92,7 @@ class JwtControllerTest {
             given(cookieProvider.extractRefreshToken(any()))
                 .willReturn("invalid-refresh-token");
             given(jwtProvider.reissueToken(anyString()))
-                .willThrow(new CustomException(ErrorCode.INVALID_TOKEN));
+                .willThrow(new CustomException(AuthErrorCode.INVALID_TOKEN));
 
             mockMvc.perform(post("/auth/token/reissue")
                     .cookie(new Cookie("refresh_token", "invalid-refresh-token")))
@@ -106,7 +106,7 @@ class JwtControllerTest {
             given(cookieProvider.extractRefreshToken(any()))
                 .willReturn("expired-refresh-token");
             given(jwtProvider.reissueToken(anyString()))
-                .willThrow(new CustomException(ErrorCode.EXPIRED_TOKEN));
+                .willThrow(new CustomException(AuthErrorCode.EXPIRED_TOKEN));
 
             mockMvc.perform(post("/auth/token/reissue")
                     .cookie(new Cookie("refresh_token", "expired-refresh-token")))

@@ -1,7 +1,7 @@
 package dev.iamrat.token.service;
 
+import dev.iamrat.auth.exception.AuthErrorCode;
 import dev.iamrat.global.exception.CustomException;
-import dev.iamrat.global.exception.ErrorCode;
 import io.jsonwebtoken.Claims;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -67,7 +67,7 @@ class JwtServiceTest {
             .isInstanceOf(CustomException.class)
             .satisfies(exception ->
                 assertThat(((CustomException) exception).getErrorCode())
-                    .isEqualTo(ErrorCode.INVALID_TOKEN));
+                    .isEqualTo(AuthErrorCode.INVALID_TOKEN));
     }
 
     @Test
@@ -80,7 +80,7 @@ class JwtServiceTest {
             .isInstanceOf(CustomException.class)
             .satisfies(exception ->
                 assertThat(((CustomException) exception).getErrorCode())
-                    .isEqualTo(ErrorCode.INVALID_TOKEN));
+                    .isEqualTo(AuthErrorCode.INVALID_TOKEN));
     }
 
     @Test
@@ -93,7 +93,7 @@ class JwtServiceTest {
             .isInstanceOf(CustomException.class)
             .satisfies(exception ->
                 assertThat(((CustomException) exception).getErrorCode())
-                    .isEqualTo(ErrorCode.INVALID_TOKEN));
+                    .isEqualTo(AuthErrorCode.INVALID_TOKEN));
     }
 
     @Test
@@ -111,7 +111,7 @@ class JwtServiceTest {
             .isInstanceOf(CustomException.class)
             .satisfies(exception ->
                 assertThat(((CustomException) exception).getErrorCode())
-                    .isEqualTo(ErrorCode.EXPIRED_TOKEN));
+                    .isEqualTo(AuthErrorCode.EXPIRED_TOKEN));
     }
 
     @Test
@@ -129,6 +129,6 @@ class JwtServiceTest {
             .isInstanceOf(CustomException.class)
             .satisfies(exception ->
                 assertThat(((CustomException) exception).getErrorCode())
-                    .isEqualTo(ErrorCode.INVALID_TOKEN));
+                    .isEqualTo(AuthErrorCode.INVALID_TOKEN));
     }
 }
