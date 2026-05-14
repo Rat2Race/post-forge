@@ -6,4 +6,7 @@ dependencies {
     api 'org.springframework:spring-web'
     api 'org.springframework.data:spring-data-commons'
     api 'com.fasterxml.jackson.core:jackson-annotations'
+
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
