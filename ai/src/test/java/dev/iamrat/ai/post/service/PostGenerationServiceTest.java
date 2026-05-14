@@ -5,6 +5,7 @@ import dev.iamrat.ai.post.NewsAnalysisPostRequest;
 import dev.iamrat.ai.post.dto.GeneratedPost;
 import dev.iamrat.ai.prompt.PromptTemplateLoader;
 import dev.iamrat.board.post.PostCategory;
+import dev.iamrat.board.post.PostWriteCommand;
 import dev.iamrat.board.post.PostWriter;
 import java.util.List;
 import java.util.Map;
@@ -25,8 +26,7 @@ import org.springframework.ai.vectorstore.VectorStore;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.contains;
-import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -125,15 +125,15 @@ class PostGenerationServiceTest {
                 .willReturn(List.of());
             given(chatModel.call(any(Prompt.class))
                 .getResult().getOutput().getText()).willReturn(VALID_JSON_RESPONSE);
-            given(postWriter.write(
-                eq("오늘의 트렌드 분석"),
-                contains("사실 관계와 맥락을 다시 확인하세요"),
-                eq("핵심 흐름 요약"),
-                eq(List.of("트렌드", "뉴스")),
-                eq("ai-post-generator"),
-                eq("AI 분석가"),
-                eq(PostCategory.AI_ANALYSIS)
-            )).willReturn(42L);
+            given(postWriter.write(argThat(command ->
+                command.title().equals("오늘의 트렌드 분석")
+                    && command.content().contains("사실 관계와 맥락을 다시 확인하세요")
+                    && command.summary().equals("핵심 흐름 요약")
+                    && command.tags().equals(List.of("트렌드", "뉴스"))
+                    && command.userId().equals("ai-post-generator")
+                    && command.nickname().equals("AI 분석가")
+                    && command.category() == PostCategory.AI_ANALYSIS
+            ))).willReturn(42L);
 
             Long postId = postGenerationService.publishNewsAnalysis(new NewsAnalysisPostRequest(
                 "테크",
@@ -150,14 +150,15 @@ class PostGenerationServiceTest {
         void publish_callsPostWriter_returnsId() {
             GeneratedPost post = new GeneratedPost(
                 "제목", "요약", "내용", List.of("태그"));
-            given(postWriter.write("제목", "내용", "요약", List.of("태그"),
-                "ai-post-generator", "AI 분석가", PostCategory.AI_ANALYSIS)).willReturn(42L);
+            PostWriteCommand command = new PostWriteCommand(
+                "제목", "내용", "요약", List.of("태그"),
+                "ai-post-generator", "AI 분석가", PostCategory.AI_ANALYSIS);
+            given(postWriter.write(command)).willReturn(42L);
 
             Long postId = postGenerationService.publish(post);
 
             assertThat(postId).isEqualTo(42L);
-            verify(postWriter).write("제목", "내용", "요약", List.of("태그"),
-                "ai-post-generator", "AI 분석가", PostCategory.AI_ANALYSIS);
+            verify(postWriter).write(command);
         }
     }
 }
