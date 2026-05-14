@@ -6,6 +6,7 @@ dependencies {
     implementation project(':core')
 
     implementation 'org.springframework:spring-webmvc'
+    implementation 'org.springframework.data:spring-data-jpa'
     implementation 'org.springframework.boot:spring-boot-starter-data-redis'
     implementation "org.springdoc:springdoc-openapi-starter-webmvc-ui:${springdocOpenapiVersion}"
     implementation 'org.springframework.security:spring-security-core'
