@@ -6,6 +6,7 @@ import dev.iamrat.ai.post.NewsAnalysisPostRequest;
 import dev.iamrat.ai.post.dto.GeneratedPost;
 import dev.iamrat.ai.prompt.PromptTemplateLoader;
 import dev.iamrat.board.post.PostCategory;
+import dev.iamrat.board.post.PostWriteCommand;
 import dev.iamrat.board.post.PostWriter;
 import java.util.List;
 import java.util.Map;
@@ -76,7 +77,7 @@ public class PostGenerationService implements NewsAnalysisPostPublisher {
     }
 
     public Long publish(GeneratedPost post) {
-        Long postId = postWriter.write(
+        Long postId = postWriter.write(new PostWriteCommand(
             post.title(),
             post.content(),
             post.summary(),
@@ -84,7 +85,7 @@ public class PostGenerationService implements NewsAnalysisPostPublisher {
             AI_USER_ID,
             AI_NICKNAME,
             PostCategory.AI_ANALYSIS
-        );
+        ));
         log.info("게시글 Board에 등록 완료 - postId: {}", postId);
         return postId;
     }
