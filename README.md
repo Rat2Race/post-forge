@@ -237,7 +237,7 @@ crawl  → 독립 Spring Boot 애플리케이션. 메인 app에는 /internal/cra
 | `POST` | `/auth/register` | 회원가입 |
 | `POST` | `/auth/login` | ID/PW 로그인 |
 | `POST` | `/auth/token/reissue` | Refresh Token 기반 Access Token 재발급 |
-| `POST` | `/auth/oauth2/exchange` | OAuth2 authorization code exchange |
+| `POST` | `/auth/oauth2/exchange` | OAuth2 authorization code 교환(JSON body) |
 | `POST` | `/auth/email/send` | 인증 메일 발송 |
 | `GET` | `/auth/email/verify?token=` | 이메일 인증 |
 | `GET` | `/posts` | 게시글 목록/검색 조회 |
