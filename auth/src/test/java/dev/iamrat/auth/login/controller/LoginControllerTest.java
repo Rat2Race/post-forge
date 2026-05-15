@@ -1,6 +1,8 @@
 package dev.iamrat.auth.login.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import dev.iamrat.core.global.error.CommonErrorCode;
+import dev.iamrat.core.global.exception.CustomException;
 import dev.iamrat.support.web.GlobalExceptionHandler;
 import dev.iamrat.auth.login.dto.CustomUserDetails;
 import dev.iamrat.auth.login.dto.LoginRequest;
@@ -75,7 +77,7 @@ class LoginControllerTest {
         void login_validCredentials_returns200() throws Exception {
             LoginRequest request = createValidLoginRequest();
             JwtResponse tokenResponse = createTokenResponse();
-            given(loginService.login(any(LoginRequest.class))).willReturn(tokenResponse);
+            given(loginService.login(any(LoginRequest.class), anyString())).willReturn(tokenResponse);
 
             mockMvc.perform(post("/auth/login")
                     .contentType(MediaType.APPLICATION_JSON)
@@ -130,7 +132,7 @@ class LoginControllerTest {
         @DisplayName("아이디 또는 비밀번호가 틀리면 401을 반환한다")
         void login_invalidCredentials_returns401() throws Exception {
             LoginRequest request = createValidLoginRequest();
-            given(loginService.login(any(LoginRequest.class)))
+            given(loginService.login(any(LoginRequest.class), anyString()))
                 .willThrow(new BadCredentialsException("Bad credentials"));
 
             mockMvc.perform(post("/auth/login")
@@ -138,6 +140,20 @@ class LoginControllerTest {
                     .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.error").value("INVALID_CREDENTIALS"));
+        }
+
+        @Test
+        @DisplayName("로그인 보호 정책에 걸리면 429를 반환한다")
+        void login_tooManyAttempts_returns429() throws Exception {
+            LoginRequest request = createValidLoginRequest();
+            given(loginService.login(any(LoginRequest.class), anyString()))
+                .willThrow(new CustomException(CommonErrorCode.TOO_MANY_REQUESTS));
+
+            mockMvc.perform(post("/auth/login")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isTooManyRequests())
+                .andExpect(jsonPath("$.error").value("TOO_MANY_REQUESTS"));
         }
     }
 

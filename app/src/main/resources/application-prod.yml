@@ -99,6 +99,17 @@ spring:
 internal:
   api-key: ${INTERNAL_API_KEY}
 
+auth:
+  login:
+    protection:
+      enabled: true
+      rate-limit-window-seconds: 60
+      user-limit-per-window: 10
+      ip-limit-per-window: 30
+      failure-window-seconds: 300
+      failure-limit: 5
+      lock-seconds: 300
+
 jwt:
   secret: ${JWT_SECRET}
   accessTokenValidity: 15
