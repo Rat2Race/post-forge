@@ -47,6 +47,8 @@ tests/**
 !tests/k6/
 !tests/k6/manual/
 !tests/k6/manual/performance.js
+!tests/k6/manual/post-api/
+!tests/k6/manual/post-api/**
 !tests/bruno/
 !tests/bruno/api/
 !tests/bruno/api/manual/

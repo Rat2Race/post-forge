@@ -185,6 +185,10 @@ function brunoFolderFor(endpoint) {
   return "draft";
 }
 
+function isRunnableSmoke(endpoint) {
+  return endpoint.class === "smoke" && endpoint.reviewRequired === false;
+}
+
 function tagsFor(endpoint, folder) {
   const tags = ["generated"];
 
@@ -260,8 +264,7 @@ function renderFolder(name, seq) {
 }
 
 function isK6SafeSmoke(endpoint) {
-  return endpoint.class === "smoke" &&
-    endpoint.reviewRequired === false &&
+  return isRunnableSmoke(endpoint) &&
     String(endpoint.method).toUpperCase() === "GET" &&
     !String(endpoint.path).includes("{");
 }
@@ -1056,6 +1059,10 @@ function replaceReportSection(sectionTitle, body) {
 const policyText = fs.readFileSync(policyPath, "utf8");
 const endpoints = parsePolicyEndpoints(policyText);
 const generatedEndpoints = endpoints.filter((endpoint) => endpoint.class !== "manual" && endpoint.class !== "forbidden");
+const runnableSmokeEndpoints = endpoints.filter(isRunnableSmoke);
+const smokeReviewCandidates = endpoints.filter((endpoint) => endpoint.class === "smoke" && endpoint.reviewRequired);
+const scenarioEndpoints = endpoints.filter((endpoint) => endpoint.class === "scenario");
+const manualOrForbiddenEndpoints = endpoints.filter((endpoint) => endpoint.class === "manual" || endpoint.class === "forbidden");
 const k6SmokeEndpoints = endpoints.filter(isK6SafeSmoke);
 
 ensureBrunoNativeCollection();
@@ -1094,11 +1101,15 @@ fs.writeFileSync(resultPath, `${JSON.stringify({
     smokeRequests: brunoCounts.smoke,
     draftRequests: brunoCounts.draft,
     scenarioRequests: brunoCounts.scenario,
+    runnableSmokeEndpoints: runnableSmokeEndpoints.length,
+    smokeReviewCandidates: smokeReviewCandidates.length,
+    scenarioEndpoints: scenarioEndpoints.length,
   },
   k6: {
     generatedRoot: path.relative(rootDir, k6GeneratedDir),
     smokeEndpoints: k6SmokeEndpoints.length,
     smokeScript: "tests/k6/generated/smoke.js",
+    policy: "GET-only, reviewRequired=false, no path variables",
   },
   sqlDrafts: {
     status: sqlDrafts.status,
@@ -1108,7 +1119,7 @@ fs.writeFileSync(resultPath, `${JSON.stringify({
     files: sqlDrafts.files,
     warnings: sqlDrafts.warnings || [],
   },
-  skippedManualOrForbidden: endpoints.length - generatedEndpoints.length,
+  skippedManualOrForbidden: manualOrForbiddenEndpoints.length,
 }, null, 2)}\n`);
 
 replaceReportSection("Generated Tests", [
@@ -1116,14 +1127,18 @@ replaceReportSection("Generated Tests", [
   `- Bruno smoke requests: \`${brunoCounts.smoke}\``,
   `- Bruno draft requests: \`${brunoCounts.draft}\``,
   `- Bruno scenario requests: \`${brunoCounts.scenario}\``,
+  `- Runnable smoke endpoints: \`${runnableSmokeEndpoints.length}\``,
+  `- Smoke candidates requiring review: \`${smokeReviewCandidates.length}\``,
+  `- Scenario endpoints kept out of smoke: \`${scenarioEndpoints.length}\``,
   `- k6 smoke endpoints: \`${k6SmokeEndpoints.length}\``,
   `- SQL draft status: \`${sqlDrafts.status}\``,
   `- SQL draft reason: \`${sqlDrafts.reason}\``,
   `- SQL draft files: \`${sqlDrafts.files.length}\``,
   `- SQL draft warnings: \`${(sqlDrafts.warnings || []).length}\``,
-  `- Skipped manual/forbidden endpoints: \`${endpoints.length - generatedEndpoints.length}\``,
+  `- Skipped manual/forbidden endpoints: \`${manualOrForbiddenEndpoints.length}\``,
   "",
   "Bruno smoke generation includes only policy smoke endpoints with `reviewRequired: false`. Other smoke candidates are generated as draft requests so the default smoke command stays runnable.",
+  "k6 generated smoke is stricter: it includes only GET smoke endpoints without path variables. Scenario/manual flows stay outside automatic smoke and should be promoted under `tests/k6/manual` or Bruno `manual/` after fixtures and cleanup are defined.",
   "SQL draft generation reads discovered JPA entities and writes reviewable SQL under `tests/sql/generated`; setup does not execute those SQL files.",
   ...(sqlDrafts.warnings || []).map((warning) => `- SQL draft warning: ${warning}`),
 ].join("\n"));
