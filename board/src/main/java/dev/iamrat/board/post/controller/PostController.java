@@ -78,7 +78,7 @@ public class PostController {
     @PreAuthorize("hasRole('ADMIN') or hasRole('USER') and @postService.isOwner(#postId, authentication.name)")
     public ResponseEntity<PostSummaryResponse> updatePost(
         @PathVariable("postId") Long postId,
-        @RequestBody PostRequest postRequest
+        @RequestBody @Valid PostRequest postRequest
     ) {
         PostSummaryResponse modifiedPost = postService.updatePost(
             postId,
