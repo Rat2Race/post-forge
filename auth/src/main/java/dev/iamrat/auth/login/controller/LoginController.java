@@ -7,6 +7,7 @@ import dev.iamrat.auth.login.dto.LoginRequest;
 import dev.iamrat.auth.token.dto.AccessTokenResponse;
 import dev.iamrat.auth.token.dto.JwtResponse;
 import dev.iamrat.auth.token.provider.CookieProvider;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -32,8 +33,9 @@ public class LoginController {
 
 	@PostMapping("/login")
 	public ResponseEntity<AccessTokenResponse> login(@Valid @RequestBody LoginRequest request,
+			HttpServletRequest servletRequest,
 			HttpServletResponse response) {
-		JwtResponse jwtResponse = loginService.login(request);
+		JwtResponse jwtResponse = loginService.login(request, servletRequest.getRemoteAddr());
 
 		cookieProvider.addRefreshTokenCookie(response, jwtResponse.refreshToken());
 
