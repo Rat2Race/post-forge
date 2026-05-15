@@ -1,12 +1,12 @@
 package dev.iamrat.ai.post.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import dev.iamrat.ai.post.NewsAnalysisPostRequest;
+import dev.iamrat.core.ai.post.NewsAnalysisPostRequest;
 import dev.iamrat.ai.post.dto.GeneratedPost;
 import dev.iamrat.ai.prompt.PromptTemplateLoader;
-import dev.iamrat.board.post.PostCategory;
-import dev.iamrat.board.post.PostWriteCommand;
-import dev.iamrat.board.post.PostWriter;
+import dev.iamrat.core.board.post.PostCategory;
+import dev.iamrat.core.board.post.PostWriteCommand;
+import dev.iamrat.core.board.post.PostWriter;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.DisplayName;

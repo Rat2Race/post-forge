@@ -53,10 +53,10 @@ public class PostForgeOpenApiGroups {
     private boolean isProtectedBySecurityFilter(HandlerMethod handlerMethod) {
         String packageName = handlerMethod.getBeanType().getPackageName();
         return packageName.startsWith("dev.iamrat.ai")
-            || packageName.startsWith("dev.iamrat.document");
+            || packageName.startsWith("dev.iamrat.ingest.document");
     }
 
     private boolean isInternalEndpoint(HandlerMethod handlerMethod) {
-        return handlerMethod.getBeanType().getPackageName().startsWith("dev.iamrat.internal");
+        return handlerMethod.getBeanType().getPackageName().startsWith("dev.iamrat.ingest.internal");
     }
 }
