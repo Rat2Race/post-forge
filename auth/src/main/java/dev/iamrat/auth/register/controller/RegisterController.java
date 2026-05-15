@@ -19,7 +19,7 @@ import org.springframework.web.bind.annotation.RestController;
 @Slf4j
 public class RegisterController {
     private final RegisterService registerService;
-
+    
     @PostMapping
     public ResponseEntity<RegisterResponse> register(@Valid @RequestBody RegisterRequest request) {
         Long memberId = registerService.register(request);

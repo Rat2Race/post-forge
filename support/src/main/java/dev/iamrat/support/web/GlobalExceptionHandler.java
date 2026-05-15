@@ -1,8 +1,9 @@
 package dev.iamrat.support.web;
 
-import dev.iamrat.global.exception.CustomException;
-import dev.iamrat.global.exception.ErrorCode;
-import dev.iamrat.global.exception.ErrorResponse;
+import dev.iamrat.core.global.error.CommonErrorCode;
+import dev.iamrat.core.global.exception.CustomException;
+import dev.iamrat.core.global.error.ErrorCode;
+import dev.iamrat.core.global.error.ErrorResponse;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.HashMap;
@@ -65,26 +66,26 @@ public class GlobalExceptionHandler {
             errors.put(fieldName, errorMessage);
         });
 
-        return buildValidationErrorResponse(ErrorCode.VALIDATION_ERROR, errors);
+        return buildValidationErrorResponse(CommonErrorCode.VALIDATION_ERROR, errors);
     }
 
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<ErrorResponse> handleHttpMessageNotReadableException(HttpMessageNotReadableException e) {
         log.error("HttpMessageNotReadableException: {}", e.getMessage());
-        return buildErrorResponse(ErrorCode.INVALID_INPUT);
+        return buildErrorResponse(CommonErrorCode.INVALID_INPUT);
     }
 
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
     public ResponseEntity<ErrorResponse> handleMethodArgumentTypeMismatchException(MethodArgumentTypeMismatchException e) {
         log.warn("Invalid path variable: {} cannot be converted to {}",
             e.getValue(), e.getRequiredType() != null ? e.getRequiredType().getSimpleName() : "unknown");
-        return buildErrorResponse(ErrorCode.INVALID_INPUT);
+        return buildErrorResponse(CommonErrorCode.INVALID_INPUT);
     }
 
     @ExceptionHandler(MissingServletRequestParameterException.class)
     public ResponseEntity<ErrorResponse> handleMissingServletRequestParameterException(MissingServletRequestParameterException e) {
         log.warn("Missing required parameter: {}", e.getParameterName());
-        return buildErrorResponse(ErrorCode.INVALID_INPUT);
+        return buildErrorResponse(CommonErrorCode.INVALID_INPUT);
     }
 
     @ExceptionHandler(NoResourceFoundException.class)
@@ -94,18 +95,18 @@ public class GlobalExceptionHandler {
         } else {
             log.warn("No resource found: {}", e.getResourcePath());
         }
-        return buildErrorResponse(ErrorCode.RESOURCE_NOT_FOUND);
+        return buildErrorResponse(CommonErrorCode.RESOURCE_NOT_FOUND);
     }
 
     @ExceptionHandler(IOException.class)
     public ResponseEntity<ErrorResponse> handleIOException(IOException e) {
         log.error("IOException: {}", e.getMessage(), e);
-        return buildErrorResponse(ErrorCode.INTERNAL_SERVER_ERROR);
+        return buildErrorResponse(CommonErrorCode.INTERNAL_SERVER_ERROR);
     }
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleException(Exception e) {
         log.error("Unexpected error: ", e);
-        return buildErrorResponse(ErrorCode.INTERNAL_SERVER_ERROR);
+        return buildErrorResponse(CommonErrorCode.INTERNAL_SERVER_ERROR);
     }
 }

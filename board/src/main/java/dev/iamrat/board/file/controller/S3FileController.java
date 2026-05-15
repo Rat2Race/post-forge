@@ -23,7 +23,7 @@ public class S3FileController {
         FileUploadResponse response = fileService.createPresignedUrl(fileName, contentType);
         return ResponseEntity.ok(response);
     }
-
+    
     @GetMapping("/{fileId}/download-url")
     public ResponseEntity<UrlResponse> getDownloadUrl(@PathVariable Long fileId) {
         String downloadUrl = fileService.createDownloadUrl(fileId);

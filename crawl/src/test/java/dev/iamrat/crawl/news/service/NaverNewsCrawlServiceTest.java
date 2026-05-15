@@ -108,7 +108,7 @@ class NaverNewsCrawlServiceTest {
         Assertions.assertThat(captor.getValue())
             .singleElement()
             .satisfies(payload -> Assertions.assertThat(payload.metadata())
-                .containsEntry("keyword", "테크")
+                .containsEntry("keyword", "삼성전자")
                 .containsEntry("newsTitle", "AI 반도체 수요 증가")
                 .containsEntry("autoPostEligible", "true")
                 .containsEntry("originalLink", "https://original-link"));
