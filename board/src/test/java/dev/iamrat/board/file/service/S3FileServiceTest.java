@@ -1,6 +1,6 @@
 package dev.iamrat.board.file.service;
 
-import dev.iamrat.board.error.BoardErrorCode;
+import dev.iamrat.board.support.error.BoardErrorCode;
 import dev.iamrat.board.file.config.S3Properties;
 import dev.iamrat.board.file.dto.FileUploadResponse;
 import dev.iamrat.board.file.entity.PostFile;

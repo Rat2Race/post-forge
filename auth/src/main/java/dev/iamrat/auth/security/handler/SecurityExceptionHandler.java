@@ -1,6 +1,6 @@
 package dev.iamrat.auth.security.handler;
 
-import dev.iamrat.auth.error.AuthErrorCode;
+import dev.iamrat.auth.support.error.AuthErrorCode;
 import dev.iamrat.core.global.error.CommonErrorCode;
 import dev.iamrat.core.global.error.ErrorCode;
 import dev.iamrat.core.global.error.ErrorResponse;

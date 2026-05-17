@@ -1,10 +1,10 @@
 package dev.iamrat.auth.token.provider;
 
-import dev.iamrat.auth.error.AuthErrorCode;
+import dev.iamrat.auth.support.error.AuthErrorCode;
 import dev.iamrat.core.global.exception.CustomException;
 import dev.iamrat.auth.login.dto.CustomUserDetails;
-import dev.iamrat.auth.member.entity.Member;
-import dev.iamrat.auth.member.service.MemberService;
+import dev.iamrat.auth.account.entity.Account;
+import dev.iamrat.auth.account.service.AccountService;
 import dev.iamrat.auth.token.dto.JwtResponse;
 import dev.iamrat.auth.token.service.JwtService;
 import io.jsonwebtoken.Claims;
@@ -25,7 +25,7 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class JwtProvider {
     private final JwtService jwtService;
-    private final MemberService memberService;
+    private final AccountService accountService;
 
     public JwtResponse createToken(String userId, String nickname,
                                    Collection<? extends GrantedAuthority> authorities) {
@@ -46,9 +46,9 @@ public class JwtProvider {
 
         jwtService.validateRefreshToken(userId, refreshToken);
 
-        Member member = memberService.findByUserId(userId);
+        Account account = accountService.findByUserId(userId);
 
-        String newAccessToken = jwtService.generateAccessToken(userId, member.getNickname(), member.getAuthorities());
+        String newAccessToken = jwtService.generateAccessToken(userId, account.getNickname(), account.getAuthorities());
         String newRefreshToken = jwtService.generateRefreshToken(userId);
 
         jwtService.saveRefreshToken(userId, newRefreshToken);

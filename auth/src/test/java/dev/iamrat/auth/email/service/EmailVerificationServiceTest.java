@@ -1,8 +1,8 @@
 package dev.iamrat.auth.email.service;
 
-import dev.iamrat.auth.error.AuthErrorCode;
+import dev.iamrat.auth.support.error.AuthErrorCode;
 import dev.iamrat.core.global.exception.CustomException;
-import dev.iamrat.auth.member.repository.MemberRepository;
+import dev.iamrat.auth.account.repository.AccountRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -30,7 +30,7 @@ class EmailVerificationServiceTest {
     ValueOperations<String, String> valueOperations;
 
     @Mock
-    MemberRepository memberRepository;
+    AccountRepository accountRepository;
 
     @Mock
     EmailService emailService;
@@ -43,7 +43,7 @@ class EmailVerificationServiceTest {
     void sendEmail_duplicate_throwsDuplicateEmail() {
         String mockEmail = "tester@test.com";
 
-        given(memberRepository.existsByEmail(mockEmail)).willReturn(true);
+        given(accountRepository.existsByEmail(mockEmail)).willReturn(true);
 
         assertThatThrownBy(() -> emailVerificationService.sendVerificationEmail(mockEmail))
             .isInstanceOf(CustomException.class)

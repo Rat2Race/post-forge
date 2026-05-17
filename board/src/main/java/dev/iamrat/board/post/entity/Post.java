@@ -1,7 +1,7 @@
 package dev.iamrat.board.post.entity;
 
 import dev.iamrat.core.board.post.PostCategory;
-import dev.iamrat.board.common.entity.AuditingFields;
+import dev.iamrat.board.support.persistence.AuditingFields;
 import dev.iamrat.board.comment.entity.Comment;
 import dev.iamrat.board.file.entity.PostFile;
 import jakarta.persistence.*;

@@ -8,11 +8,13 @@ bootJar {
 }
 
 dependencies {
+    implementation project(':core')
     implementation project(':support')
     implementation project(':auth')
     implementation project(':board')
     implementation project(':ai')
     implementation project(':ingest')
+    implementation project(':collector')
 
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'org.springframework.boot:spring-boot-starter-actuator'
@@ -22,6 +24,9 @@ dependencies {
     implementation "org.springdoc:springdoc-openapi-starter-webmvc-ui:${springdocOpenapiVersion}"
     implementation 'io.micrometer:micrometer-registry-prometheus'
     runtimeOnly "org.postgresql:postgresql"
+
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 
 tasks.named('bootJar') {

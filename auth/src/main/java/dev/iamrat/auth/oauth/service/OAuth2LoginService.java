@@ -2,8 +2,8 @@ package dev.iamrat.auth.oauth.service;
 
 import dev.iamrat.core.global.error.CommonErrorCode;
 import dev.iamrat.core.global.exception.CustomException;
-import dev.iamrat.auth.member.entity.Member;
-import dev.iamrat.auth.member.service.MemberService;
+import dev.iamrat.auth.account.entity.Account;
+import dev.iamrat.auth.account.service.AccountService;
 import dev.iamrat.auth.token.dto.JwtResponse;
 import dev.iamrat.auth.token.provider.JwtProvider;
 import lombok.RequiredArgsConstructor;
@@ -15,7 +15,7 @@ import org.springframework.stereotype.Service;
 @Slf4j
 public class OAuth2LoginService {
     private final OAuth2CodeService oAuth2CodeService;
-    private final MemberService memberService;
+    private final AccountService accountService;
     private final JwtProvider jwtProvider;
 
     public JwtResponse exchange(String code) {
@@ -24,14 +24,14 @@ public class OAuth2LoginService {
         }
 
         String userId = oAuth2CodeService.exchangeCode(code.trim());
-        Member member = memberService.findByUserId(userId);
+        Account account = accountService.findByUserId(userId);
 
         log.info("OAuth2 code 교환 성공: userId={}", userId);
 
         return jwtProvider.createToken(
-            member.getUserId(),
-            member.getNickname(),
-            member.getAuthorities()
+            account.getUserId(),
+            account.getNickname(),
+            account.getAuthorities()
         );
     }
 }

@@ -3,8 +3,6 @@ name: APP-CI
 on:
   push:
     branches: [ refactor/trend-platform ]
-    paths-ignore:
-      - 'crawl/**'
 
 permissions:
   contents: read

@@ -1,6 +1,6 @@
 package dev.iamrat.auth.token.service;
 
-import dev.iamrat.auth.error.AuthErrorCode;
+import dev.iamrat.auth.support.error.AuthErrorCode;
 import dev.iamrat.core.global.exception.CustomException;
 import io.jsonwebtoken.Claims;
 import org.junit.jupiter.api.BeforeEach;

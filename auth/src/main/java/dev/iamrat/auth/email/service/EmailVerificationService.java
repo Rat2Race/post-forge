@@ -1,8 +1,8 @@
 package dev.iamrat.auth.email.service;
 
-import dev.iamrat.auth.error.AuthErrorCode;
+import dev.iamrat.auth.support.error.AuthErrorCode;
 import dev.iamrat.core.global.exception.CustomException;
-import dev.iamrat.auth.member.repository.MemberRepository;
+import dev.iamrat.auth.account.repository.AccountRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
@@ -19,11 +19,11 @@ public class EmailVerificationService {
     private static final long VERIFIED_TTL_HOURS = 1;
 
     private final RedisTemplate<String, String> redisTemplate;
-    private final MemberRepository memberRepository;
+    private final AccountRepository accountRepository;
     private final EmailService emailService;
 
     public void sendVerificationEmail(String email) {
-        if (memberRepository.existsByEmail(email)) {
+        if (accountRepository.existsByEmail(email)) {
             throw new CustomException(AuthErrorCode.DUPLICATE_EMAIL);
         }
 

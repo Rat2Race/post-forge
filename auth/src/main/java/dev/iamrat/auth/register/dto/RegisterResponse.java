@@ -1,11 +1,11 @@
 package dev.iamrat.auth.register.dto;
 
 public record RegisterResponse(
-    Long memberId,
+    Long accountId,
     String message
 ) {
 
-    public static RegisterResponse of(Long memberId, String message) {
-        return new RegisterResponse(memberId, message);
+    public static RegisterResponse of(Long accountId, String message) {
+        return new RegisterResponse(accountId, message);
     }
 }

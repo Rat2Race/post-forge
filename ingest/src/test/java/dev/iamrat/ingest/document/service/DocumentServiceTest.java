@@ -1,8 +1,8 @@
 package dev.iamrat.ingest.document.service;
 
+import dev.iamrat.core.ingest.document.NewsDocumentMetadata;
 import dev.iamrat.ingest.document.dto.DocumentRequest;
 import java.util.List;
-import java.util.Map;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -30,11 +30,13 @@ class DocumentServiceTest {
     void store_convertsRequestsToVectorDocuments() {
         DocumentRequest request = new DocumentRequest(
             "news content",
-            "naver-news",
-            Map.of(
-                "keyword", "AI",
-                "originalLink", "https://news.example/1"
-            )
+            NewsDocumentMetadata.SOURCE_NAVER_NEWS,
+            NewsDocumentMetadata.autoPostEligible(
+                "AI",
+                "AI 반도체 수요 증가",
+                "https://news.example/1",
+                ""
+            ).toMap()
         );
 
         documentService.store(List.of(request));
@@ -47,8 +49,8 @@ class DocumentServiceTest {
         assertThat(documents).hasSize(1);
         assertThat(documents.getFirst().getText()).isEqualTo("news content");
         assertThat(documents.getFirst().getMetadata())
-            .containsEntry("source", "naver-news")
-            .containsEntry("keyword", "AI")
-            .containsEntry("originalLink", "https://news.example/1");
+            .containsEntry("source", NewsDocumentMetadata.SOURCE_NAVER_NEWS)
+            .containsEntry(NewsDocumentMetadata.KEYWORD, "AI")
+            .containsEntry(NewsDocumentMetadata.ORIGINAL_LINK, "https://news.example/1");
     }
 }

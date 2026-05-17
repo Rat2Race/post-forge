@@ -1,10 +1,10 @@
 package dev.iamrat.board.integration;
 
-import dev.iamrat.board.error.BoardErrorCode;
+import dev.iamrat.board.support.error.BoardErrorCode;
 import dev.iamrat.board.post.dto.PostDetailResponse;
 import dev.iamrat.board.post.dto.PostSummaryResponse;
 import dev.iamrat.board.post.service.ViewCountService;
-import dev.iamrat.board.integration.security.WithMockMember;
+import dev.iamrat.board.integration.security.WithMockAccount;
 import dev.iamrat.board.post.service.PostService;
 import dev.iamrat.core.global.exception.CustomException;
 import jakarta.transaction.Transactional;
@@ -40,7 +40,7 @@ class PostIntegrationTest {
     private ViewCountService viewCountService;
 
     @Test
-    @WithMockMember
+    @WithMockAccount
     @DisplayName("게시글 생성 후 상세와 목록에서 동일한 데이터를 반환한다")
     @Transactional
     void createAndReadPost() {
@@ -70,7 +70,7 @@ class PostIntegrationTest {
     }
 
     @Test
-    @WithMockMember
+    @WithMockAccount
     @DisplayName("게시글 수정 후 상세 조회에 변경된 제목과 내용이 반영된다")
     @Transactional
     void updatePost() {
@@ -98,7 +98,7 @@ class PostIntegrationTest {
     }
 
     @Test
-    @WithMockMember
+    @WithMockAccount
     @DisplayName("게시글 삭제 후 상세 조회 시 게시글을 찾을 수 없다")
     @Transactional
     void deletePost() {
