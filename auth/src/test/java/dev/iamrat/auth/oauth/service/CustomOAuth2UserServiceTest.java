@@ -1,7 +1,7 @@
 package dev.iamrat.auth.oauth.service;
 
-import dev.iamrat.auth.member.entity.Member;
-import dev.iamrat.auth.member.entity.Role;
+import dev.iamrat.auth.account.entity.Account;
+import dev.iamrat.auth.account.entity.Role;
 import dev.iamrat.auth.oauth.dto.CustomOAuth2User;
 import java.util.Collections;
 import java.util.Map;
@@ -33,7 +33,7 @@ import static org.mockito.Mockito.verify;
 class CustomOAuth2UserServiceTest {
     
     @Mock
-    private OAuth2MemberService oAuth2MemberService;
+    private OAuth2AccountService oAuth2AccountService;
     
     private CustomOAuth2UserService customOAuth2UserService;
     private OAuth2UserRequest userRequest;
@@ -41,7 +41,7 @@ class CustomOAuth2UserServiceTest {
     
     @BeforeEach
     void setUp() {
-        customOAuth2UserService = spy(new CustomOAuth2UserService(oAuth2MemberService));
+        customOAuth2UserService = spy(new CustomOAuth2UserService(oAuth2AccountService));
         
         userRequest = mock(OAuth2UserRequest.class);
         oAuth2User = new DefaultOAuth2User(
@@ -66,8 +66,8 @@ class CustomOAuth2UserServiceTest {
         given(googleClient.getRegistrationId()).willReturn("google");
         given(userRequest.getClientRegistration()).willReturn(googleClient);
         
-        Member created = member("user-uuid-123", "tester");
-        given(oAuth2MemberService.getOrCreateMember(eq("GOOGLE"), any())).willReturn(created);
+        Account created = account("user-uuid-123", "tester");
+        given(oAuth2AccountService.getOrCreateAccount(eq("GOOGLE"), any())).willReturn(created);
         
         OAuth2User result = customOAuth2UserService.loadUser(userRequest);
         
@@ -75,7 +75,7 @@ class CustomOAuth2UserServiceTest {
         assertThat(((CustomOAuth2User)result).userId()).isEqualTo("user-uuid-123");
         assertThat(((CustomOAuth2User)result).nickname()).isEqualTo("tester");
         
-        verify(oAuth2MemberService).getOrCreateMember(eq("GOOGLE"), any());
+        verify(oAuth2AccountService).getOrCreateAccount(eq("GOOGLE"), any());
     }
     
     @Test
@@ -91,15 +91,15 @@ class CustomOAuth2UserServiceTest {
         );
     }
     
-    private Member member(String userId, String nickname) {
-        Member member = Member.builder()
+    private Account account(String userId, String nickname) {
+        Account account = Account.builder()
             .userId(userId)
             .nickname(nickname)
             .email(userId + "@test.com")
             .provider("GOOGLE")
             .providerId("google-user-123")
             .build();
-        member.addRole(Role.USER);
-        return member;
+        account.addRole(Role.USER);
+        return account;
     }
 }

@@ -1,6 +1,6 @@
 package dev.iamrat.board.post.service;
 
-import dev.iamrat.board.error.BoardErrorCode;
+import dev.iamrat.board.support.error.BoardErrorCode;
 import dev.iamrat.core.board.post.PostCategory;
 import dev.iamrat.board.comment.service.CommentService;
 import dev.iamrat.board.file.entity.PostFile;

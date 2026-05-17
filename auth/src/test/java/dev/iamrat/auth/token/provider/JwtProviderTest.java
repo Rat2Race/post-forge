@@ -1,11 +1,11 @@
 package dev.iamrat.auth.token.provider;
 
-import dev.iamrat.auth.error.AuthErrorCode;
+import dev.iamrat.auth.support.error.AuthErrorCode;
 import dev.iamrat.core.global.exception.CustomException;
 import dev.iamrat.auth.login.dto.CustomUserDetails;
-import dev.iamrat.auth.member.entity.Member;
-import dev.iamrat.auth.member.entity.Role;
-import dev.iamrat.auth.member.service.MemberService;
+import dev.iamrat.auth.account.entity.Account;
+import dev.iamrat.auth.account.entity.Role;
+import dev.iamrat.auth.account.service.AccountService;
 import dev.iamrat.auth.token.dto.JwtResponse;
 import dev.iamrat.auth.token.service.JwtService;
 import io.jsonwebtoken.Claims;
@@ -37,7 +37,7 @@ class JwtProviderTest {
     private JwtService jwtService;
 
     @Mock
-    private MemberService memberService;
+    private AccountService accountService;
 
     @InjectMocks
     private JwtProvider jwtProvider;
@@ -86,14 +86,14 @@ class JwtProviderTest {
 
             doNothing().when(jwtService).validateRefreshToken(USER_ID, "old-refresh-token");
 
-            Member member = Member.builder()
+            Account account = Account.builder()
                 .userId(USER_ID)
                 .email("test@test.com")
                 .nickname("tester")
                 .roles(Set.of(Role.USER))
                 .build();
 
-            given(memberService.findByUserId(USER_ID)).willReturn(member);
+            given(accountService.findByUserId(USER_ID)).willReturn(account);
 
             given(jwtService.generateAccessToken(eq(USER_ID), any(), any())).willReturn("new-access-token");
             given(jwtService.generateRefreshToken(USER_ID)).willReturn("new-refresh-token");

@@ -14,34 +14,11 @@ public class PostForgeAuthorizationRules implements HttpAuthorizationRules {
         AuthorizeHttpRequestsConfigurer<HttpSecurity>.AuthorizationManagerRequestMatcherRegistry requests
     ) {
         requests
-            .requestMatchers(
-                "/",
-                "/index.html",
-                "/favicon.ico",
-                "/images/**",
-                "/v3/api-docs/**",
-                "/swagger-ui.html",
-                "/swagger-ui/**",
-                "/webjars/**",
-                "/oauth2/**",
-                "/login/oauth2/**"
-            ).permitAll()
-            .requestMatchers(HttpMethod.POST,
-                "/auth/register",
-                "/auth/login",
-                "/auth/token/reissue",
-                "/auth/oauth2/exchange",
-                "/auth/token/exchange",
-                "/auth/email/send"
-            ).permitAll()
-            .requestMatchers(HttpMethod.GET,
-                "/auth/email/verify",
-                "/posts",
-                "/posts/*",
-                "/posts/*/comments"
-            ).permitAll()
-            .requestMatchers("/ai/**", "/ingest/**").hasAnyRole("USER", "ADMIN")
-            .requestMatchers("/admin/**").hasRole("ADMIN")
-            .anyRequest().authenticated();
+            .requestMatchers(PostForgeSecurityRoutes.PUBLIC).permitAll()
+            .requestMatchers(HttpMethod.POST, PostForgeSecurityRoutes.PUBLIC_POST).permitAll()
+            .requestMatchers(HttpMethod.GET, PostForgeSecurityRoutes.PUBLIC_GET).permitAll()
+            .requestMatchers(PostForgeSecurityRoutes.USER_OR_ADMIN).hasAnyRole("USER", "ADMIN")
+            .requestMatchers(PostForgeSecurityRoutes.ADMIN).hasRole("ADMIN")
+            .anyRequest().denyAll();
     }
 }

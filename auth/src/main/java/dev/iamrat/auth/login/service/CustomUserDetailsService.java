@@ -1,7 +1,7 @@
 package dev.iamrat.auth.login.service;
 
-import dev.iamrat.auth.member.entity.Member;
-import dev.iamrat.auth.member.repository.MemberRepository;
+import dev.iamrat.auth.account.entity.Account;
+import dev.iamrat.auth.account.repository.AccountRepository;
 
 import dev.iamrat.auth.login.dto.CustomUserDetails;
 import lombok.RequiredArgsConstructor;
@@ -15,19 +15,19 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 @RequiredArgsConstructor
 public class CustomUserDetailsService implements UserDetailsService {
-    private final MemberRepository memberRepository;
+    private final AccountRepository accountRepository;
 
     @Override
     @Transactional(readOnly = true)
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        Member member = memberRepository.findByUserId(username)
+        Account account = accountRepository.findByUserId(username)
             .orElseThrow(() -> new UsernameNotFoundException("사용자 찾을 수 없음"));
 
         return new CustomUserDetails(
-            member.getUserId(),
-            member.getUserPw(),
-            member.getNickname(),
-            member.getAuthorities()
+            account.getUserId(),
+            account.getUserPw(),
+            account.getNickname(),
+            account.getAuthorities()
         );
     }
 }

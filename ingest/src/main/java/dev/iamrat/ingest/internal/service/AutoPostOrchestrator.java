@@ -2,10 +2,10 @@ package dev.iamrat.ingest.internal.service;
 
 import dev.iamrat.core.ai.post.NewsAnalysisPostPublisher;
 import dev.iamrat.core.ai.post.NewsAnalysisPostRequest;
+import dev.iamrat.core.ingest.document.NewsDocumentMetadata;
 import dev.iamrat.ingest.document.dto.DocumentRequest;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -15,12 +15,6 @@ import org.springframework.stereotype.Service;
 @Service
 @RequiredArgsConstructor
 public class AutoPostOrchestrator {
-
-    private static final String SOURCE_NAVER_NEWS = "naver-news";
-    private static final String METADATA_KEYWORD = "keyword";
-    private static final String METADATA_NEWS_TITLE = "newsTitle";
-    private static final String METADATA_ORIGINAL_LINK = "originalLink";
-    private static final String METADATA_AUTO_POST_ELIGIBLE = "autoPostEligible";
 
     private final NewsAnalysisPostPublisher newsAnalysisPostPublisher;
 
@@ -37,19 +31,22 @@ public class AutoPostOrchestrator {
         Set<String> publishedLinks = new LinkedHashSet<>();
 
         for (DocumentRequest request : requests) {
-            if (!isEligible(request)) {
+            NewsDocumentMetadata metadata = NewsDocumentMetadata.from(request.source(), request.metadata())
+                .filter(NewsDocumentMetadata::canPublishAutomatically)
+                .orElse(null);
+            if (metadata == null) {
                 continue;
             }
 
-            String originalLink = metadataValue(request, METADATA_ORIGINAL_LINK);
+            String originalLink = metadata.originalLink();
             if (originalLink == null || !publishedLinks.add(originalLink)) {
                 continue;
             }
 
             try {
                 newsAnalysisPostPublisher.publishNewsAnalysis(new NewsAnalysisPostRequest(
-                    metadataValue(request, METADATA_KEYWORD),
-                    metadataValue(request, METADATA_NEWS_TITLE),
+                    metadata.keyword(),
+                    metadata.newsTitle(),
                     request.content(),
                     originalLink
                 ));
@@ -62,33 +59,9 @@ public class AutoPostOrchestrator {
         return publishedCount;
     }
 
-    /**
-     * 현재 트렌드 플랫폼 자동 포스팅 정책:
-     * - 네이버 뉴스 소스만 허용
-     * - 명시적 opt-in(autoPostEligible=true)인 신규 기사만 허용
-     * - keyword/originalLink/newsTitle가 있어야 게시글 생성에 필요한 식별 정보가 충분하다고 본다
-     */
     boolean isEligible(DocumentRequest request) {
-        if (!SOURCE_NAVER_NEWS.equals(request.source())) {
-            return false;
-        }
-        if (!Boolean.parseBoolean(metadataValue(request, METADATA_AUTO_POST_ELIGIBLE))) {
-            return false;
-        }
-        return hasText(metadataValue(request, METADATA_KEYWORD))
-            && hasText(metadataValue(request, METADATA_NEWS_TITLE))
-            && hasText(metadataValue(request, METADATA_ORIGINAL_LINK));
-    }
-
-    private String metadataValue(DocumentRequest request, String key) {
-        Map<String, String> metadata = request.metadata();
-        if (metadata == null) {
-            return null;
-        }
-        return metadata.get(key);
-    }
-
-    private boolean hasText(String value) {
-        return value != null && !value.isBlank();
+        return NewsDocumentMetadata.from(request.source(), request.metadata())
+            .map(NewsDocumentMetadata::canPublishAutomatically)
+            .orElse(false);
     }
 }

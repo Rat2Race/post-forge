@@ -1,6 +1,6 @@
 package dev.iamrat.board.post.service;
 
-import dev.iamrat.board.error.BoardErrorCode;
+import dev.iamrat.board.support.error.BoardErrorCode;
 import dev.iamrat.core.global.error.CommonErrorCode;
 import dev.iamrat.core.global.exception.CustomException;
 import dev.iamrat.board.post.entity.Post;

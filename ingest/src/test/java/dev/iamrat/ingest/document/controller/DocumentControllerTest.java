@@ -2,6 +2,7 @@ package dev.iamrat.ingest.document.controller;
 
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -52,17 +53,16 @@ class DocumentControllerTest {
     }
 
     @Test
-    @DisplayName("기존 ai 문서 적재 경로도 호환용으로 유지한다")
-    void store_legacyAiPath_storesDocuments() throws Exception {
+    @DisplayName("legacy ai 문서 적재 경로는 더 이상 매핑하지 않는다")
+    void store_legacyAiPath_returnsNotFound() throws Exception {
         List<DocumentRequest> requests = requests();
 
         mockMvc.perform(post("/ai/documents")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(requests)))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$.count").value(1));
+            .andExpect(status().isNotFound());
 
-        verify(documentService).store(anyList());
+        verifyNoInteractions(documentService);
     }
 
     private List<DocumentRequest> requests() {

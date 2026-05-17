@@ -1,6 +1,6 @@
 package dev.iamrat.board.comment.service;
 
-import dev.iamrat.board.error.BoardErrorCode;
+import dev.iamrat.board.support.error.BoardErrorCode;
 import dev.iamrat.board.comment.dto.CommentDetailResponse;
 import dev.iamrat.board.comment.dto.CommentSummaryResponse;
 import dev.iamrat.board.post.entity.Post;

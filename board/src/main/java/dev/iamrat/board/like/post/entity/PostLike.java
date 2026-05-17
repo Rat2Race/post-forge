@@ -1,6 +1,6 @@
 package dev.iamrat.board.like.post.entity;
 
-import dev.iamrat.board.common.entity.AuditingFields;
+import dev.iamrat.board.support.persistence.AuditingFields;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;

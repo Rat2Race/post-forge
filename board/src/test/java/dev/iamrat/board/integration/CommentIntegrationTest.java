@@ -3,7 +3,7 @@ package dev.iamrat.board.integration;
 import dev.iamrat.board.comment.dto.CommentDetailResponse;
 import dev.iamrat.board.comment.dto.CommentSummaryResponse;
 import dev.iamrat.board.comment.service.CommentService;
-import dev.iamrat.board.integration.security.WithMockMember;
+import dev.iamrat.board.integration.security.WithMockAccount;
 import dev.iamrat.board.post.dto.PostSummaryResponse;
 import dev.iamrat.board.post.service.PostService;
 import jakarta.transaction.Transactional;
@@ -34,7 +34,7 @@ class CommentIntegrationTest {
 
     @Test
     @Transactional
-    @WithMockMember
+    @WithMockAccount
     @DisplayName("일반 댓글은 생성 후 조회 시 그대로 유지된다")
     void createAndReadComment() {
         PostSummaryResponse savedPost = postService.savePost(

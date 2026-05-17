@@ -1,6 +1,6 @@
 package dev.iamrat.board.file.support;
 
-import dev.iamrat.board.error.BoardErrorCode;
+import dev.iamrat.board.support.error.BoardErrorCode;
 import dev.iamrat.core.global.exception.CustomException;
 import org.springframework.stereotype.Component;
 

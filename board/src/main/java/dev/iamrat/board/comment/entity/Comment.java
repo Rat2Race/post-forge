@@ -1,6 +1,6 @@
 package dev.iamrat.board.comment.entity;
 
-import dev.iamrat.board.common.entity.AuditingFields;
+import dev.iamrat.board.support.persistence.AuditingFields;
 import dev.iamrat.board.post.entity.Post;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;

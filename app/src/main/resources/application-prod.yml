@@ -31,7 +31,7 @@ spring:
   jpa:
     database-platform: org.hibernate.dialect.PostgreSQLDialect
     hibernate:
-      ddl-auto: validate
+      ddl-auto: create
     #    hibernate:
     #      ddl-auto: update
     properties:
@@ -98,6 +98,14 @@ spring:
 
 internal:
   api-key: ${INTERNAL_API_KEY}
+
+collector:
+  naver-news:
+    client-id: ${NAVER_NEWS_CLIENT_ID:}
+    client-secret: ${NAVER_NEWS_CLIENT_SECRET:}
+    keywords: ${NAVER_NEWS_KEYWORDS:AI,테크,스타트업,정책}
+    display: ${NAVER_NEWS_DISPLAY:10}
+    cron: ${NAVER_NEWS_CRON:0 0 */2 * * *}
 
 auth:
   login:

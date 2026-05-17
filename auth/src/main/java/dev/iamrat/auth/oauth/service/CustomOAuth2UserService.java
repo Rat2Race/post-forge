@@ -1,6 +1,6 @@
 package dev.iamrat.auth.oauth.service;
 
-import dev.iamrat.auth.member.entity.Member;
+import dev.iamrat.auth.account.entity.Account;
 import dev.iamrat.auth.oauth.dto.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -17,7 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional
 @Slf4j
 public class CustomOAuth2UserService extends DefaultOAuth2UserService {
-    private final OAuth2MemberService oAuth2MemberService;
+    private final OAuth2AccountService oAuth2AccountService;
     
     @Override
     public OAuth2User loadUser(OAuth2UserRequest userRequest) throws OAuth2AuthenticationException {
@@ -27,16 +27,16 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
         OAuth2UserInfo userInfo = getUserInfo(registrationId, oAuth2User);
         
         String provider = registrationId.toUpperCase();
-        Member member = oAuth2MemberService.getOrCreateMember(provider, userInfo);
+        Account account = oAuth2AccountService.getOrCreateAccount(provider, userInfo);
         
         log.info("OAuth2 로그인: provider={}, providerId={}, email={}, nickname={}",
-            member.getProvider(), member.getId(), member.getEmail(), member.getNickname());
+            account.getProvider(), account.getId(), account.getEmail(), account.getNickname());
         
         return new CustomOAuth2User(
-            member.getUserId(),
-            member.getNickname(),
+            account.getUserId(),
+            account.getNickname(),
             oAuth2User.getAttributes(),
-            member.getAuthorities()
+            account.getAuthorities()
         );
     }
     

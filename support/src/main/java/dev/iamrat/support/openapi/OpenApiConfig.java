@@ -24,7 +24,7 @@ public class OpenApiConfig {
                     PostForge REST API documentation.
 
                     Public endpoints can be called without authorization. Protected endpoints use a JWT bearer token.
-                    Internal crawl endpoints can also be authorized with the X-Internal-Api-Key header.
+                    Internal collector endpoints can also be authorized with the X-Internal-Api-Key header.
                     """)
                 .license(new License().name("Proprietary")))
             .components(new Components()
@@ -37,7 +37,7 @@ public class OpenApiConfig {
                     .type(SecurityScheme.Type.APIKEY)
                     .in(SecurityScheme.In.HEADER)
                     .name("X-Internal-Api-Key")
-                    .description("Internal service API key for crawler/automation endpoints.")));
+                    .description("Internal service API key for collector/automation endpoints.")));
     }
 
 }

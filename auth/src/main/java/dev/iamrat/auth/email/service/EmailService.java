@@ -1,6 +1,6 @@
 package dev.iamrat.auth.email.service;
 
-import dev.iamrat.auth.error.AuthErrorCode;
+import dev.iamrat.auth.support.error.AuthErrorCode;
 import dev.iamrat.core.global.exception.CustomException;
 import dev.iamrat.auth.security.config.AppProperties;
 import jakarta.mail.MessagingException;

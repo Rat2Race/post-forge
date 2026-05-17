@@ -22,9 +22,9 @@ public class RegisterController {
     
     @PostMapping
     public ResponseEntity<RegisterResponse> register(@Valid @RequestBody RegisterRequest request) {
-        Long memberId = registerService.register(request);
+        Long accountId = registerService.register(request);
         return ResponseEntity
             .status(HttpStatus.CREATED)
-            .body(RegisterResponse.of(memberId, "회원가입이 완료되었습니다."));
+            .body(RegisterResponse.of(accountId, "회원가입이 완료되었습니다."));
     }
 }

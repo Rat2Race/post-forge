@@ -1,6 +1,6 @@
 package dev.iamrat.auth.register.controller;
 
-import dev.iamrat.auth.error.AuthErrorCode;
+import dev.iamrat.auth.support.error.AuthErrorCode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.iamrat.core.global.exception.CustomException;
 import dev.iamrat.core.global.error.ErrorCode;
@@ -64,7 +64,7 @@ class RegisterControllerTest {
                     .characterEncoding("utf-8")
                     .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.memberId").value(1L))
+                .andExpect(jsonPath("$.accountId").value(1L))
                 .andExpect(jsonPath("$.message").value("회원가입이 완료되었습니다."));
         }
     }

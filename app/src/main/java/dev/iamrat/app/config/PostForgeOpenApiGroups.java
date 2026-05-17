@@ -3,8 +3,10 @@ package dev.iamrat.app.config;
 import static dev.iamrat.support.openapi.OpenApiConfig.INTERNAL_API_KEY_SECURITY_SCHEME;
 import static dev.iamrat.support.openapi.OpenApiConfig.JWT_SECURITY_SCHEME;
 
+import dev.iamrat.core.global.security.OpenApiSecurityPolicy;
 import io.swagger.v3.oas.models.Operation;
 import io.swagger.v3.oas.models.security.SecurityRequirement;
+import java.util.Arrays;
 import org.springdoc.core.customizers.OperationCustomizer;
 import org.springdoc.core.models.GroupedOpenApi;
 import org.springframework.context.annotation.Bean;
@@ -20,20 +22,22 @@ public class PostForgeOpenApiGroups {
     public GroupedOpenApi allApi() {
         return GroupedOpenApi.builder()
             .group("all")
-            .pathsToMatch("/auth/**", "/user/profile/**", "/posts/**", "/files/s3/**", "/ai/**", "/ingest/**", "/internal/crawl/**")
+            .pathsToMatch(PostForgeOpenApiRoutes.ALL)
             .build();
     }
 
     @Bean
     public OperationCustomizer securityOperationCustomizer() {
         return (operation, handlerMethod) -> {
-            if (isInternalEndpoint(handlerMethod)) {
-                addSecurityRequirement(operation, JWT_SECURITY_SCHEME);
-                addSecurityRequirement(operation, INTERNAL_API_KEY_SECURITY_SCHEME);
+            OpenApiSecurityPolicy policy = findSecurityPolicy(handlerMethod);
+            if (policy != null) {
+                Arrays.stream(policy.value())
+                    .map(this::schemeName)
+                    .forEach(schemeName -> addSecurityRequirement(operation, schemeName));
                 return operation;
             }
 
-            if (hasPreAuthorize(handlerMethod) || isProtectedBySecurityFilter(handlerMethod)) {
+            if (hasPreAuthorize(handlerMethod)) {
                 addSecurityRequirement(operation, JWT_SECURITY_SCHEME);
             }
 
@@ -42,7 +46,22 @@ public class PostForgeOpenApiGroups {
     }
 
     private void addSecurityRequirement(Operation operation, String schemeName) {
+        if (operation.getSecurity() != null
+            && operation.getSecurity().stream().anyMatch(requirement -> requirement.containsKey(schemeName))) {
+            return;
+        }
         operation.addSecurityItem(new SecurityRequirement().addList(schemeName));
+    }
+
+    private OpenApiSecurityPolicy findSecurityPolicy(HandlerMethod handlerMethod) {
+        OpenApiSecurityPolicy methodPolicy = AnnotatedElementUtils.findMergedAnnotation(
+            handlerMethod.getMethod(),
+            OpenApiSecurityPolicy.class
+        );
+        if (methodPolicy != null) {
+            return methodPolicy;
+        }
+        return AnnotatedElementUtils.findMergedAnnotation(handlerMethod.getBeanType(), OpenApiSecurityPolicy.class);
     }
 
     private boolean hasPreAuthorize(HandlerMethod handlerMethod) {
@@ -50,13 +69,10 @@ public class PostForgeOpenApiGroups {
             || AnnotatedElementUtils.findMergedAnnotation(handlerMethod.getBeanType(), PreAuthorize.class) != null;
     }
 
-    private boolean isProtectedBySecurityFilter(HandlerMethod handlerMethod) {
-        String packageName = handlerMethod.getBeanType().getPackageName();
-        return packageName.startsWith("dev.iamrat.ai")
-            || packageName.startsWith("dev.iamrat.ingest.document");
-    }
-
-    private boolean isInternalEndpoint(HandlerMethod handlerMethod) {
-        return handlerMethod.getBeanType().getPackageName().startsWith("dev.iamrat.ingest.internal");
+    private String schemeName(OpenApiSecurityPolicy.Scheme scheme) {
+        return switch (scheme) {
+            case JWT -> JWT_SECURITY_SCHEME;
+            case INTERNAL_API_KEY -> INTERNAL_API_KEY_SECURITY_SCHEME;
+        };
     }
 }

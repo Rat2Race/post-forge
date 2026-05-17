@@ -3,6 +3,7 @@ package dev.iamrat.ai.chat.controller;
 import dev.iamrat.ai.chat.dto.ChatRequest;
 import dev.iamrat.ai.chat.dto.ChatResponse;
 import dev.iamrat.ai.chat.service.ChatService;
+import dev.iamrat.core.global.security.OpenApiSecurityPolicy;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -14,6 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/ai")
 @RequiredArgsConstructor
+@OpenApiSecurityPolicy(OpenApiSecurityPolicy.Scheme.JWT)
 public class ChatController {
 
     private final ChatService chatService;

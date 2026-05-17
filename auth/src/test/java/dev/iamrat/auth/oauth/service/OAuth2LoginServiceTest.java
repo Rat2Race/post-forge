@@ -1,9 +1,9 @@
 package dev.iamrat.auth.oauth.service;
 
 import dev.iamrat.core.global.exception.CustomException;
-import dev.iamrat.auth.member.entity.Member;
-import dev.iamrat.auth.member.entity.Role;
-import dev.iamrat.auth.member.service.MemberService;
+import dev.iamrat.auth.account.entity.Account;
+import dev.iamrat.auth.account.entity.Role;
+import dev.iamrat.auth.account.service.AccountService;
 import dev.iamrat.auth.token.dto.JwtResponse;
 import dev.iamrat.auth.token.provider.JwtProvider;
 import org.junit.jupiter.api.DisplayName;
@@ -27,7 +27,7 @@ class OAuth2LoginServiceTest {
     private OAuth2CodeService oAuth2CodeService;
 
     @Mock
-    private MemberService memberService;
+    private AccountService accountService;
 
     @Mock
     private JwtProvider jwtProvider;
@@ -38,7 +38,7 @@ class OAuth2LoginServiceTest {
     @Test
     @DisplayName("유효한 교환 코드면 회원 정보를 바탕으로 JWT를 발급한다")
     void exchange_validCode_issuesJwt() {
-        Member member = member("oauth-user", "tester");
+        Account account = account("oauth-user", "tester");
         JwtResponse jwtResponse = JwtResponse.builder()
             .grantType("Bearer")
             .accessToken("access-token")
@@ -46,18 +46,18 @@ class OAuth2LoginServiceTest {
             .build();
 
         given(oAuth2CodeService.exchangeCode("exchange-code")).willReturn("oauth-user");
-        given(memberService.findByUserId("oauth-user")).willReturn(member);
+        given(accountService.findByUserId("oauth-user")).willReturn(account);
         given(jwtProvider.createToken(
-            member.getUserId(),
-            member.getNickname(),
-            member.getAuthorities()
+            account.getUserId(),
+            account.getNickname(),
+            account.getAuthorities()
         )).willReturn(jwtResponse);
 
         JwtResponse result = oAuth2LoginService.exchange("exchange-code");
 
         assertThat(result).isEqualTo(jwtResponse);
         verify(oAuth2CodeService).exchangeCode("exchange-code");
-        verify(memberService).findByUserId("oauth-user");
+        verify(accountService).findByUserId("oauth-user");
     }
 
     @Test
@@ -68,15 +68,15 @@ class OAuth2LoginServiceTest {
             .hasMessageContaining("잘못된 입력");
     }
 
-    private Member member(String userId, String nickname) {
-        Member member = Member.builder()
+    private Account account(String userId, String nickname) {
+        Account account = Account.builder()
             .userId(userId)
             .nickname(nickname)
             .email(userId + "@test.com")
             .provider("GOOGLE")
             .providerId("google-user-123")
             .build();
-        member.addRole(Role.USER);
-        return member;
+        account.addRole(Role.USER);
+        return account;
     }
 }
