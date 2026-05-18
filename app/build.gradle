@@ -31,4 +31,7 @@ dependencies {
 
 tasks.named('bootJar') {
     archiveFileName = 'app.jar'
+    layered {
+        enabled = true
+    }
 }
