@@ -1,0 +1,55 @@
+meta {
+  name: Performance - Auth Update Post
+  type: http
+  seq: 7
+  tags: [
+    manual
+    performance
+    auth
+    write
+  ]
+}
+
+put {
+  url: {{baseUrl}}/posts/{{createdPostId}}
+  body: json
+  auth: bearer
+}
+
+headers {
+  Accept: application/json
+  Content-Type: application/json
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+body:json {
+  {
+    "title": "bruno perf updated {{perfRunId}}",
+    "content": "Bruno performance test updated content {{perfRunId}}. This post should be deleted by the cleanup request.",
+    "fileIds": []
+  }
+}
+
+script:pre-request {
+  if (!bru.getVar("perfRunId")) bru.setVar("perfRunId", String(Date.now()));
+  if (!bru.getVar("perfMaxMs")) bru.setVar("perfMaxMs", bru.getEnvVar("perfMaxMs") || "1000");
+}
+
+tests {
+  test("returns 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+
+  test("responds within performance budget", function() {
+    expect(res.getResponseTime()).to.be.below(Number(bru.getVar("perfMaxMs")));
+  });
+}
+
+settings {
+  encodeUrl: true
+  timeout: 5000
+  followRedirects: true
+}

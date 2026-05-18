@@ -2,23 +2,21 @@ plugins {
 	id "java-library"
 }
 
-repositories {
-	mavenCentral()
-}
-
 dependencies {
-	api project(':core')
+	implementation project(':core')
 
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'org.springframework.boot:spring-boot-starter-validation'
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    implementation 'org.springframework.boot:spring-boot-starter-data-redis'
     implementation 'org.springframework.boot:spring-boot-starter-security'
+    implementation "org.springdoc:springdoc-openapi-starter-webmvc-api:${springdocOpenapiVersion}"
 
-    implementation platform('software.amazon.awssdk:bom:2.42.4')
+    implementation platform("software.amazon.awssdk:bom:${awsSdkVersion}")
     implementation 'software.amazon.awssdk:s3'
-
-    implementation 'org.apache.tika:tika-core:2.9.1'
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
-	testImplementation 'org.springframework.security:spring-security-test'
-	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+    testImplementation project(':support')
+    testImplementation 'org.springframework.security:spring-security-test'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
     testRuntimeOnly 'com.h2database:h2'
 }

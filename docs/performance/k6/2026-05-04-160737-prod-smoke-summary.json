@@ -1,0 +1,38 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-04T07:07:37.636Z",
+  "testId": "2026-05-04-160737-prod-smoke",
+  "target": "prod",
+  "scenario": "smoke",
+  "script": "tests/k6/generated/smoke.js",
+  "appImageTag": "",
+  "appCommit": "",
+  "load": {
+    "vus": 100,
+    "iterations": 1000,
+    "durationSeconds": 12.943
+  },
+  "metrics": {
+    "checks": {
+      "rate": 1,
+      "passes": 1000,
+      "fails": 0
+    },
+    "http_reqs": 1000,
+    "requestsPerSecond": 77.26186844512907,
+    "http_req_failed": {
+      "passes": 0,
+      "fails": 1000,
+      "rate": 0
+    },
+    "http_req_duration": {
+      "avg": 128.4201440330001,
+      "min": 53.373675,
+      "med": 105.727318,
+      "max": 503.392944,
+      "p(90)": 222.79863190000003,
+      "p(95)": 311.4538844
+    }
+  },
+  "thresholdsFailed": []
+}

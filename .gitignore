@@ -14,7 +14,6 @@ out/
 **/src/main/resources/application-secret.yml
 **/src/main/resources/application-local.yml
 **/src/main/resources/application-dev.yml
-**/src/main/resources/application-prod.yml
 
 # Logs
 logs/
@@ -30,9 +29,50 @@ dist/
 
 # env
 .env
+.env.*
 !.env.example
+
+# Bruno local environments
+tests/bruno/**/environments/local.bru
+tests/bruno/**/.env
+
+# k6 local outputs
+tests/k6/results/
+tests/k6/*.summary.json
+
+# Generated testing artifacts
+# Intentionally ignored: setup can recreate policy/Bruno/k6/SQL generated outputs.
+tests/**
+!tests/
+!tests/k6/
+!tests/k6/env.js
+!tests/k6/report.js
+!tests/k6/manual/
+!tests/k6/manual/performance.js
+!tests/k6/manual/collector/
+!tests/k6/manual/collector/**
+!tests/k6/manual/post-api/
+!tests/k6/manual/post-api/**
+!tests/bruno/
+!tests/bruno/api/
+!tests/bruno/api/manual/
+!tests/bruno/api/manual/performance/
+!tests/bruno/api/manual/performance/**
+
+# setup run state
+# Intentionally ignored: setup execution state and reports are local run outputs.
+setup/state/**
+!setup/state/.gitkeep
+setup/reports/**
+!setup/reports/.gitkeep
+
+# DB
+/docker/
+redis/
 
 # H2 DB
 **/data/*.db
 # Gemini CLI internal files
 .omx/
+.codex-review/
+.codex_tmp/

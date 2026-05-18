@@ -1,0 +1,26 @@
+schemaVersion: 1
+id: k6
+name: k6
+type: performance-test
+purpose: Lightweight smoke performance checks and later load testing.
+
+commands:
+  install: setup/tools/k6/install.sh
+  verify: setup/tools/k6/verify.sh
+
+versioning:
+  strategy: os-package-manager-or-user-binary
+  macOS: brew
+  linux: apt
+  linuxFallback: github-release-to-user-bin
+  defaultVersion: latest
+  overrideEnv: K6_VERSION
+
+risk:
+  level: high
+  reason: May add an apt repository, use sudo, install via Homebrew, or download a user-local binary.
+
+outputs:
+  - tests/k6/AGENTS.md
+  - tests/k6/generated/smoke.js
+  - tests/k6/manual

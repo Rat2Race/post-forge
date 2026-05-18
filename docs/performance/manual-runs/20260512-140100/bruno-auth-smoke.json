@@ -1,0 +1,553 @@
+[
+  {
+    "iterationIndex": 0,
+    "results": [
+      {
+        "test": {
+          "filename": "manual/performance/005-auth-login.bru"
+        },
+        "request": {
+          "method": "POST",
+          "url": "http://localhost:8080/auth/login",
+          "headers": {
+            "Accept": "application/json",
+            "Content-Type": "application/json"
+          }
+        },
+        "response": {
+          "status": 200,
+          "statusText": "",
+          "headers": {
+            "vary": "Origin, Access-Control-Request-Method, Access-Control-Request-Headers",
+            "cache-control": "no-store",
+            "pragma": "no-cache",
+            "x-content-type-options": "nosniff",
+            "x-xss-protection": "0",
+            "x-frame-options": "DENY",
+            "content-type": "application/json",
+            "transfer-encoding": "chunked",
+            "date": "Tue, 12 May 2026 05:01:43 GMT",
+            "keep-alive": "timeout=60",
+            "connection": "keep-alive"
+          },
+          "url": "http://localhost/auth/login",
+          "responseTime": 82,
+          "duration": 82,
+          "size": 343
+        },
+        "error": null,
+        "status": "pass",
+        "assertionResults": [],
+        "testResults": [
+          {
+            "description": "returns 200",
+            "status": "pass",
+            "uid": "aO-2Iq9fED_A6bA2eeV8p"
+          },
+          {
+            "description": "stores access token",
+            "status": "pass",
+            "uid": "iwv65QAQoGra_EKNw0qeQ"
+          },
+          {
+            "description": "responds within performance budget",
+            "status": "pass",
+            "uid": "Mjb0_1sX4zg1cWO23D1EA"
+          }
+        ],
+        "preRequestTestResults": [],
+        "postResponseTestResults": [],
+        "shouldStopRunnerExecution": false,
+        "runDuration": 0.172057667,
+        "name": "Performance - Auth Login",
+        "path": "manual/performance/005-auth-login",
+        "iterationIndex": 0
+      },
+      {
+        "test": {
+          "filename": "manual/performance/006-auth-create-post.bru"
+        },
+        "request": {
+          "method": "POST",
+          "url": "http://localhost:8080/posts",
+          "headers": {
+            "Accept": "application/json",
+            "Content-Type": "application/json"
+          }
+        },
+        "response": {
+          "status": 201,
+          "statusText": "",
+          "headers": {
+            "vary": "Origin, Access-Control-Request-Method, Access-Control-Request-Headers",
+            "x-content-type-options": "nosniff",
+            "x-xss-protection": "0",
+            "cache-control": "no-cache, no-store, max-age=0, must-revalidate",
+            "pragma": "no-cache",
+            "expires": "0",
+            "x-frame-options": "DENY",
+            "content-type": "application/json",
+            "transfer-encoding": "chunked",
+            "date": "Tue, 12 May 2026 05:01:43 GMT",
+            "keep-alive": "timeout=60",
+            "connection": "keep-alive"
+          },
+          "url": "http://localhost/posts",
+          "responseTime": 8,
+          "duration": 8,
+          "size": 216
+        },
+        "error": null,
+        "status": "pass",
+        "assertionResults": [],
+        "testResults": [
+          {
+            "description": "returns 201",
+            "status": "pass",
+            "uid": "MclSt9KUGQslLWcvIHjvV"
+          },
+          {
+            "description": "stores created post id",
+            "status": "pass",
+            "uid": "7-dfHMFNcV6GQ_3H15RN0"
+          },
+          {
+            "description": "responds within performance budget",
+            "status": "pass",
+            "uid": "LmuX7MoK5fRTz8hEXtl3T"
+          }
+        ],
+        "preRequestTestResults": [],
+        "postResponseTestResults": [],
+        "shouldStopRunnerExecution": false,
+        "runDuration": 0.071615583,
+        "name": "Performance - Auth Create Post",
+        "path": "manual/performance/006-auth-create-post",
+        "iterationIndex": 0
+      },
+      {
+        "test": {
+          "filename": "manual/performance/007-auth-update-post.bru"
+        },
+        "request": {
+          "method": "PUT",
+          "url": "http://localhost:8080/posts/8",
+          "headers": {
+            "Accept": "application/json",
+            "Content-Type": "application/json"
+          }
+        },
+        "response": {
+          "status": 200,
+          "statusText": "",
+          "headers": {
+            "vary": "Origin, Access-Control-Request-Method, Access-Control-Request-Headers",
+            "x-content-type-options": "nosniff",
+            "x-xss-protection": "0",
+            "cache-control": "no-cache, no-store, max-age=0, must-revalidate",
+            "pragma": "no-cache",
+            "expires": "0",
+            "x-frame-options": "DENY",
+            "content-type": "application/json",
+            "transfer-encoding": "chunked",
+            "date": "Tue, 12 May 2026 05:01:43 GMT",
+            "keep-alive": "timeout=60",
+            "connection": "keep-alive"
+          },
+          "url": "http://localhost/posts/8",
+          "responseTime": 10,
+          "duration": 10,
+          "size": 224
+        },
+        "error": null,
+        "status": "pass",
+        "assertionResults": [],
+        "testResults": [
+          {
+            "description": "returns 200",
+            "status": "pass",
+            "uid": "BZrIjhdF1C2vCjdnNjvNt"
+          },
+          {
+            "description": "responds within performance budget",
+            "status": "pass",
+            "uid": "PUwuiKQ79MRRHFYZHsZ0a"
+          }
+        ],
+        "preRequestTestResults": [],
+        "postResponseTestResults": [],
+        "shouldStopRunnerExecution": false,
+        "runDuration": 0.064574542,
+        "name": "Performance - Auth Update Post",
+        "path": "manual/performance/007-auth-update-post",
+        "iterationIndex": 0
+      },
+      {
+        "test": {
+          "filename": "manual/performance/008-auth-like-post.bru"
+        },
+        "request": {
+          "method": "POST",
+          "url": "http://localhost:8080/posts/8/like",
+          "headers": {
+            "Accept": "application/json",
+            "content-type": null
+          }
+        },
+        "response": {
+          "status": 200,
+          "statusText": "",
+          "headers": {
+            "vary": "Origin, Access-Control-Request-Method, Access-Control-Request-Headers",
+            "x-content-type-options": "nosniff",
+            "x-xss-protection": "0",
+            "cache-control": "no-cache, no-store, max-age=0, must-revalidate",
+            "pragma": "no-cache",
+            "expires": "0",
+            "x-frame-options": "DENY",
+            "content-type": "application/json",
+            "transfer-encoding": "chunked",
+            "date": "Tue, 12 May 2026 05:01:43 GMT",
+            "keep-alive": "timeout=60",
+            "connection": "keep-alive"
+          },
+          "url": "http://localhost/posts/8/like",
+          "responseTime": 10,
+          "duration": 10,
+          "size": 30
+        },
+        "error": null,
+        "status": "pass",
+        "assertionResults": [],
+        "testResults": [
+          {
+            "description": "returns 200",
+            "status": "pass",
+            "uid": "th8hfQWtxN1D6wFqlHOX1"
+          },
+          {
+            "description": "responds within performance budget",
+            "status": "pass",
+            "uid": "SEXI8tVS-WlfenOZ_RVGm"
+          }
+        ],
+        "preRequestTestResults": [],
+        "postResponseTestResults": [],
+        "shouldStopRunnerExecution": false,
+        "runDuration": 0.072983333,
+        "name": "Performance - Auth Like Post",
+        "path": "manual/performance/008-auth-like-post",
+        "iterationIndex": 0
+      },
+      {
+        "test": {
+          "filename": "manual/performance/009-auth-create-comment.bru"
+        },
+        "request": {
+          "method": "POST",
+          "url": "http://localhost:8080/posts/8/comments",
+          "headers": {
+            "Accept": "application/json",
+            "Content-Type": "application/json"
+          }
+        },
+        "response": {
+          "status": 201,
+          "statusText": "",
+          "headers": {
+            "vary": "Origin, Access-Control-Request-Method, Access-Control-Request-Headers",
+            "x-content-type-options": "nosniff",
+            "x-xss-protection": "0",
+            "cache-control": "no-cache, no-store, max-age=0, must-revalidate",
+            "pragma": "no-cache",
+            "expires": "0",
+            "x-frame-options": "DENY",
+            "content-type": "application/json",
+            "transfer-encoding": "chunked",
+            "date": "Tue, 12 May 2026 05:01:43 GMT",
+            "keep-alive": "timeout=60",
+            "connection": "keep-alive"
+          },
+          "url": "http://localhost/posts/8/comments",
+          "responseTime": 7,
+          "duration": 7,
+          "size": 196
+        },
+        "error": null,
+        "status": "pass",
+        "assertionResults": [],
+        "testResults": [
+          {
+            "description": "returns 201",
+            "status": "pass",
+            "uid": "ojeeZdER86li2Vcjaz5rg"
+          },
+          {
+            "description": "stores created comment id",
+            "status": "pass",
+            "uid": "wrcMqG_ZcWX9CkOM4r8FI"
+          },
+          {
+            "description": "responds within performance budget",
+            "status": "pass",
+            "uid": "WY-kF_d_EtGGhNQ2ybrDJ"
+          }
+        ],
+        "preRequestTestResults": [],
+        "postResponseTestResults": [],
+        "shouldStopRunnerExecution": false,
+        "runDuration": 0.064082208,
+        "name": "Performance - Auth Create Comment",
+        "path": "manual/performance/009-auth-create-comment",
+        "iterationIndex": 0
+      },
+      {
+        "test": {
+          "filename": "manual/performance/010-auth-update-comment.bru"
+        },
+        "request": {
+          "method": "PUT",
+          "url": "http://localhost:8080/posts/8/comments/8",
+          "headers": {
+            "Accept": "application/json",
+            "Content-Type": "application/json"
+          }
+        },
+        "response": {
+          "status": 200,
+          "statusText": "",
+          "headers": {
+            "vary": "Origin, Access-Control-Request-Method, Access-Control-Request-Headers",
+            "x-content-type-options": "nosniff",
+            "x-xss-protection": "0",
+            "cache-control": "no-cache, no-store, max-age=0, must-revalidate",
+            "pragma": "no-cache",
+            "expires": "0",
+            "x-frame-options": "DENY",
+            "content-type": "application/json",
+            "transfer-encoding": "chunked",
+            "date": "Tue, 12 May 2026 05:01:43 GMT",
+            "keep-alive": "timeout=60",
+            "connection": "keep-alive"
+          },
+          "url": "http://localhost/posts/8/comments/8",
+          "responseTime": 8,
+          "duration": 8,
+          "size": 204
+        },
+        "error": null,
+        "status": "pass",
+        "assertionResults": [],
+        "testResults": [
+          {
+            "description": "returns 200",
+            "status": "pass",
+            "uid": "LMxY4WvapNQhTNN07Qgcv"
+          },
+          {
+            "description": "responds within performance budget",
+            "status": "pass",
+            "uid": "VPO95qLpAb1k7Xox-BT0H"
+          }
+        ],
+        "preRequestTestResults": [],
+        "postResponseTestResults": [],
+        "shouldStopRunnerExecution": false,
+        "runDuration": 0.077124917,
+        "name": "Performance - Auth Update Comment",
+        "path": "manual/performance/010-auth-update-comment",
+        "iterationIndex": 0
+      },
+      {
+        "test": {
+          "filename": "manual/performance/011-auth-like-comment.bru"
+        },
+        "request": {
+          "method": "POST",
+          "url": "http://localhost:8080/posts/8/comments/8/like",
+          "headers": {
+            "Accept": "application/json",
+            "content-type": null
+          }
+        },
+        "response": {
+          "status": 200,
+          "statusText": "",
+          "headers": {
+            "vary": "Origin, Access-Control-Request-Method, Access-Control-Request-Headers",
+            "x-content-type-options": "nosniff",
+            "x-xss-protection": "0",
+            "cache-control": "no-cache, no-store, max-age=0, must-revalidate",
+            "pragma": "no-cache",
+            "expires": "0",
+            "x-frame-options": "DENY",
+            "content-type": "application/json",
+            "transfer-encoding": "chunked",
+            "date": "Tue, 12 May 2026 05:01:43 GMT",
+            "keep-alive": "timeout=60",
+            "connection": "keep-alive"
+          },
+          "url": "http://localhost/posts/8/comments/8/like",
+          "responseTime": 14,
+          "duration": 14,
+          "size": 30
+        },
+        "error": null,
+        "status": "pass",
+        "assertionResults": [],
+        "testResults": [
+          {
+            "description": "returns 200",
+            "status": "pass",
+            "uid": "33tCvPHN567Uq5oqoVKwE"
+          },
+          {
+            "description": "responds within performance budget",
+            "status": "pass",
+            "uid": "BnVX8EgzcRpEs4P3HwXds"
+          }
+        ],
+        "preRequestTestResults": [],
+        "postResponseTestResults": [],
+        "shouldStopRunnerExecution": false,
+        "runDuration": 0.076960666,
+        "name": "Performance - Auth Like Comment",
+        "path": "manual/performance/011-auth-like-comment",
+        "iterationIndex": 0
+      },
+      {
+        "test": {
+          "filename": "manual/performance/012-auth-delete-comment.bru"
+        },
+        "request": {
+          "method": "DELETE",
+          "url": "http://localhost:8080/posts/8/comments/8",
+          "headers": {
+            "Accept": "application/json",
+            "content-type": null
+          }
+        },
+        "response": {
+          "status": 200,
+          "statusText": "",
+          "headers": {
+            "vary": "Origin, Access-Control-Request-Method, Access-Control-Request-Headers",
+            "x-content-type-options": "nosniff",
+            "x-xss-protection": "0",
+            "cache-control": "no-cache, no-store, max-age=0, must-revalidate",
+            "pragma": "no-cache",
+            "expires": "0",
+            "x-frame-options": "DENY",
+            "content-type": "application/json",
+            "content-length": "20",
+            "date": "Tue, 12 May 2026 05:01:43 GMT",
+            "keep-alive": "timeout=60",
+            "connection": "keep-alive"
+          },
+          "url": "http://localhost/posts/8/comments/8",
+          "responseTime": 8,
+          "duration": 8,
+          "size": 20
+        },
+        "error": null,
+        "status": "pass",
+        "assertionResults": [],
+        "testResults": [
+          {
+            "description": "returns 200 or 404",
+            "status": "pass",
+            "uid": "KyGIF47Y70KbZrFRwL-Pc"
+          },
+          {
+            "description": "responds within performance budget",
+            "status": "pass",
+            "uid": "4X4wyNGD2g5qsBvbMEZXK"
+          }
+        ],
+        "preRequestTestResults": [],
+        "postResponseTestResults": [],
+        "shouldStopRunnerExecution": false,
+        "runDuration": 0.0691725,
+        "name": "Performance - Auth Delete Comment",
+        "path": "manual/performance/012-auth-delete-comment",
+        "iterationIndex": 0
+      },
+      {
+        "test": {
+          "filename": "manual/performance/013-auth-delete-post.bru"
+        },
+        "request": {
+          "method": "DELETE",
+          "url": "http://localhost:8080/posts/8",
+          "headers": {
+            "Accept": "application/json",
+            "content-type": null
+          }
+        },
+        "response": {
+          "status": 200,
+          "statusText": "",
+          "headers": {
+            "vary": "Origin, Access-Control-Request-Method, Access-Control-Request-Headers",
+            "x-content-type-options": "nosniff",
+            "x-xss-protection": "0",
+            "cache-control": "no-cache, no-store, max-age=0, must-revalidate",
+            "pragma": "no-cache",
+            "expires": "0",
+            "x-frame-options": "DENY",
+            "content-type": "application/json",
+            "content-length": "23",
+            "date": "Tue, 12 May 2026 05:01:43 GMT",
+            "keep-alive": "timeout=60",
+            "connection": "keep-alive"
+          },
+          "url": "http://localhost/posts/8",
+          "responseTime": 13,
+          "duration": 13,
+          "size": 23
+        },
+        "error": null,
+        "status": "pass",
+        "assertionResults": [],
+        "testResults": [
+          {
+            "description": "returns 200 or 404",
+            "status": "pass",
+            "uid": "2QeyXXO3svD2EoVb7ztt-"
+          },
+          {
+            "description": "responds within performance budget",
+            "status": "pass",
+            "uid": "mJ3XBbSCW9gB0_xztEN_j"
+          }
+        ],
+        "preRequestTestResults": [],
+        "postResponseTestResults": [],
+        "shouldStopRunnerExecution": false,
+        "runDuration": 0.081716041,
+        "name": "Performance - Auth Delete Post",
+        "path": "manual/performance/013-auth-delete-post",
+        "iterationIndex": 0
+      }
+    ],
+    "summary": {
+      "totalRequests": 9,
+      "passedRequests": 9,
+      "failedRequests": 0,
+      "errorRequests": 0,
+      "skippedRequests": 0,
+      "totalAssertions": 0,
+      "passedAssertions": 0,
+      "failedAssertions": 0,
+      "totalTests": 21,
+      "passedTests": 21,
+      "failedTests": 0,
+      "totalPreRequestTests": 0,
+      "passedPreRequestTests": 0,
+      "failedPreRequestTests": 0,
+      "totalPostResponseTests": 0,
+      "passedPostResponseTests": 0,
+      "failedPostResponseTests": 0
+    }
+  }
+]

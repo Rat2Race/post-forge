@@ -1,0 +1,61 @@
+meta {
+  name: Performance - Auth Login
+  type: http
+  seq: 5
+  tags: [
+    manual
+    performance
+    auth
+  ]
+}
+
+post {
+  url: {{baseUrl}}/auth/login
+  body: json
+  auth: none
+}
+
+headers {
+  Accept: application/json
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "userId": "{{perfUserId}}",
+    "password": "{{perfPassword}}"
+  }
+}
+
+script:pre-request {
+  if (!bru.getVar("perfUserId")) bru.setVar("perfUserId", bru.getEnvVar("perfUserId") || "");
+  if (!bru.getVar("perfPassword")) bru.setVar("perfPassword", bru.getEnvVar("perfPassword") || "");
+  if (!bru.getVar("perfMaxMs")) bru.setVar("perfMaxMs", bru.getEnvVar("perfMaxMs") || "1000");
+}
+
+tests {
+  test("returns 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+
+  test("stores access token", function() {
+    const body = res.getBody();
+    expect(body).to.have.property("accessToken");
+    expect(body.accessToken).to.be.a("string").and.not.empty;
+    bru.setVar("accessToken", body.accessToken);
+  });
+
+  test("responds within performance budget", function() {
+    expect(res.getResponseTime()).to.be.below(Number(bru.getVar("perfMaxMs")));
+  });
+}
+
+settings {
+  encodeUrl: true
+  timeout: 5000
+  followRedirects: true
+}
+
+docs {
+  Set perfUserId and perfPassword in a local-only environment file or pass them through CLI --env-var. Do not commit secrets.
+}

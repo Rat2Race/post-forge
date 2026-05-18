@@ -3,14 +3,17 @@ plugins {
 }
 
 dependencies {
-    api project(':core')
+    implementation project(':core')
 
     implementation 'org.springframework.boot:spring-boot-starter-web'
-    implementation platform("org.springframework.ai:spring-ai-bom:1.0.0")
+    implementation 'org.springframework.boot:spring-boot-starter-jdbc'
+    implementation platform("org.springframework.ai:spring-ai-bom:${springAiVersion}")
     implementation 'org.springframework.ai:spring-ai-openai'
     implementation 'org.springframework.ai:spring-ai-pgvector-store'
+    implementation "org.springdoc:springdoc-openapi-starter-webmvc-api:${springdocOpenapiVersion}"
     implementation 'org.springframework.boot:spring-boot-starter-validation'
 
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation project(':support')
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }

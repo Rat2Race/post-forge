@@ -8,7 +8,9 @@
 *.iml
 
 # BUILD
+.gradle/
 build/
+**/build/
 !gradle/wrapper/gradle-wrapper.jar
 
 # LOG
@@ -16,15 +18,23 @@ logs/
 *.log
 
 # Docker
-Dockerfile
+Dockerfile*
 docker-compose-local.yml
+docker-compose*.yml
 
 # DOCS
-docs/docker-notes.md
 docs/
 
 # TEST
-src/test/
+tests/
+**/src/test/
 
 # YAML
 **/src/main/resources/application-local.yml
+
+# LOCAL/UNUSED APP BUILD CONTEXT
+.env
+.env.*
+.omx/
+.github/
+setup/

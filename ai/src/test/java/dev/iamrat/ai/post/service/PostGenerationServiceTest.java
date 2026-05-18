@@ -1,8 +1,14 @@
 package dev.iamrat.ai.post.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import dev.iamrat.core.ai.post.NewsAnalysisPostRequest;
 import dev.iamrat.ai.post.dto.GeneratedPost;
-import dev.iamrat.post.PostWriter;
+import dev.iamrat.ai.prompt.PromptTemplateLoader;
+import dev.iamrat.core.board.post.PostCategory;
+import dev.iamrat.core.board.post.PostWriteCommand;
+import dev.iamrat.core.board.post.PostWriter;
+import java.util.List;
+import java.util.Map;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -18,13 +24,12 @@ import org.springframework.ai.document.Document;
 import org.springframework.ai.vectorstore.SearchRequest;
 import org.springframework.ai.vectorstore.VectorStore;
 
-import java.util.List;
-import java.util.Map;
-
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.BDDMockito.given;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
 class PostGenerationServiceTest {
@@ -41,132 +46,70 @@ class PostGenerationServiceTest {
     @Mock
     private PostWriter postWriter;
 
+    @Spy
+    private OutputGuardrail outputGuardrail = new OutputGuardrail();
+
+    @Spy
+    private PromptTemplateLoader promptTemplateLoader = new PromptTemplateLoader();
+
     @InjectMocks
     private PostGenerationService postGenerationService;
 
     private static final String VALID_JSON_RESPONSE = """
             {
-              "title": "삼성전자 2025년 사업보고서 분석",
-              "summary": "삼성전자 매출액 전년 대비 9.8% 증가",
-              "content": "## 실적 요약\\n매출액 78조원으로 전년 대비 증가",
-              "tags": ["삼성전자", "실적분석", "DART"]
+              \"title\": \"오늘의 트렌드 분석\",
+              \"summary\": \"핵심 흐름 요약\",
+              \"content\": \"## 요약\\n오늘의 트렌드를 정리합니다\",
+              \"tags\": [\"트렌드\", \"뉴스\"]
             }
             """;
 
     @Nested
-    @DisplayName("게시글 생성")
+    @DisplayName("뉴스 분석 게시글 생성")
     class GenerateTests {
 
         @Test
-        @DisplayName("벡터 검색 결과와 LLM 응답으로 게시글을 생성한다")
-        void generate_withValidData_returnsGeneratedPost() {
-            // given
-            Document dartDoc = new Document("DART 공시 내용",
-                    Map.of("source", "dart", "corpName", "삼성전자", "stockCode", "005930"));
-            Document financialDoc = new Document("재무 수치 내용",
-                    Map.of("source", "dart-financial", "stockCode", "005930"));
-            Document newsDoc = new Document("뉴스 내용",
-                    Map.of("source", "naver-news"));
+        @DisplayName("관련 뉴스 문맥과 LLM 응답으로 뉴스 분석 게시글을 생성한다")
+        void generateNewsAnalysis_withNewsContext_returnsGeneratedPost() {
+            Document relatedNews = new Document("관련 뉴스 내용", Map.of("source", "naver-news"));
 
             given(vectorStore.similaritySearch(any(SearchRequest.class)))
-                    .willReturn(List.of(dartDoc))       // dart
-                    .willReturn(List.of(financialDoc))   // dart-financial
-                    .willReturn(List.of(newsDoc))        // naver-news
-                    .willReturn(List.of());              // history
+                .willReturn(List.of(relatedNews))
+                .willReturn(List.of());
 
             given(chatModel.call(any(Prompt.class))
-                    .getResult().getOutput().getText()).willReturn(VALID_JSON_RESPONSE);
+                .getResult().getOutput().getText()).willReturn(VALID_JSON_RESPONSE);
 
-            // when
-            GeneratedPost result = postGenerationService.generate("005930", "삼성전자");
+            GeneratedPost result = postGenerationService.generateNewsAnalysis(
+                "테크",
+                "AI 반도체 수요 증가",
+                "기사 본문",
+                "https://news.example/1"
+            );
 
-            // then
-            assertThat(result.title()).isEqualTo("삼성전자 2025년 사업보고서 분석");
-            assertThat(result.summary()).contains("매출액");
-            assertThat(result.tags()).containsExactly("삼성전자", "실적분석", "DART");
-            verify(vectorStore, times(4)).similaritySearch(any(SearchRequest.class));
-        }
-
-        @Test
-        @DisplayName("corpName이 null이면 공시 메타데이터에서 추출한다")
-        void generate_nullCorpName_extractsFromMetadata() {
-            // given
-            Document dartDoc = new Document("DART 공시 내용",
-                    Map.of("source", "dart", "corpName", "삼성전자", "stockCode", "005930"));
-
-            given(vectorStore.similaritySearch(any(SearchRequest.class)))
-                    .willReturn(List.of(dartDoc))
-                    .willReturn(List.of())
-                    .willReturn(List.of())
-                    .willReturn(List.of());
-
-            given(chatModel.call(any(Prompt.class))
-                    .getResult().getOutput().getText()).willReturn(VALID_JSON_RESPONSE);
-
-            // when
-            GeneratedPost result = postGenerationService.generate("005930", null);
-
-            // then
-            assertThat(result).isNotNull();
-            assertThat(result.title()).isNotBlank();
-        }
-
-        @Test
-        @DisplayName("LLM 응답이 마크다운 코드블록으로 감싸져 있어도 파싱한다")
-        void generate_markdownWrappedResponse_parsesCorrectly() {
-            // given
-            String wrappedResponse = "```json\n" + VALID_JSON_RESPONSE + "\n```";
-
-            given(vectorStore.similaritySearch(any(SearchRequest.class)))
-                    .willReturn(List.of());
-
-            given(chatModel.call(any(Prompt.class))
-                    .getResult().getOutput().getText()).willReturn(wrappedResponse);
-
-            // when
-            GeneratedPost result = postGenerationService.generate("005930", "삼성전자");
-
-            // then
-            assertThat(result.title()).isEqualTo("삼성전자 2025년 사업보고서 분석");
+            assertThat(result.title()).isEqualTo("오늘의 트렌드 분석");
+            assertThat(result.content()).contains("사실 관계와 맥락을 다시 확인하세요");
+            verify(vectorStore, times(2)).similaritySearch(any(SearchRequest.class));
         }
 
         @Test
         @DisplayName("LLM 응답 파싱 실패 시 기본 형식으로 변환한다")
-        void generate_invalidJsonResponse_fallsBackToDefault() {
-            // given
-            String invalidResponse = "이것은 JSON이 아닌 일반 텍스트 응답입니다.";
-
+        void generateNewsAnalysis_invalidJsonResponse_fallsBackToDefault() {
             given(vectorStore.similaritySearch(any(SearchRequest.class)))
-                    .willReturn(List.of());
-
+                .willReturn(List.of())
+                .willReturn(List.of());
             given(chatModel.call(any(Prompt.class))
-                    .getResult().getOutput().getText()).willReturn(invalidResponse);
+                .getResult().getOutput().getText()).willReturn("일반 텍스트 응답");
 
-            // when
-            GeneratedPost result = postGenerationService.generate("005930", "삼성전자");
+            GeneratedPost result = postGenerationService.generateNewsAnalysis(
+                "테크",
+                "AI 반도체 수요 증가",
+                "기사 본문",
+                "https://news.example/1"
+            );
 
-            // then
-            assertThat(result.title()).isEqualTo("시장 분석");
-            assertThat(result.content()).isEqualTo(invalidResponse);
-            assertThat(result.tags()).isEmpty();
-        }
-
-        @Test
-        @DisplayName("벡터 검색 실패 시 빈 결과로 계속 진행한다")
-        void generate_vectorSearchFails_continuesWithEmptyResults() {
-            // given
-            given(vectorStore.similaritySearch(any(SearchRequest.class)))
-                    .willThrow(new RuntimeException("Vector DB connection failed"));
-
-            given(chatModel.call(any(Prompt.class))
-                    .getResult().getOutput().getText()).willReturn(VALID_JSON_RESPONSE);
-
-            // when
-            GeneratedPost result = postGenerationService.generate("005930", "삼성전자");
-
-            // then
-            assertThat(result).isNotNull();
-            assertThat(result.title()).isNotBlank();
+            assertThat(result.title()).isEqualTo("트렌드 분석");
+            assertThat(result.content()).contains("일반 텍스트 응답");
         }
     }
 
@@ -175,21 +118,47 @@ class PostGenerationServiceTest {
     class PublishTests {
 
         @Test
-        @DisplayName("PostWriter를 통해 게시글을 등록하고 ID를 반환한다")
-        void publish_callsPostWriter_returnsId() {
-            // given
-            GeneratedPost post = new GeneratedPost(
-                    "제목", "요약", "내용", List.of("태그"));
-            given(postWriter.write("제목", "내용", "요약", List.of("태그"),
-                    "ai-post-generator", "AI 분석가")).willReturn(42L);
+        @DisplayName("뉴스 분석 발행 port를 통해 생성과 게시글 등록을 완료한다")
+        void publishNewsAnalysis_generatesAndPublishesPost() {
+            given(vectorStore.similaritySearch(any(SearchRequest.class)))
+                .willReturn(List.of())
+                .willReturn(List.of());
+            given(chatModel.call(any(Prompt.class))
+                .getResult().getOutput().getText()).willReturn(VALID_JSON_RESPONSE);
+            given(postWriter.write(argThat(command ->
+                command.title().equals("오늘의 트렌드 분석")
+                    && command.content().contains("사실 관계와 맥락을 다시 확인하세요")
+                    && command.summary().equals("핵심 흐름 요약")
+                    && command.tags().equals(List.of("트렌드", "뉴스"))
+                    && command.userId().equals("ai-post-generator")
+                    && command.nickname().equals("AI 분석가")
+                    && command.category() == PostCategory.AI_ANALYSIS
+            ))).willReturn(42L);
 
-            // when
+            Long postId = postGenerationService.publishNewsAnalysis(new NewsAnalysisPostRequest(
+                "테크",
+                "AI 반도체 수요 증가",
+                "기사 본문",
+                "https://news.example/1"
+            ));
+
+            assertThat(postId).isEqualTo(42L);
+        }
+
+        @Test
+        @DisplayName("PostWriter를 통해 AI_ANALYSIS 카테고리로 게시글을 등록한다")
+        void publish_callsPostWriter_returnsId() {
+            GeneratedPost post = new GeneratedPost(
+                "제목", "요약", "내용", List.of("태그"));
+            PostWriteCommand command = new PostWriteCommand(
+                "제목", "내용", "요약", List.of("태그"),
+                "ai-post-generator", "AI 분석가", PostCategory.AI_ANALYSIS);
+            given(postWriter.write(command)).willReturn(42L);
+
             Long postId = postGenerationService.publish(post);
 
-            // then
             assertThat(postId).isEqualTo(42L);
-            verify(postWriter).write("제목", "내용", "요약", List.of("태그"),
-                    "ai-post-generator", "AI 분석가");
+            verify(postWriter).write(command);
         }
     }
 }
