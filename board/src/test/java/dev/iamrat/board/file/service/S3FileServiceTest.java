@@ -1,0 +1,127 @@
+package dev.iamrat.board.file.service;
+
+import dev.iamrat.board.support.error.BoardErrorCode;
+import dev.iamrat.board.file.config.S3Properties;
+import dev.iamrat.board.file.dto.FileUploadResponse;
+import dev.iamrat.board.file.entity.PostFile;
+import dev.iamrat.board.file.repository.FileRepository;
+import dev.iamrat.board.file.support.FileTypePolicy;
+import dev.iamrat.core.global.exception.CustomException;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.Spy;
+import org.mockito.junit.jupiter.MockitoExtension;
+import software.amazon.awssdk.services.s3.presigner.S3Presigner;
+import software.amazon.awssdk.services.s3.presigner.model.GetObjectPresignRequest;
+import software.amazon.awssdk.services.s3.presigner.model.PresignedGetObjectRequest;
+import software.amazon.awssdk.services.s3.presigner.model.PresignedPutObjectRequest;
+import software.amazon.awssdk.services.s3.presigner.model.PutObjectPresignRequest;
+
+import java.net.MalformedURLException;
+import java.net.URI;
+import java.util.Optional;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+
+@ExtendWith(MockitoExtension.class)
+class S3FileServiceTest {
+
+    @InjectMocks
+    private S3FileService s3FileService;
+
+    @Mock
+    private S3Presigner s3Presigner;
+
+    @Mock
+    private FileRepository fileRepository;
+
+    @Mock
+    private S3Properties s3Properties;
+
+    @Spy
+    private FileTypePolicy fileTypePolicy;
+
+    @Test
+    @DisplayName("Presigned Upload URL 생성 시 파일 저장 후 URL 반환")
+    void testCreatePresignedUrl() throws MalformedURLException {
+        given(s3Properties.bucket()).willReturn("postforge-uploads");
+
+        PostFile savedFile = PostFile.builder()
+                .originalFileName("photo.png")
+                .savedFileName("uuid.png")
+                .filePath("images/2026-03-08/uuid.png")
+                .fileType("image/png")
+                .build();
+
+        given(fileRepository.save(any(PostFile.class))).willReturn(savedFile);
+
+        PresignedPutObjectRequest presignedRequest = mock(PresignedPutObjectRequest.class);
+        given(presignedRequest.url()).willReturn(URI.create("https://s3.example.com/presigned").toURL());
+        given(s3Presigner.presignPutObject(any(PutObjectPresignRequest.class))).willReturn(presignedRequest);
+
+        FileUploadResponse response = s3FileService.createPresignedUrl("photo.png", "image/png");
+
+        assertThat(response.savedName()).endsWith(".png");
+        assertThat(response.url()).isEqualTo("https://s3.example.com/presigned");
+        verify(fileRepository).save(any(PostFile.class));
+    }
+
+    @Test
+    @DisplayName("허용되지 않은 확장자는 Presigned URL을 발급하지 않는다")
+    void testCreatePresignedUrl_rejectsUnsupportedExtension() {
+        assertThatThrownBy(() -> s3FileService.createPresignedUrl("script.exe", "application/octet-stream"))
+                .isInstanceOf(CustomException.class)
+                .extracting(ex -> ((CustomException) ex).getErrorCode())
+                .isEqualTo(BoardErrorCode.FILE_EXTENSION_NOT_ALLOWED);
+    }
+
+    @Test
+    @DisplayName("확장자와 contentType이 다르면 Presigned URL을 발급하지 않는다")
+    void testCreatePresignedUrl_rejectsMismatchedContentType() {
+        assertThatThrownBy(() -> s3FileService.createPresignedUrl("photo.png", "image/jpeg"))
+                .isInstanceOf(CustomException.class)
+                .extracting(ex -> ((CustomException) ex).getErrorCode())
+                .isEqualTo(BoardErrorCode.FILE_TYPE_MISMATCH);
+    }
+
+    @Test
+    @DisplayName("Presigned Download URL 생성 시 파일 조회 후 URL 반환")
+    void testCreateDownloadUrl() throws MalformedURLException {
+        given(s3Properties.bucket()).willReturn("postforge-uploads");
+
+        PostFile file = PostFile.builder()
+                .originalFileName("photo.png")
+                .savedFileName("uuid.png")
+                .filePath("images/2026-03-08/uuid.png")
+                .fileType("image/png")
+                .build();
+
+        given(fileRepository.findById(1L)).willReturn(Optional.of(file));
+
+        PresignedGetObjectRequest presignedRequest = mock(PresignedGetObjectRequest.class);
+        given(presignedRequest.url()).willReturn(URI.create("https://s3.example.com/download").toURL());
+        given(s3Presigner.presignGetObject(any(GetObjectPresignRequest.class))).willReturn(presignedRequest);
+
+        String downloadUrl = s3FileService.createDownloadUrl(1L);
+
+        assertThat(downloadUrl).isEqualTo("https://s3.example.com/download");
+        verify(fileRepository).findById(1L);
+    }
+
+    @Test
+    @DisplayName("존재하지 않는 파일 다운로드 시 예외 발생")
+    void testCreateDownloadUrl_fileNotFound() {
+        given(fileRepository.findById(999L)).willReturn(Optional.empty());
+
+        assertThatThrownBy(() -> s3FileService.createDownloadUrl(999L))
+                .isInstanceOf(CustomException.class);
+    }
+}

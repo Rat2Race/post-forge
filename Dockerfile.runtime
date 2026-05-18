@@ -1,0 +1,20 @@
+FROM eclipse-temurin:21-jre AS extractor
+
+WORKDIR /builder
+
+COPY docker-build/app.jar application.jar
+
+RUN java -Djarmode=tools -jar application.jar extract --layers --destination extracted
+
+FROM eclipse-temurin:21-jre AS runtime
+
+WORKDIR /app
+
+COPY --from=extractor /builder/extracted/dependencies/ ./
+COPY --from=extractor /builder/extracted/spring-boot-loader/ ./
+COPY --from=extractor /builder/extracted/snapshot-dependencies/ ./
+COPY --from=extractor /builder/extracted/application/ ./
+
+EXPOSE 8080
+
+ENTRYPOINT ["java", "-jar", "application.jar"]

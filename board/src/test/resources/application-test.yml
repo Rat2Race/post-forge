@@ -12,6 +12,11 @@ spring:
       host: localhost
       port: 6379
 
+aws:
+  s3:
+    bucket: test-bucket
+    region: ap-northeast-2
+
 logging:
   level:
     org.springframework.web: DEBUG

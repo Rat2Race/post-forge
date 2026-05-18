@@ -1,0 +1,60 @@
+meta {
+  name: Performance - Auth Create Comment
+  type: http
+  seq: 9
+  tags: [
+    manual
+    performance
+    auth
+    write
+  ]
+}
+
+post {
+  url: {{baseUrl}}/posts/{{createdPostId}}/comments
+  body: json
+  auth: bearer
+}
+
+headers {
+  Accept: application/json
+  Content-Type: application/json
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+body:json {
+  {
+    "parentId": null,
+    "content": "Bruno perf comment {{perfRunId}}"
+  }
+}
+
+script:pre-request {
+  if (!bru.getVar("perfRunId")) bru.setVar("perfRunId", String(Date.now()));
+  if (!bru.getVar("perfMaxMs")) bru.setVar("perfMaxMs", bru.getEnvVar("perfMaxMs") || "1000");
+}
+
+tests {
+  test("returns 201", function() {
+    expect(res.getStatus()).to.equal(201);
+  });
+
+  test("stores created comment id", function() {
+    const body = res.getBody();
+    expect(body).to.have.property("id");
+    bru.setVar("createdCommentId", String(body.id));
+  });
+
+  test("responds within performance budget", function() {
+    expect(res.getResponseTime()).to.be.below(Number(bru.getVar("perfMaxMs")));
+  });
+}
+
+settings {
+  encodeUrl: true
+  timeout: 5000
+  followRedirects: true
+}
