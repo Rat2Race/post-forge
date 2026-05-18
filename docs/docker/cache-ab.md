@@ -6,7 +6,7 @@
 
 git 기록의 `b2cb42aa refactor: CI 성능 개선` 커밋을 기준으로, Docker/Gradle 캐시 적용 전후의 빌드 시간, 이미지 크기, CI 비용 proxy를 비교한다.
 
-이 검증은 현재 작업트리의 기존 `Dockerfile`, `Dockerfile.runtime`, `crawl/Dockerfile`을 수정하지 않고 `/private/tmp/postforge-cache-compare`에 각 커밋을 archive로 풀어서 수행했다.
+이 검증은 현재 작업트리의 기존 `Dockerfile`, `Dockerfile.runtime`을 수정하지 않고 `/private/tmp/postforge-cache-compare`에 각 커밋을 archive로 풀어서 수행했다.
 
 ## 비교 기준
 

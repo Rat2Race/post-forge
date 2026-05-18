@@ -45,8 +45,12 @@ tests/k6/*.summary.json
 tests/**
 !tests/
 !tests/k6/
+!tests/k6/env.js
+!tests/k6/report.js
 !tests/k6/manual/
 !tests/k6/manual/performance.js
+!tests/k6/manual/collector/
+!tests/k6/manual/collector/**
 !tests/k6/manual/post-api/
 !tests/k6/manual/post-api/**
 !tests/bruno/

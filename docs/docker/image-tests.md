@@ -114,6 +114,63 @@ done
 - v2와 v3는 최종 런타임 이미지 크기는 v1과 동일하지만, Dockerfile 레이어 구성과 build context 최적화 목적이 다르다.
 - v4는 최종 런타임 베이스가 v1-v3와 같아 이미지 크기는 동일하지만, BuildKit cache mount로 재빌드 성능 개선을 노리는 버전이다.
 
+## 2026-05-18 Dockerfile.runtime layered jar 검증
+
+`Dockerfile.runtime`을 Spring Boot 3.5의 `jarmode=tools` 기반 layer extraction 방식으로 변경한 뒤, 실제 runtime 이미지가 빌드되고 실행 가능한지 확인했다.
+
+### 변경 후 runtime 이미지 구조
+
+변경된 runtime Dockerfile은 `docker-build/app.jar`를 extractor stage에서 다음 명령으로 분해한다.
+
+```bash
+java -Djarmode=tools -jar application.jar extract --layers --destination extracted
+```
+
+그 뒤 runtime stage는 다음 레이어를 순서대로 복사한다.
+
+| 레이어 | 목적 |
+| --- | --- |
+| `dependencies` | 외부 dependency jar |
+| `spring-boot-loader` | Spring Boot loader |
+| `snapshot-dependencies` | SNAPSHOT dependency jar |
+| `application` | 애플리케이션 클래스와 리소스 |
+
+최종 runtime 이미지는 fat jar 하나(`/app/app.jar`) 대신 `/app/application.jar`와 `/app/lib` extracted layout으로 실행한다.
+
+### 검증 결과
+
+| 항목 | 결과 | 근거 |
+| --- | --- | --- |
+| `:app:bootJar` | PASS | `bash gradlew :app:bootJar -PexcludeTags=integration --build-cache --no-daemon` |
+| jar layer index | PASS | `dependencies`, `spring-boot-loader`, `snapshot-dependencies`, `application` |
+| runtime image build | PASS | `DOCKER_BUILDKIT=1 docker build --progress=plain -f Dockerfile.runtime -t postforge:runtime-layered-check .` |
+| runtime image | PASS | `sha256:552c1e628a25`, `416081559` bytes |
+| extracted layout | PASS | `/app/application.jar`, `/app/lib` 존재 |
+| Java runtime | PASS | Temurin OpenJDK `21.0.11` |
+| `/actuator/health` smoke | PASS | 임시 PostgreSQL/PgVector + Redis에서 `{"status":"UP"}` |
+
+스모크 테스트는 임시 Docker network를 만들고, `application-prod.yml`의 datasource host가 `postgres`로 고정되어 있으므로 PostgreSQL 컨테이너에 `postgres` network alias를 부여해서 진행했다. 테스트 후 임시 컨테이너와 network는 정리했다.
+
+### fat jar runtime 방식과 비교
+
+비교 대상은 같은 `app/build/libs/app.jar`를 `docker-build/app.jar`로 복사한 뒤 빌드했다. `fat jar` 기준은 이전 `Dockerfile.runtime`과 같은 구조를 보관한 `dockerfiles/cache-ab/Dockerfile.after`이고, `layered` 기준은 변경 후 `Dockerfile.runtime`이다. 아래 값은 2026-05-18 현재 WSL/Linux Docker 환경에서의 단일 측정값이므로, 2026-05-12 macOS/arm64 측정값과 직접 비교하지 않는다.
+
+| 항목 | fat jar runtime | layered runtime | 해석 |
+| --- | ---: | ---: | --- |
+| 빌드 입력 jar | `docker-build/app.jar` 94MB | `docker-build/app.jar` 94MB | 동일 산출물 사용 |
+| 이미지 크기 | `416365796` bytes | `416081559` bytes | 사실상 동일 |
+| warm build | 0.57s | 0.61s | 완전 캐시 상태에서는 차이 없음 |
+| `--no-cache` build | 1.40s | 2.72s | layered는 jar extraction 비용이 추가됨 |
+| 애플리케이션 레이어 | `COPY docker-build/app.jar` 98.2MB 단일 레이어 | `dependencies` 97.6MB + `application` 331kB 분리 | 코드 변경 시 최종 이미지 레이어 재사용에 유리 |
+| 실행 파일 배치 | `/app/app.jar` | `/app/application.jar`, `/app/lib` | layered는 extracted layout 실행 |
+
+비교 해석:
+
+- 이 변경의 목적은 이미지 크기 축소나 로컬 `--no-cache` 빌드 속도 개선이 아니다.
+- fat jar 방식은 jar 하나를 복사하므로 애플리케이션 코드만 바뀌어도 최종 이미지의 약 98MB jar 레이어가 새로 만들어진다.
+- layered 방식은 최종 이미지에서 dependency와 application 레이어가 분리된다. 의존성이 그대로이고 애플리케이션 코드/리소스만 바뀌는 배포에서는 큰 dependency 레이어를 registry push/pull에서 재사용할 수 있고, 작은 application 레이어만 바뀌는 형태가 된다.
+- Dockerfile build 과정에서는 `docker-build/app.jar`가 바뀌면 extractor stage가 다시 실행될 수 있다. 따라서 이 최적화는 "Docker build 명령 자체가 항상 빨라진다"가 아니라 "최종 이미지 레이어 구조가 배포 캐시에 유리해진다"로 보는 편이 정확하다.
+
 ## 재현 명령
 
 이미지 빌드:

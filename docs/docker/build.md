@@ -22,6 +22,7 @@
 2. 의존성 캐싱 (의존성 파일 먼저 복사해서 레이어 캐시 활용)
 3. ignore (불필요한 파일 제외로 빌드 컨텍스트 감소)
 4. BuildKit (--mount=type=cache로 Gradle 캐시 유지)
+5. Spring Boot jar layer extraction (dependencies/application 레이어 분리로 runtime 이미지 캐시 효율 개선)
 
 #### 버전별 Dockerfile
 
