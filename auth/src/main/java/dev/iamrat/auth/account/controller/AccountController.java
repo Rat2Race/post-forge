@@ -2,7 +2,7 @@ package dev.iamrat.auth.account.controller;
 
 import dev.iamrat.auth.account.dto.AccountResponse;
 import dev.iamrat.auth.account.dto.AccountUpdateRequest;
-import dev.iamrat.auth.account.dto.PasswordChangeRequest;
+import dev.iamrat.auth.account.dto.PasswordUpdateRequest;
 import dev.iamrat.auth.account.entity.Account;
 import dev.iamrat.auth.account.service.AccountService;
 import dev.iamrat.core.global.dto.MessageResponse;
@@ -26,7 +26,7 @@ public class AccountController {
     public ResponseEntity<AccountResponse> getMyAccount(
             @AuthenticationPrincipal UserPrincipal userDetails) {
 
-        Account account = accountService.findByUserId(userDetails.getUserId());
+        Account account = accountService.findWithRolesById(userDetails.getAccountId());
         return ResponseEntity.ok(AccountResponse.from(account));
     }
 
@@ -35,17 +35,17 @@ public class AccountController {
             @AuthenticationPrincipal UserPrincipal userDetails,
             @RequestBody @Valid AccountUpdateRequest request) {
 
-        accountService.updateNickname(userDetails.getUserId(), request.nickname());
+        accountService.updateNickname(userDetails.getAccountId(), request.nickname());
         return ResponseEntity.ok(MessageResponse.of("닉네임 변경 완료"));
     }
 
     @PatchMapping("/password")
-    public ResponseEntity<MessageResponse> changePassword(
+    public ResponseEntity<MessageResponse> updatePassword(
             @AuthenticationPrincipal UserPrincipal userDetails,
-            @RequestBody @Valid PasswordChangeRequest request) {
+            @RequestBody @Valid PasswordUpdateRequest request) {
 
-        accountService.changePassword(
-                userDetails.getUserId(),
+        accountService.updatePassword(
+                userDetails.getAccountId(),
                 request.currentPassword(),
                 request.newPassword());
         return ResponseEntity.ok(MessageResponse.of("비밀번호 변경 완료"));

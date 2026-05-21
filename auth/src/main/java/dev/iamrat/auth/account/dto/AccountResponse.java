@@ -7,8 +7,7 @@ import org.springframework.security.core.GrantedAuthority;
 
 @Builder
 public record AccountResponse(
-    Long id,
-    String userId,
+    String username,
     String nickname,
     String provider,
     boolean isOAuthUser,
@@ -16,11 +15,10 @@ public record AccountResponse(
 ) {
     public static AccountResponse from(Account account) {
         return AccountResponse.builder()
-            .id(account.getId())
-            .userId(account.getUserId())
+            .username(account.getUsername())
             .nickname(account.getNickname())
             .provider(account.getProvider())
-            .isOAuthUser(account.getProvider() != null)
+            .isOAuthUser(!"LOCAL".equals(account.getProvider()))
             .roles(account.getAuthorities().stream()
                 .map(GrantedAuthority::getAuthority)
                 .toList())

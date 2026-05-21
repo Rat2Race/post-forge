@@ -3,7 +3,7 @@ package dev.iamrat.auth.account.dto;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
-public record PasswordChangeRequest(
+public record PasswordUpdateRequest(
     @NotBlank(message = "현재 비밀번호를 입력해주세요")
     String currentPassword,
 

@@ -1,10 +1,12 @@
 package dev.iamrat.auth.account.service;
 
 import dev.iamrat.auth.account.entity.Account;
+import dev.iamrat.auth.account.entity.AccountStatus;
 import dev.iamrat.auth.account.entity.Role;
 import dev.iamrat.auth.account.repository.AccountRepository;
 import dev.iamrat.auth.support.error.AuthErrorCode;
 import dev.iamrat.core.global.exception.CustomException;
+import java.util.Locale;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -20,11 +22,26 @@ public class AccountService {
     private final PasswordEncoder passwordEncoder;
     
     @Transactional
-    public Account createAccount(String userId, String rawPassword,
-                                 String email, String nickname, String provider, String providerId) {
+    public Account createGeneralAccount(String username, String rawPassword, String email, String nickname) {
         Account account = Account.builder()
-            .userId(userId)
-            .userPw(rawPassword != null ? passwordEncoder.encode(rawPassword) : null)
+            .username(username)
+            .password(passwordEncoder.encode(rawPassword))
+            .email(email)
+            .nickname(nickname)
+            .provider("LOCAL")
+            .providerId(null)
+            .build();
+
+        account.addRole(Role.USER);
+
+        return accountRepository.save(account);
+    }
+
+    @Transactional
+    public Account createOAuthAccount(String provider, String providerId, String email, String nickname) {
+        Account account = Account.builder()
+            .username(provider.toLowerCase(Locale.ROOT) + "_" + providerId)
+            .password(null)
             .email(email)
             .nickname(nickname)
             .provider(provider)
@@ -35,37 +52,57 @@ public class AccountService {
 
         return accountRepository.save(account);
     }
-    
-    public Account findByUserId(String userId) {
-        return accountRepository.findByUserId(userId)
+
+    public Account findWithRolesById(Long accountId) {
+        return accountRepository.findWithRolesById(accountId)
             .orElseThrow(() -> new CustomException(AuthErrorCode.USER_NOT_FOUND));
     }
     
-    public boolean existsByUserId(String userId) {
-        return accountRepository.existsByUserId(userId);
+    public boolean existsByUsername(String username) {
+        return accountRepository.existsByUsername(username);
     }
 
     @Transactional
-    public void updateNickname(String userId, String nickname) {
+    public void updateNickname(Long accountId, String nickname) {
+        Account account = findWithRolesById(accountId);
+        ensureActive(account);
+
         if (accountRepository.existsByNickname(nickname)) {
             throw new CustomException(AuthErrorCode.DUPLICATE_NICKNAME);
         }
-        Account account = findByUserId(userId);
+
         account.updateNickname(nickname);
     }
 
     @Transactional
-    public void changePassword(String userId, String currentPassword, String newPassword) {
-        Account account = findByUserId(userId);
+    public void updatePassword(Long accountId, String currentPassword, String newPassword) {
+        Account account = findWithRolesById(accountId);
+        ensureActive(account);
 
-        if (account.getUserPw() == null) {
-            throw new CustomException(AuthErrorCode.OAUTH_PASSWORD_CHANGE_NOT_ALLOWED);
+        if (!account.isLocalAccount()) {
+            throw new CustomException(AuthErrorCode.OAUTH_PASSWORD_UPDATE_NOT_ALLOWED);
         }
 
-        if (!passwordEncoder.matches(currentPassword, account.getUserPw())) {
+        if (!passwordEncoder.matches(currentPassword, account.getPassword())) {
             throw new CustomException(AuthErrorCode.INVALID_PASSWORD);
         }
 
-        account.changePassword(newPassword, passwordEncoder);
+        account.updatePassword(newPassword, passwordEncoder);
+    }
+
+    @Transactional
+    public void updateStatus(Long accountId, AccountStatus status) {
+        if (status == null) {
+            throw new CustomException(AuthErrorCode.INVALID_ACCOUNT_STATUS);
+        }
+
+        Account account = findWithRolesById(accountId);
+        account.updateStatus(status);
+    }
+
+    private void ensureActive(Account account) {
+        if (!account.isActive()) {
+            throw new CustomException(AuthErrorCode.ACCOUNT_NOT_ACTIVE);
+        }
     }
 }
