@@ -15,10 +15,13 @@ import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
+
 import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
+
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -30,60 +33,66 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
-@Table(
-    name = "accounts",
-    uniqueConstraints = @UniqueConstraint(
-        name = "uk_accounts_provider_provider_id",
-        columnNames = {"provider", "provider_id"}
-    ),
-    indexes = @Index(name = "idx_accounts_created_at", columnList = "created_at")
-)
 @Entity
+@Table(
+        name = "accounts",
+        uniqueConstraints = {
+                @UniqueConstraint(name = "uk_accounts_username", columnNames = "username"),
+                @UniqueConstraint(name = "uk_accounts_email", columnNames = "email"),
+                @UniqueConstraint(name = "uk_accounts_nickname", columnNames = "nickname"),
+                @UniqueConstraint(name = "uk_accounts_provider_provider_id", columnNames = {"provider", "provider_id"})
+        },
+        indexes = {
+                @Index(name = "idx_accounts_status", columnList = "status")
+        }
+)
 @Getter
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @EntityListeners(AuditingEntityListener.class)
 public class Account {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, unique = true, length = 100)
-    private String userId;
+    @Column(name = "username", nullable = false, unique = true, length = 100)
+    private String username;
 
-    @Column
-    private String userPw;
+    @Column(name = "password", length = 255)
+    private String password;
 
-    @Column(nullable = false, unique = true, length = 100)
+    @Column(name = "email", nullable = false, unique = true, length = 255)
     private String email;
 
-    @Column(nullable = false, unique = true, length = 50)
+    @Column(name = "nickname", nullable = false, unique = true, length = 50)
     private String nickname;
-    
-    @Column(length = 20)
-    private String provider;
-    
-    @Column(length = 100)
+
+    @Column(name = "provider", nullable = false, length = 30)
+    @Builder.Default
+    private String provider = "LOCAL";
+
+    @Column(name = "provider_id", length = 150)
     private String providerId;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status", nullable = false, length = 30)
+    @Builder.Default
+    private AccountStatus status = AccountStatus.ACTIVE;
 
     @ElementCollection(fetch = FetchType.LAZY)
     @CollectionTable(
-        name = "account_roles",
-        joinColumns = @JoinColumn(name = "account_id"),
-        uniqueConstraints = @UniqueConstraint(
-            name = "uk_account_roles_account_role",
-            columnNames = {"account_id", "role"}
-        )
+            name = "account_roles",
+            joinColumns = @JoinColumn(name = "account_id"),
+            uniqueConstraints = {
+                    @UniqueConstraint(name = "uk_account_roles_account_role", columnNames = {"account_id", "role"})
+            }
     )
     @Enumerated(EnumType.STRING)
     @Column(name = "role", nullable = false, length = 30)
     @Builder.Default
     private Set<Role> roles = new HashSet<>();
-
-    @Column(nullable = false)
-    @Builder.Default
-    private Boolean isEnabled = true;
 
     @CreatedDate
     @Column(nullable = false, updatable = false)
@@ -91,22 +100,37 @@ public class Account {
 
     @LastModifiedDate
     private LocalDateTime updatedAt;
-    
+
     public List<SimpleGrantedAuthority> getAuthorities() {
         return roles.stream()
-            .map(role -> new SimpleGrantedAuthority(role.getValue()))
-            .toList();
+                .map(role -> new SimpleGrantedAuthority(role.getValue()))
+                .toList();
     }
-    
+
     public void addRole(Role role) {
         this.roles.add(role);
     }
-    
+
     public void updateNickname(String nickname) {
         this.nickname = nickname;
     }
-    
-    public void changePassword(String newPassword, PasswordEncoder passwordEncoder) {
-        this.userPw  = passwordEncoder.encode(newPassword);
+
+    public void updatePassword(String newPassword, PasswordEncoder passwordEncoder) {
+        this.password = passwordEncoder.encode(newPassword);
+    }
+
+    public void updateStatus(AccountStatus status) {
+        if(status == null) {
+            throw new IllegalArgumentException("상태값은 NULL 값이 들어가면 안됩니다");
+        }
+        this.status = status;
+    }
+
+    public boolean isActive() {
+        return status.equals(AccountStatus.ACTIVE);
+    }
+
+    public boolean isLocalAccount() {
+        return "LOCAL".equals(provider);
     }
 }

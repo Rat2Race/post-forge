@@ -9,9 +9,12 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface AccountRepository extends JpaRepository<Account, Long> {
 	@EntityGraph(attributePaths = "roles")
-	Optional<Account> findByUserId(String userId);
+	Optional<Account> findByUsername(String username);
 
-	boolean existsByUserId(String userId);
+	@EntityGraph(attributePaths = "roles")
+	Optional<Account> findWithRolesById(Long id);
+
+	boolean existsByUsername(String username);
 	boolean existsByEmail(String email);
     boolean existsByNickname(String nickname);
     
