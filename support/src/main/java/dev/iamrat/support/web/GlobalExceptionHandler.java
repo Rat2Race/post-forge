@@ -9,6 +9,7 @@ import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.FieldError;
@@ -96,6 +97,14 @@ public class GlobalExceptionHandler {
             log.warn("No resource found: {}", e.getResourcePath());
         }
         return buildErrorResponse(CommonErrorCode.RESOURCE_NOT_FOUND);
+    }
+
+    @ExceptionHandler(OptimisticLockingFailureException.class)
+    public ResponseEntity<ErrorResponse> handleOptimisticLockingFailureException(
+        OptimisticLockingFailureException e
+    ) {
+        log.warn("OptimisticLockingFailureException: {}", e.getMessage());
+        return buildErrorResponse(CommonErrorCode.CONCURRENT_MODIFICATION);
     }
 
     @ExceptionHandler(IOException.class)
