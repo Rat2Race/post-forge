@@ -15,6 +15,7 @@ import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
+import jakarta.persistence.Version;
 
 import java.time.LocalDateTime;
 import java.util.HashSet;
@@ -75,6 +76,10 @@ public class Account {
 
     @Column(name = "provider_id", length = 150)
     private String providerId;
+
+    @Version
+    @Column(name = "version", nullable = false)
+    private Long version;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false, length = 30)
