@@ -96,9 +96,6 @@ spring:
             user-info-uri: https://kapi.kakao.com/v2/user/me
             user-name-attribute: id
 
-internal:
-  api-key: ${INTERNAL_API_KEY}
-
 collector:
   naver-news:
     client-id: ${NAVER_NEWS_CLIENT_ID:}

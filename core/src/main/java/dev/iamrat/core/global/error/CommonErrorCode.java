@@ -10,6 +10,7 @@ public enum CommonErrorCode implements ErrorCode {
 
     VALIDATION_ERROR(HttpStatus.BAD_REQUEST, "입력값 검증 실패"),
     INVALID_INPUT(HttpStatus.BAD_REQUEST, "잘못된 입력입니다"),
+    DATA_INTEGRITY_VIOLATION(HttpStatus.CONFLICT, "데이터 무결성 제약조건을 위반했습니다"),
     CONCURRENT_MODIFICATION(HttpStatus.CONFLICT, "동시에 변경된 데이터입니다. 다시 조회 후 시도해주세요"),
     RESOURCE_NOT_FOUND(HttpStatus.NOT_FOUND, "요청한 리소스를 찾을 수 없습니다"),
     ACCESS_DENIED(HttpStatus.FORBIDDEN, "접근 권한이 없습니다"),
