@@ -3,7 +3,7 @@
 -- Tables: accounts
 -- Compatibility: Existing rows are backfilled to version 0 before enforcing NOT NULL.
 -- Rollback: ALTER TABLE accounts DROP COLUMN IF EXISTS version;
--- Verification: Compare with auth/account/entity/Account.java and run ./gradlew :auth:test.
+-- Verification: Compare with auth/account/domain/Account.java and run ./gradlew :auth:test.
 
 ALTER TABLE accounts
     ADD COLUMN IF NOT EXISTS version BIGINT;
