@@ -5,7 +5,18 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
 COLLECTION_DIR="$ROOT_DIR/tests/bruno/api"
 USER_NPM_PREFIX="${BRUNO_NPM_PREFIX:-$HOME/.local}"
 
-source "$ROOT_DIR/setup/scripts/user-path.sh"
+source "$ROOT_DIR/setup/scripts/test-env.sh"
+load_tests_env "$ROOT_DIR"
+
+prepend_path_once() {
+  local bin_dir="$1"
+
+  [[ -n "$bin_dir" ]] || return 0
+  case ":$PATH:" in
+    *":$bin_dir:"*) ;;
+    *) export PATH="${bin_dir}:${PATH}" ;;
+  esac
+}
 
 write_if_missing() {
   local path="$1"
@@ -40,12 +51,9 @@ bruno_bin() {
 
   if command -v bru >/dev/null 2>&1; then
     cli_path="$(command -v bru)"
-    if [[ "$cli_path" == "$USER_NPM_PREFIX/bin/bru" ]]; then
-      ensure_user_path "$USER_NPM_PREFIX/bin" "testing-tools-setup" >&2
-    fi
     printf '%s\n' "$cli_path"
   elif [[ -x "$USER_NPM_PREFIX/bin/bru" ]]; then
-    ensure_user_path "$USER_NPM_PREFIX/bin" "testing-tools-setup" >&2
+    prepend_path_once "$USER_NPM_PREFIX/bin"
     printf '%s\n' "$USER_NPM_PREFIX/bin/bru"
   fi
 }
@@ -170,22 +178,28 @@ else
 
   version="${BRUNO_CLI_VERSION:-latest}"
   package="@usebruno/cli@$version"
-  npm_prefix="$(npm config get prefix)"
+  install_mode="${BRUNO_INSTALL_MODE:-${SETUP_INSTALL_MODE:-user}}"
 
-  if [[ -w "$npm_prefix" ]]; then
-    printf '[bruno] installing CLI with npm global prefix: %s\n' "$package"
-    npm install -g "$package"
-  else
-    mkdir -p "$USER_NPM_PREFIX"
-    printf '[bruno] npm global prefix is not writable: %s\n' "$npm_prefix"
-    printf '[bruno] installing CLI with user npm prefix: %s\n' "$USER_NPM_PREFIX"
-    npm install -g --prefix "$USER_NPM_PREFIX" "$package"
-    ensure_user_path "$USER_NPM_PREFIX/bin" "testing-tools-setup"
-    if ! command -v bru >/dev/null 2>&1; then
-      printf '[bruno] installed CLI at %s/bin/bru\n' "$USER_NPM_PREFIX"
-      printf '[bruno] open a new shell or run: source ./setup/env.sh\n'
-    fi
-  fi
+  case "$install_mode" in
+    user)
+      mkdir -p "$USER_NPM_PREFIX"
+      printf '[bruno] installing CLI with user npm prefix: %s\n' "$USER_NPM_PREFIX"
+      npm install -g --prefix "$USER_NPM_PREFIX" "$package"
+      prepend_path_once "$USER_NPM_PREFIX/bin"
+      if ! command -v bru >/dev/null 2>&1; then
+        printf '[bruno] installed CLI at %s/bin/bru\n' "$USER_NPM_PREFIX"
+        printf '[bruno] run through ./setup/run.sh or source ./setup/env.sh before direct bru commands.\n'
+      fi
+      ;;
+    system)
+      printf '[bruno] installing CLI with npm global prefix because BRUNO_INSTALL_MODE=system: %s\n' "$package"
+      npm install -g "$package"
+      ;;
+    *)
+      printf '[bruno] invalid BRUNO_INSTALL_MODE/SETUP_INSTALL_MODE: %s (expected user or system)\n' "$install_mode" >&2
+      exit 1
+      ;;
+  esac
 fi
 
 printf '[bruno] setup complete\n'

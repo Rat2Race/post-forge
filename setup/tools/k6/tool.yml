@@ -6,6 +6,7 @@ purpose: Lightweight smoke performance checks and later load testing.
 
 commands:
   install: setup/tools/k6/install.sh
+  run: setup/tools/k6/run.sh
   verify: setup/tools/k6/verify.sh
 
 versioning:
@@ -21,6 +22,9 @@ risk:
   reason: May add an apt repository, use sudo, install via Homebrew, or download a user-local binary.
 
 outputs:
+  - tests/.env
+  - setup/run-k6
   - tests/k6/AGENTS.md
   - tests/k6/generated/smoke.js
   - tests/k6/manual
+  - setup/tools/k6/run.sh

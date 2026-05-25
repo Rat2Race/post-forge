@@ -6,11 +6,17 @@ MANIFEST="$ROOT_DIR/setup/manifest.yml"
 STATE_DIR="$ROOT_DIR/setup/state"
 REPORT_DIR="$ROOT_DIR/setup/reports"
 POLICY_FILE="$ROOT_DIR/tests/testing-policy.yml"
+VERSION_FILE="$ROOT_DIR/setup/VERSION"
 
 # Tool installers prefer user-local binaries when system paths are not writable.
 export PATH="${HOME}/.local/bin:${PATH}"
 
 ACTION="${1:-plan}"
+if [[ "$#" -gt 0 ]]; then
+  shift
+fi
+
+source "$ROOT_DIR/setup/scripts/test-env.sh"
 
 usage() {
   cat <<'EOF'
@@ -23,10 +29,16 @@ Usage:
   ./setup/run.sh sync-policy
   ./setup/run.sh generate-tests
   ./setup/run.sh run-smoke
+  ./setup/run.sh run-k6 [smoke|manual|<script>] [options] [-- <k6 run options>]
+  ./setup/run.sh doctor
+  ./setup/run.sh pack
 
 Wrappers:
   ./setup/install.sh
   ./setup/verify.sh
+  ./setup/doctor.sh
+  ./setup/pack.sh
+  ./setup/run-k6
 EOF
 }
 
@@ -149,6 +161,14 @@ command_version() {
 relative_path() {
   local path="$1"
   printf '%s' "${path#$ROOT_DIR/}"
+}
+
+setup_version() {
+  if [[ -f "$VERSION_FILE" ]]; then
+    tr -d '[:space:]' < "$VERSION_FILE"
+  else
+    printf '0.0.0'
+  fi
 }
 
 find_openapi_files() {
@@ -390,6 +410,7 @@ write_assess_state() {
 
 ensure_manifest() {
   [[ -f "$MANIFEST" ]] || die "setup/manifest.yml not found"
+  load_tests_env "$ROOT_DIR"
 }
 
 assess() {
@@ -608,6 +629,145 @@ run_smoke() {
   pass "smoke run complete"
 }
 
+run_k6() {
+  ensure_manifest
+
+  local script="$ROOT_DIR/setup/tools/k6/run.sh"
+  [[ -x "$script" ]] || die "missing executable k6 run script: ${script#$ROOT_DIR/}"
+  "$script" "$@"
+}
+
+doctor_check_command() {
+  local cmd="$1"
+  local label="$2"
+  local version_arg="${3:-}"
+
+  if command -v "$cmd" >/dev/null 2>&1; then
+    if [[ -n "$version_arg" ]]; then
+      pass "$label found: $("$cmd" "$version_arg" 2>/dev/null | head -1)"
+    else
+      pass "$label found: $(command -v "$cmd")"
+    fi
+    return 0
+  fi
+
+  warn "$label missing"
+  return 1
+}
+
+doctor_check_executable() {
+  local path="$1"
+
+  if [[ -x "$path" ]]; then
+    pass "executable found: $(relative_path "$path")"
+    return 0
+  fi
+
+  warn "executable missing or not executable: $(relative_path "$path")"
+  return 1
+}
+
+doctor_check_git_ignore() {
+  local path="$1"
+
+  if ! command -v git >/dev/null 2>&1 || ! git -C "$ROOT_DIR" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+    warn "git ignore check skipped for $path"
+    return 0
+  fi
+
+  if git -C "$ROOT_DIR" check-ignore -q "$path"; then
+    pass "git ignores $path"
+    return 0
+  fi
+
+  warn "git does not ignore $path"
+  return 1
+}
+
+doctor() {
+  ensure_manifest
+
+  local status=0
+  local install_mode="${SETUP_INSTALL_MODE:-user}"
+
+  printf '[info] setup version: %s\n' "$(setup_version)"
+  printf '[info] install mode: %s\n' "$install_mode"
+
+  doctor_check_command bash "bash" --version || status=1
+  doctor_check_command node "node" --version || status=1
+  doctor_check_command npm "npm" --version || status=1
+  doctor_check_command curl "curl" --version || status=1
+  doctor_check_command tar "tar" --version || status=1
+
+  if command -v bru >/dev/null 2>&1; then
+    pass "bruno CLI found: $(bru --version 2>/dev/null || true)"
+  else
+    warn "bruno CLI missing; run ./setup/install.sh"
+  fi
+
+  if command -v k6 >/dev/null 2>&1; then
+    pass "k6 found: $(k6 version 2>/dev/null | head -1)"
+  else
+    warn "k6 missing; run ./setup/install.sh"
+  fi
+
+  [[ -f "$ROOT_DIR/tests/.env" ]] && pass "tests env found: tests/.env" || { warn "tests env missing: tests/.env"; status=1; }
+  [[ -f "$ROOT_DIR/tests/.gitignore" ]] && pass "tests gitignore found: tests/.gitignore" || { warn "tests gitignore missing: tests/.gitignore"; status=1; }
+
+  if [[ -f "$ROOT_DIR/tests/.gitignore" ]] && grep -q '^\.env$' "$ROOT_DIR/tests/.gitignore"; then
+    pass "tests/.gitignore protects tests/.env"
+  else
+    warn "tests/.gitignore does not protect tests/.env"
+    status=1
+  fi
+
+  doctor_check_git_ignore "tests/.env" || status=1
+  doctor_check_git_ignore "setup/state/doctor-result.json" || status=1
+  doctor_check_git_ignore "setup/reports/testing-run-report.md" || status=1
+
+  doctor_check_executable "$ROOT_DIR/setup/run.sh" || status=1
+  doctor_check_executable "$ROOT_DIR/setup/install.sh" || status=1
+  doctor_check_executable "$ROOT_DIR/setup/verify.sh" || status=1
+  doctor_check_executable "$ROOT_DIR/setup/run-k6" || status=1
+  doctor_check_executable "$ROOT_DIR/setup/tools/bruno/install.sh" || status=1
+  doctor_check_executable "$ROOT_DIR/setup/tools/bruno/verify.sh" || status=1
+  doctor_check_executable "$ROOT_DIR/setup/tools/k6/install.sh" || status=1
+  doctor_check_executable "$ROOT_DIR/setup/tools/k6/verify.sh" || status=1
+  doctor_check_executable "$ROOT_DIR/setup/tools/k6/run.sh" || status=1
+
+  if [[ "$status" -eq 0 ]]; then
+    write_state "doctor" "ok" "$(setup_version)" "$install_mode"
+    pass "setup doctor complete"
+  else
+    write_state "doctor" "warning" "$(setup_version)" "$install_mode"
+    die "setup doctor found issues"
+  fi
+}
+
+pack() {
+  ensure_manifest
+
+  command -v tar >/dev/null 2>&1 || die "tar is required for pack"
+
+  local version
+  local dist_dir
+  local archive
+  version="$(setup_version)"
+  dist_dir="$ROOT_DIR/setup/dist"
+  archive="$dist_dir/testing-tool-setup-${version}.tar.gz"
+
+  mkdir -p "$dist_dir"
+  tar -czf "$archive" \
+    --exclude='setup/dist' \
+    --exclude='setup/state/*' \
+    --exclude='setup/reports/*' \
+    -C "$ROOT_DIR" \
+    setup
+
+  write_state "pack" "ok" "$(relative_path "$archive")"
+  pass "setup package written: $(relative_path "$archive")"
+}
+
 case "$ACTION" in
   assess) assess ;;
   plan) plan ;;
@@ -617,6 +777,9 @@ case "$ACTION" in
   sync-policy) sync_policy ;;
   generate-tests) generate_tests ;;
   run-smoke) run_smoke ;;
+  run-k6) run_k6 "$@" ;;
+  doctor) doctor ;;
+  pack) pack ;;
   -h|--help|help) usage ;;
   *) usage; die "unknown action: $ACTION" ;;
 esac

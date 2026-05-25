@@ -19,13 +19,16 @@ const stateDir = path.dirname(resultPath);
 const baseUrl = process.env.BASE_URL || "http://localhost:8080";
 const failOnError = process.env.SMOKE_FAIL_ON_ERROR === "true";
 const brunoVerbose = process.env.BRUNO_VERBOSE === "true";
+const brunoFilterTags = envList("BRUNO_FILTER_TAGS", "smoke");
+const brunoExcludeTags = envList("BRUNO_EXCLUDE_TAGS", "draft,scenario,requires-review");
 const brunoCollectionDir = path.join(rootDir, "tests/bruno/api");
-const k6ScriptPath = path.join(rootDir, "tests/k6/generated/smoke.js");
+const k6ScriptRoot = rootPath(process.env.K6_SCRIPT_ROOT || "tests/k6");
+const k6ScriptPath = path.join(k6ScriptRoot, "generated/smoke.js");
 const brunoEnvPath = path.join(stateDir, "bruno-smoke-env.bru");
 const brunoReportJsonPath = path.join(stateDir, "bruno-smoke-report.json");
 const k6SummaryPath = path.join(stateDir, "k6-smoke-summary.json");
-const k6ReportDir = path.join(path.dirname(reportPath), "k6");
-const k6GeneratedSummaryDir = path.join(stateDir, "k6");
+const k6ReportDir = rootPath(process.env.K6_REPORT_DIR || process.env.K6_REPORT_ROOT || path.join(path.dirname(reportPath), "k6"));
+const k6GeneratedSummaryDir = rootPath(process.env.K6_SUMMARY_DIR || process.env.K6_REPORT_ROOT || path.join(stateDir, "k6"));
 
 function now() {
   return new Date().toISOString();
@@ -34,6 +37,23 @@ function now() {
 function commandExists(command) {
   const result = spawnSync("bash", ["-lc", `command -v ${command}`], { encoding: "utf8" });
   return result.status === 0 ? result.stdout.trim() : "";
+}
+
+function envList(name, fallback) {
+  const raw = process.env[name];
+  const value = raw === undefined || raw === "" ? fallback : raw;
+  return String(value)
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+function rootPath(value) {
+  return path.isAbsolute(value) ? value : path.resolve(rootDir, value);
+}
+
+function k6EnvPath(value) {
+  return path.isAbsolute(value) ? value : path.relative(rootDir, value);
 }
 
 function probeBaseUrl(url) {
@@ -315,17 +335,14 @@ let bruno = {
 if (bruPath && fs.existsSync(brunoCollectionDir)) {
   writeBrunoEnv();
   fs.rmSync(brunoReportJsonPath, { force: true });
-  const brunoArgs = [
-    "run",
-    "--tags=smoke",
-    "--exclude-tags=draft",
-    "--exclude-tags=scenario",
-    "--exclude-tags=requires-review",
-    "--env-file",
-    brunoEnvPath,
-    "--reporter-json",
-    brunoReportJsonPath,
-  ];
+  const brunoArgs = ["run"];
+  if (brunoFilterTags.length > 0) {
+    brunoArgs.push(`--tags=${brunoFilterTags.join(",")}`);
+  }
+  if (brunoExcludeTags.length > 0) {
+    brunoArgs.push(`--exclude-tags=${brunoExcludeTags.join(",")}`);
+  }
+  brunoArgs.push("--env-file", brunoEnvPath, "--reporter-json", brunoReportJsonPath);
   if (brunoVerbose) {
     brunoArgs.push("--verbose");
   }
@@ -361,8 +378,8 @@ if (k6Path && fs.existsSync(k6ScriptPath)) {
     {
       env: {
         BASE_URL: baseUrl,
-        K6_REPORT_DIR: path.relative(rootDir, k6ReportDir),
-        K6_SUMMARY_DIR: path.relative(rootDir, k6GeneratedSummaryDir),
+        K6_REPORT_DIR: k6EnvPath(k6ReportDir),
+        K6_SUMMARY_DIR: k6EnvPath(k6GeneratedSummaryDir),
         K6_REPORT_NAME: "setup-smoke",
       },
     },
