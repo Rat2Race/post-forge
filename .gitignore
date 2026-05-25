@@ -68,7 +68,7 @@ setup/reports/**
 
 # DB
 /docker/
-redis/
+/redis/
 
 # H2 DB
 **/data/*.db

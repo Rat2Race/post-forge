@@ -4,7 +4,18 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
 USER_BIN_DIR="${K6_BIN_DIR:-$HOME/.local/bin}"
 
-source "$ROOT_DIR/setup/scripts/user-path.sh"
+source "$ROOT_DIR/setup/scripts/test-env.sh"
+load_tests_env "$ROOT_DIR"
+
+prepend_path_once() {
+  local bin_dir="$1"
+
+  [[ -n "$bin_dir" ]] || return 0
+  case ":$PATH:" in
+    *":$bin_dir:"*) ;;
+    *) export PATH="${bin_dir}:${PATH}" ;;
+  esac
+}
 
 write_if_missing() {
   local path="$1"
@@ -286,51 +297,42 @@ install_user_local_k6() {
   chmod +x "$USER_BIN_DIR/k6"
   rm -rf "$tmp_dir"
 
-  ensure_user_path "$USER_BIN_DIR" "testing-tools-setup"
+  prepend_path_once "$USER_BIN_DIR"
   if ! command -v k6 >/dev/null 2>&1; then
     printf '[k6] installed CLI at %s/k6\n' "$USER_BIN_DIR"
-    printf '[k6] open a new shell or run: source ./setup/env.sh\n'
+    printf '[k6] run through ./setup/run-k6 or source ./setup/env.sh before direct k6 commands.\n'
   fi
 }
 
-if [[ -n "$(k6_bin)" ]]; then
-  cli="$(k6_bin)"
-  if [[ "$cli" == "$USER_BIN_DIR/k6" ]]; then
-    ensure_user_path "$USER_BIN_DIR" "testing-tools-setup"
-  fi
-  printf '[k6] found: %s\n' "$("$cli" version | head -1)"
-else
-  os="$(uname -s)"
+install_system_k6() {
+  local os="$1"
+
   if [[ "$os" == "Darwin" ]]; then
     if ! command -v brew >/dev/null 2>&1; then
-      printf '[k6] Homebrew not found. Install Homebrew or install k6 manually: https://grafana.com/docs/k6/latest/set-up/install-k6/\n' >&2
+      printf '[k6] Homebrew not found. Install Homebrew or set K6_BIN to an existing k6 binary.\n' >&2
       exit 1
     fi
-    printf '[k6] installing with Homebrew\n'
+    printf '[k6] installing with Homebrew because K6_INSTALL_MODE=system\n'
     brew install k6
   elif [[ "$os" == "Linux" ]]; then
     if ! command -v apt-get >/dev/null 2>&1; then
-      printf '[k6] apt-get not found. Install k6 manually: https://grafana.com/docs/k6/latest/set-up/install-k6/\n' >&2
+      printf '[k6] apt-get not found. Install k6 manually or keep SETUP_INSTALL_MODE=user on supported Linux architectures.\n' >&2
       exit 1
     fi
     if ! command -v sudo >/dev/null 2>&1; then
-      printf '[k6] sudo not found. Falling back to user-local binary install.\n'
-      install_user_local_k6
-      printf '[k6] setup complete\n'
-      exit 0
+      printf '[k6] sudo not found. System install requires sudo; use SETUP_INSTALL_MODE=user instead.\n' >&2
+      exit 1
     fi
     if ! sudo -n true 2>/dev/null; then
-      printf '[k6] sudo requires an interactive password. Falling back to user-local binary install.\n'
-      install_user_local_k6
-      printf '[k6] setup complete\n'
-      exit 0
+      printf '[k6] sudo requires an interactive password. System install was requested but cannot run non-interactively.\n' >&2
+      exit 1
     fi
     if ! command -v gpg >/dev/null 2>&1 || ! command -v curl >/dev/null 2>&1; then
-      printf '[k6] installing prerequisites with apt\n'
+      printf '[k6] installing prerequisites with apt because K6_INSTALL_MODE=system\n'
       sudo apt-get update
       sudo apt-get install -y ca-certificates curl gpg
     fi
-    printf '[k6] installing with apt repository\n'
+    printf '[k6] installing with apt repository because K6_INSTALL_MODE=system\n'
     curl -fsSL https://dl.k6.io/key.gpg | sudo gpg --dearmor --yes -o /usr/share/keyrings/k6-archive-keyring.gpg
     echo "deb [signed-by=/usr/share/keyrings/k6-archive-keyring.gpg] https://dl.k6.io/deb stable main" | sudo tee /etc/apt/sources.list.d/k6.list >/dev/null
     sudo apt-get update
@@ -339,6 +341,34 @@ else
     printf '[k6] unsupported OS: %s\n' "$os" >&2
     exit 1
   fi
+}
+
+if [[ -n "$(k6_bin)" ]]; then
+  cli="$(k6_bin)"
+  if [[ "$cli" == "$USER_BIN_DIR/k6" ]]; then
+    prepend_path_once "$USER_BIN_DIR"
+  fi
+  printf '[k6] found: %s\n' "$("$cli" version | head -1)"
+else
+  os="$(uname -s)"
+  install_mode="${K6_INSTALL_MODE:-${SETUP_INSTALL_MODE:-user}}"
+
+  case "$install_mode" in
+    user)
+      if [[ "$os" != "Linux" ]]; then
+        printf '[k6] user-local auto-install currently supports Linux only. Set K6_BIN to an existing binary or run K6_INSTALL_MODE=system for Homebrew on macOS.\n' >&2
+        exit 1
+      fi
+      install_user_local_k6
+      ;;
+    system)
+      install_system_k6 "$os"
+      ;;
+    *)
+      printf '[k6] invalid K6_INSTALL_MODE/SETUP_INSTALL_MODE: %s (expected user or system)\n' "$install_mode" >&2
+      exit 1
+      ;;
+  esac
 fi
 
 printf '[k6] setup complete\n'

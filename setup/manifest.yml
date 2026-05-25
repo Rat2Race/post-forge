@@ -18,7 +18,9 @@ stages:
       - apt
       - npm
     riskNotes:
-      - k6 may add an apt repository and use sudo.
+      - Default install mode is user-local.
+      - k6 uses apt/sudo only when SETUP_INSTALL_MODE=system or K6_INSTALL_MODE=system.
+      - Bruno uses global npm only when SETUP_INSTALL_MODE=system or BRUNO_INSTALL_MODE=system.
 
   macos:
     match:
@@ -31,7 +33,9 @@ stages:
       - brew
       - npm
     riskNotes:
-      - k6 uses Homebrew when available.
+      - Default install mode is user-local.
+      - k6 uses Homebrew only when SETUP_INSTALL_MODE=system or K6_INSTALL_MODE=system.
+      - Bruno uses global npm only when SETUP_INSTALL_MODE=system or BRUNO_INSTALL_MODE=system.
 
 state:
   directory: setup/state
@@ -42,6 +46,8 @@ state:
   smokeRunResult: setup/state/smoke-run-result.json
   installResult: setup/state/install-result.json
   verifyResult: setup/state/verify-result.json
+  doctorResult: setup/state/doctor-result.json
+  packResult: setup/state/pack-result.json
 
 reports:
   testingSetup: setup/reports/testing-setup-report.md
@@ -53,6 +59,8 @@ policy:
   sync: setup/run.sh sync-policy
   generate: setup/run.sh generate-tests
   runSmoke: setup/run.sh run-smoke
+  doctor: setup/run.sh doctor
+  pack: setup/run.sh pack
   sourcePriority:
     - openapi
     - controllers
@@ -77,6 +85,7 @@ tools:
     verify: setup/tools/bruno/verify.sh
     risk: global-npm-install
     outputs:
+      - tests/.gitignore
       - tests/bruno/AGENTS.md
       - tests/bruno/api
       - tests/bruno/api/bruno.json
@@ -90,9 +99,14 @@ tools:
     path: setup/tools/k6
     type: performance-test
     install: setup/tools/k6/install.sh
+    run: setup/tools/k6/run.sh
     verify: setup/tools/k6/verify.sh
     risk: sudo-apt-or-brew-install
     outputs:
+      - tests/.env
+      - tests/.gitignore
+      - setup/run-k6
       - tests/k6/AGENTS.md
       - tests/k6/generated/smoke.js
       - tests/k6/manual
+      - setup/tools/k6/run.sh

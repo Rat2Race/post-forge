@@ -20,7 +20,9 @@
 | `setup/tools/<tool>/AGENTS.md` | 툴별 sub-agent 규칙 |
 | `setup/tools/<tool>/tool.yml` | 툴별 목적, 버전관리, 위험도, 산출물 선언 |
 | `setup/tools/<tool>/install.sh` | 툴별 설치/scaffold executor |
+| `setup/tools/<tool>/run.sh` | 툴별 간편 실행 wrapper가 있을 때 사용하는 executor |
 | `setup/tools/<tool>/verify.sh` | 툴별 검증 executor |
+| `tests/.env` | Bruno/k6/SQL 등 테스트 툴 공통 로컬 환경값, commit 금지 |
 
 ## 규칙
 
@@ -36,6 +38,7 @@
 | OpenAPI 우선 | `openapi.*` 또는 `swagger.*`가 있으면 해당 `paths`를 source of truth로 보고 controller route scan은 fallback으로만 사용한다. |
 | Bruno 형식 | Bruno collection은 native `.bru` 형식을 사용한다. `bruno.json`, `collection.bru`, `folder.bru`, request `*.bru`가 기준이다. |
 | 기본 baseUrl | setup 기본 `baseUrl`은 `http://localhost:8080`으로 고정한다. 예외 환경은 `BASE_URL`, Bruno `local.bru`, Bruno `--env-var baseUrl=...`, 또는 k6 `tests/k6/env.js`로 명시적으로 override한다. |
+| 공통 테스트 env | setup executor는 `tests/.env`가 없으면 생성하고, 있으면 shell env를 덮어쓰지 않는 방식으로 로드한다. 빈 값은 각 도구의 기본값으로 fallback한다. |
 | k6 리포트 | k6 script는 `tests/k6/report.js`와 `handleSummary()`로 markdown/json 성능 리포트를 자동 생성한다. |
 | 수동 보호 | Agent는 `generated/` 영역만 자동 수정하고 `manual/` 영역은 보호한다. |
 | 성능 테스트 | k6는 성능/부하 테스트 전용이다. API smoke/scenario 테스트는 Bruno 영역에 둔다. |
@@ -67,6 +70,7 @@ source ./setup/env.sh 2>/dev/null || true
 | 상태 | 해석 |
 |---|---|
 | `tests/`가 `.gitignore`로 ignored | 의도된 상태다. generated Bruno/k6 산출물과 policy 초안은 로컬 재생성 산출물로 취급한다. setup이 생성하는 `tests/**` 전체는 재생성 가능한 로컬 산출물로 취급한다. |
+| `tests/.env` ignored | 의도된 상태다. setup이 없을 때 생성하는 로컬 테스트 설정이며 사용자/서버별 값과 비밀값 placeholder를 포함할 수 있으므로 commit하지 않는다. |
 | `tests/bruno/api/environments/local.bru` ignored | 의도된 상태다. secret이 들어갈 수 있으므로 commit하지 않는다. |
 | `setup/state/**` ignored | 의도된 상태다. 실행 기록용이며 commit하지 않는다. |
 | `setup/reports/**` ignored | 의도된 상태다. 사람이 읽는 실행 보고서지만 run output으로 취급한다. |
@@ -85,6 +89,7 @@ source ./setup/env.sh 2>/dev/null || true
 | policy 동기화 | `setup/run.sh sync-policy` |
 | generated 테스트/SQL draft 생성 | `setup/run.sh generate-tests` |
 | smoke 테스트 자동 실행 | `setup/run.sh run-smoke` |
+| k6 단독 간편 실행 | `setup/run-k6 [smoke|manual|<script>]` 또는 `setup/run.sh run-k6 [smoke|manual|<script>]` |
 | smoke/scenario/draft 분류 판단 | `tests/testing-policy.yml` |
 | 툴별 세부 정책 수정 | 해당 `setup/tools/<tool>/AGENTS.md` |
 

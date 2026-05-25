@@ -157,14 +157,14 @@ function assertSetupScaffold(projectRoot) {
   assert(fs.readFileSync(path.join(projectRoot, "tests/sql/manual/keep.sql"), "utf8").includes("manual SQL"), "SQL manual files should not be overwritten");
 }
 
-function assertNoProjectSpecificText(projectRoot) {
+function assertNoTemplateLeakText(projectRoot) {
   const generatedFiles = [
     ...collectFiles(path.join(projectRoot, "tests")),
     ...collectFiles(path.join(projectRoot, "setup/state")),
     ...collectFiles(path.join(projectRoot, "setup/reports")),
   ];
   const combined = generatedFiles.map((filePath) => fs.readFileSync(filePath, "utf8")).join("\n");
-  assert(!/PostForge|postforge|dev\.iamrat|iamrat/.test(combined), "generated artifacts should not contain PostForge-specific text");
+  assert(!/TemplateOnlyProject|template-only-package/.test(combined), "generated artifacts should not contain template-only fixture text");
 }
 
 try {
@@ -179,7 +179,7 @@ try {
   assertSqlDrafts(projectA, projectAResult);
   assertSqlDrafts(projectB, projectBResult);
   assertSetupScaffold(projectA);
-  assertNoProjectSpecificText(projectA);
+  assertNoTemplateLeakText(projectA);
 
   assert(
     JSON.stringify(readRelativeContents(projectA, "tests/bruno/api/generated")) === JSON.stringify(readRelativeContents(projectB, "tests/bruno/api/generated")),

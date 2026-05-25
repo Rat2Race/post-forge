@@ -9,14 +9,67 @@ k6는 API의 성능 테스트와 부하 테스트를 위한 도구다.
 ```
 설치 스크립트는 다음을 수행한다.
 
-- macOS에서는 Homebrew가 있으면 `brew install k6`를 사용한다.
-- Linux/WSL 계열에서는 apt 기반 설치를 시도한다. `sudo` 권한과 네트워크가 필요할 수 있다.
-- sudo가 대화형 비밀번호를 요구하면 GitHub release binary를 `~/.local/bin/k6`에 설치한다.
+- 이미 설치된 `k6`가 있으면 그대로 사용한다.
+- Linux/WSL 계열에서 `k6`가 없으면 기본적으로 GitHub release binary를 user-local 경로에 설치한다.
+- macOS에서 `k6`가 없으면 `K6_BIN`으로 기존 binary를 지정하거나 system mode를 명시한다.
+- apt/Homebrew 같은 system install은 `K6_INSTALL_MODE=system` 또는 `SETUP_INSTALL_MODE=system`일 때만 사용한다.
+
+```bash
+K6_INSTALL_MODE=system ./setup/tools/k6/install.sh
+```
 
 ## 검증
 
 ```bash
 ./setup/tools/k6/verify.sh
+```
+
+## 공통 테스트 env
+
+setup entrypoint는 `tests/.env`가 없으면 생성하고, 있으면 shell env를 덮어쓰지 않는 방식으로 로드한다. 이 파일은 `tests/**` ignore 정책에 따라 로컬 산출물로 취급한다.
+
+```env
+BASE_URL=http://localhost:8080
+K6_SCRIPT_ROOT=tests/k6
+K6_REPORT_ROOT=setup/reports/k6
+K6_TARGET_NAME=local
+VUS_COUNT=1
+ITERATIONS=1
+```
+
+값을 비워두면 wrapper나 k6 script의 기본값을 사용한다.
+
+## 간편 실행
+
+리포트 옵션을 매번 직접 붙이지 않으려면 setup package 안의 wrapper를 사용한다. 기본 실행은 `K6_SCRIPT_ROOT` 아래 generated smoke script를 대상으로 실행하고, markdown 리포트/summary JSON/log를 `K6_REPORT_ROOT/<run-id>/` 아래에 남긴다.
+
+```bash
+./setup/run-k6
+```
+
+setup wrapper를 통해서도 같은 명령을 실행할 수 있다.
+
+```bash
+./setup/run.sh run-k6 smoke
+```
+
+대상 주소나 script만 바꾸면 리포트 이름과 경로는 자동으로 잡힌다.
+
+```bash
+BASE_URL=http://127.0.0.1:8080 ./setup/run-k6 manual
+BASE_URL=http://127.0.0.1:8080 ./setup/run-k6 manual/performance.js
+```
+
+다른 프로젝트가 k6 script를 다른 위치에 둔다면 `--script-root` 또는 `K6_SCRIPT_ROOT`로 바꾼다.
+
+```bash
+./setup/run-k6 smoke --script-root performance/k6
+```
+
+기존 k6 script 환경변수(`PUBLIC_VUS`, `TEST_SECONDS`, `PERF_USER_ID`, `PERF_PASSWORD` 등)는 그대로 사용할 수 있다. native k6 옵션은 `--` 뒤에 둔다.
+
+```bash
+./setup/run-k6 manual -- --quiet
 ```
 
 ## 수동 실행
@@ -33,7 +86,7 @@ k6만 직접 실행하려면 먼저 `./setup/run.sh generate-tests`로 generated
 k6 run tests/k6/generated/smoke.js
 ```
 
-다른 주소를 계속 쓰려면 `tests/k6/env.js`의 `baseUrl`을 수정한다. 일회성 실행에서는 shell env가 `env.js` 기본값보다 우선한다. generated smoke는 `tests/testing-policy.yml`에서 고른 GET endpoint 목록을 사용하며, 부하 조건은 `VUS_COUNT`, `ITERATIONS`로 조절한다.
+다른 주소를 계속 쓰려면 `tests/.env`의 `BASE_URL`을 수정한다. 일회성 실행에서는 shell env가 `tests/.env`보다 우선한다. generated smoke는 `tests/testing-policy.yml`에서 고른 GET endpoint 목록을 사용하며, 부하 조건은 `VUS_COUNT`, `ITERATIONS`로 조절한다.
 
 ```bash
 BASE_URL=http://127.0.0.1:18080 VUS_COUNT=1 ITERATIONS=3 k6 run tests/k6/generated/smoke.js
