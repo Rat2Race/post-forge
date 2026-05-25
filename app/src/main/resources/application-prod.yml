@@ -31,9 +31,8 @@ spring:
   jpa:
     database-platform: org.hibernate.dialect.PostgreSQLDialect
     hibernate:
-      ddl-auto: create
-    #    hibernate:
-    #      ddl-auto: update
+      # 로컬/초기화 환경에서만 create 사용, prod-like 환경은 validate 사용
+      ddl-auto: validate
     properties:
       hibernate:
         format_sql: true

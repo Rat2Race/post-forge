@@ -13,7 +13,7 @@ PostForge는 게시글, 댓글, 좋아요, 파일 업로드 같은 커뮤니티 
 
 | Area | What It Shows |
 | --- | --- |
-| Modular Monolith | `auth`, `board`, `collector`, `ingest`, `ai`, `core`, `support`, `app` 모듈 분리 |
+| Modular Monolith | DDD-lite style modular monolith. `auth`, `board`, `collector`, `ingest`, `ai`, `messaging`, `core`, `support`, `app` 모듈 분리 |
 | Auth / Security | JWT, Redis refresh token, OAuth2, 이메일 인증, 로그인 보호, route policy |
 | Board Domain | 게시글, 댓글/대댓글, 좋아요, 조회수, 파일 업로드, 작성자 소유권 검증 |
 | External Collection | Naver News collector, 중복 방지, 수집 데이터를 ingest port로 전달 |
@@ -51,19 +51,21 @@ board     게시글, 댓글, 좋아요, 파일, 조회수, 게시글 작성 port
 collector 외부 뉴스/API 수집, 수집 이력, ingest port 전달
 ingest    수집 문서 적재, PgVector 저장, 자동 게시 orchestration
 ai        Spring AI, OpenAI, PgVector 설정, AI 게시글 생성, prompt 관리
+messaging outbox event 저장/릴레이 foundation, future MQ adapter 경계
 core      모듈 간 port/contract, 공통 DTO/error/security metadata
-support   Redis, OpenAPI, web exception handler 등 Spring infrastructure
+support   Redis, JPA auditing, web exception handler 등 Spring infrastructure
 ```
 
 ### Dependency Direction
 
 ```text
-app       -> support, auth, board, ai, ingest, collector
+app       -> support, auth, board, ai, ingest, collector, messaging
 auth      -> core
 board     -> core
 collector -> core
 ingest    -> core
 ai        -> core
+messaging -> core
 support   -> core
 core      -> framework API only
 ```
@@ -74,6 +76,15 @@ Design rules:
 - Cross-module write는 `core` port 또는 module API를 통해 처리합니다.
 - `app`은 조립 계층이며 도메인 소유권을 갖지 않습니다.
 - DB table ownership은 [DB Schema Ownership](./docs/db/schema-ownership.md)에 선언합니다.
+
+DDD-lite notes:
+
+- 현재 구조는 DDD-lite style modular monolith입니다.
+- `domain` 패키지의 `Account`, `Post` 등은 JPA Entity와 domain model을 분리하지 않고 함께 사용합니다.
+- 이는 포트폴리오 규모에서 복잡도를 줄이기 위한 의도적인 선택입니다.
+- 완전한 DDD/Hexagonal 구조처럼 persistence model을 별도로 분리한 것은 아닙니다.
+- `board`의 일부 DTO는 `presentation/dto`로 모두 이동하지 않고 `board.post.dto` 같은 feature-level DTO로 유지합니다.
+- 이 DTO들은 현재 API response와 application result model로 같이 쓰는 경량 DTO이며, 추후 API request/response와 application result를 분리할 경우 `presentation/dto`로 이동할 수 있습니다.
 
 ---
 
