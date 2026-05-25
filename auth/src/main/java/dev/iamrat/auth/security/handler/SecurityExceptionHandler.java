@@ -3,17 +3,21 @@ package dev.iamrat.auth.security.handler;
 import dev.iamrat.auth.support.error.AuthErrorCode;
 import dev.iamrat.core.global.error.CommonErrorCode;
 import dev.iamrat.core.global.error.ErrorCode;
-import dev.iamrat.core.global.error.ErrorResponse;
+import dev.iamrat.core.global.dto.ErrorResponse;
 import java.time.LocalDateTime;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.core.Ordered;
+import org.springframework.core.annotation.Order;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 @Slf4j
+@Order(Ordered.HIGHEST_PRECEDENCE)
 @RestControllerAdvice
 public class SecurityExceptionHandler {
 
@@ -32,6 +36,12 @@ public class SecurityExceptionHandler {
     public ResponseEntity<ErrorResponse> handleBadCredentialsException(BadCredentialsException e) {
         log.warn("BadCredentialsException: {}", e.getMessage());
         return buildErrorResponse(AuthErrorCode.INVALID_CREDENTIALS);
+    }
+
+    @ExceptionHandler(DisabledException.class)
+    public ResponseEntity<ErrorResponse> handleDisabledException(DisabledException e) {
+        log.warn("DisabledException: {}", e.getMessage());
+        return buildErrorResponse(AuthErrorCode.ACCOUNT_NOT_ACTIVE);
     }
 
     @ExceptionHandler(UsernameNotFoundException.class)
