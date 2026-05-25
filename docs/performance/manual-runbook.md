@@ -50,7 +50,7 @@ read -r -s PERF_PASSWORD
 
 BASE_URL=http://localhost:8080 \
 RUN_AUTH_FLOW=true \
-PERF_USER_ID=testuser1 \
+PERF_USERNAME=testuser1 \
 PERF_PASSWORD="$PERF_PASSWORD" \
 PUBLIC_VUS=1 \
 AUTH_VUS=1 \
