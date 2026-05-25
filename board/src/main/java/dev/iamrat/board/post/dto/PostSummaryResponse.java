@@ -1,7 +1,7 @@
 package dev.iamrat.board.post.dto;
 
 import dev.iamrat.core.board.post.PostCategory;
-import dev.iamrat.board.post.entity.Post;
+import dev.iamrat.board.post.domain.Post;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -11,7 +11,7 @@ public record PostSummaryResponse(
     String summary,
     List<String> tags,
     PostCategory category,
-    String userId,
+    Long accountId,
     String nickname,
     LocalDateTime createdAt,
     LocalDateTime modifiedAt
@@ -24,7 +24,7 @@ public record PostSummaryResponse(
             post.getSummary(),
             post.getTags(),
             post.getCategory(),
-            post.getUserId(),
+            post.getAccountId(),
             post.getNickname(),
             post.getCreatedAt(),
             post.getModifiedAt()

@@ -1,12 +1,12 @@
 package dev.iamrat.board.comment.dto;
 
-import dev.iamrat.board.comment.entity.Comment;
+import dev.iamrat.board.comment.domain.Comment;
 import java.time.LocalDateTime;
 
 public record CommentSummaryResponse(
     Long id,
     String content,
-    String userId,
+    Long accountId,
     String nickname,
     Long parentId,
     LocalDateTime createdAt,
@@ -16,7 +16,7 @@ public record CommentSummaryResponse(
         return new CommentSummaryResponse(
             comment.getId(),
             comment.getContent(),
-            comment.getUserId(),
+            comment.getAccountId(),
             comment.getNickname(),
             comment.getParent() != null ? comment.getParent().getId() : null,
             comment.getCreatedAt(),
