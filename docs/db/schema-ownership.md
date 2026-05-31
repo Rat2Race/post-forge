@@ -20,40 +20,46 @@
 | --- | --- | --- | --- |
 | `auth` | `accounts` | `auth/account/domain/Account.java` | 계정 identity, OAuth provider identity, account fields, optimistic lock version |
 | `auth` | `account_roles` | `Account.roles` `@CollectionTable` | account role set; `accounts` lifecycle에 종속 |
-| `board` | `posts` | `board/post/domain/Post.java` | 게시글 본문, 조회수, category, 작성자 account id와 nickname snapshot. system/AI 게시글은 account id가 없을 수 있음 |
+| `board` | `posts` | `board/post/domain/Post.java` | 게시글 본문, 조회수, category, 작성자 account id와 nickname snapshot |
 | `board` | `post_tags` | `Post.tags` `@CollectionTable` | 게시글 tag collection; `posts` lifecycle에 종속 |
 | `board` | `comments` | `board/comment/domain/Comment.java` | 댓글/대댓글 tree; 작성자는 `accounts.id` 값을 `account_id` scalar로 보관 |
 | `board` | `post_like` | `board/like/domain/PostLike.java` | 게시글 좋아요 uniqueness: `(post_id, account_id)` |
 | `board` | `comment_like` | `board/like/domain/CommentLike.java` | 댓글 좋아요 uniqueness: `(comment_id, account_id)` |
 | `board` | `post_file` | `board/file/domain/PostFile.java` | S3 object metadata and post attachment relation |
-| `collector` | `collected_articles` | `collector/item/domain/CollectedArticle.java` | external source collection history and duplicate guard |
+| `board` | `auto_post_drafts` | `board/post/domain/autopost/AutoPostDraft.java` | AI 가격 하락 게시글 초안과 발행 상태 |
+| `source` | `source_policies` | `source/domain/SourcePolicy.java` | source별 enable/quota/retry/circuit breaker 정책 |
+| `source` | `external_api_request_logs` | `source/domain/ExternalApiRequestLog.java` | source별 외부 API 호출 결과, 응답 시간, 실패 사유 |
+| `ingest` | `tracked_keywords` | `ingest/product/domain/TrackedKeyword.java` | 스케줄 수집 대상 키워드와 source/display policy |
+| `ingest` | `collection_jobs` | `ingest/product/domain/CollectionJob.java` | 상품 수집 실행 단위 상태 |
+| `ingest` | `raw_products` | `ingest/product/domain/RawProduct.java` | 외부 API 응답 원본 payload |
+| `catalog` | `product_categories` | `catalog/domain/ProductCategory.java` | 상품 카테고리 |
+| `catalog` | `products` | `catalog/domain/Product.java` | 외부 상품 데이터를 내부 표준 모델로 정규화한 상품 원본 |
+| `catalog` | `offers` | `catalog/domain/Offer.java` | source/mall별 외부 판매 상품 식별자 |
+| `catalog` | `product_embeddings` | `catalog/infrastructure/persistence/matching/ProductEmbeddingJdbcStore.java` | pgvector 기반 product embedding 저장소 |
+| `catalog` | `product_match_candidates` | `catalog/domain/matching/ProductMatchCandidate.java` | 자동 매칭 확신이 낮은 상품 병합 후보 |
+| `price` | `price_snapshots` | `price/domain/PriceSnapshot.java` | offer 수집 시점별 가격 스냅샷 |
+| `price` | `lowest_price_snapshots` | `price/domain/LowestPriceSnapshot.java` | product별 최신 최저가 read model과 하락률 |
+| `board` | `post_product_links` | `board/post/domain/PostProductLink.java` | 자동/상품 관련 게시글과 상품의 느슨한 연결 |
 | `messaging` | `outbox_events` | `messaging/outbox/domain/OutboxMessage.java` | standalone reliable event handoff table; no domain-table FK |
 | `ai` | `vector_store` | `ai/search/infrastructure/vector/PgVectorConfig.java`, Spring AI PgVector default | RAG document embeddings; default table name from local Spring AI PgVector 1.0.7 constant |
 
 ## Target Schema Candidates
 
-다음 테이블은 "공개 게시판 + 개인 리포트 작업공간 + collector 트렌드 데이터 + AI 비용 통제" 방향을 위한 설계 후보이다.
+다음 테이블은 "상품 데이터 수집 + 가격 하락 자동 게시 + 커머스 커뮤니티" 방향을 위한 설계 후보이다.
 구현 시에는 같은 변경에서 JPA entity, migration SQL, 이 ownership 문서를 함께 갱신한다.
 
 | Owner | Table | Planned Source | Notes |
 | --- | --- | --- | --- |
-| `collector` | `collector_sources` | collector source registry | 외부 API/provider 기준 정보 |
-| `collector` | `collector_source_policies` | collector API control middleware | timeout, retry, quota, circuit breaker 정책 |
-| `collector` | `collector_jobs` | collector scheduler/manual trigger | 수집 작업 단위 이력 |
-| `collector` | `collector_api_requests` | collector API control middleware | 외부 API 호출 attempt, latency, retry, rate limit 이력 |
-| `collector` | `collected_items` | replacement/extension of `collected_articles` | 뉴스/문서/API item 원본 메타데이터와 중복 방지 |
 | `notification` | `keyword_subscriptions` | keyword watch list | 사용자별 관심 키워드와 활성 상태 |
 | `notification` | `notification_events` | notification queue | 수집 item과 keyword subscription 매칭 결과, 발송 처리 상태 |
 | `notification` | `email_delivery_logs` | email delivery log | 이메일 발송 성공/실패/재시도 이력 |
-| `collector` | `trend_clusters` | future trend aggregation/read model | 상품 추천/트렌드 분석 분기에서 추가할 관련 트렌드 묶음 |
-| `collector` | `trend_cluster_items` | future trend aggregation/read model | trend cluster와 collected item의 구성 관계 |
 | `workspace` | `workspaces` | private report workspace | account별 개인 리포트 작업공간 |
 | `workspace` | `workspace_members` | private report workspace | workspace 소유자/협업자 권한. MVP는 owner 1명으로 시작 가능 |
 | `workspace` | `drafts` | private writing workspace | 공개 발행 전 비공개 초안/리포트 |
-| `workspace` | `draft_sources` | private writing workspace | 초안이 저장한 collected item/trend/external URL |
+| `workspace` | `draft_sources` | private writing workspace | 초안이 저장한 product/trend/external URL |
 | `workspace` | `saved_trend_bundles` | private writing workspace | 사용자가 리포트 작성에 쓰려고 저장한 trend 묶음 |
 | `workspace` | `saved_trend_bundle_items` | private writing workspace | 저장한 trend bundle 구성 관계 |
-| `board` | `post_reference_links` | future board reference relation | 게시글이 참고한 collected item/trend/external URL 연결 |
+| `board` | `post_reference_links` | future board reference relation | 게시글이 참고한 product/trend/external URL 연결 |
 | `board` | `post_rank_scores` | future ranking read model | 추천/쇼핑몰 분기에서 검토할 내부 랭킹 score |
 | `billing` | `subscription_plans` | plan/quota policy | 무료/유료 plan별 AI quota, private workspace limit |
 | `billing` | `account_subscriptions` | account plan state | account별 현재 plan과 상태 |
@@ -61,13 +67,16 @@
 | `ai` | `ai_usage_logs` | AI cost control | 모든 AI operation의 token/cost/status 원본 이력 |
 
 Ownership boundary:
-- `collector` owns external source truth: source policies, request logs, and collected item normalization.
-- `messaging` owns the shared outbox infrastructure: persisted event envelopes, retry state, relay claim policy, and broker publishing adapters. It does not own board, collector, or notification event semantics.
+- `source` owns external API adapter execution and request logs.
+- `ingest` owns collection orchestration, tracked keywords, collection jobs, and raw product payloads.
+- `catalog` owns normalized product truth.
+- `price` owns price history, lowest-price read models, and price-drop detection state.
+- `messaging` owns the shared outbox infrastructure: persisted event envelopes, retry state, relay claim policy, and broker publishing adapters. It does not own board, source, ingest, catalog, price, or notification event semantics.
 - `notification` owns keyword watch and delivery state: keyword subscriptions, notification events, and email delivery logs.
 - `workspace` owns private writing state: workspaces, drafts, draft source selections, saved trend bundles.
 - `board` owns user-facing published content: posts, comments, likes, and files. MVP board sorting stays count/index based.
 - `billing` owns plan/subscription state. Public board trust signals must not be plan-gated.
-- `ai` owns usage accounting and model operation logs. AI may generate suggestions or brief drafts, but it should not own board post rows, workspace draft rows, or collector source rows.
+- `ai` owns usage accounting and model operation logs. AI may generate suggestions or brief drafts, but it should not own board post rows, workspace draft rows, source rows, catalog rows, or price rows.
 - Read paths such as post detail must not call AI or external APIs on every request.
 
 ## Non-Relational Storage

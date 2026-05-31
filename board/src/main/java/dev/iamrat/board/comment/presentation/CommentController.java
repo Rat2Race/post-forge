@@ -3,10 +3,11 @@ package dev.iamrat.board.comment.presentation;
 import dev.iamrat.board.comment.application.CommentCommandService;
 import dev.iamrat.board.comment.application.CommentInteractionService;
 import dev.iamrat.board.comment.application.CommentQueryService;
-import dev.iamrat.board.comment.dto.CommentDetailResponse;
-import dev.iamrat.board.comment.dto.CommentRequest;
-import dev.iamrat.board.comment.dto.CommentSummaryResponse;
-import dev.iamrat.board.like.application.LikeResponse;
+import dev.iamrat.board.comment.presentation.dto.CommentDetailResponse;
+import dev.iamrat.board.comment.presentation.dto.CommentRequest;
+import dev.iamrat.board.comment.presentation.dto.CommentSummaryResponse;
+import dev.iamrat.board.like.application.LikeResult;
+import dev.iamrat.board.like.presentation.dto.LikeResponse;
 import dev.iamrat.core.global.dto.MessageResponse;
 import dev.iamrat.core.global.dto.PageResponse;
 import dev.iamrat.core.account.UserPrincipal;
@@ -92,9 +93,9 @@ public class CommentController {
             @PathVariable Long commentId,
             @AuthenticationPrincipal UserPrincipal user
     ) {
-        LikeResponse likeStatus = commentInteractionService.likeComment(commentId, accountId(user));
+        LikeResult likeStatus = commentInteractionService.likeComment(commentId, accountId(user));
 
-        return ResponseEntity.ok(likeStatus);
+        return ResponseEntity.ok(LikeResponse.from(likeStatus));
     }
 
     @DeleteMapping("/{commentId:\\d+}/like")
@@ -103,9 +104,9 @@ public class CommentController {
             @PathVariable Long commentId,
             @AuthenticationPrincipal UserPrincipal user
     ) {
-        LikeResponse likeStatus = commentInteractionService.unlikeComment(commentId, accountId(user));
+        LikeResult likeStatus = commentInteractionService.unlikeComment(commentId, accountId(user));
 
-        return ResponseEntity.ok(likeStatus);
+        return ResponseEntity.ok(LikeResponse.from(likeStatus));
     }
 
     private static Long optionalAccountId(UserPrincipal user) {

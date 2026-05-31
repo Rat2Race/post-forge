@@ -1,11 +1,10 @@
 # PostForge
 
-> Spring Boot 기반 멀티 모듈 커뮤니티 백엔드 + 외부 뉴스 수집 + AI/RAG 실험 프로젝트
+> 외부 쇼핑 API 기반 최저가 추적 커머스 커뮤니티 백엔드
 
-PostForge는 게시글, 댓글, 좋아요, 파일 업로드 같은 커뮤니티 핵심 기능 위에 JWT/OAuth2 인증, Redis 상태 관리, PostgreSQL/PgVector 기반 RAG, 외부 뉴스 collector, Docker/CI/CD, 성능 테스트 문서화를 함께 구성한 백엔드 포트폴리오입니다.
+PostForge는 외부 쇼핑 API 데이터를 수집해 정규화 상품과 가격 스냅샷을 저장하고, 최근 수집 기준 최저가와 가격 변동을 제공하는 커머스 커뮤니티 백엔드입니다. 게시글, 댓글, 좋아요, 조회수 같은 커뮤니티 기능 위에 source/ingest/catalog/price 경계, 이벤트 기반 가격 하락 감지, AI 가격 요약 자동 게시 흐름으로 확장하는 것을 목표로 합니다.
 
-현재 구현의 중심은 **운영 가능한 게시판 백엔드 토대**입니다.
-향후 제품 방향은 수집된 트렌드 데이터를 공개 게시글과 개인 리포트 작성 흐름에 연결하는 것이지만, README에서는 구현된 범위와 검증 근거를 먼저 보여줍니다.
+현재 구현의 중심은 **운영 가능한 게시판 백엔드 토대**와 **외부 상품 수집 -> catalog 정규화 -> price snapshot/read model** 흐름입니다.
 
 ---
 
@@ -13,10 +12,10 @@ PostForge는 게시글, 댓글, 좋아요, 파일 업로드 같은 커뮤니티 
 
 | Area | What It Shows |
 | --- | --- |
-| Modular Monolith | DDD-lite style modular monolith. `auth`, `board`, `collector`, `ingest`, `ai`, `messaging`, `core`, `support`, `app` 모듈 분리 |
+| Modular Monolith | DDD-lite style modular monolith. `auth`, `board`, `source`, `ingest`, `catalog`, `price`, `ai`, `messaging`, `core`, `support`, `app` 모듈 분리 |
 | Auth / Security | JWT, Redis refresh token, OAuth2, 이메일 인증, 로그인 보호, route policy |
 | Board Domain | 게시글, 댓글/대댓글, 좋아요, 조회수, 파일 업로드, 작성자 소유권 검증 |
-| External Collection | Naver News collector, 중복 방지, 수집 데이터를 ingest port로 전달 |
+| Price Tracking Direction | source API 제어, 수집 job/raw product, catalog 정규화, price snapshot/read model 분리 |
 | AI / RAG | Spring AI, OpenAI, PgVector, 문서 적재, AI 게시글 생성 foundation |
 | Architecture Discipline | module dependency policy, DB ownership, MSA migration concept 문서화 |
 | Infra / Deployment | Docker Compose, GitHub Actions, Docker Hub runtime image, layered jar 최적화 |
@@ -30,27 +29,30 @@ PostForge는 게시글, 댓글, 좋아요, 파일 업로드 같은 커뮤니티 
 | --- | --- | --- |
 | Community Core | Implemented | posts, comments, likes, files, view count |
 | Auth Core | Implemented | JWT, Redis refresh token, OAuth2, email verification |
-| Collector Foundation | Implemented | Naver News collection, duplicate guard, ingest contract |
-| AI/RAG Foundation | Implemented | Spring AI, OpenAI, PgVector, prompt/output guardrail |
+| Price Tracking Platform | In progress | source API log, tracked keyword, collection job, raw product, catalog product, price snapshot/read model |
+| Commerce Ingestion | Implemented MVP | mock 상품 수집, 수집 job/log, 상품 정규화 |
+| AI/RAG Foundation | Implemented | Spring AI, OpenAI, PgVector, 문서 검색 foundation |
 | Docker Runtime | Implemented | Spring Boot layered jar runtime image |
 | Testing Docs | Implemented | JUnit, Bruno, k6, performance analysis docs |
-| Product Expansion | Designed | trend/evidence/private report/cost policy docs |
+| Product Expansion | Implemented | external shopping API collection, price history, pgvector matching, AI price-drop posts |
 
 ---
 
 ## Architecture
 
-![PostForge Architecture](./docs/images/PostForge_Architecture_v2.png)
+![PostForge Architecture](./docs/images/PostForge_Architecture_v3.png)
 
 ### Module Layout
 
 ```text
 app       실행 모듈. feature 모듈 조립, route/security/OpenAPI 정책 조립
 auth      계정, 로그인, OAuth2, JWT, 이메일 인증, 로그인 보호
-board     게시글, 댓글, 좋아요, 파일, 조회수, 게시글 작성 port 구현
-collector 외부 뉴스/API 수집, 수집 이력, ingest port 전달
-ingest    수집 문서 적재, PgVector 저장, 자동 게시 orchestration
-ai        Spring AI, OpenAI, PgVector 설정, AI 게시글 생성, prompt 관리
+board     게시글, 댓글, 좋아요, 파일, 조회수, 상품-게시글 연결, 자동 가격 하락 게시글 초안
+source    외부 상품 API adapter, 호출 실행, request log
+ingest    상품 수집 orchestration, tracked keyword, collection job, raw product, 문서 적재와 vector 저장 경계
+catalog   정규화 상품, 카테고리, offer, product embedding, 유사 상품 매칭 후보
+price     가격 스냅샷, 최신 최저가 read model, 가격 하락 조회
+ai        AI 채팅, 문서 검색, product embedding 생성 adapter, 가격 하락 게시글 생성
 messaging outbox event 저장/릴레이 foundation, future MQ adapter 경계
 core      모듈 간 port/contract, 공통 DTO/error/security metadata
 support   Redis, JPA auditing, web exception handler 등 Spring infrastructure
@@ -59,11 +61,13 @@ support   Redis, JPA auditing, web exception handler 등 Spring infrastructure
 ### Dependency Direction
 
 ```text
-app       -> support, auth, board, ai, ingest, collector, messaging
+app       -> support, auth, board, source, ingest, catalog, price, ai, messaging
 auth      -> core
 board     -> core
-collector -> core
-ingest    -> core
+source    -> core
+catalog   -> core
+price     -> catalog, core
+ingest    -> source, catalog, price, core
 ai        -> core
 messaging -> core
 support   -> core
@@ -128,23 +132,19 @@ DDD-lite notes:
 - S3 presigned URL 기반 파일 업로드/다운로드
 - 작성자 snapshot과 소유권 검증
 
-### Collector / Ingest
+### Price Tracking Direction
 
-- Naver News API 기반 수집
-- original link 기반 중복 방지
-- 스케줄러 기반 주기 수집
-- 수동 수집 trigger
-- `core` ingest port를 통해 ingest 모듈로 수집 문서 전달
-- PgVector 저장 후 자동 게시 후보 처리 foundation
+- `source` 모듈의 외부 상품 source adapter와 external API request log
+- `ingest` 모듈의 tracked keyword, collection job, raw product 저장
+- `catalog` 모듈의 Product/ProductCategory 정규화 상품 도메인
+- `price` 모듈의 price snapshot, latest lowest price read model, 가격 하락 조회
+- Mock source 기반 `source -> ingest -> catalog -> price` 수집 흐름
 
 ### AI
 
-- Spring AI + OpenAI 기반 채팅/생성 foundation
+- Spring AI + OpenAI 기반 채팅 foundation
 - PgVector 기반 문서 검색/RAG
-- 수집 문서 기반 AI 트렌드 분석 게시글 생성 foundation
 - prompt template loader
-- output guardrail
-- `NewsAnalysisPostPublisher` / `PostWriter` port 분리
 
 ### Infra / Docs
 
@@ -159,7 +159,7 @@ DDD-lite notes:
 
 ## Data Model
 
-![PostForge ERD](./docs/images/PostForge_Erd_v1.png)
+![PostForge ERD](./docs/images/PostForge_Erd_v2.png)
 
 Current implemented storage:
 
@@ -169,16 +169,15 @@ Current implemented storage:
 | board | `posts`, `post_tags`, `comments` | 게시글, 태그, 댓글/대댓글 |
 | board | `post_like`, `comment_like` | 좋아요 원본 데이터 |
 | board | `post_file` | S3 object metadata |
-| collector | `collected_articles` | 외부 뉴스 수집 이력과 중복 방지 |
+| board | `auto_post_drafts` | AI 가격 하락 게시글 초안과 발행 상태 |
+| board | `post_product_links` | 상품 관련 게시글과 상품 연결 |
+| source | `source_policies`, `external_api_request_logs` | 외부 API 호출 정책과 호출 로그 |
+| ingest | `tracked_keywords`, `collection_jobs`, `raw_products` | 수집 대상, 수집 작업, 외부 응답 원본 |
+| catalog | `products`, `product_categories`, `offers` | 상품 정규화와 source/mall 판매 상품 |
+| catalog | `product_embeddings`, `product_match_candidates` | pgvector 상품 임베딩과 낮은 확신도 유사 상품 매칭 후보 |
+| price | `price_snapshots`, `lowest_price_snapshots` | offer 가격 이력과 최저가 read model |
 | ai | `vector_store` | Spring AI PgVector 문서 임베딩 |
 | Redis | `refresh_token:*`, `email_verify_token:*`, `post:views:*` | 인증 상태, 이메일 인증, 조회수 cache |
-
-Target schema and policy drafts are kept under `docs/` instead of expanding this README:
-
-- [ERD Design Draft](./docs/db/postforge-erd-design-draft.md)
-- [DBML Draft](./docs/db/postforge-dbdiagram-draft.dbml)
-- [Use Case Data Policy](./docs/policy/usecase-data-policy.md)
-- [AI Cost Policy](./docs/policy/ai-cost-policy.md)
 
 ---
 
@@ -198,7 +197,14 @@ Actual request/response schemas are available through OpenAPI when the app is ru
 | `GET` | `/auth/email/verify` | 이메일 인증 |
 | `GET` | `/posts` | 게시글 목록/검색 |
 | `GET` | `/posts/{postId}` | 게시글 상세 |
+| `GET` | `/api/posts` | 게시글 목록 |
 | `GET` | `/posts/{postId}/comments` | 댓글 목록 |
+| `GET` | `/api/products` | 상품 목록 |
+| `GET` | `/api/products/search?query={query}` | 상품 검색 |
+| `GET` | `/api/products/{productId}` | 상품 상세 |
+| `GET` | `/api/products/{productId}/prices` | 가격 변동 이력 |
+| `GET` | `/api/products/price-drops` | 가격 하락 상품 목록 |
+| `GET` | `/api/products/{productId}/posts` | 상품 연결 게시글 |
 | `GET` | `/swagger-ui.html` | Swagger UI |
 
 ### Authenticated
@@ -219,14 +225,27 @@ Actual request/response schemas are available through OpenAPI when the app is ru
 | `GET` | `/files/presigned-url` | 파일 업로드 URL 발급 |
 | `GET` | `/files/{fileId}/download-url` | 파일 다운로드 URL 발급 |
 
-### AI / Collector
+### AI / Ingest
 
 | Method | Endpoint | Purpose |
 | --- | --- | --- |
 | `POST` | `/ai/chat` | AI 채팅 |
 | `POST` | `/ingest/documents` | 문서 저장 |
-| `POST` | `/internal/collector/documents` | collector 문서 적재 + 자동 게시 후보 처리 |
-| `POST` | `/collector/naver-news` | Naver News 수동 수집 |
+
+### Admin Product Collection
+
+| Method | Endpoint | Purpose |
+| --- | --- | --- |
+| `POST` | `/api/admin/products` | 상품 수동 upsert |
+| `PATCH` | `/api/admin/products/{productId}/hide` | 상품 숨김 |
+| `POST` | `/api/admin/tracked-keywords` | 수집 키워드 등록 |
+| `GET` | `/api/admin/tracked-keywords` | 수집 키워드 목록 |
+| `PATCH` | `/api/admin/tracked-keywords/{id}/disable` | 수집 키워드 비활성화 |
+| `POST` | `/api/admin/collection-jobs/manual` | 수동 상품 수집 실행 |
+| `GET` | `/api/admin/collection-jobs` | 상품 수집 job 목록 |
+| `GET` | `/api/admin/external-api-logs` | 외부 API 호출 로그 |
+| `GET` | `/api/admin/source-policies` | 외부 API source 정책 목록 |
+| `PUT` | `/api/admin/source-policies` | 외부 API source 정책 설정 |
 
 ---
 
@@ -237,7 +256,7 @@ Actual request/response schemas are available through OpenAPI when the app is ru
 - Java 21+
 - Docker / Docker Compose
 - PostgreSQL + Redis, usually through `docker-compose.local.yml`
-- Optional credentials: OpenAI, Gmail, OAuth2, AWS S3, Naver News API
+- Optional credentials: OpenAI, Gmail, OAuth2, AWS S3
 
 ### Environment
 
@@ -262,8 +281,6 @@ REDIS_PORT=6379
 JWT_SECRET=your-secret-key-at-least-32-characters
 
 OPENAI_API_KEY=
-NAVER_NEWS_CLIENT_ID=
-NAVER_NEWS_CLIENT_SECRET=
 ```
 
 ### Start Infra
@@ -286,13 +303,6 @@ Swagger UI:
 
 ```text
 http://localhost:8080/swagger-ui.html
-```
-
-Collector manual trigger:
-
-```bash
-curl -X POST http://localhost:8080/collector/naver-news \
-  -H "Authorization: Bearer <admin-access-token>"
 ```
 
 ---
@@ -360,26 +370,40 @@ Related docs:
 
 ---
 
-## Next Product Direction
+## Product Direction
 
-The current product design work is documented outside the README.
-The direction is to connect collected trend data to:
+The current direction is:
 
-- public posts with evidence links
-- private report drafts
-- precomputed related trends
-- explicit AI usage/cost logging
+```text
+Mock/external product data
+-> source request control
+-> ingest collection job/raw product
+-> catalog normalization
+-> price snapshot and lowest-price read model
+-> price-drop event / AI summary draft
+-> community reactions
+```
 
 Important boundary:
 
-> AI should run on explicit write/batch operations, not on every read request.
+> Product collection, price snapshot updates, and AI/post generation should run on scheduled/admin/event flows, not on every read request.
 
 See:
 
-- [PostForge ERD Design Draft](./docs/db/postforge-erd-design-draft.md)
-- [AI Cost Policy](./docs/policy/ai-cost-policy.md)
+- [Refactoring Use Cases](refactoring-usecase.md)
+- [Refactoring PRD](refactoring-prd.md)
+- [Refactoring Architecture](refactoring-architecture.md)
 - [Access Policy](./docs/policy/access-policy.md)
-- [Use Case Data Policy](./docs/policy/usecase-data-policy.md)
+
+Product collection and price metrics exposed through Micrometer:
+
+- `external_api_requests_total`
+- `external_api_failures_total`
+- `external_api_response_time_seconds`
+- `collection_jobs_success_total`
+- `collection_jobs_failed_total`
+- `collection_jobs_duration_seconds`
+- `raw_products_saved_total`
 
 ---
 
@@ -388,14 +412,9 @@ See:
 | Document | Description |
 | --- | --- |
 | [DB Schema Ownership](./docs/db/schema-ownership.md) | DB/PgVector/Redis/S3 ownership and migration convention |
-| [ERD Design Draft](./docs/db/postforge-erd-design-draft.md) | target product schema and cost boundaries |
-| [DBML Draft](./docs/db/postforge-dbdiagram-draft.dbml) | dbdiagram.io target ERD draft |
 | [Access Policy](./docs/policy/access-policy.md) | public/private/admin access boundary |
-| [AI Cost Policy](./docs/policy/ai-cost-policy.md) | AI/API cost control rules |
 | [Module Dependencies](./docs/architecture/module-dependencies.md) | module boundary and dependency policy |
-| [Modular Monolith Rationale](./docs/architecture/modular-monolith-rationale.md) | modular monolith / MSA transition rationale |
 | [Gradle Dependency Rationale](./docs/architecture/gradle-dependency-rationale.md) | module-level Gradle dependency decisions |
-| [MSA Migration Concepts](./docs/architecture/msa-migration-concepts.md) | DB ownership, outbox, versioning, observability |
 | [Docker Docs](./docs/docker/README.md) | Docker build, image, cache, compose docs |
 | [Performance Reports](./docs/performance/README.md) | k6, Grafana, capacity and cost notes |
 | [Redis Key Design](./docs/redis-key-design.md) | Redis key ownership and TTL policy |
@@ -406,8 +425,9 @@ See:
 
 - Modular monolith로 시작하되 MSA 전환 비용을 낮추기 위해 module boundary와 DB ownership을 문서화했습니다.
 - 인증 상태, 이메일 인증, 조회수, 좋아요 보호처럼 TTL/중복 방지가 필요한 영역은 Redis로 분리했습니다.
-- 외부 뉴스 수집은 게시판 도메인에 직접 붙이지 않고 collector -> ingest -> ai/board port 흐름으로 분리했습니다.
-- AI/RAG는 기능으로만 붙인 것이 아니라 prompt, output guardrail, PgVector, 자동 게시 orchestration을 분리해 실험했습니다.
+- 외부 상품 API 호출을 `source`, 수집 작업을 `ingest`, 정규화 상품을 `catalog`, 가격 이력을 `price`로 나눠 장애/소유권 경계를 분리했습니다.
+- Mock source 수집부터 raw product, catalog upsert, price snapshot/read model까지 하나의 batch/admin 흐름으로 연결했습니다.
+- 사용자 조회는 저장된 catalog/price 데이터를 기준으로 처리하고, 외부 API는 수집 흐름에서만 호출하도록 경계를 잡았습니다.
 - Docker runtime image는 Spring Boot layered jar를 사용해 dependency layer와 application layer의 cache 효율을 개선했습니다.
 - k6/Grafana 성능 문서와 Docker image 테스트 문서를 남겨 구현 외 운영 관점까지 설명할 수 있게 했습니다.
 

@@ -1,12 +1,13 @@
 package dev.iamrat.board.post.presentation;
 
-import dev.iamrat.board.like.application.LikeResponse;
+import dev.iamrat.board.like.application.LikeResult;
+import dev.iamrat.board.like.presentation.dto.LikeResponse;
 import dev.iamrat.board.post.application.PostCommandService;
 import dev.iamrat.board.post.application.PostInteractionService;
 import dev.iamrat.board.post.application.PostQueryService;
-import dev.iamrat.board.post.dto.PostDetailResponse;
-import dev.iamrat.board.post.dto.PostRequest;
-import dev.iamrat.board.post.dto.PostSummaryResponse;
+import dev.iamrat.board.post.presentation.dto.PostDetailResponse;
+import dev.iamrat.board.post.presentation.dto.PostRequest;
+import dev.iamrat.board.post.presentation.dto.PostSummaryResponse;
 import dev.iamrat.core.global.dto.MessageResponse;
 import dev.iamrat.core.global.dto.PageResponse;
 import dev.iamrat.core.account.UserPrincipal;
@@ -24,7 +25,7 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/posts")
+@RequestMapping({"/posts", "/api/posts"})
 public class PostController {
 
     private final PostCommandService postCommandService;
@@ -40,6 +41,9 @@ public class PostController {
         PostSummaryResponse savedPost = postCommandService.savePost(
             postRequest.title(),
             postRequest.content(),
+            postRequest.summary(),
+            postRequest.tags(),
+            postRequest.category(),
             accountId(user),
             postRequest.fileIds()
         );
@@ -64,6 +68,16 @@ public class PostController {
         return ResponseEntity.ok(PageResponse.from(posts));
     }
 
+    @GetMapping("/auto/price-drops")
+    public ResponseEntity<PageResponse<PostDetailResponse>> getAutoPriceDropPosts(
+        @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable,
+        @AuthenticationPrincipal UserPrincipal user
+    ) {
+        Long accountId = optionalAccountId(user);
+        Page<PostDetailResponse> posts = postQueryService.getProductLinkedPosts(pageable, accountId);
+        return ResponseEntity.ok(PageResponse.from(posts));
+    }
+
     @GetMapping("/{postId:\\d+}")
     public ResponseEntity<PostDetailResponse> getPost(
         @PathVariable("postId") Long postId,
@@ -85,6 +99,9 @@ public class PostController {
             postId,
             postRequest.title(),
             postRequest.content(),
+            postRequest.summary(),
+            postRequest.tags(),
+            postRequest.category(),
             postRequest.fileIds()
         );
 
@@ -107,9 +124,9 @@ public class PostController {
         @PathVariable("postId") Long postId,
         @AuthenticationPrincipal UserPrincipal user
     ) {
-        LikeResponse likeStatus = postInteractionService.likePost(postId, accountId(user));
+        LikeResult likeStatus = postInteractionService.likePost(postId, accountId(user));
 
-        return ResponseEntity.ok(likeStatus);
+        return ResponseEntity.ok(LikeResponse.from(likeStatus));
     }
 
     @DeleteMapping("/{postId:\\d+}/like")
@@ -118,9 +135,9 @@ public class PostController {
         @PathVariable("postId") Long postId,
         @AuthenticationPrincipal UserPrincipal user
     ) {
-        LikeResponse likeStatus = postInteractionService.unlikePost(postId, accountId(user));
+        LikeResult likeStatus = postInteractionService.unlikePost(postId, accountId(user));
 
-        return ResponseEntity.ok(likeStatus);
+        return ResponseEntity.ok(LikeResponse.from(likeStatus));
     }
 
     private static Long optionalAccountId(UserPrincipal user) {

@@ -11,9 +11,12 @@ COPY ingest/build.gradle ./ingest/
 COPY app/build.gradle ./app/
 COPY auth/build.gradle ./auth/
 COPY board/build.gradle ./board/
+COPY source/build.gradle ./source/
+COPY catalog/build.gradle ./catalog/
+COPY price/build.gradle ./price/
 COPY core/build.gradle ./core/
 COPY support/build.gradle ./support/
-COPY collector/build.gradle ./collector/
+COPY messaging/build.gradle ./messaging/
 
 RUN --mount=type=cache,target=/home/gradle/.gradle \
     gradle :app:dependencies --configuration runtimeClasspath --no-daemon
@@ -23,9 +26,12 @@ COPY ingest/src ./ingest/src
 COPY app/src ./app/src
 COPY auth/src ./auth/src
 COPY board/src ./board/src
+COPY source/src ./source/src
+COPY catalog/src ./catalog/src
+COPY price/src ./price/src
 COPY core/src ./core/src
 COPY support/src ./support/src
-COPY collector/src ./collector/src
+COPY messaging/src ./messaging/src
 
 RUN --mount=type=cache,target=/home/gradle/.gradle \
     --mount=type=cache,target=/workspace/.gradle \

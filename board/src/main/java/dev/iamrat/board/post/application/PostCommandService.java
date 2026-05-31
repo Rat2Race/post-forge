@@ -5,9 +5,10 @@ import dev.iamrat.board.post.domain.PostPolicy;
 import dev.iamrat.board.post.domain.event.PostCreatedEvent;
 import dev.iamrat.board.post.domain.event.PostDeletedEvent;
 import dev.iamrat.board.post.domain.event.PostDomainEvent;
-import dev.iamrat.board.post.dto.PostSummaryResponse;
+import dev.iamrat.board.post.presentation.dto.PostSummaryResponse;
 import dev.iamrat.board.view.application.ViewCountService;
 import dev.iamrat.core.account.AccountProfileReader;
+import dev.iamrat.core.board.post.PostCategory;
 import dev.iamrat.core.event.DomainEventRecorder;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -29,10 +30,23 @@ public class PostCommandService {
 
     @Transactional
     public PostSummaryResponse savePost(String title, String content, Long accountId, List<Long> fileIds) {
+        return savePost(title, content, null, null, PostCategory.GENERAL, accountId, fileIds);
+    }
+
+    @Transactional
+    public PostSummaryResponse savePost(
+        String title,
+        String content,
+        String summary,
+        List<String> tags,
+        PostCategory category,
+        Long accountId,
+        List<Long> fileIds
+    ) {
         postPolicy.validateAuthor(accountId);
         String nickname = accountProfileReader.getProfile(accountId).nickname();
 
-        Post newPost = Post.general(title, content, accountId, nickname);
+        Post newPost = Post.create(title, content, summary, tags, category, accountId, nickname);
 
         postStore.save(newPost);
         postFileAppender.appendFiles(newPost, fileIds);
@@ -43,9 +57,22 @@ public class PostCommandService {
 
     @Transactional
     public PostSummaryResponse updatePost(Long postId, String title, String content, List<Long> fileIds) {
+        return updatePost(postId, title, content, null, null, PostCategory.GENERAL, fileIds);
+    }
+
+    @Transactional
+    public PostSummaryResponse updatePost(
+        Long postId,
+        String title,
+        String content,
+        String summary,
+        List<String> tags,
+        PostCategory category,
+        List<Long> fileIds
+    ) {
         Post post = postReader.getById(postId);
 
-        post.update(title, content);
+        post.update(title, content, summary, tags, category);
         postFileAppender.replaceFiles(post, fileIds);
 
         return PostSummaryResponse.from(post);

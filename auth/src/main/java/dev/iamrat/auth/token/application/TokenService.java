@@ -2,8 +2,8 @@ package dev.iamrat.auth.token.application;
 
 import dev.iamrat.auth.account.application.AccountQueryService;
 import dev.iamrat.auth.account.domain.Account;
-import dev.iamrat.auth.security.principal.AccountAuthorityMapper;
-import dev.iamrat.auth.security.principal.AuthenticatedAccount;
+import dev.iamrat.auth.security.infrastructure.principal.AccountAuthorityMapper;
+import dev.iamrat.auth.security.infrastructure.principal.AuthenticatedAccount;
 import dev.iamrat.auth.support.error.AuthErrorCode;
 import dev.iamrat.core.global.exception.CustomException;
 import java.util.Collection;

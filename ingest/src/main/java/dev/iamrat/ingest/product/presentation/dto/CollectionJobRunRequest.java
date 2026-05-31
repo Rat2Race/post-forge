@@ -1,0 +1,11 @@
+package dev.iamrat.ingest.product.presentation.dto;
+
+import dev.iamrat.source.product.domain.SourceType;
+import jakarta.validation.constraints.NotBlank;
+
+public record CollectionJobRunRequest(
+    SourceType source,
+    @NotBlank String keyword,
+    Integer displayCount
+) {
+}

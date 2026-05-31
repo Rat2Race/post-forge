@@ -111,8 +111,15 @@ public class Post extends AuditingFields {
 	}
 
 	public void update(String title, String content) {
+		update(title, content, this.summary, this.tags, this.category);
+	}
+
+	public void update(String title, String content, String summary, List<String> tags, PostCategory category) {
 		this.title = title;
 		this.content = content;
+		this.summary = summary;
+		this.tags = tags == null ? new ArrayList<>() : new ArrayList<>(tags);
+		this.category = category == null ? PostCategory.GENERAL : category;
 	}
 
 	public void updateViews(Long count) {

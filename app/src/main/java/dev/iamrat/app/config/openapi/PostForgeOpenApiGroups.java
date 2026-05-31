@@ -50,18 +50,34 @@ public class PostForgeOpenApiGroups {
     }
 
     @Bean
-    public GroupedOpenApi ingestApi() {
+    public GroupedOpenApi catalogApi() {
         return GroupedOpenApi.builder()
-            .group("ingest")
-            .pathsToMatch(PostForgeOpenApiRoutes.INGEST)
+            .group("catalog")
+            .pathsToMatch(PostForgeOpenApiRoutes.CATALOG)
             .build();
     }
 
     @Bean
-    public GroupedOpenApi internalApi() {
+    public GroupedOpenApi sourceApi() {
         return GroupedOpenApi.builder()
-            .group("internal")
-            .pathsToMatch(PostForgeOpenApiRoutes.INTERNAL)
+            .group("source")
+            .pathsToMatch(PostForgeOpenApiRoutes.SOURCE)
+            .build();
+    }
+
+    @Bean
+    public GroupedOpenApi priceApi() {
+        return GroupedOpenApi.builder()
+            .group("price")
+            .pathsToMatch(PostForgeOpenApiRoutes.PRICE)
+            .build();
+    }
+
+    @Bean
+    public GroupedOpenApi ingestApi() {
+        return GroupedOpenApi.builder()
+            .group("ingest")
+            .pathsToMatch(PostForgeOpenApiRoutes.INGEST)
             .build();
     }
 

@@ -1,0 +1,196 @@
+// PostForge portfolio ERD
+// Condensed view for explaining the core product flow.
+
+Project postforge_portfolio {
+  database_type: "PostgreSQL"
+  Note: '''
+  Condensed ERD for portfolio explanation.
+  Full table map: docs/db/postforge-current-erd.dbml
+  '''
+}
+
+Table accounts {
+  id bigint [pk, increment]
+  username varchar(100) [not null, unique]
+  email varchar(255) [not null, unique]
+  nickname varchar(50) [not null, unique]
+  provider varchar(30) [not null]
+  status varchar(30) [not null]
+  version bigint [not null]
+}
+
+Table posts {
+  id bigint [pk, increment]
+  title varchar(100) [not null]
+  content varchar(10000) [not null]
+  category varchar(30) [not null]
+  views bigint [not null]
+  like_count bigint [not null]
+  account_id bigint [not null]
+  nickname varchar(50) [not null]
+  created_at timestamp [not null]
+}
+
+Table comments {
+  id bigint [pk, increment]
+  post_id bigint [not null]
+  parent_id bigint
+  account_id bigint [not null]
+  nickname varchar(50) [not null]
+  content varchar(500) [not null]
+  like_count bigint [not null]
+  created_at timestamp [not null]
+}
+
+Table post_like {
+  id bigint [pk, increment]
+  post_id bigint [not null]
+  account_id bigint [not null]
+  created_at timestamp [not null]
+
+  indexes {
+    (post_id, account_id) [unique, name: 'uk_post_like_post_account']
+  }
+}
+
+Table comment_like {
+  id bigint [pk, increment]
+  comment_id bigint [not null]
+  account_id bigint [not null]
+  created_at timestamp [not null]
+
+  indexes {
+    (comment_id, account_id) [unique, name: 'uk_comment_like_comment_account']
+  }
+}
+
+Table source_policies {
+  id bigint [pk, increment]
+  source varchar(30) [not null, unique]
+  enabled boolean [not null]
+  daily_quota int [not null]
+  max_retry_attempts int [not null]
+  circuit_failure_threshold int [not null]
+}
+
+Table collection_jobs {
+  id bigint [pk, increment]
+  tracked_keyword_id bigint
+  source varchar(30) [not null]
+  keyword varchar(100) [not null]
+  status varchar(30) [not null]
+  collected_count int [not null]
+  requested_at timestamp [not null]
+  finished_at timestamp
+}
+
+Table raw_products {
+  id bigint [pk, increment]
+  collection_job_id bigint [not null]
+  source varchar(30) [not null]
+  external_product_id varchar(120) [not null]
+  raw_payload text [not null]
+  collected_at timestamp [not null]
+}
+
+Table products {
+  id bigint [pk, increment]
+  source varchar(30) [not null]
+  external_product_id varchar(120) [not null]
+  name varchar(200) [not null]
+  normalized_name varchar(200) [not null]
+  brand varchar(100)
+  current_price bigint [not null]
+  status varchar(30) [not null]
+
+  indexes {
+    (source, external_product_id) [unique, name: 'uk_products_source_external_id']
+  }
+}
+
+Table offers {
+  id bigint [pk, increment]
+  product_id bigint [not null]
+  source varchar(30) [not null]
+  external_product_id varchar(120) [not null]
+  mall_name varchar(100)
+  title varchar(200) [not null]
+  active boolean [not null]
+
+  indexes {
+    (source, external_product_id) [unique, name: 'uk_offers_source_external_product_id']
+  }
+}
+
+Table price_snapshots {
+  id bigint [pk, increment]
+  product_id bigint [not null]
+  offer_id bigint [not null]
+  source varchar(30) [not null]
+  external_product_id varchar(120) [not null]
+  price bigint [not null]
+  collected_at timestamp [not null]
+}
+
+Table lowest_price_snapshots {
+  id bigint [pk, increment]
+  product_id bigint [not null, unique]
+  offer_id bigint [not null]
+  lowest_price bigint [not null]
+  previous_lowest_price bigint
+  drop_rate numeric(8,2)
+  changed_at timestamp [not null]
+  collected_at timestamp [not null]
+}
+
+Table auto_post_drafts {
+  id bigint [pk, increment]
+  product_id bigint [not null]
+  event_id varchar(80) [not null, unique]
+  title varchar(100) [not null]
+  status varchar(30) [not null]
+  post_id bigint
+  created_at timestamp [not null]
+  published_at timestamp
+}
+
+Table post_product_links {
+  id bigint [pk, increment]
+  post_id bigint [not null, unique]
+  product_id bigint [not null]
+  post_date date [not null]
+}
+
+Table outbox_events {
+  id bigint [pk, increment]
+  event_id varchar(36) [not null, unique]
+  event_type varchar(150) [not null]
+  aggregate_type varchar(80)
+  aggregate_id varchar(100)
+  status varchar(30) [not null]
+  retry_count int [not null]
+  available_at timestamptz [not null]
+}
+
+Ref: posts.account_id > accounts.id // logical scalar author reference
+Ref: comments.account_id > accounts.id // logical scalar author reference
+Ref: post_like.account_id > accounts.id // logical scalar actor reference
+Ref: comment_like.account_id > accounts.id // logical scalar actor reference
+
+Ref: comments.post_id > posts.id
+Ref: comments.parent_id > comments.id
+Ref: post_like.post_id > posts.id
+Ref: comment_like.comment_id > comments.id
+
+Ref: raw_products.collection_job_id > collection_jobs.id
+
+Ref: offers.product_id > products.id
+Ref: price_snapshots.product_id > products.id // logical scalar reference
+Ref: price_snapshots.offer_id > offers.id // logical scalar reference
+Ref: lowest_price_snapshots.product_id - products.id // logical unique read model
+Ref: lowest_price_snapshots.offer_id > offers.id // logical scalar reference
+
+Ref: auto_post_drafts.product_id > products.id // logical scalar reference
+Ref: auto_post_drafts.post_id > posts.id
+Ref: post_product_links.product_id > products.id // logical scalar reference
+Ref: post_product_links.post_id > posts.id

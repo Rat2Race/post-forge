@@ -4,7 +4,7 @@ import dev.iamrat.core.global.error.CommonErrorCode;
 import dev.iamrat.core.global.exception.CustomException;
 import dev.iamrat.auth.account.application.AccountQueryService;
 import dev.iamrat.auth.account.domain.Account;
-import dev.iamrat.auth.security.principal.AccountAuthorityMapper;
+import dev.iamrat.auth.security.infrastructure.principal.AccountAuthorityMapper;
 import dev.iamrat.auth.support.error.AuthErrorCode;
 import dev.iamrat.auth.token.application.TokenIssueResult;
 import dev.iamrat.auth.token.application.TokenService;

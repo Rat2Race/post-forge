@@ -1,0 +1,474 @@
+// PostForge current ERD
+// Source: current worktree JPA entities, JDBC stores, PgVector config, docs/db/migrations.
+// Logical refs below model scalar id relationships even when no physical FK is enforced.
+
+Project postforge_current {
+  database_type: "PostgreSQL"
+  Note: '''
+  Current implemented schema only. Target schema candidates are excluded.
+  Read the markdown ERD for senior-review notes, simplification candidates, and naming candidates.
+  '''
+}
+
+TableGroup auth {
+  accounts
+  account_roles
+}
+
+TableGroup board {
+  posts
+  post_tags
+  comments
+  post_like
+  comment_like
+  post_file
+  auto_post_drafts
+  post_product_links
+}
+
+TableGroup source {
+  source_policies
+  external_api_request_logs
+}
+
+TableGroup ingest {
+  tracked_keywords
+  collection_jobs
+  raw_products
+}
+
+TableGroup catalog {
+  product_categories
+  products
+  offers
+  product_embeddings
+  product_match_candidates
+}
+
+TableGroup price {
+  price_snapshots
+  lowest_price_snapshots
+}
+
+TableGroup ai {
+  vector_store
+}
+
+TableGroup messaging {
+  outbox_events
+}
+
+Table accounts {
+  id bigint [pk, increment]
+  username varchar(100) [not null, unique]
+  password varchar(255)
+  email varchar(255) [not null, unique]
+  nickname varchar(50) [not null, unique]
+  provider varchar(30) [not null, default: 'LOCAL']
+  provider_id varchar(150)
+  version bigint [not null, default: 0]
+  status varchar(30) [not null, default: 'ACTIVE']
+  created_at timestamp [not null]
+  updated_at timestamp
+
+  indexes {
+    status [name: 'idx_accounts_status']
+    (provider, provider_id) [unique, name: 'uk_accounts_provider_provider_id']
+  }
+}
+
+Table account_roles {
+  account_id bigint [not null]
+  role varchar(30) [not null]
+
+  indexes {
+    (account_id, role) [unique, name: 'uk_account_roles_account_role']
+  }
+}
+
+Table posts {
+  id bigint [pk, increment]
+  title varchar(100) [not null]
+  content varchar(10000) [not null]
+  summary varchar(500)
+  category varchar(30) [not null, default: 'GENERAL']
+  views bigint [not null, default: 0]
+  like_count bigint [not null, default: 0]
+  account_id bigint [not null]
+  nickname varchar(50) [not null]
+  created_at timestamp [not null]
+  created_by varchar(100) [not null]
+  modified_at timestamp [not null]
+  modified_by varchar(100) [not null]
+
+  indexes {
+    created_at [name: 'idx_posts_created_at']
+    account_id [name: 'idx_posts_account_id']
+  }
+}
+
+Table post_tags {
+  post_id bigint [not null]
+  tag varchar(50)
+
+  indexes {
+    post_id [name: 'idx_post_tags_post_id']
+  }
+}
+
+Table comments {
+  id bigint [pk, increment]
+  post_id bigint [not null]
+  content varchar(500) [not null]
+  account_id bigint [not null]
+  nickname varchar(50) [not null]
+  parent_id bigint
+  like_count bigint [not null, default: 0]
+  created_at timestamp [not null]
+  created_by varchar(100) [not null]
+  modified_at timestamp [not null]
+  modified_by varchar(100) [not null]
+
+  indexes {
+    (post_id, created_at) [name: 'idx_comments_post_created_at']
+    parent_id [name: 'idx_comments_parent_id']
+  }
+}
+
+Table post_like {
+  id bigint [pk, increment]
+  post_id bigint [not null]
+  account_id bigint [not null]
+  created_at timestamp [not null]
+  created_by varchar(100) [not null]
+  modified_at timestamp [not null]
+  modified_by varchar(100) [not null]
+
+  indexes {
+    (post_id, account_id) [unique, name: 'uk_post_like_post_account']
+    (account_id, post_id) [name: 'idx_post_like_account_post']
+  }
+}
+
+Table comment_like {
+  id bigint [pk, increment]
+  comment_id bigint [not null]
+  account_id bigint [not null]
+  created_at timestamp [not null]
+  created_by varchar(100) [not null]
+  modified_at timestamp [not null]
+  modified_by varchar(100) [not null]
+
+  indexes {
+    (comment_id, account_id) [unique, name: 'uk_comment_like_comment_account']
+    (account_id, comment_id) [name: 'idx_comment_like_account_comment']
+  }
+}
+
+Table post_file {
+  id bigint [pk, increment]
+  original_file_name varchar(255) [not null]
+  saved_file_name varchar(255) [not null]
+  file_path varchar(500) [not null]
+  file_size bigint
+  file_type varchar(100) [not null]
+  created_at timestamp [not null]
+  post_id bigint
+
+  indexes {
+    (post_id, created_at) [name: 'idx_post_file_post_created_at']
+  }
+}
+
+Table auto_post_drafts {
+  Note: 'AI generated post draft/publication state. Useful for review, retry, scheduling, and duplicate event prevention; optional if AI output is published immediately.'
+
+  id bigint [pk, increment]
+  product_id bigint [not null]
+  event_id varchar(80) [not null, unique]
+  title varchar(100) [not null]
+  content varchar(10000) [not null]
+  status varchar(30) [not null, default: 'DRAFT']
+  post_id bigint
+  created_at timestamp [not null]
+  published_at timestamp
+
+  indexes {
+    (product_id, created_at) [name: 'idx_auto_post_drafts_product_created']
+    (status, created_at) [name: 'idx_auto_post_drafts_status_created']
+  }
+}
+
+Table post_product_links {
+  Note: 'Logical link between a board post and a catalog product. This is the minimal bridge needed for product-related posts.'
+
+  id bigint [pk, increment]
+  post_id bigint [not null, unique]
+  product_id bigint [not null]
+  post_date date [not null]
+  created_at timestamp [not null]
+
+  indexes {
+    product_id [name: 'idx_post_product_links_product_id']
+    (product_id, post_date) [unique, name: 'uk_post_product_links_product_post_date']
+  }
+}
+
+Table source_policies {
+  Note: 'Per-provider API policy such as enabled flag, quota, retry count, and circuit-breaker threshold.'
+
+  id bigint [pk, increment]
+  source varchar(30) [not null, unique]
+  enabled boolean [not null]
+  daily_quota int [not null]
+  max_retry_attempts int [not null]
+  circuit_failure_threshold int [not null]
+  created_at timestamp [not null]
+  updated_at timestamp [not null]
+}
+
+Table external_api_request_logs {
+  Note: 'Request-level external API log. Keep for quota/circuit decisions and operations; consider retention or aggregate state when volume grows.'
+
+  id bigint [pk, increment]
+  source varchar(30) [not null]
+  endpoint varchar(200) [not null]
+  request_key varchar(200) [not null]
+  status_code int
+  success boolean [not null]
+  response_time_ms bigint [not null]
+  error_message varchar(1000)
+  requested_at timestamp [not null]
+}
+
+Table tracked_keywords {
+  id bigint [pk, increment]
+  keyword varchar(100) [not null]
+  source varchar(30) [not null]
+  interval_minutes int [not null]
+  display_count int [not null]
+  enabled boolean [not null]
+  created_at timestamp [not null]
+  updated_at timestamp [not null]
+
+  indexes {
+    (source, keyword) [unique, name: 'uk_tracked_keywords_source_keyword']
+  }
+}
+
+Table collection_jobs {
+  Note: 'Product collection run state. This is job-level tracking, distinct from request-level API logs.'
+
+  id bigint [pk, increment]
+  tracked_keyword_id bigint
+  source varchar(30) [not null]
+  keyword varchar(100) [not null]
+  status varchar(30) [not null]
+  requested_at timestamp [not null]
+  started_at timestamp
+  finished_at timestamp
+  collected_count int [not null, default: 0]
+  failure_reason varchar(1000)
+  retry_count int [not null, default: 0]
+}
+
+Table raw_products {
+  Note: 'Raw external product payload. Valuable for reprocessing and audits; optional if normalized products/offers are sufficient.'
+
+  id bigint [pk, increment]
+  collection_job_id bigint [not null]
+  source varchar(30) [not null]
+  external_product_id varchar(120) [not null]
+  raw_payload text [not null]
+  collected_at timestamp [not null]
+}
+
+Table product_categories {
+  Note: 'Normalized category model. Current products also keep category1/category2/category3 strings, so category modeling should be consolidated later.'
+
+  id bigint [pk, increment]
+  name varchar(100) [not null, unique]
+  parent_id bigint
+  depth int [not null, default: 0]
+  created_at timestamp [not null]
+  updated_at timestamp [not null]
+}
+
+Table products {
+  id bigint [pk, increment]
+  source varchar(30) [not null]
+  external_product_id varchar(120) [not null]
+  name varchar(200) [not null]
+  normalized_name varchar(200) [not null]
+  brand varchar(100)
+  maker varchar(100)
+  category_id bigint
+  category1 varchar(100)
+  category2 varchar(100)
+  category3 varchar(100)
+  current_price bigint [not null]
+  image_url varchar(1000)
+  product_url varchar(1000)
+  mall_name varchar(100)
+  status varchar(30) [not null, default: 'ACTIVE']
+  created_at timestamp [not null]
+  updated_at timestamp [not null]
+
+  indexes {
+    (source, external_product_id) [unique, name: 'uk_products_source_external_id']
+    normalized_name [name: 'idx_products_normalized_name']
+    category_id [name: 'idx_products_category_id']
+    (status, created_at) [name: 'idx_products_status_created_at']
+  }
+}
+
+Table offers {
+  id bigint [pk, increment]
+  product_id bigint [not null]
+  source varchar(30) [not null]
+  external_product_id varchar(120) [not null]
+  mall_name varchar(100)
+  title varchar(200) [not null]
+  product_url varchar(1000)
+  image_url varchar(1000)
+  active boolean [not null, default: true]
+  created_at timestamp [not null]
+  updated_at timestamp [not null]
+
+  indexes {
+    (source, external_product_id) [unique, name: 'uk_offers_source_external_product_id']
+    product_id [name: 'idx_offers_product_id']
+  }
+}
+
+Table product_embeddings {
+  Note: 'Product matching vector, not general RAG. Separate from vector_store because it is keyed by product_id and used for catalog deduplication.'
+
+  product_id bigint [pk]
+  embedding_input text [not null]
+  embedding vector(1536) [not null]
+  created_at timestamp [not null]
+  updated_at timestamp [not null]
+}
+
+Table product_match_candidates {
+  Note: 'Possible duplicate/same-product match pending human or admin review. Extension table unless review/merge operations are active.'
+
+  id bigint [pk, increment]
+  source_product_id bigint [not null]
+  source varchar(30) [not null]
+  external_product_id varchar(120) [not null]
+  source_product_title varchar(200) [not null]
+  candidate_product_id bigint [not null]
+  similarity_score numeric(6,4) [not null]
+  brand_matched boolean [not null]
+  category_matched boolean [not null]
+  status varchar(30) [not null, default: 'PENDING']
+  created_at timestamp [not null]
+  updated_at timestamp [not null]
+
+  indexes {
+    (source_product_id, candidate_product_id, status) [unique, name: 'uk_product_match_candidates_source_candidate_status']
+    (status, created_at) [name: 'idx_product_match_candidates_status_created']
+    candidate_product_id [name: 'idx_product_match_candidates_candidate']
+  }
+}
+
+Table price_snapshots {
+  id bigint [pk, increment]
+  product_id bigint [not null]
+  offer_id bigint [not null]
+  source varchar(30) [not null]
+  external_product_id varchar(120) [not null]
+  price bigint [not null]
+  collected_at timestamp [not null]
+
+  indexes {
+    (product_id, collected_at) [name: 'idx_price_snapshots_product_collected']
+    (offer_id, collected_at) [name: 'idx_price_snapshots_offer_collected']
+    (source, external_product_id) [name: 'idx_price_snapshots_source_external']
+  }
+}
+
+Table lowest_price_snapshots {
+  Note: 'Current lowest-price read model. price_snapshots alone can calculate drops at small scale; this table optimizes frequent reads/detection.'
+
+  id bigint [pk, increment]
+  product_id bigint [not null, unique]
+  offer_id bigint [not null]
+  source varchar(30) [not null]
+  external_product_id varchar(120) [not null]
+  lowest_price bigint [not null]
+  previous_lowest_price bigint
+  drop_rate numeric(8,2)
+  changed_at timestamp [not null]
+  collected_at timestamp [not null]
+
+  indexes {
+    drop_rate [name: 'idx_lowest_price_snapshots_drop_rate']
+  }
+}
+
+Table vector_store {
+  Note: 'Spring AI PgVector RAG document store. Do not use as the catalog product identity/matching table.'
+
+  id uuid [pk]
+  content text
+  metadata json
+  embedding vector(1536)
+}
+
+Table outbox_events {
+  id bigint [pk, increment]
+  event_id varchar(36) [not null, unique]
+  event_type varchar(150) [not null]
+  aggregate_type varchar(80)
+  aggregate_id varchar(100)
+  payload text [not null]
+  status varchar(30) [not null]
+  retry_count int [not null, default: 0]
+  available_at timestamptz [not null]
+  occurred_at timestamptz [not null]
+  published_at timestamptz
+  last_error varchar(2000)
+  created_at timestamptz [not null]
+  updated_at timestamptz [not null]
+
+  indexes {
+    (status, available_at) [name: 'idx_outbox_events_status_available_at']
+    (event_type, created_at) [name: 'idx_outbox_events_event_type_created_at']
+    (aggregate_type, aggregate_id) [name: 'idx_outbox_events_aggregate']
+  }
+}
+
+Ref: account_roles.account_id > accounts.id
+Ref: posts.account_id > accounts.id // logical scalar owner reference
+Ref: comments.account_id > accounts.id // logical scalar owner reference
+Ref: post_like.account_id > accounts.id // logical scalar actor reference
+Ref: comment_like.account_id > accounts.id // logical scalar actor reference
+
+Ref: post_tags.post_id > posts.id
+Ref: comments.post_id > posts.id
+Ref: comments.parent_id > comments.id
+Ref: post_like.post_id > posts.id
+Ref: comment_like.comment_id > comments.id
+Ref: post_file.post_id > posts.id
+Ref: auto_post_drafts.post_id > posts.id
+Ref: post_product_links.post_id > posts.id
+
+Ref: collection_jobs.tracked_keyword_id > tracked_keywords.id // logical/manual jobs may be null
+Ref: raw_products.collection_job_id > collection_jobs.id
+
+Ref: product_categories.parent_id > product_categories.id // logical category tree
+Ref: products.category_id > product_categories.id
+Ref: offers.product_id > products.id
+Ref: product_embeddings.product_id - products.id
+Ref: product_match_candidates.source_product_id > products.id // logical scalar reference
+Ref: product_match_candidates.candidate_product_id > products.id // logical scalar reference
+
+Ref: price_snapshots.product_id > products.id // logical scalar reference
+Ref: price_snapshots.offer_id > offers.id // logical scalar reference
+Ref: lowest_price_snapshots.product_id - products.id // logical unique read model
+Ref: lowest_price_snapshots.offer_id > offers.id // logical scalar reference
+Ref: post_product_links.product_id > products.id // logical scalar reference
+Ref: auto_post_drafts.product_id > products.id // logical scalar reference

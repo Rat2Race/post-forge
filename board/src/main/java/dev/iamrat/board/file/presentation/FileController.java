@@ -1,8 +1,9 @@
 package dev.iamrat.board.file.presentation;
 
 import dev.iamrat.board.file.application.FileReader;
-import dev.iamrat.board.file.application.FileUploadResponse;
+import dev.iamrat.board.file.application.FileUploadResult;
 import dev.iamrat.board.file.application.FileUploadService;
+import dev.iamrat.board.file.presentation.dto.FileUploadResponse;
 import dev.iamrat.core.global.dto.UrlResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -22,8 +23,8 @@ public class FileController {
     public ResponseEntity<FileUploadResponse> getPresignedUrl(
             @RequestParam String fileName,
             @RequestParam String contentType) {
-        FileUploadResponse response = fileUploadService.createPresignedUrl(fileName, contentType);
-        return ResponseEntity.ok(response);
+        FileUploadResult result = fileUploadService.createPresignedUrl(fileName, contentType);
+        return ResponseEntity.ok(FileUploadResponse.from(result));
     }
     
     @GetMapping("/{fileId}/download-url")

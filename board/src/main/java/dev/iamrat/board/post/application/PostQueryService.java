@@ -1,10 +1,12 @@
 package dev.iamrat.board.post.application;
 
 import dev.iamrat.board.comment.application.CommentQueryService;
-import dev.iamrat.board.like.application.LikeResponse;
+import dev.iamrat.board.like.application.LikeResult;
 import dev.iamrat.board.like.application.PostLikeService;
 import dev.iamrat.board.post.domain.Post;
-import dev.iamrat.board.post.dto.PostDetailResponse;
+import dev.iamrat.board.post.domain.PostProductLink;
+import dev.iamrat.board.post.infrastructure.persistence.PostProductLinkRepository;
+import dev.iamrat.board.post.presentation.dto.PostDetailResponse;
 import dev.iamrat.board.view.application.ViewCountService;
 import java.util.List;
 import java.util.Map;
@@ -26,6 +28,7 @@ public class PostQueryService {
     private final PostLikeService postLikeService;
     private final CommentQueryService commentQueryService;
     private final ViewCountService viewCountService;
+    private final PostProductLinkRepository postProductLinkRepository;
 
     public Page<PostDetailResponse> getPosts(Pageable pageable, Long accountId) {
         Page<Post> posts = postStore.findAll(pageable);
@@ -37,11 +40,17 @@ public class PostQueryService {
         return toDetailPage(posts, pageable, accountId);
     }
 
+    public Page<PostDetailResponse> getProductLinkedPosts(Pageable pageable, Long accountId) {
+        Page<PostProductLink> links = postProductLinkRepository.findAllByOrderByCreatedAtDesc(pageable);
+        Page<Post> posts = links.map(PostProductLink::getPost);
+        return toDetailPage(posts, pageable, accountId);
+    }
+
     public PostDetailResponse getPost(Long postId, Long accountId) {
         Post post = postReader.getById(postId);
 
         long views = viewCountService.getViewCount(postId);
-        LikeResponse likeInfo = postLikeService.getLikeInfo(postId, accountId);
+        LikeResult likeInfo = postLikeService.getLikeInfo(postId, accountId);
         int commentCount = commentQueryService.getCommentCount(postId);
         return PostDetailResponse.from(post, likeInfo.isLiked(), likeInfo.likeCount(), commentCount, views);
     }

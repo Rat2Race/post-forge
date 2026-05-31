@@ -68,11 +68,17 @@ setup/reports/**
 
 # DB
 /docker/
+!/docker/
+/docker/**
+!/docker/postgres/
+!/docker/postgres/init/
+!/docker/postgres/init/.gitkeep
 /redis/
 
 # H2 DB
 **/data/*.db
 # Gemini CLI internal files
 .omx/
+.codex
 .codex-review/
 .codex_tmp/
