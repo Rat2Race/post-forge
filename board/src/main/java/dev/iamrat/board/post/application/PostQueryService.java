@@ -1,10 +1,10 @@
 package dev.iamrat.board.post.application;
 
 import dev.iamrat.board.comment.application.CommentQueryService;
-import dev.iamrat.board.like.application.LikeResponse;
+import dev.iamrat.board.like.application.LikeResult;
 import dev.iamrat.board.like.application.PostLikeService;
 import dev.iamrat.board.post.domain.Post;
-import dev.iamrat.board.post.dto.PostDetailResponse;
+import dev.iamrat.board.post.presentation.dto.PostDetailResponse;
 import dev.iamrat.board.view.application.ViewCountService;
 import java.util.List;
 import java.util.Map;
@@ -41,7 +41,7 @@ public class PostQueryService {
         Post post = postReader.getById(postId);
 
         long views = viewCountService.getViewCount(postId);
-        LikeResponse likeInfo = postLikeService.getLikeInfo(postId, accountId);
+        LikeResult likeInfo = postLikeService.getLikeInfo(postId, accountId);
         int commentCount = commentQueryService.getCommentCount(postId);
         return PostDetailResponse.from(post, likeInfo.isLiked(), likeInfo.likeCount(), commentCount, views);
     }

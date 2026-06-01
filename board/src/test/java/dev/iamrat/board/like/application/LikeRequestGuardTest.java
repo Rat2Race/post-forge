@@ -64,12 +64,15 @@ class LikeRequestGuardTest {
     }
 
     @Test
-    @DisplayName("Redis 장애가 나면 fail-open으로 요청을 통과시킨다")
-    void guardCommentLike_whenRedisFails_allowsRequest() {
+    @DisplayName("좋아요 요청 가드 저장소 장애가 나면 429 예외로 요청을 막는다")
+    void guardCommentLike_whenStoreFails_throwsTooManyRequests() {
         given(likeRequestWindow.markCooldownIfAbsent("comment", 7L, 1L, "like"))
             .willThrow(new RuntimeException("redis down"));
 
-        likeRequestGuard.guardCommentLike(7L, 1L);
+        assertThatThrownBy(() -> likeRequestGuard.guardCommentLike(7L, 1L))
+            .isInstanceOf(CustomException.class)
+            .extracting(ex -> ((CustomException) ex).getErrorCode())
+            .isEqualTo(CommonErrorCode.TOO_MANY_REQUESTS);
 
         verify(likeRequestWindow, never()).incrementRateCount(1L);
     }

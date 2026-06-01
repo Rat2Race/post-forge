@@ -27,7 +27,7 @@ class PostPersistenceAdapterTest {
     private PostPersistenceAdapter postPersistenceAdapter;
 
     @Test
-    @DisplayName("save delegates to the Spring Data repository")
+    @DisplayName("save는 Spring Data repository에 위임한다")
     void save_delegatesToRepository() {
         Post post = post(1L);
         given(postRepository.save(post)).willReturn(post);
@@ -38,7 +38,7 @@ class PostPersistenceAdapterTest {
     }
 
     @Test
-    @DisplayName("findById delegates to the Spring Data repository")
+    @DisplayName("findById는 Spring Data repository에 위임한다")
     void findById_delegatesToRepository() {
         Post post = post(1L);
         given(postRepository.findById(1L)).willReturn(Optional.of(post));
@@ -49,7 +49,7 @@ class PostPersistenceAdapterTest {
     }
 
     @Test
-    @DisplayName("findAll delegates to the Spring Data repository")
+    @DisplayName("findAll은 Spring Data repository에 위임한다")
     void findAll_delegatesToRepository() {
         PageRequest pageable = PageRequest.of(0, 10);
         Post post = post(1L);
@@ -61,7 +61,7 @@ class PostPersistenceAdapterTest {
     }
 
     @Test
-    @DisplayName("findByKeyword delegates to the Spring Data repository")
+    @DisplayName("findByKeyword는 Spring Data repository에 위임한다")
     void findByKeyword_delegatesToRepository() {
         PageRequest pageable = PageRequest.of(0, 10);
         Post post = post(1L);
@@ -74,7 +74,7 @@ class PostPersistenceAdapterTest {
     }
 
     @Test
-    @DisplayName("update counters delegate to the Spring Data repository")
+    @DisplayName("카운터 갱신은 Spring Data repository에 위임한다")
     void updateCounters_delegateToRepository() {
         postPersistenceAdapter.updateViews(1L, 10L);
         postPersistenceAdapter.updateLikeCount(1L, 3L);
@@ -84,7 +84,7 @@ class PostPersistenceAdapterTest {
     }
 
     @Test
-    @DisplayName("delete delegates to the Spring Data repository")
+    @DisplayName("delete는 Spring Data repository에 위임한다")
     void delete_delegatesToRepository() {
         Post post = post(1L);
 

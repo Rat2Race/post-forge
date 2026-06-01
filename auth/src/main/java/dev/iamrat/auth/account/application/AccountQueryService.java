@@ -23,10 +23,6 @@ public class AccountQueryService {
         return accountStore.findByUsername(username);
     }
 
-    public Optional<Account> findByProviderAndProviderId(String provider, String providerId) {
-        return accountStore.findByProviderAndProviderId(provider, providerId);
-    }
-
     public boolean existsByUsername(String username) {
         return accountStore.existsByUsername(username);
     }

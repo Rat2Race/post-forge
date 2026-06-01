@@ -65,7 +65,6 @@ class AccountOptimisticLockTest {
             .password("{noop}Password123!")
             .email(email)
             .nickname(nickname)
-            .provider("LOCAL")
             .build();
     }
 

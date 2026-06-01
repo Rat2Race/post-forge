@@ -3,7 +3,6 @@ package dev.iamrat.auth.register.application;
 import dev.iamrat.auth.account.application.AccountCommandService;
 import dev.iamrat.auth.account.application.AccountQueryService;
 import dev.iamrat.auth.account.domain.Account;
-import dev.iamrat.auth.email.application.EmailVerificationService;
 import dev.iamrat.auth.support.error.AuthErrorCode;
 import dev.iamrat.auth.support.normalizer.EmailNormalizer;
 import dev.iamrat.core.global.exception.CustomException;
@@ -16,18 +15,17 @@ import org.springframework.transaction.annotation.Transactional;
 public class RegisterService {
     private final AccountCommandService accountCommandService;
     private final AccountQueryService accountQueryService;
-    private final EmailVerificationService emailVerificationService;
 
     @Transactional
     public Long register(RegisterCommand command) {
         String normalizedEmail = EmailNormalizer.normalize(command.email());
 
-        if (!emailVerificationService.isEmailVerified(normalizedEmail)) {
-            throw new CustomException(AuthErrorCode.EMAIL_NOT_VERIFIED);
-        }
-
         if (accountQueryService.existsByUsername(command.username())) {
             throw new CustomException(AuthErrorCode.DUPLICATE_USERNAME);
+        }
+
+        if (accountQueryService.existsByEmail(normalizedEmail)) {
+            throw new CustomException(AuthErrorCode.DUPLICATE_EMAIL);
         }
 
         if (accountQueryService.existsByNickname(command.nickname())) {
@@ -40,8 +38,6 @@ public class RegisterService {
             normalizedEmail,
             command.nickname()
         );
-
-        emailVerificationService.removeVerifiedEmail(normalizedEmail);
 
         return account.getId();
     }

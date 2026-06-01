@@ -1,8 +1,7 @@
 package dev.iamrat.app.config.security;
 
-import dev.iamrat.app.config.monitoring.MetricsConfig;
-import dev.iamrat.auth.security.handler.JwtAccessDeniedHandler;
-import dev.iamrat.auth.security.handler.JwtAuthenticationEntryPoint;
+import dev.iamrat.auth.security.infrastructure.handler.JwtAccessDeniedHandler;
+import dev.iamrat.auth.security.infrastructure.handler.JwtAuthenticationEntryPoint;
 import dev.iamrat.auth.token.application.TokenService;
 import dev.iamrat.auth.login.application.CustomUserDetailsService;
 import org.junit.jupiter.api.BeforeEach;
@@ -12,26 +11,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
-import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.oauth2.client.AuthorizedClientServiceOAuth2AuthorizedClientManager;
-import org.springframework.security.oauth2.client.InMemoryOAuth2AuthorizedClientService;
-import org.springframework.security.oauth2.client.OAuth2AuthorizedClientManager;
-import org.springframework.security.oauth2.client.OAuth2AuthorizedClientProviderBuilder;
-import org.springframework.security.oauth2.client.OAuth2AuthorizedClientService;
-import org.springframework.security.oauth2.client.registration.ClientRegistration;
-import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
-import org.springframework.security.oauth2.client.registration.InMemoryClientRegistrationRepository;
-import org.springframework.security.oauth2.client.userinfo.OAuth2UserRequest;
-import org.springframework.security.oauth2.client.userinfo.OAuth2UserService;
-import org.springframework.security.oauth2.core.AuthorizationGrantType;
-import org.springframework.security.oauth2.core.ClientAuthenticationMethod;
-import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -39,10 +23,9 @@ import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.security.web.authentication.AuthenticationFailureHandler;
-import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -52,6 +35,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -62,9 +46,6 @@ import static org.mockito.BDDMockito.willAnswer;
 @SpringBootTest(classes = SecurityConfigRegressionTest.TestApp.class)
 @AutoConfigureMockMvc
 @TestPropertySource(properties = {
-    "monitoring.username=monitor",
-    "monitoring.password=monitor-secret",
-    "management.health.defaults.enabled=false",
     "spring.autoconfigure.exclude="
         + "org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration,"
         + "org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration,"
@@ -87,16 +68,7 @@ class SecurityConfigRegressionTest {
     private TokenService tokenService;
 
     @MockitoBean
-    private OAuth2UserService<OAuth2UserRequest, OAuth2User> oauth2UserService;
-
-    @MockitoBean
     private CustomUserDetailsService customUserDetailsService;
-
-    @MockitoBean
-    private AuthenticationSuccessHandler oAuth2SuccessHandler;
-
-    @MockitoBean
-    private AuthenticationFailureHandler oAuth2FailureHandler;
 
     @BeforeEach
     void setUpAuthenticationDefaults() {
@@ -155,28 +127,30 @@ class SecurityConfigRegressionTest {
     }
 
     @Test
-    @DisplayName("파일 API는 익명 사용자를 차단한다")
-    void fileApi_rejectsAnonymousAccess() throws Exception {
-        mockMvc.perform(get("/files/presigned-url"))
+    @DisplayName("프로필 조회는 익명 사용자를 차단한다")
+    void getProfile_rejectsAnonymousAccess() throws Exception {
+        mockMvc.perform(get("/user/profile"))
             .andExpect(status().isUnauthorized());
     }
 
     @Test
     @WithMockUser(roles = "USER")
-    @DisplayName("파일 API는 USER 권한이면 허용한다")
-    void fileApi_allowsUserRole() throws Exception {
-        mockMvc.perform(get("/files/presigned-url"))
+    @DisplayName("프로필 조회는 USER 권한이면 허용한다")
+    void getProfile_allowsUserRole() throws Exception {
+        mockMvc.perform(get("/user/profile"))
             .andExpect(status().isOk())
-            .andExpect(content().string("file"));
+            .andExpect(content().string("profile"));
     }
 
     @Test
     @WithMockUser(roles = "USER")
-    @DisplayName("파일 API legacy S3 경로도 USER 권한이면 허용한다")
-    void fileApi_legacyS3Path_allowsUserRole() throws Exception {
-        mockMvc.perform(get("/files/s3/presigned-url"))
+    @DisplayName("프로필 닉네임 변경은 USER 권한이면 허용한다")
+    void updateProfileNickname_allowsUserRole() throws Exception {
+        mockMvc.perform(patch("/user/profile/nickname")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{}"))
             .andExpect(status().isOk())
-            .andExpect(content().string("file"));
+            .andExpect(content().string("profile-nickname"));
     }
 
     @Test
@@ -228,90 +202,6 @@ class SecurityConfigRegressionTest {
     }
 
     @Test
-    @DisplayName("AI API는 익명 사용자를 차단한다")
-    void aiApi_rejectsAnonymousAccess() throws Exception {
-        mockMvc.perform(get("/ai/ping"))
-            .andExpect(status().isUnauthorized());
-    }
-
-    @Test
-    @DisplayName("Ingest API는 익명 사용자를 차단한다")
-    void ingestApi_rejectsAnonymousAccess() throws Exception {
-        mockMvc.perform(get("/ingest/ping"))
-            .andExpect(status().isUnauthorized());
-    }
-
-    @Test
-    @DisplayName("collector trigger는 익명 사용자를 차단한다")
-    void collectorTrigger_rejectsAnonymousAccess() throws Exception {
-        mockMvc.perform(post("/collector/naver-news"))
-            .andExpect(status().isUnauthorized());
-    }
-
-    @Test
-    @WithMockUser(roles = "USER")
-    @DisplayName("collector trigger는 USER 권한을 차단한다")
-    void collectorTrigger_rejectsUserRole() throws Exception {
-        mockMvc.perform(post("/collector/naver-news"))
-            .andExpect(status().isForbidden());
-    }
-
-    @Test
-    @WithMockUser(roles = "ADMIN")
-    @DisplayName("collector trigger는 ADMIN 권한이면 허용한다")
-    void collectorTrigger_allowsAdminRole() throws Exception {
-        mockMvc.perform(post("/collector/naver-news"))
-            .andExpect(status().isOk())
-            .andExpect(content().string("collected"));
-    }
-
-    @Test
-    @WithMockUser(roles = "USER")
-    @DisplayName("internal collector ingest는 USER 권한을 차단한다")
-    void internalCollectorDocuments_rejectsUserRole() throws Exception {
-        mockMvc.perform(post("/internal/collector/documents")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("[]"))
-            .andExpect(status().isForbidden());
-    }
-
-    @Test
-    @WithMockUser(roles = "ADMIN")
-    @DisplayName("internal collector ingest는 ADMIN 권한이면 허용한다")
-    void internalCollectorDocuments_allowsAdminRole() throws Exception {
-        mockMvc.perform(post("/internal/collector/documents")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("[]"))
-            .andExpect(status().isOk())
-            .andExpect(content().string("internal-collected"));
-    }
-
-    @Test
-    @DisplayName("internal collector ingest는 익명 사용자를 차단한다")
-    void internalCollectorDocuments_rejectsAnonymousAccess() throws Exception {
-        mockMvc.perform(post("/internal/collector/documents")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("[]"))
-            .andExpect(status().isUnauthorized());
-    }
-
-    @Test
-    @DisplayName("로컬 Test Console route는 인증 필터에서 막지 않는다")
-    void testConsoleRoute_allowsAnonymousAccessToReachLocalOnlyController() throws Exception {
-        mockMvc.perform(get("/test-console"))
-            .andExpect(status().isOk())
-            .andExpect(content().string("test-console"));
-    }
-
-    @Test
-    @DisplayName("로컬 Test Console API route는 인증 필터에서 막지 않는다")
-    void testConsoleApi_allowsAnonymousAccessToReachLocalOnlyController() throws Exception {
-        mockMvc.perform(get("/api/test-console/state"))
-            .andExpect(status().isOk())
-            .andExpect(content().string("test-console-state"));
-    }
-
-    @Test
     @WithMockUser(roles = "USER")
     @DisplayName("명시되지 않은 route는 인증된 사용자도 차단한다")
     void undeclaredRoute_deniesAuthenticatedUser() throws Exception {
@@ -321,118 +211,17 @@ class SecurityConfigRegressionTest {
 
     @EnableAutoConfiguration
     @Import({
-        MetricsConfig.class,
         SecurityConfig.class,
-        ActuatorSecurityConfig.class,
+        PostForgeAuthorizationRules.class,
         PasswordEncoderConfig.class,
         JwtAuthenticationEntryPoint.class,
         JwtAccessDeniedHandler.class,
         DummyPostController.class,
         DummyCommentController.class,
         DummyAccountController.class,
-        DummyFileController.class,
-        DummyAiController.class,
-        DummyIngestController.class,
-        DummyCollectorController.class,
-        DummyInternalCollectorController.class,
-        DummyTestConsoleController.class
+        DummyProfileController.class
     })
     static class TestApp {
-
-        @Bean
-        HttpAuthorizationRules httpAuthorizationRules() {
-            return requests -> requests
-                .requestMatchers(
-                    "/",
-                    "/index.html",
-                    "/favicon.ico",
-                    "/images/**",
-                    "/v3/api-docs/**",
-                    "/swagger-ui.html",
-                    "/swagger-ui/**",
-                    "/webjars/**",
-                    "/test-console",
-                    "/test-console/**",
-                    "/api/test-console",
-                    "/api/test-console/**",
-                    "/oauth2/**",
-                    "/login/oauth2/**"
-                ).permitAll()
-                .requestMatchers(HttpMethod.POST,
-                    "/auth/register",
-                    "/auth/login",
-                    "/auth/token/reissue",
-                    "/auth/oauth2/exchange",
-                    "/auth/email/send"
-                ).permitAll()
-                .requestMatchers(HttpMethod.GET,
-                    "/auth/email/verify",
-                    "/posts",
-                    "/posts/*",
-                    "/posts/*/comments"
-                ).permitAll()
-                .requestMatchers(
-                    "/auth/logout",
-                    "/user/account",
-                    "/user/account/**",
-                    "/posts",
-                    "/posts/*",
-                    "/posts/*/like",
-                    "/posts/*/comments",
-                    "/posts/*/comments/*",
-                    "/posts/*/comments/*/like",
-                    "/files/**",
-                    "/ai/**",
-                    "/ingest/**"
-                ).hasAnyRole("USER", "ADMIN")
-                .requestMatchers("/collector/**").hasRole("ADMIN")
-                .requestMatchers("/internal/collector/**").hasRole("ADMIN")
-                .requestMatchers("/admin/**").hasRole("ADMIN")
-                .anyRequest().denyAll();
-        }
-
-        @Bean
-        ClientRegistrationRepository clientRegistrationRepository() {
-            ClientRegistration registration = ClientRegistration.withRegistrationId("test")
-                .clientId("client-id")
-                .clientSecret("client-secret")
-                .clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_BASIC)
-                .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
-                .redirectUri("{baseUrl}/login/oauth2/code/{registrationId}")
-                .scope("profile")
-                .authorizationUri("https://example.com/oauth2/authorize")
-                .tokenUri("https://example.com/oauth2/token")
-                .userInfoUri("https://example.com/userinfo")
-                .userNameAttributeName("id")
-                .clientName("Test OAuth")
-                .build();
-
-            return new InMemoryClientRegistrationRepository(registration);
-        }
-
-        @Bean
-        OAuth2AuthorizedClientService authorizedClientService(
-            ClientRegistrationRepository clientRegistrationRepository
-        ) {
-            return new InMemoryOAuth2AuthorizedClientService(clientRegistrationRepository);
-        }
-
-        @Bean
-        OAuth2AuthorizedClientManager authorizedClientManager(
-            ClientRegistrationRepository clientRegistrationRepository,
-            OAuth2AuthorizedClientService authorizedClientService
-        ) {
-            AuthorizedClientServiceOAuth2AuthorizedClientManager manager =
-                new AuthorizedClientServiceOAuth2AuthorizedClientManager(
-                    clientRegistrationRepository,
-                    authorizedClientService
-                );
-
-            manager.setAuthorizedClientProvider(
-                OAuth2AuthorizedClientProviderBuilder.builder().authorizationCode().build()
-            );
-            return manager;
-        }
     }
 
     @RestController
@@ -492,66 +281,19 @@ class SecurityConfigRegressionTest {
     }
 
     @RestController
-    @RequestMapping({"/files", "/files/s3"})
-    static class DummyFileController {
+    @RequestMapping("/user/profile")
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
+    static class DummyProfileController {
 
-        @GetMapping("/presigned-url")
-        String getPresignedUrl() {
-            return "file";
+        @GetMapping
+        String getProfile() {
+            return "profile";
+        }
+
+        @PatchMapping("/nickname")
+        String updateNickname(@RequestBody String ignored) {
+            return "profile-nickname";
         }
     }
 
-    @RestController
-    @RequestMapping("/ai")
-    static class DummyAiController {
-
-        @GetMapping("/ping")
-        String ping() {
-            return "ai";
-        }
-    }
-
-    @RestController
-    @RequestMapping("/ingest")
-    static class DummyIngestController {
-
-        @GetMapping("/ping")
-        String ping() {
-            return "ingest";
-        }
-    }
-
-    @RestController
-    @RequestMapping("/collector")
-    static class DummyCollectorController {
-
-        @PostMapping("/naver-news")
-        String collect() {
-            return "collected";
-        }
-    }
-
-    @RestController
-    @RequestMapping("/internal/collector")
-    static class DummyInternalCollectorController {
-
-        @PostMapping("/documents")
-        String collectDocuments(@RequestBody String ignored) {
-            return "internal-collected";
-        }
-    }
-
-    @RestController
-    static class DummyTestConsoleController {
-
-        @GetMapping("/test-console")
-        String page() {
-            return "test-console";
-        }
-
-        @GetMapping("/api/test-console/state")
-        String state() {
-            return "test-console-state";
-        }
-    }
 }

@@ -1,15 +1,15 @@
 package dev.iamrat.board.post.application;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.verify;
+
 import dev.iamrat.board.post.domain.Post;
-import dev.iamrat.board.post.domain.event.PostCreatedEvent;
-import dev.iamrat.board.post.domain.event.PostDeletedEvent;
-import dev.iamrat.board.post.domain.event.PostDomainEvent;
-import dev.iamrat.board.post.dto.PostSummaryResponse;
+import dev.iamrat.board.post.presentation.dto.PostSummaryResponse;
 import dev.iamrat.board.view.application.ViewCountService;
 import dev.iamrat.core.account.AccountProfile;
 import dev.iamrat.core.account.AccountProfileReader;
-import dev.iamrat.core.event.DomainEventRecorder;
-import dev.iamrat.core.event.EventType;
+import dev.iamrat.core.board.post.PostCategory;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -19,12 +19,6 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.BDDMockito.given;
-import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
 class PostCommandServiceTest {
@@ -36,16 +30,10 @@ class PostCommandServiceTest {
     private PostReader postReader;
 
     @Mock
-    private PostFileAppender postFileAppender;
-
-    @Mock
     private ViewCountService viewCountService;
 
     @Mock
     private AccountProfileReader accountProfileReader;
-
-    @Mock
-    private DomainEventRecorder domainEventRecorder;
 
     private PostCommandService postCommandService;
 
@@ -54,65 +42,108 @@ class PostCommandServiceTest {
         postCommandService = new PostCommandService(
             postStore,
             postReader,
-            postFileAppender,
             viewCountService,
-            accountProfileReader,
-            domainEventRecorder
+            accountProfileReader
         );
     }
 
     @Test
-    @DisplayName("게시글 생성 시 principal 값이 아니라 account profile 포트의 닉네임을 저장한다")
+    @DisplayName("게시글 생성 시 account profile 포트의 닉네임을 저장한다")
     void savePost_usesAccountProfileNickname() {
         given(accountProfileReader.getProfile(1L)).willReturn(new AccountProfile(1L, "포트닉네임"));
 
         PostSummaryResponse response = postCommandService.savePost(
             "title",
             "content",
-            1L,
-            List.of()
+            1L
         );
 
         ArgumentCaptor<Post> postCaptor = ArgumentCaptor.forClass(Post.class);
         verify(postStore).save(postCaptor.capture());
-        verify(postFileAppender).appendFiles(postCaptor.getValue(), List.of());
         assertThat(postCaptor.getValue().getNickname()).isEqualTo("포트닉네임");
         assertThat(response.nickname()).isEqualTo("포트닉네임");
     }
 
     @Test
-    @DisplayName("게시글 생성 시 같은 트랜잭션 안에서 PostCreated 이벤트 기록을 요청한다")
-    void savePost_recordsPostCreatedEvent() {
+    @DisplayName("게시글 생성 시 요청의 요약, 태그, 카테고리를 저장한다")
+    void savePost_savesSummaryTagsAndCategory() {
         given(accountProfileReader.getProfile(1L)).willReturn(new AccountProfile(1L, "포트닉네임"));
-        given(postStore.save(any(Post.class))).willAnswer(invocation -> {
-            Post post = invocation.getArgument(0);
-            ReflectionTestUtils.setField(post, "id", 10L);
-            return post;
-        });
 
-        postCommandService.savePost(
+        PostSummaryResponse response = postCommandService.savePost(
             "title",
             "content",
-            1L,
-            List.of()
+            "summary",
+            List.of("tag1", "tag2"),
+            PostCategory.GENERAL,
+            1L
         );
 
-        ArgumentCaptor<PostCreatedEvent> eventCaptor = ArgumentCaptor.forClass(PostCreatedEvent.class);
-        verify(domainEventRecorder).record(
-            eq(EventType.from(PostCreatedEvent.EVENT_TYPE)),
-            eq(PostDomainEvent.AGGREGATE_TYPE),
-            eq("10"),
-            eventCaptor.capture()
-        );
-        assertThat(eventCaptor.getValue().postId()).isEqualTo(10L);
-        assertThat(eventCaptor.getValue().title()).isEqualTo("title");
-        assertThat(eventCaptor.getValue().accountId()).isEqualTo(1L);
-        assertThat(eventCaptor.getValue().nickname()).isEqualTo("포트닉네임");
+        ArgumentCaptor<Post> postCaptor = ArgumentCaptor.forClass(Post.class);
+        verify(postStore).save(postCaptor.capture());
+        assertThat(postCaptor.getValue().getSummary()).isEqualTo("summary");
+        assertThat(postCaptor.getValue().getTags()).containsExactly("tag1", "tag2");
+        assertThat(postCaptor.getValue().getCategory()).isEqualTo(PostCategory.GENERAL);
+        assertThat(response.summary()).isEqualTo("summary");
+        assertThat(response.tags()).containsExactly("tag1", "tag2");
+        assertThat(response.category()).isEqualTo(PostCategory.GENERAL);
     }
 
     @Test
-    @DisplayName("게시글 삭제 시 같은 트랜잭션 안에서 PostDeleted 이벤트 기록을 요청한다")
-    void deletePost_recordsPostDeletedEvent() {
+    @DisplayName("게시글 수정 시 제목과 내용을 갱신한다")
+    void updatePost_updatesTitleAndContent() {
+        Post post = Post.general(
+            "old title",
+            "old content",
+            1L,
+            "포트닉네임"
+        );
+        given(postReader.getById(10L)).willReturn(post);
+
+        PostSummaryResponse response = postCommandService.updatePost(
+            10L,
+            "new title",
+            "new content"
+        );
+
+        assertThat(post.getTitle()).isEqualTo("new title");
+        assertThat(post.getContent()).isEqualTo("new content");
+        assertThat(response.title()).isEqualTo("new title");
+    }
+
+    @Test
+    @DisplayName("게시글 수정 시 요약, 태그, 카테고리를 함께 갱신한다")
+    void updatePost_updatesSummaryTagsAndCategory() {
+        Post post = Post.create(
+            "old title",
+            "old content",
+            "old summary",
+            List.of("old"),
+            PostCategory.GENERAL,
+            1L,
+            "포트닉네임"
+        );
+        given(postReader.getById(10L)).willReturn(post);
+
+        PostSummaryResponse response = postCommandService.updatePost(
+            10L,
+            "new title",
+            "new content",
+            "new summary",
+            List.of("new", "tag"),
+            PostCategory.GENERAL
+        );
+
+        assertThat(post.getSummary()).isEqualTo("new summary");
+        assertThat(post.getTags()).containsExactly("new", "tag");
+        assertThat(post.getCategory()).isEqualTo(PostCategory.GENERAL);
+        assertThat(response.summary()).isEqualTo("new summary");
+        assertThat(response.tags()).containsExactly("new", "tag");
+        assertThat(response.category()).isEqualTo(PostCategory.GENERAL);
+    }
+
+    @Test
+    @DisplayName("게시글 삭제 시 조회수와 저장소 데이터를 정리한다")
+    void deletePost_deletesPostAndViewCount() {
         Post post = Post.builder()
             .title("delete title")
             .content("delete content")
@@ -124,19 +155,7 @@ class PostCommandServiceTest {
 
         postCommandService.deletePost(10L);
 
-        verify(postFileAppender).detachFiles(post);
         verify(viewCountService).deleteViewCount(10L);
         verify(postStore).delete(post);
-
-        ArgumentCaptor<PostDeletedEvent> eventCaptor = ArgumentCaptor.forClass(PostDeletedEvent.class);
-        verify(domainEventRecorder).record(
-            eq(EventType.from(PostDeletedEvent.EVENT_TYPE)),
-            eq(PostDomainEvent.AGGREGATE_TYPE),
-            eq("10"),
-            eventCaptor.capture()
-        );
-        assertThat(eventCaptor.getValue().postId()).isEqualTo(10L);
-        assertThat(eventCaptor.getValue().accountId()).isEqualTo(1L);
-        assertThat(eventCaptor.getValue().title()).isEqualTo("delete title");
     }
 }

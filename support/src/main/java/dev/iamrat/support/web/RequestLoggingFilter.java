@@ -50,11 +50,7 @@ public class RequestLoggingFilter extends OncePerRequestFilter {
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
         String uri = request.getRequestURI();
-        return "/favicon.ico".equals(uri)
-            || uri.startsWith("/actuator/health")
-            || uri.startsWith("/actuator/prometheus")
-            || uri.startsWith("/swagger-ui")
-            || uri.startsWith("/v3/api-docs");
+        return "/favicon.ico".equals(uri);
     }
 
     private String resolveRequestId(HttpServletRequest request) {

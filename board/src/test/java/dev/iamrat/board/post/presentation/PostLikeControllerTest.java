@@ -3,7 +3,7 @@ package dev.iamrat.board.post.presentation;
 import dev.iamrat.core.global.error.CommonErrorCode;
 import dev.iamrat.core.global.exception.CustomException;
 import dev.iamrat.board.support.web.TestExceptionResponseHandler;
-import dev.iamrat.board.like.application.LikeResponse;
+import dev.iamrat.board.like.application.LikeResult;
 import dev.iamrat.board.post.application.PostCommandService;
 import dev.iamrat.board.post.application.PostInteractionService;
 import dev.iamrat.board.post.application.PostQueryService;
@@ -63,7 +63,7 @@ class PostLikeControllerTest {
     @Test
     @DisplayName("POST /posts/{id}/like 는 좋아요 응답을 반환한다")
     void likePost_returnsLikeResponse() throws Exception {
-        given(postInteractionService.likePost(1L, 1L)).willReturn(new LikeResponse(true, 3L));
+        given(postInteractionService.likePost(1L, 1L)).willReturn(new LikeResult(true, 3L));
 
         mockMvc.perform(post("/posts/1/like").with(user(1L)))
                 .andExpect(status().isOk())

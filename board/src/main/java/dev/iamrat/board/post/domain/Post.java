@@ -1,9 +1,8 @@
 package dev.iamrat.board.post.domain;
 
-import dev.iamrat.core.board.post.PostCategory;
 import dev.iamrat.board.support.persistence.AuditingFields;
 import dev.iamrat.board.comment.domain.Comment;
-import dev.iamrat.board.file.domain.PostFile;
+import dev.iamrat.core.board.post.PostCategory;
 import jakarta.persistence.*;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
@@ -77,11 +76,6 @@ public class Post extends AuditingFields {
 	@Builder.Default
 	private Set<Comment> comments = new LinkedHashSet<>();
 
-	@ToString.Exclude
-	@OneToMany(mappedBy = "post")
-	@Builder.Default
-	private Set<PostFile> files = new LinkedHashSet<>();
-
 	public static Post general(String title, String content, Long accountId, String nickname) {
 		return create(title, content, null, null, PostCategory.GENERAL, accountId, nickname);
 	}
@@ -111,8 +105,15 @@ public class Post extends AuditingFields {
 	}
 
 	public void update(String title, String content) {
+		update(title, content, this.summary, this.tags, this.category);
+	}
+
+	public void update(String title, String content, String summary, List<String> tags, PostCategory category) {
 		this.title = title;
 		this.content = content;
+		this.summary = summary;
+		this.tags = tags == null ? new ArrayList<>() : new ArrayList<>(tags);
+		this.category = category == null ? PostCategory.GENERAL : category;
 	}
 
 	public void updateViews(Long count) {

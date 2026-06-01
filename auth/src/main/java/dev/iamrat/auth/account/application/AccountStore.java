@@ -15,8 +15,6 @@ public interface AccountStore {
 
     Optional<Account> findByUsername(String username);
 
-    Optional<Account> findByProviderAndProviderId(String provider, String providerId);
-
     boolean existsByUsername(String username);
 
     boolean existsByNickname(String nickname);

@@ -1,7 +1,7 @@
 package dev.iamrat.board.comment.application;
 
 import dev.iamrat.board.comment.domain.Comment;
-import dev.iamrat.board.comment.dto.CommentDetailResponse;
+import dev.iamrat.board.comment.presentation.dto.CommentDetailResponse;
 import dev.iamrat.board.like.application.CommentLikeService;
 import dev.iamrat.board.post.domain.Post;
 import java.util.List;

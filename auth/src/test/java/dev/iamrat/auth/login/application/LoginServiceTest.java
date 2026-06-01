@@ -1,7 +1,7 @@
 package dev.iamrat.auth.login.application;
 
-import dev.iamrat.auth.security.principal.CustomUserDetails;
-import dev.iamrat.auth.login.support.LoginAttemptGuard;
+import dev.iamrat.auth.security.infrastructure.principal.CustomUserDetails;
+import dev.iamrat.auth.login.application.LoginAttemptGuard;
 import dev.iamrat.auth.token.application.TokenIssueResult;
 import dev.iamrat.auth.token.application.TokenService;
 import dev.iamrat.core.global.error.CommonErrorCode;

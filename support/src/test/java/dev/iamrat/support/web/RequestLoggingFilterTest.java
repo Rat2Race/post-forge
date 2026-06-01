@@ -44,9 +44,9 @@ class RequestLoggingFilterTest {
     }
 
     @Test
-    @DisplayName("헬스체크 요청은 공통 요청 로그 대상에서 제외한다")
-    void requestLog_skipsHealthCheck(CapturedOutput output) throws Exception {
-        MockHttpServletRequest request = new MockHttpServletRequest("GET", "/actuator/health");
+    @DisplayName("favicon 요청은 공통 요청 로그 대상에서 제외한다")
+    void requestLog_skipsFavicon(CapturedOutput output) throws Exception {
+        MockHttpServletRequest request = new MockHttpServletRequest("GET", "/favicon.ico");
         MockHttpServletResponse response = new MockHttpServletResponse();
         FilterChain chain = (servletRequest, servletResponse) ->
             ((MockHttpServletResponse) servletResponse).setStatus(HttpStatus.OK.value());
@@ -54,6 +54,6 @@ class RequestLoggingFilterTest {
         filter.doFilter(request, response, chain);
 
         assertThat(response.getHeader(RequestLoggingFilter.REQUEST_ID_HEADER)).isNull();
-        assertThat(output).doesNotContain("uri=/actuator/health");
+        assertThat(output).doesNotContain("uri=/favicon.ico");
     }
 }

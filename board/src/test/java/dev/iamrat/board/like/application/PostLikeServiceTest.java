@@ -42,7 +42,7 @@ class PostLikeServiceTest {
         given(postLikeStore.existsByPostIdAndAccountId(postId, 1L)).willReturn(true);
         given(postLikeStore.countByPostId(postId)).willReturn(4L);
 
-        LikeResponse response = postLikeService.like(postId, 1L);
+        LikeResult response = postLikeService.like(postId, 1L);
 
         assertThat(response.isLiked()).isTrue();
         assertThat(response.likeCount()).isEqualTo(4L);
@@ -60,7 +60,7 @@ class PostLikeServiceTest {
         given(postLikeTargetService.getReference(postId)).willReturn(postRef);
         given(postLikeStore.countByPostId(postId)).willReturn(5L);
 
-        LikeResponse response = postLikeService.like(postId, 2L);
+        LikeResult response = postLikeService.like(postId, 2L);
 
         assertThat(response.isLiked()).isTrue();
         assertThat(response.likeCount()).isEqualTo(5L);
@@ -80,7 +80,7 @@ class PostLikeServiceTest {
         given(postLikeStore.deleteByPostIdAndAccountId(postId, 9L)).willReturn(1L);
         given(postLikeStore.countByPostId(postId)).willReturn(2L);
 
-        LikeResponse response = postLikeService.unlike(postId, 9L);
+        LikeResult response = postLikeService.unlike(postId, 9L);
 
         assertThat(response.isLiked()).isFalse();
         assertThat(response.likeCount()).isEqualTo(2L);
@@ -95,7 +95,7 @@ class PostLikeServiceTest {
         given(postLikeStore.countByPostId(postId)).willReturn(7L);
         given(postLikeStore.existsByPostIdAndAccountId(postId, 3L)).willReturn(true);
 
-        LikeResponse response = postLikeService.getLikeInfo(postId, 3L);
+        LikeResult response = postLikeService.getLikeInfo(postId, 3L);
 
         assertThat(response.isLiked()).isTrue();
         assertThat(response.likeCount()).isEqualTo(7L);

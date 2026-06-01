@@ -1,7 +1,7 @@
 package dev.iamrat.board.comment.application;
 
 import dev.iamrat.board.comment.domain.Comment;
-import dev.iamrat.board.comment.dto.CommentSummaryResponse;
+import dev.iamrat.board.comment.presentation.dto.CommentSummaryResponse;
 import dev.iamrat.board.post.application.PostReader;
 import dev.iamrat.board.post.domain.Post;
 import dev.iamrat.core.account.AccountProfile;

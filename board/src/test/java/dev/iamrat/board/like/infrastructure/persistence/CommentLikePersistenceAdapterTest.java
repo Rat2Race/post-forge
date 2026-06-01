@@ -26,7 +26,7 @@ class CommentLikePersistenceAdapterTest {
     private CommentLikePersistenceAdapter commentLikePersistenceAdapter;
 
     @Test
-    @DisplayName("existsByCommentIdAndAccountId delegates to the Spring Data repository")
+    @DisplayName("existsByCommentIdAndAccountId는 Spring Data repository에 위임한다")
     void existsByCommentIdAndAccountId_delegatesToRepository() {
         given(commentLikeRepository.existsByComment_IdAndAccountId(1L, 2L)).willReturn(true);
 
@@ -36,7 +36,7 @@ class CommentLikePersistenceAdapterTest {
     }
 
     @Test
-    @DisplayName("save delegates to the Spring Data repository")
+    @DisplayName("save는 Spring Data repository에 위임한다")
     void save_delegatesToRepository() {
         CommentLike commentLike = CommentLike.of(comment(1L), 2L);
         given(commentLikeRepository.save(commentLike)).willReturn(commentLike);
@@ -47,7 +47,7 @@ class CommentLikePersistenceAdapterTest {
     }
 
     @Test
-    @DisplayName("count and delete delegate to the Spring Data repository")
+    @DisplayName("count와 delete는 Spring Data repository에 위임한다")
     void countAndDelete_delegateToRepository() {
         given(commentLikeRepository.countByComment_Id(1L)).willReturn(3L);
         given(commentLikeRepository.deleteByComment_IdAndAccountId(1L, 2L)).willReturn(1L);
@@ -57,7 +57,7 @@ class CommentLikePersistenceAdapterTest {
     }
 
     @Test
-    @DisplayName("bulk queries delegate to the Spring Data repository")
+    @DisplayName("bulk 조회는 Spring Data repository에 위임한다")
     void bulkQueries_delegateToRepository() {
         List<Object[]> rows = List.<Object[]>of(new Object[]{1L, 2L});
         given(commentLikeRepository.countByCommentIds(List.of(1L))).willReturn(rows);
@@ -70,7 +70,7 @@ class CommentLikePersistenceAdapterTest {
     }
 
     @Test
-    @DisplayName("update delete path invokes repository")
+    @DisplayName("삭제 갱신 경로는 repository를 호출한다")
     void deleteByCommentIdAndAccountId_invokesRepository() {
         commentLikePersistenceAdapter.deleteByCommentIdAndAccountId(1L, 2L);
 

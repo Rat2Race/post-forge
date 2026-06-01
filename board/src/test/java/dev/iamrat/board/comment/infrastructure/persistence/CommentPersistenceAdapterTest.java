@@ -28,7 +28,7 @@ class CommentPersistenceAdapterTest {
     private CommentPersistenceAdapter commentPersistenceAdapter;
 
     @Test
-    @DisplayName("save delegates to the Spring Data repository")
+    @DisplayName("save는 Spring Data repository에 위임한다")
     void save_delegatesToRepository() {
         Comment comment = comment(1L);
         given(commentRepository.save(comment)).willReturn(comment);
@@ -39,7 +39,7 @@ class CommentPersistenceAdapterTest {
     }
 
     @Test
-    @DisplayName("findById delegates to the Spring Data repository")
+    @DisplayName("findById는 Spring Data repository에 위임한다")
     void findById_delegatesToRepository() {
         Comment comment = comment(1L);
         given(commentRepository.findById(1L)).willReturn(Optional.of(comment));
@@ -50,7 +50,7 @@ class CommentPersistenceAdapterTest {
     }
 
     @Test
-    @DisplayName("findByPostId delegates to the Spring Data repository")
+    @DisplayName("findByPostId는 Spring Data repository에 위임한다")
     void findByPostId_delegatesToRepository() {
         PageRequest pageable = PageRequest.of(0, 10);
         Comment comment = comment(1L);
@@ -63,7 +63,7 @@ class CommentPersistenceAdapterTest {
     }
 
     @Test
-    @DisplayName("countByPostIds delegates to the Spring Data repository")
+    @DisplayName("countByPostIds는 Spring Data repository에 위임한다")
     void countByPostIds_delegatesToRepository() {
         List<Object[]> rows = List.<Object[]>of(new Object[]{1L, 2L});
         given(commentRepository.countByPostIds(List.of(1L))).willReturn(rows);
@@ -74,7 +74,7 @@ class CommentPersistenceAdapterTest {
     }
 
     @Test
-    @DisplayName("updateLikeCount delegates to the Spring Data repository")
+    @DisplayName("updateLikeCount는 Spring Data repository에 위임한다")
     void updateLikeCount_delegatesToRepository() {
         commentPersistenceAdapter.updateLikeCount(1L, 3L);
 
@@ -82,7 +82,7 @@ class CommentPersistenceAdapterTest {
     }
 
     @Test
-    @DisplayName("delete delegates to the Spring Data repository")
+    @DisplayName("delete는 Spring Data repository에 위임한다")
     void delete_delegatesToRepository() {
         Comment comment = comment(1L);
 

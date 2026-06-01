@@ -57,16 +57,6 @@ class AccountConstraintTest {
     }
 
     @Test
-    @DisplayName("provider와 providerId 조합은 중복 저장할 수 없다")
-    void providerAndProviderIdMustBeUniqueTogether() {
-        accountRepository.saveAndFlush(oauthAccount("GOOGLE", "google-123", "user01", "user01@test.com", "nick01"));
-
-        assertThatThrownBy(() ->
-            accountRepository.saveAndFlush(oauthAccount("GOOGLE", "google-123", "user02", "user02@test.com", "nick02"))
-        ).isInstanceOf(DataIntegrityViolationException.class);
-    }
-
-    @Test
     @DisplayName("username은 필수이다")
     void usernameMustNotBeNull() {
         assertThatThrownBy(() -> accountRepository.saveAndFlush(account(null, "user01@test.com", "nick01")))
@@ -88,21 +78,6 @@ class AccountConstraintTest {
     }
 
     @Test
-    @DisplayName("provider는 필수이다")
-    void providerMustNotBeNull() {
-        Account account = Account.builder()
-            .username("user01")
-            .password("{noop}Password123!")
-            .email("user01@test.com")
-            .nickname("nick01")
-            .provider(null)
-            .build();
-
-        assertThatThrownBy(() -> accountRepository.saveAndFlush(account))
-            .isInstanceOf(DataIntegrityViolationException.class);
-    }
-
-    @Test
     @DisplayName("status는 필수이다")
     void statusMustNotBeNull() {
         Account account = Account.builder()
@@ -110,7 +85,6 @@ class AccountConstraintTest {
             .password("{noop}Password123!")
             .email("user01@test.com")
             .nickname("nick01")
-            .provider("LOCAL")
             .status(null)
             .build();
 
@@ -133,7 +107,6 @@ class AccountConstraintTest {
             .password(repeat("p", 256))
             .email("user01@test.com")
             .nickname("nick01")
-            .provider("LOCAL")
             .build();
 
         assertThatThrownBy(() -> accountRepository.saveAndFlush(account))
@@ -154,41 +127,12 @@ class AccountConstraintTest {
             .isInstanceOfAny(DataIntegrityViolationException.class, PersistenceException.class);
     }
 
-    @Test
-    @DisplayName("provider는 30자를 초과할 수 없다")
-    void providerMustNotExceed30Characters() {
-        Account account = oauthAccount(repeat("p", 31), "provider-123", "user01", "user01@test.com", "nick01");
-
-        assertThatThrownBy(() -> accountRepository.saveAndFlush(account))
-            .isInstanceOfAny(DataIntegrityViolationException.class, PersistenceException.class);
-    }
-
-    @Test
-    @DisplayName("providerId는 150자를 초과할 수 없다")
-    void providerIdMustNotExceed150Characters() {
-        Account account = oauthAccount("GOOGLE", repeat("p", 151), "user01", "user01@test.com", "nick01");
-
-        assertThatThrownBy(() -> accountRepository.saveAndFlush(account))
-            .isInstanceOfAny(DataIntegrityViolationException.class, PersistenceException.class);
-    }
-
     private static Account account(String username, String email, String nickname) {
         return Account.builder()
             .username(username)
             .password("{noop}Password123!")
             .email(email)
             .nickname(nickname)
-            .provider("LOCAL")
-            .build();
-    }
-
-    private static Account oauthAccount(String provider, String providerId, String username, String email, String nickname) {
-        return Account.builder()
-            .username(username)
-            .email(email)
-            .nickname(nickname)
-            .provider(provider)
-            .providerId(providerId)
             .build();
     }
 

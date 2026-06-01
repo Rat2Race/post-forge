@@ -1,7 +1,6 @@
 package dev.iamrat.auth.register.application;
 
 import dev.iamrat.auth.support.error.AuthErrorCode;
-import dev.iamrat.auth.email.application.EmailVerificationService;
 import dev.iamrat.core.global.exception.CustomException;
 import dev.iamrat.auth.account.application.AccountCommandService;
 import dev.iamrat.auth.account.application.AccountQueryService;
@@ -31,9 +30,6 @@ class RegisterServiceTest {
     @Mock
     private AccountQueryService accountQueryService;
 
-    @Mock
-    private EmailVerificationService emailVerificationService;
-
     @InjectMocks
     private RegisterService registerService;
 
@@ -50,8 +46,8 @@ class RegisterServiceTest {
         void register_allConditionsMet_returnsAccountId() {
             RegisterCommand command = createValidCommand();
 
-            given(emailVerificationService.isEmailVerified("test@example.com")).willReturn(true);
             given(accountQueryService.existsByUsername("testuser1")).willReturn(false);
+            given(accountQueryService.existsByEmail("test@example.com")).willReturn(false);
             given(accountQueryService.existsByNickname("길동이")).willReturn(false);
 
             Account account = Account.builder()
@@ -69,16 +65,15 @@ class RegisterServiceTest {
             assertThat(result).isEqualTo(account.getId());
             verify(accountCommandService).createGeneralAccount("testuser1", "Test1234!",
                 "test@example.com", "길동이");
-            verify(emailVerificationService).removeVerifiedEmail("test@example.com");
         }
 
         @Test
-        @DisplayName("회원가입 시 이메일을 정규화해서 인증 확인, 계정 생성, 인증 상태 제거에 사용한다")
+        @DisplayName("회원가입 시 이메일을 정규화해서 계정 생성에 사용한다")
         void register_normalizesEmail() {
             RegisterCommand command = new RegisterCommand("testuser1", "Test1234!", " Test@Example.COM ", "길동이");
 
-            given(emailVerificationService.isEmailVerified("test@example.com")).willReturn(true);
             given(accountQueryService.existsByUsername("testuser1")).willReturn(false);
+            given(accountQueryService.existsByEmail("test@example.com")).willReturn(false);
             given(accountQueryService.existsByNickname("길동이")).willReturn(false);
 
             Account account = Account.builder()
@@ -93,10 +88,8 @@ class RegisterServiceTest {
 
             registerService.register(command);
 
-            verify(emailVerificationService).isEmailVerified("test@example.com");
             verify(accountCommandService).createGeneralAccount("testuser1", "Test1234!",
                 "test@example.com", "길동이");
-            verify(emailVerificationService).removeVerifiedEmail("test@example.com");
         }
     }
 
@@ -105,27 +98,10 @@ class RegisterServiceTest {
     class RegisterFail {
 
         @Test
-        @DisplayName("이메일 인증이 완료되지 않았으면 EMAIL_NOT_VERIFIED 예외를 던진다")
-        void register_emailNotVerified_throwsEmailNotVerified() {
-            RegisterCommand command = createValidCommand();
-
-            given(emailVerificationService.isEmailVerified("test@example.com")).willReturn(false);
-
-            assertThatThrownBy(() -> registerService.register(command))
-                .isInstanceOf(CustomException.class)
-                .satisfies(exception ->
-                    assertThat(((CustomException) exception).getErrorCode())
-                        .isEqualTo(AuthErrorCode.EMAIL_NOT_VERIFIED));
-
-            verify(accountCommandService, never()).createGeneralAccount(any(), any(), any(), any());
-        }
-
-        @Test
         @DisplayName("이미 존재하는 username이면 DUPLICATE_USERNAME 예외를 던진다")
         void register_duplicateUsername_throwsDuplicateUsername() {
             RegisterCommand command = createValidCommand();
 
-            given(emailVerificationService.isEmailVerified("test@example.com")).willReturn(true);
             given(accountQueryService.existsByUsername("testuser1")).willReturn(true);
 
             assertThatThrownBy(() -> registerService.register(command))
@@ -138,12 +114,29 @@ class RegisterServiceTest {
         }
 
         @Test
+        @DisplayName("이미 존재하는 이메일이면 DUPLICATE_EMAIL 예외를 던진다")
+        void register_duplicateEmail_throwsDuplicateEmail() {
+            RegisterCommand command = createValidCommand();
+
+            given(accountQueryService.existsByUsername("testuser1")).willReturn(false);
+            given(accountQueryService.existsByEmail("test@example.com")).willReturn(true);
+
+            assertThatThrownBy(() -> registerService.register(command))
+                .isInstanceOf(CustomException.class)
+                .satisfies(exception ->
+                    assertThat(((CustomException) exception).getErrorCode())
+                        .isEqualTo(AuthErrorCode.DUPLICATE_EMAIL));
+
+            verify(accountCommandService, never()).createGeneralAccount(any(), any(), any(), any());
+        }
+
+        @Test
         @DisplayName("이미 존재하는 닉네임이면 DUPLICATE_NICKNAME 예외를 던진다")
         void register_duplicateNickname_throwsDuplicateNickname() {
             RegisterCommand command = createValidCommand();
 
-            given(emailVerificationService.isEmailVerified("test@example.com")).willReturn(true);
             given(accountQueryService.existsByUsername("testuser1")).willReturn(false);
+            given(accountQueryService.existsByEmail("test@example.com")).willReturn(false);
             given(accountQueryService.existsByNickname("길동이")).willReturn(true);
 
             assertThatThrownBy(() -> registerService.register(command))

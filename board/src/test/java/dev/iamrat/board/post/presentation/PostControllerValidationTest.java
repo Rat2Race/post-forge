@@ -43,8 +43,7 @@ class PostControllerValidationTest {
     private static final String INVALID_POST_REQUEST = """
         {
           "title": "",
-          "content": "short",
-          "fileIds": []
+          "content": "short"
         }
         """;
 
@@ -66,7 +65,7 @@ class PostControllerValidationTest {
             .andExpect(jsonPath("$.validation.title").exists())
             .andExpect(jsonPath("$.validation.content").exists());
 
-        verify(postCommandService, never()).savePost(any(), any(), any(), any());
+        verify(postCommandService, never()).savePost(any(), any(), any());
     }
 
     @Test
@@ -80,6 +79,6 @@ class PostControllerValidationTest {
             .andExpect(jsonPath("$.validation.title").exists())
             .andExpect(jsonPath("$.validation.content").exists());
 
-        verify(postCommandService, never()).updatePost(any(), any(), any(), any());
+        verify(postCommandService, never()).updatePost(any(), any(), any());
     }
 }

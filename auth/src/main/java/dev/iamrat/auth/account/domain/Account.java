@@ -19,7 +19,6 @@ import jakarta.persistence.Version;
 
 import java.time.LocalDateTime;
 import java.util.HashSet;
-import java.util.Locale;
 import java.util.Set;
 
 import lombok.AccessLevel;
@@ -37,8 +36,7 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
         uniqueConstraints = {
                 @UniqueConstraint(name = "uk_accounts_username", columnNames = "username"),
                 @UniqueConstraint(name = "uk_accounts_email", columnNames = "email"),
-                @UniqueConstraint(name = "uk_accounts_nickname", columnNames = "nickname"),
-                @UniqueConstraint(name = "uk_accounts_provider_provider_id", columnNames = {"provider", "provider_id"})
+                @UniqueConstraint(name = "uk_accounts_nickname", columnNames = "nickname")
         },
         indexes = {
                 @Index(name = "idx_accounts_status", columnList = "status")
@@ -50,8 +48,6 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @EntityListeners(AuditingEntityListener.class)
 public class Account {
-    public static final String LOCAL_PROVIDER = "LOCAL";
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -67,13 +63,6 @@ public class Account {
 
     @Column(name = "nickname", nullable = false, length = 50)
     private String nickname;
-
-    @Column(name = "provider", nullable = false, length = 30)
-    @Builder.Default
-    private String provider = LOCAL_PROVIDER;
-
-    @Column(name = "provider_id", length = 150)
-    private String providerId;
 
     @Version
     @Column(name = "version", nullable = false)
@@ -110,21 +99,6 @@ public class Account {
             .password(encodedPassword)
             .email(email)
             .nickname(nickname)
-            .provider(LOCAL_PROVIDER)
-            .providerId(null)
-            .build();
-        account.addRole(AccountRole.USER);
-        return account;
-    }
-
-    public static Account createOAuth(String provider, String providerId, String email, String nickname) {
-        Account account = Account.builder()
-            .username(provider.toLowerCase(Locale.ROOT) + "_" + providerId)
-            .password(null)
-            .email(email)
-            .nickname(nickname)
-            .provider(provider)
-            .providerId(providerId)
             .build();
         account.addRole(AccountRole.USER);
         return account;
@@ -150,7 +124,4 @@ public class Account {
         return status.equals(AccountStatus.ACTIVE);
     }
 
-    public boolean isLocalAccount() {
-        return LOCAL_PROVIDER.equals(provider);
-    }
 }

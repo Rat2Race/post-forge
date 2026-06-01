@@ -11,8 +11,6 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-data-redis'
     implementation 'org.springframework.boot:spring-boot-starter-security'
 
-    implementation platform("software.amazon.awssdk:bom:${awsSdkVersion}")
-    implementation 'software.amazon.awssdk:s3'
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation project(':support')
     testImplementation 'org.springframework.security:spring-security-test'

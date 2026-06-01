@@ -23,7 +23,7 @@ class AccountPersistenceAdapterTest {
     private AccountPersistenceAdapter accountPersistenceAdapter;
 
     @Test
-    @DisplayName("saveAndFlush delegates to the Spring Data repository")
+    @DisplayName("saveAndFlush는 Spring Data repository에 위임한다")
     void saveAndFlush_delegatesToRepository() {
         Account account = account(1L);
         given(accountRepository.saveAndFlush(account)).willReturn(account);
@@ -34,7 +34,7 @@ class AccountPersistenceAdapterTest {
     }
 
     @Test
-    @DisplayName("findById delegates to the Spring Data repository")
+    @DisplayName("findById는 Spring Data repository에 위임한다")
     void findById_delegatesToRepository() {
         Account account = account(1L);
         given(accountRepository.findById(1L)).willReturn(Optional.of(account));
@@ -45,7 +45,7 @@ class AccountPersistenceAdapterTest {
     }
 
     @Test
-    @DisplayName("findWithRolesById delegates to the Spring Data repository")
+    @DisplayName("findWithRolesById는 Spring Data repository에 위임한다")
     void findWithRolesById_delegatesToRepository() {
         Account account = account(1L);
         given(accountRepository.findWithRolesById(1L)).willReturn(Optional.of(account));
@@ -56,20 +56,16 @@ class AccountPersistenceAdapterTest {
     }
 
     @Test
-    @DisplayName("identity lookups delegate to the Spring Data repository")
+    @DisplayName("identity 조회는 Spring Data repository에 위임한다")
     void identityLookups_delegateToRepository() {
         Account account = account(1L);
         given(accountRepository.findByUsername("user")).willReturn(Optional.of(account));
-        given(accountRepository.findByProviderAndProviderId("GOOGLE", "google-123"))
-            .willReturn(Optional.of(account));
 
         assertThat(accountPersistenceAdapter.findByUsername("user")).containsSame(account);
-        assertThat(accountPersistenceAdapter.findByProviderAndProviderId("GOOGLE", "google-123"))
-            .containsSame(account);
     }
 
     @Test
-    @DisplayName("existence and flush operations delegate to the Spring Data repository")
+    @DisplayName("존재 여부 조회와 flush 작업은 Spring Data repository에 위임한다")
     void existenceAndFlush_delegateToRepository() {
         given(accountRepository.existsByUsername("user")).willReturn(true);
         given(accountRepository.existsByNickname("nick")).willReturn(true);
@@ -89,7 +85,6 @@ class AccountPersistenceAdapterTest {
             .username("user")
             .email("user@test.com")
             .nickname("nick")
-            .provider("LOCAL")
             .build();
     }
 }

@@ -9,16 +9,12 @@ import lombok.Builder;
 public record AccountResponse(
     String username,
     String nickname,
-    String provider,
-    boolean isOAuthUser,
     List<String> roles
 ) {
     public static AccountResponse from(Account account) {
         return AccountResponse.builder()
             .username(account.getUsername())
             .nickname(account.getNickname())
-            .provider(account.getProvider())
-            .isOAuthUser(!Account.LOCAL_PROVIDER.equals(account.getProvider()))
             .roles(account.getRoles().stream()
                 .map(AccountRole::getValue)
                 .sorted()

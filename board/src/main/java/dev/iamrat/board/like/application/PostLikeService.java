@@ -18,16 +18,16 @@ public class PostLikeService extends AbstractLikeService {
     private final PostLikeTargetService postLikeTargetService;
 
     @Transactional
-    public LikeResponse like(Long postId, Long accountId) {
+    public LikeResult like(Long postId, Long accountId) {
         return likeTarget(postId, accountId);
     }
 
     @Transactional
-    public LikeResponse unlike(Long postId, Long accountId) {
+    public LikeResult unlike(Long postId, Long accountId) {
         return unlikeTarget(postId, accountId);
     }
 
-    public LikeResponse getLikeInfo(Long postId, Long accountId) {
+    public LikeResult getLikeInfo(Long postId, Long accountId) {
         if (postId == null) {
             throw new CustomException(CommonErrorCode.INVALID_INPUT);
         }
@@ -35,7 +35,7 @@ public class PostLikeService extends AbstractLikeService {
         long likeCount = postLikeStore.countByPostId(postId);
         boolean liked = accountId != null && postLikeStore.existsByPostIdAndAccountId(postId, accountId);
 
-        return new LikeResponse(liked, likeCount);
+        return new LikeResult(liked, likeCount);
     }
 
     public Map<Long, Long> getLikeCounts(List<Long> postIds) {

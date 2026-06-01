@@ -50,7 +50,15 @@ public class LikeRequestGuard {
         } catch (CustomException e) {
             throw e;
         } catch (Exception e) {
-            log.warn("좋아요 요청 가드 우회: action={} targetType={} entityId={} accountId={}", action, targetType, entityId, accountId, e);
+            log.warn(
+                "좋아요 요청 가드 저장소 장애: action={} targetType={} entityId={} accountId={}",
+                action,
+                targetType,
+                entityId,
+                accountId,
+                e
+            );
+            throw new CustomException(CommonErrorCode.TOO_MANY_REQUESTS);
         }
     }
 }

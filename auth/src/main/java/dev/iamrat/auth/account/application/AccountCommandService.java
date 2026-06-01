@@ -31,18 +31,6 @@ public class AccountCommandService {
         return accountStore.saveAndFlush(account);
     }
 
-    @Transactional
-    public Account createOAuthAccount(String provider, String providerId, String email, String nickname) {
-        Account account = Account.createOAuth(
-            provider,
-            providerId,
-            EmailNormalizer.normalize(email),
-            nickname
-        );
-
-        return accountStore.saveAndFlush(account);
-    }
-
     private Account findWithRolesById(Long accountId) {
         return accountStore.findWithRolesById(accountId)
             .orElseThrow(() -> new CustomException(AuthErrorCode.USER_NOT_FOUND));
@@ -65,7 +53,6 @@ public class AccountCommandService {
     public void updatePassword(Long accountId, String currentPassword, String newPassword) {
         Account account = findWithRolesById(accountId);
         accountPolicy.requireActive(account);
-        accountPolicy.requireLocalAccount(account);
 
         if (!passwordEncoder.matches(currentPassword, account.getPassword())) {
             throw new CustomException(AuthErrorCode.INVALID_PASSWORD);

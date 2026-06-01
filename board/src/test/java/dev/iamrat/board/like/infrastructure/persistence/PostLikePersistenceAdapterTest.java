@@ -25,7 +25,7 @@ class PostLikePersistenceAdapterTest {
     private PostLikePersistenceAdapter postLikePersistenceAdapter;
 
     @Test
-    @DisplayName("existsByPostIdAndAccountId delegates to the Spring Data repository")
+    @DisplayName("existsByPostIdAndAccountId는 Spring Data repository에 위임한다")
     void existsByPostIdAndAccountId_delegatesToRepository() {
         given(postLikeRepository.existsByPost_IdAndAccountId(1L, 2L)).willReturn(true);
 
@@ -35,7 +35,7 @@ class PostLikePersistenceAdapterTest {
     }
 
     @Test
-    @DisplayName("save delegates to the Spring Data repository")
+    @DisplayName("save는 Spring Data repository에 위임한다")
     void save_delegatesToRepository() {
         PostLike postLike = PostLike.of(post(1L), 2L);
         given(postLikeRepository.save(postLike)).willReturn(postLike);
@@ -46,7 +46,7 @@ class PostLikePersistenceAdapterTest {
     }
 
     @Test
-    @DisplayName("count and delete delegate to the Spring Data repository")
+    @DisplayName("count와 delete는 Spring Data repository에 위임한다")
     void countAndDelete_delegateToRepository() {
         given(postLikeRepository.countByPost_Id(1L)).willReturn(3L);
         given(postLikeRepository.deleteByPost_IdAndAccountId(1L, 2L)).willReturn(1L);
@@ -56,7 +56,7 @@ class PostLikePersistenceAdapterTest {
     }
 
     @Test
-    @DisplayName("bulk queries delegate to the Spring Data repository")
+    @DisplayName("bulk 조회는 Spring Data repository에 위임한다")
     void bulkQueries_delegateToRepository() {
         List<Object[]> rows = List.<Object[]>of(new Object[]{1L, 2L});
         given(postLikeRepository.countByPostIds(List.of(1L))).willReturn(rows);
@@ -68,7 +68,7 @@ class PostLikePersistenceAdapterTest {
     }
 
     @Test
-    @DisplayName("update delete path invokes repository")
+    @DisplayName("삭제 갱신 경로는 repository를 호출한다")
     void deleteByPostIdAndAccountId_invokesRepository() {
         postLikePersistenceAdapter.deleteByPostIdAndAccountId(1L, 2L);
 

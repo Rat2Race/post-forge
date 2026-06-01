@@ -3,13 +3,9 @@ plugins {
 }
 rootProject.name = "postforge"
 include(
-        ":ai",
-        ":ingest",
         ":app",
         ":support",
         ":core",
         ":auth",
-        ":board",
-        ":collector",
-        ":messaging"
+        ":board"
 )

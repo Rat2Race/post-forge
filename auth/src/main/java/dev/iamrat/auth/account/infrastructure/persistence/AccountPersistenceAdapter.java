@@ -38,11 +38,6 @@ public class AccountPersistenceAdapter implements AccountStore {
     }
 
     @Override
-    public Optional<Account> findByProviderAndProviderId(String provider, String providerId) {
-        return accountRepository.findByProviderAndProviderId(provider, providerId);
-    }
-
-    @Override
     public boolean existsByUsername(String username) {
         return accountRepository.existsByUsername(username);
     }

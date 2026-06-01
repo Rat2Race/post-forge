@@ -5,9 +5,6 @@ plugins {
 ext {
     springBootVersion = '3.5.14'
     lombokVersion = '1.18.46'
-    springdocOpenapiVersion = '2.8.17'
-    springAiVersion = '1.0.7'
-    awsSdkVersion = '2.42.41'
     jjwtVersion = '0.12.7'
 }
 

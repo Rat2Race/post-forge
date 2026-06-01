@@ -56,7 +56,6 @@ class AccountProfileReaderAdapterTest {
             .username("testuser1")
             .email("test@example.com")
             .nickname("tester")
-            .provider("LOCAL")
             .status(status)
             .build();
     }

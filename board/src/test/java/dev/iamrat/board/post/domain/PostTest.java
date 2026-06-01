@@ -22,32 +22,34 @@ class PostTest {
 
     @Test
     void create_copiesTagsAndUsesExplicitCategory() {
-        List<String> tags = List.of("ai", "news");
+        List<String> tags = List.of("product", "trend");
 
         Post post = Post.create(
-            "AI title",
-            "AI content",
-            "AI summary",
+            "title",
+            "content",
+            "summary",
             tags,
-            PostCategory.AI_ANALYSIS,
-            null,
-            "AI 분석가"
+            PostCategory.GENERAL,
+            1L,
+            "writer"
         );
 
-        assertThat(post.getTitle()).isEqualTo("AI title");
-        assertThat(post.getSummary()).isEqualTo("AI summary");
-        assertThat(post.getTags()).containsExactly("ai", "news");
+        assertThat(post.getTitle()).isEqualTo("title");
+        assertThat(post.getSummary()).isEqualTo("summary");
+        assertThat(post.getTags()).containsExactly("product", "trend");
         assertThat(post.getTags()).isNotSameAs(tags);
-        assertThat(post.getCategory()).isEqualTo(PostCategory.AI_ANALYSIS);
-        assertThat(post.getAccountId()).isNull();
-        assertThat(post.getNickname()).isEqualTo("AI 분석가");
+        assertThat(post.getCategory()).isEqualTo(PostCategory.GENERAL);
+        assertThat(post.getAccountId()).isEqualTo(1L);
+        assertThat(post.getNickname()).isEqualTo("writer");
     }
 
     @Test
-    void create_nullCategoryDefaultsToGeneral() {
-        Post post = Post.create("title", "content", null, null, null, 1L, "writer");
+    void update_changesTitleAndContent() {
+        Post post = Post.general("old title", "old content", 1L, "writer");
 
-        assertThat(post.getCategory()).isEqualTo(PostCategory.GENERAL);
-        assertThat(post.getTags()).isEmpty();
+        post.update("new title", "new content");
+
+        assertThat(post.getTitle()).isEqualTo("new title");
+        assertThat(post.getContent()).isEqualTo("new content");
     }
 }

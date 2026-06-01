@@ -3,7 +3,7 @@ package dev.iamrat.board.comment.presentation;
 import dev.iamrat.board.comment.application.CommentCommandService;
 import dev.iamrat.board.comment.application.CommentInteractionService;
 import dev.iamrat.board.comment.application.CommentQueryService;
-import dev.iamrat.board.like.application.LikeResponse;
+import dev.iamrat.board.like.application.LikeResult;
 import dev.iamrat.core.global.error.CommonErrorCode;
 import dev.iamrat.core.global.exception.CustomException;
 import dev.iamrat.core.account.UserPrincipal;
@@ -63,7 +63,7 @@ class CommentLikeControllerTest {
     @Test
     @DisplayName("POST /comments/{id}/like 는 좋아요 응답을 반환한다")
     void likeComment_returnsLikeResponse() throws Exception {
-        given(commentInteractionService.likeComment(2L, 1L)).willReturn(new LikeResponse(true, 4L));
+        given(commentInteractionService.likeComment(2L, 1L)).willReturn(new LikeResult(true, 4L));
 
         mockMvc.perform(post("/posts/1/comments/2/like").with(user(1L)))
                 .andExpect(status().isOk())

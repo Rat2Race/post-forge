@@ -2,14 +2,14 @@ package dev.iamrat.board.integration;
 
 import dev.iamrat.board.comment.application.CommentCommandService;
 import dev.iamrat.board.comment.application.CommentQueryService;
-import dev.iamrat.board.comment.dto.CommentDetailResponse;
-import dev.iamrat.board.comment.dto.CommentSummaryResponse;
+import dev.iamrat.board.comment.presentation.dto.CommentDetailResponse;
+import dev.iamrat.board.comment.presentation.dto.CommentSummaryResponse;
 import dev.iamrat.board.integration.security.WithMockAccount;
 import dev.iamrat.board.post.application.PostCommandService;
-import dev.iamrat.board.post.dto.PostSummaryResponse;
+import dev.iamrat.board.post.presentation.dto.PostSummaryResponse;
 import dev.iamrat.core.account.AccountProfile;
+import dev.iamrat.core.account.AccountProfileManager;
 import dev.iamrat.core.account.AccountProfileReader;
-import dev.iamrat.core.event.DomainEventRecorder;
 import jakarta.transaction.Transactional;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
@@ -21,8 +21,6 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
-
-import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.BDDMockito.given;
@@ -45,7 +43,7 @@ class CommentIntegrationTest {
     private AccountProfileReader accountProfileReader;
 
     @MockitoBean
-    private DomainEventRecorder domainEventRecorder;
+    private AccountProfileManager accountProfileManager;
 
     @Test
     @Transactional
@@ -58,8 +56,7 @@ class CommentIntegrationTest {
         PostSummaryResponse savedPost = postCommandService.savePost(
             "댓글 통합 테스트",
             "댓글 통합 테스트용 게시글 본문입니다.",
-            1L,
-            List.of()
+            1L
         );
 
         CommentSummaryResponse savedComment = commentCommandService.saveComment(

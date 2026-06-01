@@ -13,7 +13,7 @@ import dev.iamrat.auth.account.application.AccountQueryService;
 import dev.iamrat.auth.account.domain.Account;
 import dev.iamrat.auth.account.presentation.dto.AccountUpdateRequest;
 import dev.iamrat.auth.account.presentation.dto.PasswordUpdateRequest;
-import dev.iamrat.auth.security.principal.AuthenticatedAccount;
+import dev.iamrat.auth.security.infrastructure.principal.AuthenticatedAccount;
 import dev.iamrat.auth.support.web.TestExceptionResponseHandler;
 import java.util.List;
 import org.junit.jupiter.api.AfterEach;
@@ -63,8 +63,6 @@ class AccountControllerTest {
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.username").value("testuser1"))
             .andExpect(jsonPath("$.nickname").value("길동이"))
-            .andExpect(jsonPath("$.provider").value(Account.LOCAL_PROVIDER))
-            .andExpect(jsonPath("$.isOAuthUser").value(false))
             .andExpect(jsonPath("$.roles[0]").value("ROLE_USER"));
     }
 

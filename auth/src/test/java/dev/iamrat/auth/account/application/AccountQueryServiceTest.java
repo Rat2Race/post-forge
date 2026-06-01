@@ -34,7 +34,6 @@ class AccountQueryServiceTest {
             .username("testuser1")
             .email("test@example.com")
             .nickname("tester")
-            .provider("LOCAL")
             .build();
 
         given(accountStore.findWithRolesById(1L)).willReturn(Optional.of(account));
@@ -61,31 +60,11 @@ class AccountQueryServiceTest {
             .username("testuser1")
             .email("test@example.com")
             .nickname("tester")
-            .provider("LOCAL")
             .build();
 
         given(accountStore.findByUsername("testuser1")).willReturn(Optional.of(account));
 
         assertThat(accountQueryService.findByUsername("testuser1")).containsSame(account);
-    }
-
-    @Test
-    @DisplayName("OAuth provider identity로 계정을 조회한다")
-    void findByProviderAndProviderId_delegatesRepository() {
-        Account account = Account.builder()
-            .id(1L)
-            .username("oauth-user")
-            .email("oauth@example.com")
-            .nickname("oauthTester")
-            .provider("GOOGLE")
-            .providerId("google-user-123")
-            .build();
-
-        given(accountStore.findByProviderAndProviderId("GOOGLE", "google-user-123"))
-            .willReturn(Optional.of(account));
-
-        assertThat(accountQueryService.findByProviderAndProviderId("GOOGLE", "google-user-123"))
-            .containsSame(account);
     }
 
     @Test

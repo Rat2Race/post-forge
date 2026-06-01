@@ -3,13 +3,13 @@ package dev.iamrat.board.integration;
 import dev.iamrat.board.support.error.BoardErrorCode;
 import dev.iamrat.board.post.application.PostCommandService;
 import dev.iamrat.board.post.application.PostQueryService;
-import dev.iamrat.board.post.dto.PostDetailResponse;
-import dev.iamrat.board.post.dto.PostSummaryResponse;
+import dev.iamrat.board.post.presentation.dto.PostDetailResponse;
+import dev.iamrat.board.post.presentation.dto.PostSummaryResponse;
 import dev.iamrat.board.view.application.ViewCountService;
 import dev.iamrat.board.integration.security.WithMockAccount;
 import dev.iamrat.core.account.AccountProfile;
+import dev.iamrat.core.account.AccountProfileManager;
 import dev.iamrat.core.account.AccountProfileReader;
-import dev.iamrat.core.event.DomainEventRecorder;
 import dev.iamrat.core.global.exception.CustomException;
 import jakarta.transaction.Transactional;
 import org.junit.jupiter.api.DisplayName;
@@ -50,7 +50,7 @@ class PostIntegrationTest {
     private AccountProfileReader accountProfileReader;
 
     @MockitoBean
-    private DomainEventRecorder domainEventRecorder;
+    private AccountProfileManager accountProfileManager;
 
     @Test
     @WithMockAccount
@@ -60,7 +60,7 @@ class PostIntegrationTest {
         // given
         given(accountProfileReader.getProfile(1L)).willReturn(new AccountProfile(1L, "테스터"));
         PostSummaryResponse saved = postCommandService.savePost(
-                "테스트 제목", "테스트 내용입니다. 10자 이상.", 1L, List.of());
+                "테스트 제목", "테스트 내용입니다. 10자 이상.", 1L);
         given(viewCountService.getViewCount(saved.id())).willReturn(0L);
         given(viewCountService.getViewCounts(anyList())).willReturn(Map.of(saved.id(), 0L));
 
@@ -93,16 +93,14 @@ class PostIntegrationTest {
         PostSummaryResponse saved = postCommandService.savePost(
             "수정 전 제목",
             "수정 전 게시글 내용입니다.",
-            1L,
-            List.of()
+            1L
         );
         given(viewCountService.getViewCount(saved.id())).willReturn(0L);
 
         PostSummaryResponse updated = postCommandService.updatePost(
             saved.id(),
             "수정 후 제목",
-            "수정 후 게시글 내용입니다.",
-            List.of()
+            "수정 후 게시글 내용입니다."
         );
         PostDetailResponse detail = postQueryService.getPost(saved.id(), 1L);
 
@@ -121,8 +119,7 @@ class PostIntegrationTest {
         PostSummaryResponse saved = postCommandService.savePost(
             "삭제 대상 제목",
             "삭제 대상 게시글 내용입니다.",
-            1L,
-            List.of()
+            1L
         );
 
         postCommandService.deletePost(saved.id());
