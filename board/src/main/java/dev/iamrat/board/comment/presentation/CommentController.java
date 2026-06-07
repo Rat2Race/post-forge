@@ -1,12 +1,15 @@
 package dev.iamrat.board.comment.presentation;
 
 import dev.iamrat.board.comment.application.CommentCommandService;
+import dev.iamrat.board.comment.application.CommentDetailResult;
 import dev.iamrat.board.comment.application.CommentInteractionService;
 import dev.iamrat.board.comment.application.CommentQueryService;
-import dev.iamrat.board.comment.dto.CommentDetailResponse;
-import dev.iamrat.board.comment.dto.CommentRequest;
-import dev.iamrat.board.comment.dto.CommentSummaryResponse;
-import dev.iamrat.board.like.application.LikeResponse;
+import dev.iamrat.board.comment.application.CommentSummaryResult;
+import dev.iamrat.board.comment.presentation.dto.CommentDetailResponse;
+import dev.iamrat.board.comment.presentation.dto.CommentRequest;
+import dev.iamrat.board.comment.presentation.dto.CommentSummaryResponse;
+import dev.iamrat.board.like.application.LikeResult;
+import dev.iamrat.board.like.presentation.dto.LikeResponse;
 import dev.iamrat.core.global.dto.MessageResponse;
 import dev.iamrat.core.global.dto.PageResponse;
 import dev.iamrat.core.account.UserPrincipal;
@@ -38,7 +41,7 @@ public class CommentController {
             @RequestBody @Valid CommentRequest commentRequest,
             @AuthenticationPrincipal UserPrincipal user
     ) {
-        CommentSummaryResponse savedComment = commentCommandService.saveComment(
+        CommentSummaryResult savedComment = commentCommandService.saveComment(
                 postId,
                 commentRequest.parentId(),
                 commentRequest.content(),
@@ -47,7 +50,7 @@ public class CommentController {
 
         return ResponseEntity
                 .status(HttpStatus.CREATED)
-                .body(savedComment);
+                .body(CommentSummaryResponse.from(savedComment));
     }
 
     @GetMapping
@@ -57,9 +60,9 @@ public class CommentController {
             @AuthenticationPrincipal UserPrincipal user
     ) {
         Long accountId = optionalAccountId(user);
-        Page<CommentDetailResponse> commentsByPost = commentQueryService.getCommentsByPost(postId, pageable, accountId);
+        Page<CommentDetailResult> commentsByPost = commentQueryService.getCommentsByPost(postId, pageable, accountId);
 
-        return ResponseEntity.ok(PageResponse.from(commentsByPost));
+        return ResponseEntity.ok(PageResponse.from(commentsByPost.map(CommentDetailResponse::from)));
     }
 
     @PutMapping("/{commentId:\\d+}")
@@ -68,12 +71,12 @@ public class CommentController {
             @PathVariable Long commentId,
             @RequestBody @Valid CommentRequest commentRequest
     ) {
-        CommentSummaryResponse modifiedComment = commentCommandService.updateComment(
+        CommentSummaryResult modifiedComment = commentCommandService.updateComment(
                 commentId,
                 commentRequest.content()
         );
 
-        return ResponseEntity.ok(modifiedComment);
+        return ResponseEntity.ok(CommentSummaryResponse.from(modifiedComment));
     }
 
     @DeleteMapping("/{commentId:\\d+}")
@@ -92,9 +95,9 @@ public class CommentController {
             @PathVariable Long commentId,
             @AuthenticationPrincipal UserPrincipal user
     ) {
-        LikeResponse likeStatus = commentInteractionService.likeComment(commentId, accountId(user));
+        LikeResult likeStatus = commentInteractionService.likeComment(commentId, accountId(user));
 
-        return ResponseEntity.ok(likeStatus);
+        return ResponseEntity.ok(LikeResponse.from(likeStatus));
     }
 
     @DeleteMapping("/{commentId:\\d+}/like")
@@ -103,9 +106,9 @@ public class CommentController {
             @PathVariable Long commentId,
             @AuthenticationPrincipal UserPrincipal user
     ) {
-        LikeResponse likeStatus = commentInteractionService.unlikeComment(commentId, accountId(user));
+        LikeResult likeStatus = commentInteractionService.unlikeComment(commentId, accountId(user));
 
-        return ResponseEntity.ok(likeStatus);
+        return ResponseEntity.ok(LikeResponse.from(likeStatus));
     }
 
     private static Long optionalAccountId(UserPrincipal user) {

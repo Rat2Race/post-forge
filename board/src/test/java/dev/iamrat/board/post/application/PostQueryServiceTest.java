@@ -1,10 +1,9 @@
 package dev.iamrat.board.post.application;
 
 import dev.iamrat.board.comment.application.CommentQueryService;
-import dev.iamrat.board.like.application.LikeResponse;
+import dev.iamrat.board.like.application.LikeResult;
 import dev.iamrat.board.like.application.PostLikeService;
 import dev.iamrat.board.post.domain.Post;
-import dev.iamrat.board.post.dto.PostDetailResponse;
 import dev.iamrat.board.view.application.ViewCountService;
 import java.util.List;
 import org.junit.jupiter.api.DisplayName;
@@ -56,10 +55,10 @@ class PostQueryServiceTest {
 
         given(postReader.getById(postId)).willReturn(post);
         given(viewCountService.getViewCount(postId)).willReturn(3L);
-        given(postLikeService.getLikeInfo(postId, null)).willReturn(new LikeResponse(false, 1L));
+        given(postLikeService.getLikeInfo(postId, null)).willReturn(new LikeResult(false, 1L));
         given(commentQueryService.getCommentCount(postId)).willReturn(2);
 
-        PostDetailResponse response = postQueryService.readPost(postId, null);
+        PostDetailResult response = postQueryService.readPost(postId, null);
 
         assertThat(response.views()).isEqualTo(3L);
         assertThat(response.isLiked()).isFalse();

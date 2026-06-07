@@ -4,7 +4,6 @@ import dev.iamrat.board.post.domain.Post;
 import dev.iamrat.board.post.domain.event.PostCreatedEvent;
 import dev.iamrat.board.post.domain.event.PostDeletedEvent;
 import dev.iamrat.board.post.domain.event.PostDomainEvent;
-import dev.iamrat.board.post.dto.PostSummaryResponse;
 import dev.iamrat.board.view.application.ViewCountService;
 import dev.iamrat.core.account.AccountProfile;
 import dev.iamrat.core.account.AccountProfileReader;
@@ -66,7 +65,7 @@ class PostCommandServiceTest {
     void savePost_usesAccountProfileNickname() {
         given(accountProfileReader.getProfile(1L)).willReturn(new AccountProfile(1L, "포트닉네임"));
 
-        PostSummaryResponse response = postCommandService.savePost(
+        PostSummaryResult response = postCommandService.savePost(
             "title",
             "content",
             1L,

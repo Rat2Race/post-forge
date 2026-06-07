@@ -15,7 +15,7 @@ Examples:
 
 ```text
 V0001__baseline_schema_ownership.sql
-V0002__rename_collected_articles_source_columns.sql
+V0002__rename_source_columns.sql
 ```
 
 ## Required Header
@@ -39,4 +39,3 @@ Each SQL artifact starts with:
 - Destructive changes require a compatibility and rollback note.
 - New JPA entity/table changes require a matching SQL artifact, even if it is applied manually for now.
 - Do not mix migration-tool adoption with broad schema redesign in the same change.
-

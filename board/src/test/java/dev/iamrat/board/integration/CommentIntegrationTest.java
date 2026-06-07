@@ -1,13 +1,14 @@
 package dev.iamrat.board.integration;
 
 import dev.iamrat.board.comment.application.CommentCommandService;
+import dev.iamrat.board.comment.application.CommentDetailResult;
 import dev.iamrat.board.comment.application.CommentQueryService;
-import dev.iamrat.board.comment.dto.CommentDetailResponse;
-import dev.iamrat.board.comment.dto.CommentSummaryResponse;
+import dev.iamrat.board.comment.application.CommentSummaryResult;
 import dev.iamrat.board.integration.security.WithMockAccount;
 import dev.iamrat.board.post.application.PostCommandService;
-import dev.iamrat.board.post.dto.PostSummaryResponse;
+import dev.iamrat.board.post.application.PostSummaryResult;
 import dev.iamrat.core.account.AccountProfile;
+import dev.iamrat.core.account.AccountProfileManager;
 import dev.iamrat.core.account.AccountProfileReader;
 import dev.iamrat.core.event.DomainEventRecorder;
 import jakarta.transaction.Transactional;
@@ -45,6 +46,9 @@ class CommentIntegrationTest {
     private AccountProfileReader accountProfileReader;
 
     @MockitoBean
+    private AccountProfileManager accountProfileManager;
+
+    @MockitoBean
     private DomainEventRecorder domainEventRecorder;
 
     @Test
@@ -55,21 +59,21 @@ class CommentIntegrationTest {
         given(accountProfileReader.getProfile(1L)).willReturn(new AccountProfile(1L, "테스터"));
         given(accountProfileReader.getProfile(2L)).willReturn(new AccountProfile(2L, "댓글러"));
 
-        PostSummaryResponse savedPost = postCommandService.savePost(
+        PostSummaryResult savedPost = postCommandService.savePost(
             "댓글 통합 테스트",
             "댓글 통합 테스트용 게시글 본문입니다.",
             1L,
             List.of()
         );
 
-        CommentSummaryResponse savedComment = commentCommandService.saveComment(
+        CommentSummaryResult savedComment = commentCommandService.saveComment(
             savedPost.id(),
             null,
             "자동 답변 없이 남아야 하는 일반 댓글입니다.",
             2L
         );
 
-        Page<CommentDetailResponse> comments = commentQueryService.getCommentsByPost(
+        Page<CommentDetailResult> comments = commentQueryService.getCommentsByPost(
             savedPost.id(),
             PageRequest.of(0, 20, Sort.by(Sort.Direction.ASC, "createdAt")),
             2L

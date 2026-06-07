@@ -1,7 +1,0 @@
-# Local setup run outputs
-state/**
-!state/.gitkeep
-reports/**
-!reports/.gitkeep
-dist/**
-!dist/.gitkeep

@@ -14,32 +14,62 @@
 | 작성 템플릿 | `docs/performance/report-template.md` | 새 리포트 작성 시 복사해서 사용 |
 | 비용/수용량 계산 | `docs/performance/cost-capacity.md` | RPS/TPS, VM/Functions/전기세, API별 부하 추정 |
 
-## 자동 생성
+## 실행과 보관
 
-k6 script는 `handleSummary()`로 테스트 종료 후 markdown 리포트와 summary JSON을 자동 생성한다.
+현재 기준 성능 테스트는 Spring Test Console이나 별도 런처 없이 `k6/` 스크립트를 직접 실행한다.
+시계열 지표와 대시보드는 Prometheus/Grafana에 맡기고, Git에는 사람이 비교할 수 있는 요약 리포트와
+필요한 캡처만 남긴다.
 
-기본 출력 위치:
-
-```text
-docs/performance/<auto-name>.md
-docs/performance/k6/<auto-name>-summary.json
-```
-
-파일명과 대상 이름은 shell env로 고정할 수 있다.
+기본 실행 예:
 
 ```bash
-K6_TARGET_NAME=staging \
-K6_SCENARIO_NAME=smoke \
-K6_REPORT_NAME=2026-05-04-staging-smoke \
-k6 run tests/k6/generated/smoke.js
+BASE_URL=http://127.0.0.1:8080 \
+TARGET_ENDPOINT_KEY=board.post.list \
+PERF_AUTH_MODE=AUTO \
+K6_TARGET_RPS=50 \
+K6_DURATION_SECONDS=60 \
+API_VUS=20 \
+RUN_GROUP=local-board-post-list-$(date +%Y%m%d%H%M%S) \
+k6 run k6/postforge-benchmark.js
 ```
 
-출력 위치를 바꾸려면 다음 값을 사용한다.
+조회수 Redis 경로 측정 예:
 
 ```bash
-K6_REPORT_DIR=docs/performance \
-K6_SUMMARY_DIR=docs/performance/k6 \
-k6 run tests/k6/generated/smoke.js
+SPRING_PROFILES_ACTIVE=perf-redis
+
+BASE_URL=http://127.0.0.1:8080 \
+TARGET_ENDPOINT_KEY=board.post.view-count \
+PERF_AUTH_MODE=AUTO \
+K6_TARGET_RPS=50 \
+K6_DURATION_SECONDS=60 \
+API_VUS=20 \
+CACHE_STATE=REDIS_ENABLED \
+RUN_GROUP=local-board-view-count-$(date +%Y%m%d%H%M%S) \
+k6 run k6/postforge-benchmark.js
+```
+
+조회수 SQL-only 경로 측정 예:
+
+```bash
+SPRING_PROFILES_ACTIVE=perf-sql
+
+BASE_URL=http://127.0.0.1:8080 \
+TARGET_ENDPOINT_KEY=board.post.view-count \
+PERF_AUTH_MODE=AUTO \
+K6_TARGET_RPS=50 \
+K6_DURATION_SECONDS=60 \
+API_VUS=20 \
+CACHE_STATE=SQL_ONLY \
+RUN_GROUP=local-board-view-count-sql-$(date +%Y%m%d%H%M%S) \
+k6 run k6/postforge-benchmark.js
+```
+
+Prometheus remote write를 쓰는 경우:
+
+```bash
+K6_PROMETHEUS_RW_SERVER_URL=http://localhost:9090/api/v1/write \
+k6 run -o experimental-prometheus-rw k6/postforge-benchmark.js
 ```
 
 ## 파일명
@@ -91,8 +121,13 @@ http://10.x.x.x:8080 -> private-prod
 
 ## 작성 순서
 
-1. k6 실행 후 자동 생성된 markdown 리포트를 확인한다.
-2. `report-template.md`를 참고해 수동 해석과 리소스 관측값을 보강한다.
-3. k6 summary와 Grafana 값을 필요한 만큼 표에 옮긴다.
+1. k6 실행 조건과 `RUN_GROUP`을 기록한다.
+2. Grafana에서 같은 시간대의 애플리케이션/리소스 지표를 확인하고 필요한 캡처를 저장한다.
+3. `report-template.md`를 참고해 k6 결과와 Grafana 값을 필요한 만큼 표에 옮긴다.
 4. 수치만 나열하지 말고 결론과 다음 조치를 적는다.
 5. 민감정보가 없는지 확인한 뒤 Git에 포함한다.
+
+`RUN_GROUP`은 k6 실행 묶음을 구분하기 위한 값이다. Spring app metric label에는 넣지 않는다.
+`board.post.view-count`는 `SPRING_PROFILES_ACTIVE=perf-redis|perf-sql`로 실행 프로필을 바꾼 뒤
+`postforge_view_count_*` metric과 함께 확인한다. Redis mode는 cache hit/miss와 DB fallback을,
+SQL mode는 direct DB read/increment 비용을 같은 load profile에서 비교하기 위한 기준선이다.

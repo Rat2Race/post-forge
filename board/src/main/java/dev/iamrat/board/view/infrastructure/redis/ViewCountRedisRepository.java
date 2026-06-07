@@ -1,6 +1,6 @@
 package dev.iamrat.board.view.infrastructure.redis;
 
-import dev.iamrat.board.view.application.ViewCountStore;
+import dev.iamrat.board.view.application.ViewCountRedisStore;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.HashMap;
@@ -10,6 +10,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import lombok.RequiredArgsConstructor;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.data.redis.core.RedisCallback;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Repository;
@@ -21,7 +22,8 @@ import static dev.iamrat.board.view.infrastructure.redis.ViewCountRedisKeys.view
 
 @Repository
 @RequiredArgsConstructor
-public class ViewCountRedisRepository implements ViewCountStore {
+@ConditionalOnProperty(prefix = "postforge.view-count", name = "mode", havingValue = "redis", matchIfMissing = true)
+public class ViewCountRedisRepository implements ViewCountRedisStore {
 
     private static final long VIEW_GUARD_TTL_HOURS = 24;
     private static final long CACHE_TTL_SECONDS = 86_400;

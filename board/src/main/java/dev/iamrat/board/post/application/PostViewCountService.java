@@ -46,4 +46,13 @@ public class PostViewCountService {
 
         postStore.updateViews(postId, views);
     }
+
+    @Transactional
+    public void incrementViewCount(Long postId) {
+        if (postId == null) {
+            throw new CustomException(CommonErrorCode.INVALID_INPUT);
+        }
+
+        postStore.incrementViews(postId);
+    }
 }

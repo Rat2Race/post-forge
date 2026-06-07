@@ -2,12 +2,13 @@ package dev.iamrat.board.integration;
 
 import dev.iamrat.board.support.error.BoardErrorCode;
 import dev.iamrat.board.post.application.PostCommandService;
+import dev.iamrat.board.post.application.PostDetailResult;
 import dev.iamrat.board.post.application.PostQueryService;
-import dev.iamrat.board.post.dto.PostDetailResponse;
-import dev.iamrat.board.post.dto.PostSummaryResponse;
+import dev.iamrat.board.post.application.PostSummaryResult;
 import dev.iamrat.board.view.application.ViewCountService;
 import dev.iamrat.board.integration.security.WithMockAccount;
 import dev.iamrat.core.account.AccountProfile;
+import dev.iamrat.core.account.AccountProfileManager;
 import dev.iamrat.core.account.AccountProfileReader;
 import dev.iamrat.core.event.DomainEventRecorder;
 import dev.iamrat.core.global.exception.CustomException;
@@ -50,6 +51,9 @@ class PostIntegrationTest {
     private AccountProfileReader accountProfileReader;
 
     @MockitoBean
+    private AccountProfileManager accountProfileManager;
+
+    @MockitoBean
     private DomainEventRecorder domainEventRecorder;
 
     @Test
@@ -59,13 +63,13 @@ class PostIntegrationTest {
     void createAndReadPost() {
         // given
         given(accountProfileReader.getProfile(1L)).willReturn(new AccountProfile(1L, "테스터"));
-        PostSummaryResponse saved = postCommandService.savePost(
+        PostSummaryResult saved = postCommandService.savePost(
                 "테스트 제목", "테스트 내용입니다. 10자 이상.", 1L, List.of());
         given(viewCountService.getViewCount(saved.id())).willReturn(0L);
         given(viewCountService.getViewCounts(anyList())).willReturn(Map.of(saved.id(), 0L));
 
         // when
-        PostDetailResponse detail = postQueryService.getPost(saved.id(), 1L);
+        PostDetailResult detail = postQueryService.getPost(saved.id(), 1L);
 
         // then
         assertThat(detail.id()).isEqualTo(saved.id());
@@ -75,12 +79,12 @@ class PostIntegrationTest {
         assertThat(detail.nickname()).isEqualTo("테스터");
 
         Pageable pageable = PageRequest.of(0, 20, Sort.by(Sort.Direction.DESC, "createdAt"));
-        Page<PostDetailResponse> posts = postQueryService.getPosts(pageable, 1L);
+        Page<PostDetailResult> posts = postQueryService.getPosts(pageable, 1L);
 
         assertThat(posts.getNumber()).isZero();
         assertThat(posts.getSize()).isEqualTo(20);
         assertThat(posts.getContent())
-            .extracting(PostDetailResponse::id)
+            .extracting(PostDetailResult::id)
             .contains(saved.id());
     }
 
@@ -90,7 +94,7 @@ class PostIntegrationTest {
     @Transactional
     void updatePost() {
         given(accountProfileReader.getProfile(1L)).willReturn(new AccountProfile(1L, "테스터"));
-        PostSummaryResponse saved = postCommandService.savePost(
+        PostSummaryResult saved = postCommandService.savePost(
             "수정 전 제목",
             "수정 전 게시글 내용입니다.",
             1L,
@@ -98,13 +102,13 @@ class PostIntegrationTest {
         );
         given(viewCountService.getViewCount(saved.id())).willReturn(0L);
 
-        PostSummaryResponse updated = postCommandService.updatePost(
+        PostSummaryResult updated = postCommandService.updatePost(
             saved.id(),
             "수정 후 제목",
             "수정 후 게시글 내용입니다.",
             List.of()
         );
-        PostDetailResponse detail = postQueryService.getPost(saved.id(), 1L);
+        PostDetailResult detail = postQueryService.getPost(saved.id(), 1L);
 
         assertThat(updated.id()).isEqualTo(saved.id());
         assertThat(updated.title()).isEqualTo("수정 후 제목");
@@ -118,7 +122,7 @@ class PostIntegrationTest {
     @Transactional
     void deletePost() {
         given(accountProfileReader.getProfile(1L)).willReturn(new AccountProfile(1L, "테스터"));
-        PostSummaryResponse saved = postCommandService.savePost(
+        PostSummaryResult saved = postCommandService.savePost(
             "삭제 대상 제목",
             "삭제 대상 게시글 내용입니다.",
             1L,

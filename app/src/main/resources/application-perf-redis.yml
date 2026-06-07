@@ -1,0 +1,3 @@
+postforge:
+  view-count:
+    mode: redis

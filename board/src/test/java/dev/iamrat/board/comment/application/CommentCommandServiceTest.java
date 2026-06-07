@@ -1,7 +1,6 @@
 package dev.iamrat.board.comment.application;
 
 import dev.iamrat.board.comment.domain.Comment;
-import dev.iamrat.board.comment.dto.CommentSummaryResponse;
 import dev.iamrat.board.post.application.PostReader;
 import dev.iamrat.board.post.domain.Post;
 import dev.iamrat.core.account.AccountProfile;
@@ -58,7 +57,7 @@ class CommentCommandServiceTest {
         given(postReader.getById(1L)).willReturn(post);
         given(accountProfileReader.getProfile(2L)).willReturn(new AccountProfile(2L, "댓글러"));
 
-        CommentSummaryResponse response = commentCommandService.saveComment(
+        CommentSummaryResult response = commentCommandService.saveComment(
             1L,
             null,
             "댓글 본문",

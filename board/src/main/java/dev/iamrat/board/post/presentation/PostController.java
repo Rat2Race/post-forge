@@ -1,12 +1,15 @@
 package dev.iamrat.board.post.presentation;
 
-import dev.iamrat.board.like.application.LikeResponse;
+import dev.iamrat.board.like.application.LikeResult;
+import dev.iamrat.board.like.presentation.dto.LikeResponse;
+import dev.iamrat.board.post.application.PostDetailResult;
 import dev.iamrat.board.post.application.PostCommandService;
 import dev.iamrat.board.post.application.PostInteractionService;
 import dev.iamrat.board.post.application.PostQueryService;
-import dev.iamrat.board.post.dto.PostDetailResponse;
-import dev.iamrat.board.post.dto.PostRequest;
-import dev.iamrat.board.post.dto.PostSummaryResponse;
+import dev.iamrat.board.post.application.PostSummaryResult;
+import dev.iamrat.board.post.presentation.dto.PostDetailResponse;
+import dev.iamrat.board.post.presentation.dto.PostRequest;
+import dev.iamrat.board.post.presentation.dto.PostSummaryResponse;
 import dev.iamrat.core.global.dto.MessageResponse;
 import dev.iamrat.core.global.dto.PageResponse;
 import dev.iamrat.core.account.UserPrincipal;
@@ -24,7 +27,7 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/posts")
+@RequestMapping({"/posts", "/api/posts"})
 public class PostController {
 
     private final PostCommandService postCommandService;
@@ -37,16 +40,19 @@ public class PostController {
         @RequestBody @Valid PostRequest postRequest,
         @AuthenticationPrincipal UserPrincipal user
     ) {
-        PostSummaryResponse savedPost = postCommandService.savePost(
+        PostSummaryResult savedPost = postCommandService.savePost(
             postRequest.title(),
             postRequest.content(),
+            postRequest.summary(),
+            postRequest.tags(),
+            postRequest.category(),
             accountId(user),
             postRequest.fileIds()
         );
 
         return ResponseEntity
             .status(HttpStatus.CREATED)
-            .body(savedPost);
+            .body(PostSummaryResponse.from(savedPost));
     }
 
     @GetMapping
@@ -57,11 +63,21 @@ public class PostController {
     ) {
         Long accountId = optionalAccountId(user);
 
-        Page<PostDetailResponse> posts = keyword != null
+        Page<PostDetailResult> posts = keyword != null
             ? postQueryService.searchPosts(keyword, pageable, accountId)
             : postQueryService.getPosts(pageable, accountId);
 
-        return ResponseEntity.ok(PageResponse.from(posts));
+        return ResponseEntity.ok(PageResponse.from(posts.map(PostDetailResponse::from)));
+    }
+
+    @GetMapping("/auto/price-drops")
+    public ResponseEntity<PageResponse<PostDetailResponse>> getAutoPriceDropPosts(
+        @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable,
+        @AuthenticationPrincipal UserPrincipal user
+    ) {
+        Long accountId = optionalAccountId(user);
+        Page<PostDetailResult> posts = postQueryService.getProductLinkedPosts(pageable, accountId);
+        return ResponseEntity.ok(PageResponse.from(posts.map(PostDetailResponse::from)));
     }
 
     @GetMapping("/{postId:\\d+}")
@@ -70,9 +86,9 @@ public class PostController {
         @AuthenticationPrincipal UserPrincipal user
     ) {
         Long accountId = optionalAccountId(user);
-        PostDetailResponse post = postQueryService.readPost(postId, accountId);
+        PostDetailResult post = postQueryService.readPost(postId, accountId);
 
-        return ResponseEntity.ok(post);
+        return ResponseEntity.ok(PostDetailResponse.from(post));
     }
 
     @PutMapping("/{postId:\\d+}")
@@ -81,14 +97,17 @@ public class PostController {
         @PathVariable("postId") Long postId,
         @RequestBody @Valid PostRequest postRequest
     ) {
-        PostSummaryResponse modifiedPost = postCommandService.updatePost(
+        PostSummaryResult modifiedPost = postCommandService.updatePost(
             postId,
             postRequest.title(),
             postRequest.content(),
+            postRequest.summary(),
+            postRequest.tags(),
+            postRequest.category(),
             postRequest.fileIds()
         );
 
-        return ResponseEntity.ok(modifiedPost);
+        return ResponseEntity.ok(PostSummaryResponse.from(modifiedPost));
     }
 
     @DeleteMapping("/{postId:\\d+}")
@@ -107,9 +126,9 @@ public class PostController {
         @PathVariable("postId") Long postId,
         @AuthenticationPrincipal UserPrincipal user
     ) {
-        LikeResponse likeStatus = postInteractionService.likePost(postId, accountId(user));
+        LikeResult likeStatus = postInteractionService.likePost(postId, accountId(user));
 
-        return ResponseEntity.ok(likeStatus);
+        return ResponseEntity.ok(LikeResponse.from(likeStatus));
     }
 
     @DeleteMapping("/{postId:\\d+}/like")
@@ -118,9 +137,9 @@ public class PostController {
         @PathVariable("postId") Long postId,
         @AuthenticationPrincipal UserPrincipal user
     ) {
-        LikeResponse likeStatus = postInteractionService.unlikePost(postId, accountId(user));
+        LikeResult likeStatus = postInteractionService.unlikePost(postId, accountId(user));
 
-        return ResponseEntity.ok(likeStatus);
+        return ResponseEntity.ok(LikeResponse.from(likeStatus));
     }
 
     private static Long optionalAccountId(UserPrincipal user) {

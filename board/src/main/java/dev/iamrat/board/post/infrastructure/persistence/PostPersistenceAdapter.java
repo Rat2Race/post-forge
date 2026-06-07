@@ -61,6 +61,11 @@ public class PostPersistenceAdapter implements PostStore {
     }
 
     @Override
+    public void incrementViews(Long postId) {
+        postRepository.incrementViews(postId);
+    }
+
+    @Override
     public void updateLikeCount(Long postId, long likeCount) {
         postRepository.updateLikeCount(postId, likeCount);
     }

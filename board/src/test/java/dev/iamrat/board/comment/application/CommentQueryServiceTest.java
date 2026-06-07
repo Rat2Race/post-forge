@@ -1,7 +1,6 @@
 package dev.iamrat.board.comment.application;
 
 import dev.iamrat.board.comment.domain.Comment;
-import dev.iamrat.board.comment.dto.CommentDetailResponse;
 import dev.iamrat.board.like.application.CommentLikeService;
 import dev.iamrat.board.post.domain.Post;
 import java.util.List;
@@ -42,7 +41,7 @@ class CommentQueryServiceTest {
         given(commentLikeService.getLikeCounts(List.of(10L))).willReturn(Map.of(10L, 3L));
         given(commentLikeService.getLikedCommentIds(List.of(10L), 2L)).willReturn(Set.of(10L));
 
-        Page<CommentDetailResponse> result = commentQueryService.getCommentsByPost(1L, pageable, 2L);
+        Page<CommentDetailResult> result = commentQueryService.getCommentsByPost(1L, pageable, 2L);
 
         assertThat(result.getTotalElements()).isEqualTo(1);
         assertThat(result.getContent().get(0).id()).isEqualTo(10L);

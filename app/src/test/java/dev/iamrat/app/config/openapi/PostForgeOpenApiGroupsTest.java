@@ -28,12 +28,20 @@ class PostForgeOpenApiGroupsTest {
             "/auth/**",
             "/user/account",
             "/user/account/**",
+            "/user/profile",
+            "/user/profile/**",
             "/posts/**",
+            "/api/posts/**",
+            "/api/products/**",
+            "/api/admin/products/**",
+            "/api/admin/product-match-candidates/**",
+            "/api/admin/tracked-keywords/**",
+            "/api/admin/collection-jobs/**",
+            "/api/admin/external-api-logs/**",
+            "/api/admin/source-policies/**",
             "/files/**",
             "/ai/**",
-            "/ingest/**",
-            "/collector/**",
-            "/internal/collector/**"
+            "/ingest/**"
         );
     }
 
@@ -41,10 +49,12 @@ class PostForgeOpenApiGroupsTest {
     @DisplayName("app OpenAPI 조립은 모듈별 API 그룹 경로를 정의한다")
     void moduleApis_defineModuleGroups() {
         assertOpenApiGroup(groups.authApi(), "auth", "/auth/**", "/user/account/**");
-        assertOpenApiGroup(groups.boardApi(), "board", "/posts/**", "/files/**");
+        assertOpenApiGroup(groups.boardApi(), "board", "/user/profile", "/user/profile/**", "/posts/**", "/api/posts/**", "/files/**");
+        assertOpenApiGroup(groups.catalogApi(), "catalog", "/api/products/**", "/api/admin/products/**", "/api/admin/product-match-candidates/**");
+        assertOpenApiGroup(groups.sourceApi(), "source", "/api/admin/external-api-logs/**", "/api/admin/source-policies/**");
+        assertOpenApiGroup(groups.priceApi(), "price", "/api/products/*/prices", "/api/products/price-drops");
         assertOpenApiGroup(groups.aiApi(), "ai", "/ai/**");
-        assertOpenApiGroup(groups.ingestApi(), "ingest", "/ingest/**", "/internal/collector/**");
-        assertOpenApiGroup(groups.internalApi(), "internal", "/internal/collector/**");
+        assertOpenApiGroup(groups.ingestApi(), "ingest", "/ingest/**");
     }
 
     @Test

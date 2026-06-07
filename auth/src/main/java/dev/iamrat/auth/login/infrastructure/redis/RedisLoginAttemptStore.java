@@ -14,7 +14,7 @@ public class RedisLoginAttemptStore implements LoginAttemptStore {
 
     @Override
     public boolean hasLock(String normalizedUsername) {
-        return Boolean.TRUE.equals(redisTemplate.hasKey(RedisLoginAttemptKeys.lockKey(normalizedUsername)));
+        return redisTemplate.hasKey(RedisLoginAttemptKeys.lockKey(normalizedUsername));
     }
 
     @Override

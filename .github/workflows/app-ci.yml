@@ -2,7 +2,7 @@ name: APP-CI
 
 on:
   push:
-    branches: [ refactor/trend-platform ]
+    branches: [ refactor/postforge-ddd ]
 
 permissions:
   contents: read

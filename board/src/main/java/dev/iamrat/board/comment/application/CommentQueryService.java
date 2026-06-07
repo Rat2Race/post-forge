@@ -1,7 +1,6 @@
 package dev.iamrat.board.comment.application;
 
 import dev.iamrat.board.comment.domain.Comment;
-import dev.iamrat.board.comment.dto.CommentDetailResponse;
 import dev.iamrat.board.like.application.CommentLikeService;
 import java.util.List;
 import java.util.Map;
@@ -22,7 +21,7 @@ public class CommentQueryService {
     private final CommentStore commentStore;
     private final CommentLikeService commentLikeService;
 
-    public Page<CommentDetailResponse> getCommentsByPost(Long postId, Pageable pageable, Long accountId) {
+    public Page<CommentDetailResult> getCommentsByPost(Long postId, Pageable pageable, Long accountId) {
         Page<Comment> comments = commentStore.findByPostId(postId, pageable);
         List<Comment> commentList = comments.getContent();
         List<Long> commentIds = commentList.stream()
@@ -34,7 +33,7 @@ public class CommentQueryService {
 
         return new PageImpl<>(
             commentList.stream()
-                .map(comment -> CommentDetailResponse.from(
+                .map(comment -> CommentDetailResult.from(
                     comment,
                     likeCounts.getOrDefault(comment.getId(), 0L),
                     likedIds.contains(comment.getId())

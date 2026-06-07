@@ -1,7 +1,7 @@
 package dev.iamrat.board.file.presentation;
 
 import dev.iamrat.board.file.application.FileReader;
-import dev.iamrat.board.file.application.FileUploadResponse;
+import dev.iamrat.board.file.application.FileUploadResult;
 import dev.iamrat.board.file.application.FileUploadService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -31,7 +31,7 @@ class FileControllerTest {
     @Test
     @DisplayName("storage-neutral 경로에서 Presigned URL 발급 요청 시 FileUploadResponse 반환")
     void getPresignedUrl_storageNeutralPath_returnsFileUploadResponse() throws Exception {
-        FileUploadResponse response = new FileUploadResponse(1L, "uuid.jpg", "https://s3.presigned-url.example.com");
+        FileUploadResult response = new FileUploadResult(1L, "uuid.jpg", "https://s3.presigned-url.example.com");
         given(fileUploadService.createPresignedUrl("test.jpg", "image/jpeg")).willReturn(response);
 
         mockMvc.perform(get("/files/presigned-url")
@@ -46,7 +46,7 @@ class FileControllerTest {
     @Test
     @DisplayName("legacy S3 경로도 Presigned URL 발급을 유지한다")
     void getPresignedUrl_legacyS3Path_returnsFileUploadResponse() throws Exception {
-        FileUploadResponse response = new FileUploadResponse(1L, "uuid.jpg", "https://s3.presigned-url.example.com");
+        FileUploadResult response = new FileUploadResult(1L, "uuid.jpg", "https://s3.presigned-url.example.com");
         given(fileUploadService.createPresignedUrl("test.jpg", "image/jpeg")).willReturn(response);
 
         mockMvc.perform(get("/files/s3/presigned-url")

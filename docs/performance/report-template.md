@@ -21,7 +21,7 @@
 | 앱 image tag | `<image-tag>` |
 | 앱 commit | `<commit-hash>` |
 | k6 version | `<k6 version>` |
-| script | `tests/k6/generated/smoke.js` |
+| script | `k6/postforge-benchmark.js` |
 | 실행 명령 | `BASE_URL=<masked> k6 run ...` |
 
 ## 부하 조건

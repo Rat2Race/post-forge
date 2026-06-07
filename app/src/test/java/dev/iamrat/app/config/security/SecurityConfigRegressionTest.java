@@ -1,8 +1,8 @@
 package dev.iamrat.app.config.security;
 
 import dev.iamrat.app.config.monitoring.MetricsConfig;
-import dev.iamrat.auth.security.handler.JwtAccessDeniedHandler;
-import dev.iamrat.auth.security.handler.JwtAuthenticationEntryPoint;
+import dev.iamrat.auth.security.infrastructure.handler.JwtAccessDeniedHandler;
+import dev.iamrat.auth.security.infrastructure.handler.JwtAuthenticationEntryPoint;
 import dev.iamrat.auth.token.application.TokenService;
 import dev.iamrat.auth.login.application.CustomUserDetailsService;
 import org.junit.jupiter.api.BeforeEach;
@@ -19,6 +19,8 @@ import org.springframework.http.MediaType;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configurers.AuthorizeHttpRequestsConfigurer;
 import org.springframework.security.oauth2.client.AuthorizedClientServiceOAuth2AuthorizedClientManager;
 import org.springframework.security.oauth2.client.InMemoryOAuth2AuthorizedClientService;
 import org.springframework.security.oauth2.client.OAuth2AuthorizedClientManager;
@@ -296,22 +298,6 @@ class SecurityConfigRegressionTest {
     }
 
     @Test
-    @DisplayName("로컬 Test Console route는 인증 필터에서 막지 않는다")
-    void testConsoleRoute_allowsAnonymousAccessToReachLocalOnlyController() throws Exception {
-        mockMvc.perform(get("/test-console"))
-            .andExpect(status().isOk())
-            .andExpect(content().string("test-console"));
-    }
-
-    @Test
-    @DisplayName("로컬 Test Console API route는 인증 필터에서 막지 않는다")
-    void testConsoleApi_allowsAnonymousAccessToReachLocalOnlyController() throws Exception {
-        mockMvc.perform(get("/api/test-console/state"))
-            .andExpect(status().isOk())
-            .andExpect(content().string("test-console-state"));
-    }
-
-    @Test
     @WithMockUser(roles = "USER")
     @DisplayName("명시되지 않은 route는 인증된 사용자도 차단한다")
     void undeclaredRoute_deniesAuthenticatedUser() throws Exception {
@@ -334,61 +320,63 @@ class SecurityConfigRegressionTest {
         DummyAiController.class,
         DummyIngestController.class,
         DummyCollectorController.class,
-        DummyInternalCollectorController.class,
-        DummyTestConsoleController.class
+        DummyInternalCollectorController.class
     })
     static class TestApp {
 
         @Bean
-        HttpAuthorizationRules httpAuthorizationRules() {
-            return requests -> requests
-                .requestMatchers(
-                    "/",
-                    "/index.html",
-                    "/favicon.ico",
-                    "/images/**",
-                    "/v3/api-docs/**",
-                    "/swagger-ui.html",
-                    "/swagger-ui/**",
-                    "/webjars/**",
-                    "/test-console",
-                    "/test-console/**",
-                    "/api/test-console",
-                    "/api/test-console/**",
-                    "/oauth2/**",
-                    "/login/oauth2/**"
-                ).permitAll()
-                .requestMatchers(HttpMethod.POST,
-                    "/auth/register",
-                    "/auth/login",
-                    "/auth/token/reissue",
-                    "/auth/oauth2/exchange",
-                    "/auth/email/send"
-                ).permitAll()
-                .requestMatchers(HttpMethod.GET,
-                    "/auth/email/verify",
-                    "/posts",
-                    "/posts/*",
-                    "/posts/*/comments"
-                ).permitAll()
-                .requestMatchers(
-                    "/auth/logout",
-                    "/user/account",
-                    "/user/account/**",
-                    "/posts",
-                    "/posts/*",
-                    "/posts/*/like",
-                    "/posts/*/comments",
-                    "/posts/*/comments/*",
-                    "/posts/*/comments/*/like",
-                    "/files/**",
-                    "/ai/**",
-                    "/ingest/**"
-                ).hasAnyRole("USER", "ADMIN")
-                .requestMatchers("/collector/**").hasRole("ADMIN")
-                .requestMatchers("/internal/collector/**").hasRole("ADMIN")
-                .requestMatchers("/admin/**").hasRole("ADMIN")
-                .anyRequest().denyAll();
+        PostForgeAuthorizationRules postForgeAuthorizationRules() {
+            return new PostForgeAuthorizationRules() {
+                @Override
+                public void customize(
+                    AuthorizeHttpRequestsConfigurer<HttpSecurity>.AuthorizationManagerRequestMatcherRegistry requests
+                ) {
+                    requests
+                        .requestMatchers(
+                            "/",
+                            "/index.html",
+                            "/favicon.ico",
+                            "/images/**",
+                            "/v3/api-docs/**",
+                            "/swagger-ui.html",
+                            "/swagger-ui/**",
+                            "/webjars/**",
+                            "/oauth2/**",
+                            "/login/oauth2/**"
+                        ).permitAll()
+                        .requestMatchers(HttpMethod.POST,
+                            "/auth/register",
+                            "/auth/login",
+                            "/auth/token/reissue",
+                            "/auth/oauth2/exchange",
+                            "/auth/email/send"
+                        ).permitAll()
+                        .requestMatchers(HttpMethod.GET,
+                            "/auth/email/verify",
+                            "/posts",
+                            "/posts/*",
+                            "/posts/*/comments"
+                        ).permitAll()
+                        .requestMatchers(
+                            "/auth/logout",
+                            "/user/account",
+                            "/user/account/**",
+                            "/posts",
+                            "/posts/*",
+                            "/posts/*/like",
+                            "/posts/*/comments",
+                            "/posts/*/comments/*",
+                            "/posts/*/comments/*/like",
+                            "/files/**",
+                            "/ai/**",
+                            "/ingest/**"
+                        ).hasAnyRole("USER", "ADMIN")
+                        .requestMatchers("/collector/**").hasRole("ADMIN")
+                        .requestMatchers("/internal/collector/**").hasRole("ADMIN")
+                        .requestMatchers("/admin/**").hasRole("ADMIN")
+                        .anyRequest().denyAll();
+                }
+            };
         }
 
         @Bean
@@ -541,17 +529,4 @@ class SecurityConfigRegressionTest {
         }
     }
 
-    @RestController
-    static class DummyTestConsoleController {
-
-        @GetMapping("/test-console")
-        String page() {
-            return "test-console";
-        }
-
-        @GetMapping("/api/test-console/state")
-        String state() {
-            return "test-console-state";
-        }
-    }
 }

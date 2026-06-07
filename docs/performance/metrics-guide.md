@@ -168,6 +168,64 @@ k6는 요청 1건을 아래 단계로 쪼개서 측정함:
 
 ## Part 4. 분석 체크리스트
 
+### Step 0: PostForge view-count custom metrics
+
+`board.post.view-count`는 SQL-only와 Redis-enabled 조회수 경로를 비교하기 위한 커스텀 metric 대상이다.
+앱 실행 프로필은 `SPRING_PROFILES_ACTIVE=perf-redis|perf-sql`로 전환한다.
+
+| Metric | 의미 |
+|--------|------|
+| `postforge_view_count_cache_requests_total` | 조회수 cache hit/miss/failure 수 |
+| `postforge_view_count_db_loads_total` | cache miss 이후 DB fallback load 수 |
+| `postforge_view_count_operations_total` | increment, dirty mark, delete 같은 조회수 operation 결과 |
+| `postforge_view_count_operation_duration_seconds` | 조회수 operation duration timer |
+
+허용 label은 `endpoint`, `cache_state`, `operation`, `result`만 사용한다. `postId`, `accountId`,
+`username`, `token`, `RUN_GROUP` 같은 값은 app metric label로 넣지 않는다.
+
+Cache hit ratio는 Redis mode에서만 의미가 있다:
+
+```promql
+sum(rate(postforge_view_count_cache_requests_total{cache_state="redis_enabled",result="hit"}[1m]))
+/
+sum(rate(postforge_view_count_cache_requests_total{cache_state="redis_enabled",result=~"hit|miss"}[1m]))
+```
+
+Redis DB fallback rate:
+
+```promql
+sum(rate(postforge_view_count_db_loads_total{cache_state="redis_enabled"}[1m]))
+```
+
+SQL-only direct DB read/update rate:
+
+```promql
+sum(rate(postforge_view_count_db_loads_total{cache_state="sql_only"}[1m]))
+```
+
+View-count p95 duration:
+
+```promql
+histogram_quantile(
+  0.95,
+  sum(rate(postforge_view_count_operation_duration_seconds_bucket[1m])) by (le, operation, cache_state)
+)
+```
+
+Failure rate:
+
+```promql
+sum(rate(postforge_view_count_operations_total{result="failure"}[1m]))
+/
+sum(rate(postforge_view_count_operations_total[1m]))
+```
+
+Redis와 SQL-only 비교에서 가장 먼저 볼 것은 같은 k6 조건에서 `http_req_duration p95`,
+`postforge_view_count_operation_duration_seconds p95`, `cache hit ratio`, `DB fallback/direct DB rate`,
+그리고 DB CPU/connection 지표다. Redis mode는 cache miss 때만 DB fallback이 증가해야 하고,
+SQL mode는 direct DB read/increment 때문에 `cache_state="sql_only"` DB load/operation 지표가
+부하에 비례해 증가한다.
+
 ### Step 1: k6 결과 전체 개요
 
 - [ ] checks 100% 통과하는가?

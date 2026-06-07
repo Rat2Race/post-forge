@@ -2,8 +2,8 @@ package dev.iamrat.auth.login.application;
 
 import dev.iamrat.auth.account.application.AccountQueryService;
 import dev.iamrat.auth.account.domain.Account;
-import dev.iamrat.auth.security.principal.AccountAuthorityMapper;
-import dev.iamrat.auth.security.principal.CustomUserDetails;
+import dev.iamrat.auth.security.infrastructure.principal.AccountAuthorityMapper;
+import dev.iamrat.auth.security.infrastructure.principal.CustomUserDetails;
 import dev.iamrat.auth.support.error.AuthErrorCode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.DisabledException;

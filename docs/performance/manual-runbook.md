@@ -7,8 +7,7 @@
 | 값 | 기본 |
 |---|---|
 | 대상 URL | `http://localhost:8080` |
-| k6 script | `tests/k6/manual/performance.js` |
-| Bruno folder | `tests/bruno/api/manual/performance` |
+| k6 script | `k6/postforge-benchmark.js` |
 | 리포트 위치 | `docs/performance/manual-runs/<run-id>/` |
 
 ## 리포트 디렉터리
@@ -23,107 +22,116 @@ mkdir -p "$REPORT_DIR"
 
 ```bash
 BASE_URL=http://localhost:8080 \
-PUBLIC_VUS=5 \
-DURATION=1m \
-RAMP_UP=30s \
-RAMP_DOWN=30s \
-K6_TARGET_NAME=local \
-K6_SCENARIO_NAME=manual-public \
-K6_REPORT_NAME="$RUN_ID-k6-public" \
-K6_REPORT_DIR="$REPORT_DIR" \
-K6_SUMMARY_DIR="$REPORT_DIR" \
-k6 run tests/k6/manual/performance.js 2>&1 | tee "$REPORT_DIR/k6-public.log"
+TARGET_ENDPOINT_KEY=board.post.list \
+PERF_AUTH_MODE=NONE \
+K6_TARGET_RPS=25 \
+K6_DURATION_SECONDS=60 \
+API_VUS=10 \
+RUN_GROUP="$RUN_ID-board-post-list" \
+k6 run k6/postforge-benchmark.js 2>&1 | tee "$REPORT_DIR/k6-public.log"
 ```
 
 남는 파일:
 
-- `$REPORT_DIR/$RUN_ID-k6-public.md`
-- `$REPORT_DIR/$RUN_ID-k6-public-summary.json`
 - `$REPORT_DIR/k6-public.log`
+- 필요 시 Grafana PNG 캡처
+
+## k6 조회수 Redis 경로 부하
+
+앱을 Redis mode로 실행한 뒤 같은 부하 조건을 기록한다.
+
+```bash
+SPRING_PROFILES_ACTIVE=perf-redis
+
+BASE_URL=http://localhost:8080 \
+TARGET_ENDPOINT_KEY=board.post.view-count \
+PERF_AUTH_MODE=AUTO \
+K6_TARGET_RPS=25 \
+K6_DURATION_SECONDS=60 \
+API_VUS=10 \
+CACHE_STATE=REDIS_ENABLED \
+RUN_GROUP="$RUN_ID-board-view-count" \
+k6 run k6/postforge-benchmark.js 2>&1 | tee "$REPORT_DIR/k6-view-count.log"
+```
+
+확인할 app metric:
+
+- `postforge_view_count_cache_requests_total`
+- `postforge_view_count_db_loads_total`
+- `postforge_view_count_operations_total`
+- `postforge_view_count_operation_duration_seconds`
+
+`RUN_GROUP`은 k6/Grafana에서 테스트 묶음을 구분할 때만 사용한다. Spring app metric label에는
+넣지 않는다.
+
+남는 파일:
+
+- `$REPORT_DIR/k6-view-count.log`
+- 필요 시 Grafana PNG 캡처
+
+## k6 조회수 SQL-only 경로 부하
+
+앱을 SQL mode로 재실행한 뒤 Redis 측정과 같은 RPS, VUs, duration, data set, auth 조건을 사용한다.
+이 mode는 Redis cache, 24시간 view guard, dirty-sync queue 없이 DB 직접 read와 atomic increment를
+사용한다.
+
+```bash
+SPRING_PROFILES_ACTIVE=perf-sql
+
+BASE_URL=http://localhost:8080 \
+TARGET_ENDPOINT_KEY=board.post.view-count \
+PERF_AUTH_MODE=AUTO \
+K6_TARGET_RPS=25 \
+K6_DURATION_SECONDS=60 \
+API_VUS=10 \
+CACHE_STATE=SQL_ONLY \
+RUN_GROUP="$RUN_ID-board-view-count-sql" \
+k6 run k6/postforge-benchmark.js 2>&1 | tee "$REPORT_DIR/k6-view-count-sql.log"
+```
+
+비교할 app metric:
+
+- `postforge_view_count_db_loads_total{cache_state="sql_only"}`
+- `postforge_view_count_operations_total{cache_state="sql_only"}`
+- `postforge_view_count_operation_duration_seconds{cache_state="sql_only"}`
+
+남는 파일:
+
+- `$REPORT_DIR/k6-view-count-sql.log`
+- 필요 시 Grafana PNG 캡처
 
 ## k6 인증 쓰기 부하
 
-인증 쓰기 부하는 게시글과 댓글을 생성한 뒤 삭제한다. 로컬 전용 계정만 사용하고 비밀번호는 커맨드 히스토리에 남지 않게 주의한다.
+인증이 필요한 endpoint는 토큰 또는 로컬 전용 계정을 사용한다. 비밀번호는 커맨드 히스토리에 남지 않게 주의한다.
 
 ```bash
 read -r -s PERF_PASSWORD
 
 BASE_URL=http://localhost:8080 \
-RUN_AUTH_FLOW=true \
+TARGET_ENDPOINT_KEY=board.post.create \
+PERF_AUTH_MODE=AUTO \
 PERF_USERNAME=testuser1 \
 PERF_PASSWORD="$PERF_PASSWORD" \
-PUBLIC_VUS=1 \
-AUTH_VUS=1 \
-DURATION=30s \
-RAMP_UP=10s \
-RAMP_DOWN=10s \
-K6_TARGET_NAME=local \
-K6_SCENARIO_NAME=manual-auth \
-K6_REPORT_NAME="$RUN_ID-k6-auth" \
-K6_REPORT_DIR="$REPORT_DIR" \
-K6_SUMMARY_DIR="$REPORT_DIR" \
-k6 run tests/k6/manual/performance.js 2>&1 | tee "$REPORT_DIR/k6-auth.log"
+K6_TARGET_RPS=5 \
+K6_DURATION_SECONDS=30 \
+API_VUS=3 \
+RUN_GROUP="$RUN_ID-board-post-create" \
+k6 run k6/postforge-benchmark.js 2>&1 | tee "$REPORT_DIR/k6-auth.log"
 ```
 
 남는 파일:
 
-- `$REPORT_DIR/$RUN_ID-k6-auth.md`
-- `$REPORT_DIR/$RUN_ID-k6-auth-summary.json`
 - `$REPORT_DIR/k6-auth.log`
+- 필요 시 Grafana PNG 캡처
 
-## Bruno 공개 API 반복 실행
+## Prometheus remote write
 
-```bash
-cd tests/bruno/api
-
-bru run manual/performance -r \
-  --env-file ./environments/local.bru \
-  --tags public \
-  --iteration-count 20 \
-  --delay 100 \
-  --reporter-skip-response-body \
-  --reporter-json "../../../$REPORT_DIR/bruno-public.json" \
-  --reporter-html "../../../$REPORT_DIR/bruno-public.html" \
-  2>&1 | tee "../../../$REPORT_DIR/bruno-public.log"
-
-cd ../../..
-```
-
-남는 파일:
-
-- `$REPORT_DIR/bruno-public.json`
-- `$REPORT_DIR/bruno-public.html`
-- `$REPORT_DIR/bruno-public.log`
-
-## Bruno 인증 쓰기 시나리오
-
-`local.bru` 또는 CLI `--env-var`로 `perfUserId`, `perfPassword`를 로컬 전용 값으로 넣는다. 실행 순서대로 로그인, 생성, 수정, 좋아요, 댓글, 정리 요청이 실행된다.
+k6 결과를 Prometheus에도 남길 때는 같은 `RUN_GROUP`을 유지한다.
 
 ```bash
-cd tests/bruno/api
-
-bru run manual/performance -r \
-  --env-file ./environments/local.bru \
-  --tags auth \
-  --env-var perfUserId=testuser1 \
-  --env-var perfPassword="$PERF_PASSWORD" \
-  --env-var perfMaxMs=1000 \
-  --reporter-skip-body \
-  --reporter-skip-headers Authorization \
-  --reporter-skip-headers Cookie \
-  --reporter-skip-headers Set-Cookie \
-  --reporter-json "../../../$REPORT_DIR/bruno-auth.json" \
-  --reporter-html "../../../$REPORT_DIR/bruno-auth.html" \
-  2>&1 | tee "../../../$REPORT_DIR/bruno-auth.log"
-
-cd ../../..
+K6_PROMETHEUS_RW_SERVER_URL=http://localhost:9090/api/v1/write \
+k6 run -o experimental-prometheus-rw k6/postforge-benchmark.js
 ```
-
-남는 파일:
-
-- `$REPORT_DIR/bruno-auth.json`
-- `$REPORT_DIR/bruno-auth.html`
-- `$REPORT_DIR/bruno-auth.log`
 
 ## 빠른 로컬 검증
 
@@ -135,25 +143,12 @@ REPORT_DIR="docs/performance/manual-runs/$RUN_ID"
 mkdir -p "$REPORT_DIR"
 
 BASE_URL=http://localhost:8080 \
-PUBLIC_VUS=1 \
-DURATION=5s \
-RAMP_UP=1s \
-RAMP_DOWN=1s \
-K6_TARGET_NAME=local \
-K6_SCENARIO_NAME=manual-public-smoke \
-K6_REPORT_NAME="$RUN_ID-k6-public-smoke" \
-K6_REPORT_DIR="$REPORT_DIR" \
-K6_SUMMARY_DIR="$REPORT_DIR" \
-k6 run tests/k6/manual/performance.js 2>&1 | tee "$REPORT_DIR/k6-public-smoke.log"
-
-cd tests/bruno/api
-bru run manual/performance -r \
-  --env-file ./environments/local.example.bru \
-  --tags public \
-  --iteration-count 1 \
-  --reporter-skip-response-body \
-  --reporter-json "../../../$REPORT_DIR/bruno-public-smoke.json" \
-  --reporter-html "../../../$REPORT_DIR/bruno-public-smoke.html" \
-  2>&1 | tee "../../../$REPORT_DIR/bruno-public-smoke.log"
-cd ../../..
+TARGET_ENDPOINT_KEY=board.post.view-count \
+PERF_AUTH_MODE=AUTO \
+K6_TARGET_RPS=1 \
+K6_DURATION_SECONDS=5 \
+API_VUS=1 \
+CACHE_STATE=REDIS_ENABLED \
+RUN_GROUP="$RUN_ID-board-view-count-smoke" \
+k6 run k6/postforge-benchmark.js 2>&1 | tee "$REPORT_DIR/k6-public-smoke.log"
 ```

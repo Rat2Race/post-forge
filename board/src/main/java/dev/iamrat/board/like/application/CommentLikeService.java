@@ -16,12 +16,12 @@ public class CommentLikeService extends AbstractLikeService {
     private final CommentLikeTargetService commentLikeTargetService;
 
     @Transactional
-    public LikeResponse like(Long commentId, Long accountId) {
+    public LikeResult like(Long commentId, Long accountId) {
         return likeTarget(commentId, accountId);
     }
 
     @Transactional
-    public LikeResponse unlike(Long commentId, Long accountId) {
+    public LikeResult unlike(Long commentId, Long accountId) {
         return unlikeTarget(commentId, accountId);
     }
 

@@ -12,9 +12,11 @@ dependencies {
     implementation project(':support')
     implementation project(':auth')
     implementation project(':board')
+    implementation project(':source')
+    implementation project(':catalog')
+    implementation project(':price')
     implementation project(':ai')
     implementation project(':ingest')
-    implementation project(':collector')
     implementation project(':messaging')
 
     implementation 'org.springframework.boot:spring-boot-starter-web'

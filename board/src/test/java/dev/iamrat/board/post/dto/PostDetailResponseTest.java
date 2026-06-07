@@ -1,4 +1,4 @@
-package dev.iamrat.board.post.dto;
+package dev.iamrat.board.post.presentation.dto;
 
 import static org.assertj.core.api.Assertions.assertThat;
 

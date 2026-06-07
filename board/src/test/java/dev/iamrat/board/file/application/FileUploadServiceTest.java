@@ -48,7 +48,7 @@ class FileUploadServiceTest {
         given(fileStore.save(any(PostFile.class))).willReturn(savedFile);
         given(fileStorage.createUploadUrl(any(), eq("image/png"))).willReturn("https://storage.example.com/presigned");
 
-        FileUploadResponse response = fileUploadService.createPresignedUrl("photo.png", "image/png");
+        FileUploadResult response = fileUploadService.createPresignedUrl("photo.png", "image/png");
 
         ArgumentCaptor<PostFile> fileCaptor = ArgumentCaptor.forClass(PostFile.class);
         verify(fileStore).save(fileCaptor.capture());

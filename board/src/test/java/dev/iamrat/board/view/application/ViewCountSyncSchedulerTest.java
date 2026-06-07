@@ -17,7 +17,7 @@ import static org.mockito.Mockito.verify;
 class ViewCountSyncSchedulerTest {
 
     @Mock
-    private ViewCountStore viewCountStore;
+    private ViewCountRedisStore viewCountStore;
 
     @Mock
     private PostViewCountService postViewCountService;

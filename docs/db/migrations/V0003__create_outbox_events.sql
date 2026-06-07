@@ -1,7 +1,7 @@
 -- Owner: messaging
 -- Purpose: Add the shared outbox table used by domain modules to persist reliable events in the same transaction as domain writes.
 -- Tables: outbox_events
--- Compatibility: Additive table creation. Existing auth, board, collector, and ai tables are not changed.
+-- Compatibility: Additive table creation. Existing auth, board, catalog, price, and ai tables are not changed.
 -- Rollback: DROP TABLE IF EXISTS outbox_events;
 -- Verification: Compare with messaging/outbox/domain/OutboxMessage.java and run ./gradlew :messaging:test.
 
