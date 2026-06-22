@@ -1,7 +1,12 @@
 # Delete Policy
 
+> Current status: 게시글/댓글/좋아요/계정 삭제 정책은 현재 구현과 연결된다.
+> draft, private report, workspace, `ai_usage_logs`, evidence/trend link 삭제 정책은 target/future policy이며 2026-06-22 현재 code-backed schema가 아니다.
+
 PostForge 삭제 정책은 일반 사용자에게 리소스를 더 이상 노출하지 않는 것을 기준으로 한다.
 게시글, 댓글, 계정은 soft delete를 기본으로 하고, 좋아요 취소는 관계 제거로 처리한다.
+
+> 문서 경계: 이 문서는 삭제 후 노출/보존 policy만 정의한다. Delete endpoint와 응답 status는 `../api/`, schema column ownership은 `../database/schema-ownership.md`를 따른다.
 
 ## Post
 

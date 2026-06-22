@@ -3,6 +3,8 @@
 이 문서는 PostForge 유스케이스별 Read/Write 데이터를 정리한다.
 현재 구현과 target schema 후보가 함께 나오므로, 구현 완료 전 테이블은 `target`으로 표시한다.
 
+> 문서 경계: 이 문서는 use case별 data read/write ownership을 다룬다. HTTP contract는 `../api/`, 사용자 시나리오 narrative는 `../usecase/postforge-user-scenarios.md`, schema source of truth는 `../database/schema-ownership.md`를 따른다.
+
 ## Data Stores
 
 ### Implemented Stores
@@ -14,15 +16,23 @@
 | `posts` | 게시글 본문, 작성자 스냅샷, category, 조회수, 좋아요 수 |
 | `post_tags` | 게시글 태그 |
 | `post_file` | 게시글 첨부파일 메타데이터와 게시글 연결 |
+| `post_product_links` | 상품 관련 게시글과 상품 연결 |
+| `post_reference_links` | 출시 뉴스 게시글의 provider/canonical URL/source evidence와 daily cap 기준 metadata |
+| `post_purchase_vote` | 자동 게시된 출시 뉴스에 대한 회원별 구매 판단 투표 |
 | `comments` | 댓글/대댓글, 작성자 스냅샷, 좋아요 수 |
 | `post_like` | 게시글 좋아요 |
 | `comment_like` | 댓글 좋아요 |
-| `collected_articles` | 현재 Naver News 수집 이력 |
+| `tracked_keywords`, `collection_jobs`, `raw_products` | 현재 상품 source 수집 대상, 작업 이력, 원본 payload |
+| `products`, `product_categories`, `offers` | 정규화 상품, 카테고리, source/mall별 판매 상품 |
+| `product_embeddings`, `product_match_candidates` | pgvector 상품 임베딩과 낮은 확신도 유사 상품 매칭 후보 |
+| `price_snapshots` | 수집 시점별 가격 이력과 프론트 가격 그래프 원천 데이터 |
 | `outbox_events` | standalone messaging 모듈의 발행 대기 이벤트 |
 | `vector_store` | Spring AI PgVector 문서 |
 | Redis `refresh_token:*` | refresh token 저장과 rotation 검증 |
+| Redis `oauth2_code:*` | OAuth2 callback 이후 프론트 교환용 short-lived code |
 | Redis `email_verify_token:*` | 이메일 인증 토큰 |
 | Redis `email_verified:*` | 회원가입 전 이메일 인증 완료 상태 |
+| Redis `email_verify_send:*` | 이메일 인증 발송 cooldown/rate limit 상태 |
 | Redis `auth:login:*` | 로그인 실패 누적, 잠금, rate limit 상태 |
 | Redis `like:*` | 좋아요 요청 cooldown/rate limit 상태 |
 | Redis view count keys | 게시글 조회수 캐시와 중복 조회 방지 상태 |
@@ -31,10 +41,10 @@
 
 | 저장소 | 주요 데이터 |
 | --- | --- |
-| `collector_sources` | 외부 source/provider 기준 정보 |
-| `collector_source_policies` | timeout, retry, quota, circuit state |
-| `collector_jobs` | 수집 작업 이력 |
-| `collector_api_requests` | 외부 API 호출 attempt 이력 |
+| `collector_sources` | legacy/target 외부 source/provider 기준 정보. 현재 코드에는 없음 |
+| `collector_source_policies` | legacy/target timeout, retry, quota, circuit state. 현재 코드에는 없음 |
+| `collector_jobs` | legacy/target 수집 작업 이력. 현재 코드는 `collection_jobs` 사용 |
+| `collector_api_requests` | legacy/target 외부 API 호출 attempt 이력. 현재 코드에는 없음 |
 | `collected_items` | 확장된 수집 item 원본 metadata |
 | `keyword_subscriptions` | 사용자별 관심 키워드 구독 |
 | `notification_events` | 수집 item과 keyword subscription 매칭 결과 |
@@ -46,7 +56,6 @@
 | `drafts` | 비공개 초안/리포트 작성 상태 |
 | `draft_sources` | draft에 저장한 출처/trend |
 | `saved_trend_bundles` | 사용자가 저장한 trend 묶음 |
-| `post_reference_links` | future 발행 글이 참고한 collected item/trend/external URL |
 | `post_rank_scores` | future 내부 ranking snapshot |
 | `subscription_plans` | plan별 quota/limit |
 | `account_subscriptions` | account별 현재 plan |
@@ -57,7 +66,7 @@
 
 | 유스케이스 | Actor | Read 데이터 | Write 데이터 |
 | --- | --- | --- | --- |
-| 이메일 인증 발송 | Guest | `accounts.email` 중복 여부 | `email_verify_token:{token}` |
+| 이메일 인증 발송 | Guest | `accounts.email` 중복 여부, Redis `email_verify_send:*` 제한 상태 | `email_verify_token:{token}`, Redis `email_verify_send:*` |
 | 이메일 인증 확인 | Guest | `email_verify_token:{token}` | `email_verify_token:{token}` 삭제, `email_verified:{email}` |
 | 회원가입 | Guest | `email_verified:{email}`, `accounts.user_id`, `accounts.email`, `accounts.nickname` 중복 여부 | `accounts`, `account_roles`, 기본 `workspaces` target, `email_verified:{email}` 삭제 |
 | 로그인 | Guest | `accounts.user_id`, `accounts.user_pw`, `accounts.nickname`, `account_roles`, `auth:login:*` 제한 상태 | `refresh_token:{accountId}`, 실패/잠금 키 갱신 또는 삭제 |
@@ -78,6 +87,7 @@
 주의:
 
 - 공개 상세 조회는 AI를 호출하지 않는다.
+- 출시 뉴스 게시글 상세/목록은 저장된 `post_reference_links`와 `post_purchase_vote` 집계를 읽는다. `myVote`는 인증된 회원에게만 포함한다.
 - 게시판 목록 정렬은 최신순/조회순/좋아요순/댓글순 같은 count/index 기반 정렬로 시작한다.
 
 ## Private Workspace And Reports
@@ -98,22 +108,40 @@
 - Admin은 moderation 권한만으로 private workspace를 조회하지 않는다.
 - plan은 private draft/report 저장량과 AI quota에만 영향을 준다.
 
-## Collector
+## Source / Product Ingest
 
 | 유스케이스 | Actor | Read 데이터 | Write 데이터 |
 | --- | --- | --- | --- |
-| source 등록/수정 | Admin | `collector_sources` target | `collector_sources`, `collector_source_policies` |
-| 수동 수집 실행 | Admin/System | `collector_sources`, `collector_source_policies`, quota/circuit state | `collector_jobs`, `collector_api_requests`, `collected_items` |
-| 스케줄 수집 실행 | System | `collector_sources`, `collector_source_policies`, quota/circuit state | `collector_jobs`, `collector_api_requests`, `collected_items` |
-| API request 실패 기록 | System | `collector_jobs`, `collector_sources` | `collector_api_requests`, 필요 시 `collector_source_policies.circuit_state` |
-| keyword notification 매칭 | System | `collected_items`, 활성 `keyword_subscriptions` | `notification_events` |
+| 수집 키워드 등록/수정 | Admin | 기존 `tracked_keywords` | `tracked_keywords` |
+| 수동 상품 수집 실행 | Admin/System | `tracked_keywords` optional, source adapter 설정 | `collection_jobs`, `raw_products`, catalog `products`/`offers`, price snapshot tables |
+| 스케줄 상품 수집 실행 | System | 활성 `tracked_keywords`, source adapter 설정 | `collection_jobs`, `raw_products`, catalog/price tables |
+| 외부 source 호출 실패 기록 | System | `collection_jobs` | `collection_jobs.failure_reason`, `collection_jobs.status` |
+| 가격 스냅샷 기록 | System | catalog `products`/`offers`, 수집 결과 | `price_snapshots` |
+| 수동 뉴스 문서 수집 | Admin/System | Naver News source adapter 설정, keyword/topics 요청 | `vector_store` document embeddings |
+| 출시 뉴스 자동 게시 | Admin/System | Naver News source adapter 설정, `post_reference_links.canonical_url`, daily cap metadata, AI draft port | `posts(category=PRODUCT_LAUNCH_NEWS)`, `post_tags`, `post_reference_links` |
 
 주의:
 
-- 외부 API 요청은 source policy를 통과해야 한다.
-- 모든 호출 attempt는 request log로 남긴다.
-- collector는 public post를 직접 생성하지 않고, 수집 item과 키워드 알림 후보를 만든다.
-- 수집 item 생성 이후 여러 후처리가 필요하면 후속 phase에서 event contract를 정한 뒤 `messaging` 연결 여부를 결정한다.
+- 현재 코드는 `collector_sources`, `collector_source_policies`, `collector_api_requests`를 사용하지 않는다.
+- 실제 외부 상품 source는 Naver Shopping adapter를 통해 호출하며, `MOCK` source는 로컬/테스트용으로 명시 선택한다.
+- 실제 외부 뉴스 source는 Naver News adapter를 통해 문서 적재 흐름으로 보낸다.
+- 출시 뉴스 자동 게시 흐름은 문서 적재 흐름과 별도이며, 모든 수집 item을 AI 게시글로 만들지 않는다.
+- 출시 뉴스 후보는 중복 기사, 광고성 기사, 출처 불명, 필수 키워드 미포함, AI 요약 실패, 같은 상품/키워드 당 하루 N개 초과 필터를 통과해야 한다.
+- 상품 수집은 raw payload, catalog 상품/offer, 가격 snapshot까지 저장하는 동작 경로에 집중한다.
+- 가격 수집은 상승/하락 이벤트를 만들지 않고 snapshot history만 저장한다.
+
+## Price Judgement
+
+| 유스케이스 | Actor | Read 데이터 | Write 데이터 |
+| --- | --- | --- | --- |
+| 가격 판정 요청 | Member | Naver Shopping source adapter 결과 | 없음 |
+
+주의:
+
+- `POST /api/price-checks`는 response-only API이며 `price_snapshots`나 게시글을 만들지 않는다.
+- 요청은 상품명/옵션/판매가/배송비/쿠폰·카드 할인/최종 결제액을 받을 수 있고, `finalPaidPrice`가 있으면 실제 구매가 기준으로 우선 사용한다.
+- Naver Search Shopping 샘플은 배송비 포함 가격을 우선 사용하되, 포함 여부를 확정하지 못하면 `shippingIncludedVerified=false`와 `배송비 포함 여부 미확인` 경고 문구를 포함한다.
+- 배송비 불확실성이 판정을 뒤집을 수 있으면 `LOW` confidence 또는 `INSUFFICIENT_INFO`로 응답한다.
 
 ## Messaging
 
@@ -127,7 +155,7 @@
 주의:
 
 - `outbox_events`는 업무 알림 테이블이 아니라 기술 이벤트 envelope이다.
-- 현재 `board`, `collector`, `notification`은 `messaging`을 직접 의존하지 않는다.
+- 기능 모듈이 `DomainEventRecorder`를 통해 `messaging`을 사용할 수 있고, relay/broker 전송은 opt-in이다.
 - 기능 모듈에 outbox를 연결할 때는 도메인 변경과 같은 `@Transactional` 경계 안에서 저장해야 한다.
 - MQ를 붙이면 relay가 `outbox_events`를 읽어 broker로 publish한다.
 
@@ -155,7 +183,7 @@
 | AI 리포트 개요 생성 | Paid Member | `drafts`, `draft_sources`, `account_subscriptions`, `ai_budget_windows` | `ai_usage_logs`, 필요 시 `drafts.assist_used` |
 | AI 수집 자료 요약 | Paid Member | `collected_items`, `draft_sources`, `ai_budget_windows` | `ai_usage_logs` |
 | AI 문장 개선 | Paid Member | `drafts`, `ai_budget_windows` | `ai_usage_logs`, `drafts.assist_used` |
-| AI brief 생성 | Admin/System | future `trend_clusters`, `trend_cluster_items`, `collected_items`, system `ai_budget_windows` | `ai_usage_logs`, `posts(post_type = AI_BRIEF)`, future `post_reference_links` |
+| 출시 뉴스 AI 초안 생성 | Admin/System | Naver News 후보, duplicate/ad/source/keyword/day-limit filters, system `ai_budget_windows` | `ai_usage_logs`, `posts(category = PRODUCT_LAUNCH_NEWS)`, `post_reference_links` |
 | quota 초과 거절 | Member/System | `account_subscriptions`, `subscription_plans`, `ai_budget_windows` | `ai_usage_logs(status = REJECTED_BY_QUOTA)` 또는 거절 이벤트 |
 
 주의:
@@ -182,6 +210,19 @@
 | 댓글 좋아요 | Member | `comments.id`, `comment_like(comment_id, account_id)` 존재 여부, Redis `like:*` 제한 상태 | `comment_like`, `comments.like_count`, Redis `like:*` |
 | 댓글 좋아요 취소 | Member | `comments.id`, `comment_like(comment_id, account_id)`, Redis `like:*` 제한 상태 | `comment_like` 삭제, `comments.like_count`, Redis `like:*` |
 
+## Purchase Vote
+
+| 유스케이스 | Actor | Read 데이터 | Write 데이터 |
+| --- | --- | --- | --- |
+| 구매 판단 투표 | Member | `posts.id`, `posts.category`, `posts.publish_origin`, 기존 `post_purchase_vote(post_id, account_id)` | `post_purchase_vote` create/update |
+| 구매 판단 투표 취소 | Member | `post_purchase_vote(post_id, account_id)` | `post_purchase_vote` 삭제 |
+| 구매 판단 집계 조회 | Guest, Member | `post_purchase_vote` aggregate, 회원이면 본인 vote | 없음 |
+
+주의:
+
+- 투표는 `PRODUCT_LAUNCH_NEWS` 및 `publish_origin=SYSTEM_BATCH` 게시글에만 허용한다.
+- `ADMIN_BACKFILL` 출시 뉴스와 일반 게시글은 투표를 거절한다.
+
 ## Profile And Account
 
 | 유스케이스 | Actor | Read 데이터 | Write 데이터 |
@@ -195,7 +236,7 @@
 
 - Guest는 공개 게시판 읽기와 인증 진입을 제외하고 영속 데이터를 쓰지 않는다.
 - Member 쓰기 유스케이스는 인증 principal의 `account_id`로 소유권을 확인한다.
-- Admin 예외 권한은 공개 게시글/댓글 moderation과 collector 운영에 한정한다.
+- Admin 예외 권한은 공개 게시글/댓글 moderation과 상품 source/ingest 운영에 한정한다.
 - private workspace는 owner/member 권한으로만 접근한다.
 - Redis 데이터는 토큰, 인증 보호, 좋아요 보호, 조회수처럼 보조 상태만 관리한다.
 - `like_count`, `comment_count`, `view_count`는 원본이 아니라 다시 계산 가능한 파생 데이터다.

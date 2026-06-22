@@ -1,5 +1,8 @@
 # AI Cost Policy
 
+> Current status: 이 문서는 AI 비용 통제 target policy다.
+> 2026-06-22 현재 구현은 AI chat, AI 게시글 초안 생성, product embedding foundation, launch-news AI draft port를 포함한다. `ai_usage_logs`, `ai_budget_windows`, billing/plan 기반 quota는 아직 code-backed schema가 아니다.
+
 PostForge의 AI 정책은 기능보다 먼저 비용 통제를 기준으로 한다.
 AI는 서비스의 모든 요청에 붙는 기본 동작이 아니라, 명시적으로 실행되고 저장되는 작업이다.
 
@@ -10,37 +13,50 @@ AI는 서비스의 모든 요청에 붙는 기본 동작이 아니라, 명시적
 - 상세 페이지의 관련 트렌드는 `post_trend_links`, `trend_clusters` 같은 저장된 read model에서 조회한다.
 - 글쓰기 폼의 기본 추천은 DB 검색과 trend read model을 사용한다.
 - AI 작성 보조는 사용자가 명시적으로 실행할 때만 호출한다.
-- 모든 AI 호출은 `ai_usage_logs`에 기록한다.
-- account 또는 system budget을 초과한 AI 호출은 실행 전에 거절한다.
+- target 정책상 모든 AI 호출은 `ai_usage_logs`에 기록한다.
+- target 정책상 account 또는 system budget을 초과한 AI 호출은 실행 전에 거절한다.
+- 현재 code-backed 범위에서는 public read path AI 호출 금지, deterministic pre-gate, shared `TextGenerationClient` metric/log 기록을 우선 적용한다. `ai_usage_logs`/budget window persistence는 target schema 도입 시 강제한다.
 
 ## External API To Posting
 
 외부 API로 들어온 item을 모두 AI 게시글로 만들지 않는다.
 
-허용 흐름:
+현재 구현 흐름:
 
 ```text
-collector request
--> collected_items
--> trend_clusters
--> eligibility check
--> AI_BRIEF_GENERATION
--> stored posts(post_type = AI_BRIEF)
+source/ingest collection
+-> raw_products / vector_store documents
+-> catalog products / price snapshots
+-> stored records for product pages, price graphs, and RAG
 ```
 
-AI brief 후보 조건 예:
+AI 게시글 생성은 기본 수집 경로에 붙지 않는다. 예외적으로 new-product launch news는 deterministic gate, duplicate/ad/source/keyword/daily-cap 검사, AI draft 성공을 모두 통과한 batch/admin/system write flow에서만 공개 게시글로 발행할 수 있다.
 
-- 일정 시간 내 여러 출처에서 반복된 이슈
-- source_count 또는 trend_score가 기준 이상
-- 중복/저품질 item이 아닌 경우
+출시 뉴스 게시 후보 조건:
+
+- 새로운 상품 출시/예약판매/공식 발표/공식 가격 공개와 직접 관련된 경우
+- 중복 기사, 광고성 기사, 출처 불명 기사가 아닌 경우
+- 필수 출시 키워드를 포함한 경우
+- 같은 상품/키워드 당 하루 N개 한도 이내인 경우
+- AI draft generation이 성공한 경우
 - source quota와 AI budget이 남아 있는 경우
-- 관리자 승인 또는 안전한 batch rule을 통과한 경우
 
 금지 흐름:
 
 ```text
 every collected item -> AI call -> public post
 ```
+
+허용 흐름:
+
+```text
+Naver News launch candidate
+-> duplicate/ad/source/keyword/daily-cap gates
+-> AI draft generation
+-> PRODUCT_LAUNCH_NEWS post + post_reference_links evidence
+```
+
+이 흐름은 공개 read path가 아니라 명시적 admin write path 또는 property-gated system batch scheduler에서만 실행한다.
 
 ## Writing Assist
 
@@ -65,7 +81,7 @@ every collected item -> AI call -> public post
 - 수집 자료 요약
 - 문장 개선
 - 반론/주의점 제안
-- AI brief 초안 생성
+- 출시 뉴스 초안 생성
 
 실행 조건:
 
@@ -101,7 +117,7 @@ every collected item -> AI call -> public post
 | `account_id` | 비용을 발생시킨 사용자. system 작업이면 null 가능 |
 | `workspace_id` | private workspace context |
 | `draft_id` | draft assist context |
-| `post_id` | AI brief 또는 published content context |
+| `post_id` | PRODUCT_LAUNCH_NEWS 또는 published content context |
 | `operation_type` | 비용 목적 분류 |
 | `model` | 사용 모델 |
 | `input_tokens` | 입력 token |
@@ -133,8 +149,8 @@ every collected item -> AI call -> public post
 다음 조건은 운영 경고 대상이다.
 
 - 특정 account의 AI 실패율 급증
-- system AI brief 비용 급증
+- system launch-news draft 비용 급증
 - source별 API quota 소진
-- collector circuit open
+- source adapter circuit open 또는 외부 source 장애율 급증
 - AI budget window 80% 이상 소진
 - 조회 API에서 AI usage log가 생성되는 이상 징후
