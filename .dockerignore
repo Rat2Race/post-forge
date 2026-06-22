@@ -26,7 +26,7 @@ docker-compose*.yml
 docs/
 
 # TEST
-tests/
+script/
 **/src/test/
 
 # YAML
@@ -38,3 +38,4 @@ tests/
 .omx/
 .github/
 setup/
+loadtest/
