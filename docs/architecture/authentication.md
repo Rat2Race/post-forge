@@ -1,24 +1,69 @@
-## 로그인 보호 정책
+# Authentication Architecture
 
-`POST /auth/login`은 BCrypt 검증 때문에 CPU 비용이 큰 endpoint다.
-BCrypt cost는 보안 강도와 직접 연결되므로 기본 정책에서는 낮추지 않고, Redis 기반 보호 정책으로 과도한 반복 시도를 먼저 제한한다.
+이 문서는 인증/인가 흐름과 운영 경계를 설명한다. HTTP endpoint, request/response DTO, validation 상세는 [Auth API](../api/auth.md)를 canonical source로 둔다.
 
-현재 기본값은 다음과 같다.
+## Runtime Ownership
 
-| 항목 | 기본값 |
-| --- | ---: |
-| 사용자별 로그인 시도 제한 | 60초당 10회 |
-| IP별 로그인 시도 제한 | 60초당 30회 |
-| 실패 누적 관찰 구간 | 300초 |
-| 사용자별 실패 허용 횟수 | 5회 |
-| 실패 한도 도달 시 잠금 | 300초 |
+| 영역 | 소유 모듈 | 비고 |
+| --- | --- | --- |
+| 계정/권한 | `auth` | `accounts`, `account_roles` |
+| JWT 발급/검증 | `auth` | access token은 stateless, refresh token은 Redis stateful |
+| OAuth2 callback | `auth` + Spring Security | provider callback 이후 frontend에는 one-time exchange code만 전달 |
+| route authorization | `app` | `PostForgeAuthorizationRules`에서 조립 |
+| 공통 principal 계약 | `core` | `UserPrincipal` 기반 account id 사용 |
+| Redis infrastructure | `support` | key ownership은 `auth`에 남김 |
 
-처리 순서:
+## Core Rules
 
-1. `LoginService`가 `AuthenticationManager` 호출 전에 `LoginAttemptGuard`로 사용자/IP별 rate limit과 잠금 상태를 확인한다.
-2. 인증 실패 시 사용자별 실패 카운터를 증가시킨다.
-3. 실패 횟수가 한도에 도달하면 사용자 잠금 키를 만들고 `429 TOO_MANY_REQUESTS`를 반환한다.
-4. 인증 성공 시 해당 사용자의 실패 카운터와 잠금 키를 삭제한다.
+- 권한과 소유권 판단은 username이나 nickname이 아니라 `accountId`를 기준으로 한다.
+- refresh token은 Redis에 저장하고 재발급 시 rotation한다.
+- OAuth2 redirect URL에는 refresh token이나 access token을 노출하지 않는다.
+- 로그인 실패, 이메일 인증, OAuth2 exchange code는 Redis guard/TTL state로 보호한다.
+- OAuth2 또는 이메일 인증 Redis state 장애는 인증 안전성을 위해 fail-closed로 처리한다.
+- 계정 비활성 상태는 login, token reissue, OAuth2 exchange에서 거절한다.
 
-Redis 장애 시에는 정상 로그인을 막지 않기 위해 fail-open으로 동작하고 warn 로그를 남긴다.
-운영값은 `auth.login.protection.*` 설정으로 조정한다.
+## Main Flows
+
+### Email Registration
+
+1. 사용자가 이메일 인증 메일 발송을 요청한다.
+2. `auth`가 이메일 중복과 Redis 발송 제한을 확인한다.
+3. 인증 token을 Redis TTL 상태로 저장하고 메일을 보낸다.
+4. 사용자가 인증 링크를 열면 token을 1회성으로 소비하고 이메일 인증 완료 상태를 Redis에 남긴다.
+5. 회원가입은 인증 완료 상태를 확인한 뒤 `accounts`와 `account_roles`를 저장한다.
+
+### Password Login
+
+1. 사용자가 username/password로 로그인한다.
+2. 로그인 guard가 사용자/IP별 rate, failure, lock 상태를 확인한다.
+3. 성공하면 access token을 body로 반환하고 refresh token을 `refresh_token` cookie와 Redis에 저장한다.
+4. 실패하면 Redis 실패 상태를 갱신한다.
+
+### Token Reissue
+
+1. 클라이언트가 `refresh_token` cookie로 재발급을 요청한다.
+2. `auth`가 JWT parse, Redis 저장값, 계정 활성 상태를 확인한다.
+3. 성공하면 access token과 새 refresh token을 발급하고 Redis 값을 rotation한다.
+
+### OAuth2 Login
+
+1. Provider callback은 Spring Security OAuth2 login flow가 처리한다.
+2. 성공 handler가 account를 연결하거나 조회한다.
+3. `OAuth2CodeService`가 짧은 수명의 one-time exchange code를 Redis에 저장한다.
+4. Backend는 frontend redirect URL에 `?code=`만 붙인다.
+5. Frontend가 exchange API를 호출하면 code를 `getAndDelete` 방식으로 소비하고 JWT/refresh token을 발급한다.
+
+## Cookie And Token Boundary
+
+| 항목 | 정책 |
+| --- | --- |
+| Access token | response body, `Authorization: Bearer`로 사용 |
+| Refresh token | `HttpOnly`, `Secure`, `SameSite=Lax`, `Path=/api/auth` cookie |
+| Token response cache | `Cache-Control: no-store`, `Pragma: no-cache` |
+| OAuth2 handoff code | Redis TTL, one-time consume |
+
+## Operational Checks
+
+- Redis 장애 시 refresh reissue, OAuth2 exchange, 이메일 인증, 로그인 guard가 실패할 수 있다.
+- OAuth2 장애는 provider redirect URI, `app.oauth2.redirect-url`, Redis `oauth2_code:*` TTL, frontend duplicate exchange를 먼저 확인한다.
+- 인증 API 상세는 중복 작성하지 않고 [Auth API](../api/auth.md), Redis 장애 대응은 [Redis 연결 장애](../troubleshooting/redis-connection-failure.md), OAuth2 장애 대응은 [OAuth2 상태 흐름](../troubleshooting/oauth2-state-flow.md)을 따른다.
