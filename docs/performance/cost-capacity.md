@@ -1,8 +1,9 @@
 # PostForge 비용 및 수용량 계산 가이드
 
 작성일: 2026-05-12 KST
+최신화: 2026-06-22 KST
 
-이 문서는 PostForge 백엔드의 요청량, 서버 부하, 클라우드 비용, 전기요금을 계산하는 기준 문서다. 숫자는 현재 저장된 k6/Grafana 리포트와 2026-05-12 기준 공식 가격 자료를 근거로 한다. 클라우드 단가와 전기요금은 바뀔 수 있으므로 실제 견적에는 최신 가격표와 청구서를 다시 확인한다.
+이 문서는 PostForge 백엔드의 요청량, 서버 부하, 클라우드 비용, 전기요금을 계산하는 기준 문서다. 저장된 k6/Grafana 숫자는 대부분 과거 Oracle ARM 1vCPU / 1GB 환경의 historical baseline이고, 현재 Intel N100 prod capacity를 증명하지 않는다. 클라우드 단가와 전기요금은 바뀔 수 있으므로 실제 견적에는 최신 가격표와 청구서를 다시 확인한다.
 
 ## 용어
 
@@ -10,6 +11,7 @@
 |---|---|---|
 | RPS | Requests Per Second. HTTP 요청을 초당 몇 건 처리하는지 나타내는 값 | `/posts`, `/auth/login` 같은 API request 기준 |
 | TPS | Transactions Per Second. 업무 트랜잭션을 초당 몇 건 처리하는지 나타내는 값 | 게시글 작성 1건이 로그인, 글 작성, 댓글 작성 등 여러 API를 부르면 TPS보다 RPS가 더 큼 |
+| LLM TPS | Tokens Per Second. LLM이 초당 처리하거나 생성하는 토큰 수 | vLLM/외부 LLM 처리량은 HTTP RPS가 아니라 input/output token 처리량과 함께 본다 |
 | VU | Virtual User. k6 같은 부하 도구의 가상 사용자 | 실제 동시 사용자와 1:1로 같지 않음 |
 | p95 | 요청 100개 중 95개가 이 시간 이하에 끝났다는 뜻 | 운영 응답시간 목표는 평균보다 p95를 우선 본다 |
 
@@ -19,6 +21,8 @@
 RPS = TPS * 트랜잭션 1건당 API 요청 수
 월 요청 수 = TPS * 2,592,000초
 동시 처리 중 요청 수 ~= RPS * 평균 응답시간(초)
+필요 output token/sec ~= 사용자 RPS * 요청당 평균 output tokens
+필요 input token/sec ~= 사용자 RPS * 요청당 평균 input tokens
 ```
 
 예시:
@@ -27,16 +31,68 @@ RPS = TPS * 트랜잭션 1건당 API 요청 수
 1 TPS = 월 2,592,000 트랜잭션
 1 TPS에서 트랜잭션 1건이 API 4개를 호출하면 4 RPS
 25 RPS * p95 0.18초 = p95 기준 약 4.5개 요청이 동시에 처리 중
+10 RPS * 요청당 output 300 tokens = 약 3,000 output tokens/sec 필요
 ```
 
-## 현재 검증된 성능 기준
+## 외부 API / LLM 계측 기준
+
+외부 API 수집과 LLM 호출은 같은 HTTP latency로 뭉개지지 않도록 애플리케이션 내부에서 다음 metric을 분리 기록한다.
+
+| Metric | 의미 | 주요 태그 | 튜닝 판단 |
+|---|---|---|---|
+| `external_source_fetch_seconds` | Naver 등 외부 source API 호출과 응답 매핑 시간 | `resource`, `source` | 느리면 cache, batch, prefetch, source 분리 검토 |
+| `external_source_db_persist_seconds` | 외부 source 결과를 raw/catalog/price/document store에 반영하는 시간 | `resource`, `source` | 느리면 bulk insert, index, transaction, vector store 경계 점검 |
+| `ai_text_generation_seconds` | 외부 LLM/OpenAI/vLLM 생성 호출 시간 | `provider` | 느리면 queue, prompt 길이, model size, concurrency, batch 설정 점검 |
+| `ai_text_generation_prompt_tokens` | LLM input tokens | `provider` | prompt 압축과 context retrieval 크기 조절 근거 |
+| `ai_text_generation_completion_tokens` | LLM output tokens | `provider` | output TPS와 서버 처리량 계산 근거 |
+
+Prometheus에서 초당 요청/토큰 흐름은 다음처럼 비교한다.
+
+```promql
+sum(rate(ai_text_generation_seconds_count[1m]))
+sum(rate(ai_text_generation_completion_tokens_sum[1m]))
+sum(rate(ai_text_generation_prompt_tokens_sum[1m]))
+```
+
+해석 기준:
+
+- 사용자 RPS가 `ai_text_generation_seconds_count` 증가율보다 빠르면 LLM 호출 전 queue/backpressure가 생길 수 있다.
+- `completion_tokens_sum` 증가율이 서버의 실제 output TPS다. vLLM capacity와 직접 비교한다.
+- fetch timer가 높으면 LLM 튜닝 전에 외부 API/cache 경계를 먼저 본다.
+- persist timer가 높으면 source API보다 DB/vector store 적재가 병목일 수 있다.
+
+## 현재 prod 실행 환경 스펙
+
+2026-06-17 기준 prod host/container 체급은 [prod-environment-spec.md](./prod-environment-spec.md)에 기록한다.
+
+| 항목 | 값 |
+|---|---|
+| CPU | Intel N100, 4 logical CPUs, 4 cores, 1 thread/core |
+| Memory | 15 GiB total, 13 GiB available at capture |
+| Swap | 4 GiB total, 0 B used at capture |
+| Root disk | 98 GiB ext4 on LVM, 21% used |
+| Runtime | Docker Engine 29.3.0, Docker Compose v5.1.0 |
+| Containers | app, PostgreSQL/pgvector, Redis |
+| App idle snapshot | 0.39% CPU, 586 MiB memory, 46 PIDs |
+
+주의: 아래 historical baseline의 20~25 RPS 수치는 이전 Oracle Cloud ARM 1vCPU / 1GB 환경에서 측정한 값이다. 현재 prod 체급에서는 같은 k6 시나리오를 다시 실행해 새 RPS/p95/CPU 기준선을 잡아야 한다.
+
+## Current Prod Capacity Gap
+
+현재 prod는 Intel N100, 4 logical CPUs, 15 GiB memory 환경으로 이전 1vCPU/1GB baseline과 다르다. 그러나 같은 `board.guest-read` / `board.member-write` k6 시나리오를 N100 prod에서 Prometheus 지표와 함께 실행한 리포트는 아직 없다.
+
+따라서 현재 문서에서 말할 수 있는 것은 다음까지다.
+
+- N100 host 체급과 idle container snapshot은 기록되어 있다.
+- 과거 1vCPU 결과는 병목 분석과 대략적인 비용 계산의 historical input이다.
+- 현재 prod steady-state RPS, p95, CPU 상한은 미측정이다.
+
+## Historical Verified Baseline (Oracle ARM 1vCPU / 1GB)
 
 근거 문서:
 
-- `docs/performance/guest-split.md`
-- `docs/performance/k6/K6-guest-batch-size-1773387011819.md`
-- `docs/performance/load-analysis.md`
-- `docs/performance/manual-runs/20260512-140100/run-summary.md`
+- `docs/performance/k6-scenario-results.md`
+- `docs/performance/n-plus-one-analysis.md`
 
 환경:
 
@@ -75,7 +131,7 @@ CPU 부하를 요청당 비용으로 바꾸는 기본식:
 목표 CPU 사용률에서 가능한 RPS = 목표 CPU사용률 * vCPU수 / 요청당 CPU초
 ```
 
-현재 검증값으로 계산:
+historical 검증값으로 계산:
 
 ```text
 CPU max 59%, 1 vCPU, 23.75 RPS
@@ -264,7 +320,9 @@ Functions 요청당 비용 = invocation 비용 + GB-second 비용
 
 ## 결론
 
-현재 PostForge는 1 OCPU / 1GB RAM 기준으로 읽기 중심 20~25 RPS를 보수적인 운영 기준으로 잡는 것이 안전하다. OCI Always Free VM 안에서는 이 트래픽의 서버 compute 비용은 $0이다. paid VM으로 환산해도 1 OCPU / 1GB A1은 월 $8.28 수준이라 요청당 비용은 요청량이 많을수록 낮아진다.
+기존 1 OCPU / 1GB RAM 환경에서는 읽기 중심 20~25 RPS를 보수적인 운영 기준으로 잡는 것이 안전했다. OCI Always Free VM 안에서는 이 트래픽의 서버 compute 비용은 $0이고, paid VM으로 환산해도 1 OCPU / 1GB A1은 월 $8.28 수준이라 요청당 비용은 요청량이 많을수록 낮아진다.
+
+현재 prod는 Intel N100 4 logical CPUs / 15 GiB memory 환경이므로, historical 1 OCPU / 1GB 수용량을 그대로 상한으로 보지 않는다. 새 기준선은 별도 수동/CI 성능 실험과 prod Prometheus metric을 같은 시간창으로 수집해 기록한다.
 
 반대로 Functions 방식은 100~200ms의 짧은 API만 있을 때는 저렴하지만, PostForge처럼 상시 실행 Spring Boot 앱과 DB 연결이 필요한 서버에는 VM 방식이 더 단순하고 비용 예측도 쉽다.
 
