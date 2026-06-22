@@ -1,0 +1,12 @@
+# Mirrors Dockerfile.runtime introduced by b2cb42aa.
+# Build app/build/libs/app.jar first, copy it to docker-build/app.jar, then
+# build this runtime-only image.
+FROM eclipse-temurin:21-jre AS runtime
+
+WORKDIR /app
+
+COPY docker-build/app.jar app.jar
+
+EXPOSE 8080
+
+ENTRYPOINT ["java", "-jar", "app.jar"]
