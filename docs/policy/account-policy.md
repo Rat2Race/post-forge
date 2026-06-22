@@ -1,7 +1,12 @@
 # Account Policy
 
+> Current status: 계정/로그인/프로필/닉네임/비밀번호 변경은 현재 구현 범위다.
+> plan, private workspace, draft, saved trend bundle, AI usage retention은 target policy이며 2026-06-22 현재 code-backed schema가 아니다.
+
 PostForge 계정 정책은 회원가입, 로그인, 프로필, 닉네임 변경, 비밀번호 변경, 회원 탈퇴를 다룬다.
 로그인 식별자는 `userId`를 사용하고, 인증 이후 계정 식별과 소유권 판단은 `accounts.id` 기반 `accountId`를 기준으로 한다.
+
+> 문서 경계: 이 문서는 계정 lifecycle policy만 정의한다. Auth endpoint/DTO/status는 `../api/auth.md`, 인증 runtime 구조는 `../architecture/authentication.md`를 따른다.
 
 ## Registration
 

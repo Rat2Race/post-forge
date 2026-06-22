@@ -3,6 +3,8 @@
 PostForge 접근 정책은 공개 게시판, 개인 작업공간, AI 보조 기능을 분리한다.
 권한 판단은 닉네임이나 로그인 `userId`가 아니라 인증된 `account_id`를 기준으로 한다.
 
+> 문서 경계: 이 문서는 권한과 노출 invariant만 정의한다. Endpoint/DTO/status는 `../api/`, module ownership은 `../architecture/`, 유스케이스별 read/write 데이터는 `usecase-data-policy.md`를 따른다.
+
 ## Core Rule
 
 무료/유료 플랜은 공개 게시판의 신뢰 신호를 나누지 않는다.
@@ -24,6 +26,7 @@ PostForge 접근 정책은 공개 게시판, 개인 작업공간, AI 보조 기�
 - 공개 게시글 목록을 조회할 수 있다.
 - 공개 게시글 상세를 조회할 수 있다.
 - 공개 게시글의 공개 evidence/trend 정보는 볼 수 있다.
+- 자동 게시된 출시 뉴스의 출처 링크와 구매 판단 투표 집계는 볼 수 있다.
 - 개인 workspace, draft, AI assist는 사용할 수 없다.
 - 좋아요, 댓글, 게시글 작성은 할 수 없다.
 
@@ -33,6 +36,8 @@ PostForge 접근 정책은 공개 게시판, 개인 작업공간, AI 보조 기�
 
 - 공개 게시글을 작성, 수정, 삭제할 수 있다.
 - 댓글과 좋아요를 사용할 수 있다.
+- 출시 뉴스 게시글에 구매 판단 투표를 할 수 있다.
+- `POST /api/price-checks`로 상품 가격 정보를 제출하고 response-only 가격 판정을 받을 수 있다.
 - 본인 계정을 조회/변경/탈퇴할 수 있다.
 - 기본 private workspace와 제한된 draft를 사용할 수 있다.
 - DB 기반 관련 트렌드/출처 추천을 사용할 수 있다.
@@ -53,8 +58,9 @@ PostForge 접근 정책은 공개 게시판, 개인 작업공간, AI 보조 기�
 관리자는 운영 목적의 예외 권한을 가진다.
 
 - 공개 게시글과 댓글을 숨기거나 삭제할 수 있다.
-- collector source, source policy, circuit state를 관리할 수 있다.
-- AI brief 생성 후보를 승인하거나 중지할 수 있다.
+- 상품 source 수집, tracked keyword, collection job, product matching candidate를 관리할 수 있다.
+- gated launch-news 수동/backfill 게시를 실행할 수 있다. 자동 발행은 system batch scheduler가 `SYSTEM_BATCH` origin으로 실행한다.
+- PRODUCT_LAUNCH_NEWS 생성 후보를 승인하거나 중지할 수 있다.
 - 일반 회원의 개인 workspace/draft 내용을 기본적으로 조회하지 않는다.
 - 개인 정보 변경 권한은 이 정책에 포함하지 않는다.
 
@@ -66,15 +72,18 @@ PostForge 접근 정책은 공개 게시판, 개인 작업공간, AI 보조 기�
 - `UNLISTED` content는 직접 링크와 권한 조건을 만족할 때만 조회한다.
 - 삭제되거나 숨김 처리된 리소스는 일반 조회 결과에서 제외한다.
 - 회원별 좋아요 여부는 인증된 회원에게만 계산한다.
+- 구매 판단 투표 집계는 공개할 수 있지만 `myVote`는 인증된 회원에게만 계산한다.
 - 게시글 상세와 관련 트렌드 조회는 AI를 호출하지 않는다.
 
 ## Write Boundary
 
 - 공개 게시글/댓글/좋아요 쓰기는 Member 이상만 가능하다.
+- 구매 판단 투표 쓰기는 Member 이상만 가능하며, `PRODUCT_LAUNCH_NEWS` 및 `publish_origin=SYSTEM_BATCH` 게시글에만 허용한다.
+- 가격 판정 API는 결과를 저장하지 않지만 상품/가격 입력을 받으므로 Member/Admin write-security bucket에 둔다.
 - private draft/report 쓰기는 workspace 권한이 필요하다.
 - AI assist 실행은 인증, plan/quota, budget window를 모두 통과해야 한다.
-- collector source policy 변경은 Admin만 가능하다.
-- AI brief 자동 발행은 batch/admin/system 경로로만 가능하고 사용자의 조회 요청에서 실행하지 않는다.
+- 상품 source/ingest 운영 액션과 product matching candidate 결정은 Admin만 가능하다.
+- PRODUCT_LAUNCH_NEWS 자동 발행은 batch/admin/system 경로로만 가능하고 사용자의 조회 요청에서 실행하지 않는다.
 
 ## Error Rules
 
