@@ -1,46 +1,44 @@
-# Performance Reports
+# 성능 리포트
 
 성능 테스트 결과를 Git에 남길 때는 원본 로그 전체보다 사람이 비교할 수 있는 요약 리포트를 우선한다.
+
+## Current Status (2026-06-22)
+
+이 repo에는 현재 전용 부하 테스트 모듈이나 runner를 두지 않는다.
+Gradle `:app:smoke` task와 `app/src/smoke` source set은 2026-06-11 기준 제거되었다.
+예전 `tests/k6/**`, `tests/bruno/**`, `setup/**`, 앱 repo의 부하 테스트 runner는 더 이상 실행 표면이 아니지만, 과거 k6/Grafana/manual run/raw 리포트는 정량 근거로 계속 보관한다.
+
+운영 host 체급은 [prod-environment-spec.md](./prod-environment-spec.md)에 기록되어 있지만, Intel N100 prod 환경에서 동일 k6 시나리오로 새 capacity baseline을 아직 잡지 않았다.
+따라서 과거 Oracle ARM 1vCPU / 1GB 환경의 20~25 RPS 수치는 병목 분석의 historical baseline이지 현재 prod 상한이 아니다.
+현재 capacity 주장을 하려면 별도 수동/CI 성능 실험으로 k6/Bruno와 Prometheus/컨테이너 지표를 같은 시간 구간에 수집해야 한다.
 
 ## 저장 위치
 
 | 종류 | 위치 | 비고 |
 |---|---|---|
+| 요약 리포트 | `docs/performance/n-plus-one-analysis.md`, `redis-cache-benchmark.md`, `k6-scenario-results.md` | 주요 병목/벤치마크를 사람이 비교하기 쉬운 표준 문서로 정리 |
 | 표준 리포트 | `docs/performance/YYYY-MM-DD-<scenario>.md` | 사람이 읽는 최종 기록 |
-| k6 원문 요약 | `docs/performance/k6/` | 민감정보와 과도한 raw body는 제외 |
-| Grafana 캡처 | `docs/performance/grafana/` | 중요한 대시보드 캡처만 보관 |
-| 수동 실행 절차 | `docs/performance/manual-runbook.md` | 로컬/명시 대상 수동 성능 테스트 절차 |
+| k6 원문 요약 | `docs/performance/k6/` | 과거 실행 결과의 정량 원문. 현재 capacity로 재해석할 때는 환경 차이를 표시 |
+| Grafana 캡처 | `docs/performance/grafana/` | JVM/CPU/메모리 관측 근거 캡처. 삭제하지 않고 historical evidence로 보관 |
+| 수동 실행 원본 | `docs/performance/manual-runs/` | k6/Bruno JSON, HTML, markdown 원본 산출물 |
 | 지표 해석 가이드 | `docs/performance/metrics-guide.md` | k6/Grafana 주요 지표 해석 기준 |
 | 작성 템플릿 | `docs/performance/report-template.md` | 새 리포트 작성 시 복사해서 사용 |
+| 운영 서버 스펙 | `docs/performance/prod-environment-spec.md` | 현재 prod host/container 체급 기준선. 부하 결과가 아님 |
 | 비용/수용량 계산 | `docs/performance/cost-capacity.md` | RPS/TPS, VM/Functions/전기세, API별 부하 추정 |
+| Historical 분석 | `docs/performance/load-analysis.md`, `guest-split.md` | 과거 1vCPU 병목 분석 원문. 최신 요약은 위 요약 리포트를 우선 |
 
-## 자동 생성
+## 현재 검증 표면
 
-k6 script는 `handleSummary()`로 테스트 종료 후 markdown 리포트와 summary JSON을 자동 생성한다.
-
-기본 출력 위치:
-
-```text
-docs/performance/<auto-name>.md
-docs/performance/k6/<auto-name>-summary.json
-```
-
-파일명과 대상 이름은 shell env로 고정할 수 있다.
+현재 repo 안에서 바로 실행하는 검증은 Gradle test와 bootJar 생성이다.
+성능 부하 실행은 전용 모듈로 유지하지 않으며, 필요할 때 수동 k6/Bruno 실행 또는 별도 CI smoke suite로 수행하고 산출물만 `docs/performance/`에 남긴다.
 
 ```bash
-K6_TARGET_NAME=staging \
-K6_SCENARIO_NAME=smoke \
-K6_REPORT_NAME=2026-05-04-staging-smoke \
-k6 run tests/k6/generated/smoke.js
+./gradlew test
+./gradlew :app:bootJar
 ```
 
-출력 위치를 바꾸려면 다음 값을 사용한다.
-
-```bash
-K6_REPORT_DIR=docs/performance \
-K6_SUMMARY_DIR=docs/performance/k6 \
-k6 run tests/k6/generated/smoke.js
-```
+운영 target에 부하를 주는 실험은 허용된 host, VU/RPS/duration 상한, 실행자와 실행 시간, write 시나리오 여부, 전용 test data 사용 여부, 같은 시간 구간의 CPU/memory/GC/DB/Redis/HTTP metric 수집 여부를 리포트에 함께 남긴다.
+새 성능 실험을 추가하면 실행 명령, 대상 환경, 원본 artifact 위치, Prometheus/Grafana 관측 시간을 이 README에 함께 갱신한다.
 
 ## 파일명
 
@@ -54,9 +52,9 @@ YYYY-MM-DD-<target>-<scenario>-summary.json
 예시:
 
 ```text
-2026-05-04-staging-smoke.md
-2026-05-04-staging-baseline.md
-2026-05-04-prod-read-only-smoke.md
+2026-06-22-staging-smoke.md
+2026-06-22-staging-baseline.md
+2026-06-22-prod-read-only-smoke.md
 ```
 
 ## 남기는 값
@@ -69,8 +67,23 @@ YYYY-MM-DD-<target>-<scenario>-summary.json
 - checks, request count, failure rate, RPS
 - latency avg/med/p90/p95/p99/max
 - 가능하면 CPU, memory, network, disk I/O 관측값
+- 외부 source fetch, DB persist, LLM generation timer와 token summary
 - Grafana screenshot, k6 summary JSON 같은 artifact 링크
 - 다음 조치
+
+## 외부 Source / LLM 계측
+
+초저지연 튜닝 후보는 HTTP latency만으로 판단하지 않는다. 앱 내부 metric으로 외부 source fetch, DB persist, LLM generation을 분리해 남긴다.
+
+| Metric | 용도 |
+|---|---|
+| `external_source_fetch_seconds` | Naver 등 외부 source API 호출 시간 |
+| `external_source_db_persist_seconds` | source 결과를 DB/vector store에 반영하는 시간 |
+| `ai_text_generation_seconds` | OpenAI/vLLM 등 LLM 생성 호출 시간 |
+| `ai_text_generation_prompt_tokens` | LLM input token 처리량 계산 |
+| `ai_text_generation_completion_tokens` | LLM output TPS 계산 |
+
+사용자 RPS와 LLM TPS 계산식은 [cost-capacity.md](./cost-capacity.md)의 외부 API / LLM 계측 기준을 따른다.
 
 ## 제외할 값
 
@@ -92,7 +105,8 @@ http://10.x.x.x:8080 -> private-prod
 ## 작성 순서
 
 1. k6 실행 후 자동 생성된 markdown 리포트를 확인한다.
-2. `report-template.md`를 참고해 수동 해석과 리소스 관측값을 보강한다.
-3. k6 summary와 Grafana 값을 필요한 만큼 표에 옮긴다.
-4. 수치만 나열하지 말고 결론과 다음 조치를 적는다.
-5. 민감정보가 없는지 확인한 뒤 Git에 포함한다.
+2. 최신 focused report인 `n-plus-one-analysis.md`, `redis-cache-benchmark.md`, `k6-scenario-results.md` 중 가장 비슷한 문서 구조를 따른다.
+3. k6 summary와 Grafana/Prometheus 값을 필요한 만큼 표에 옮긴다.
+4. historical baseline인지 current capacity claim인지 명확히 표시한다.
+5. 수치만 나열하지 말고 결론과 다음 조치를 적는다.
+6. 민감정보가 없는지 확인한 뒤 Git에 포함한다.
