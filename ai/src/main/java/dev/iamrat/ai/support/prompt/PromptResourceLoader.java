@@ -1,4 +1,4 @@
-package dev.iamrat.ai.support.infrastructure.openai;
+package dev.iamrat.ai.support.prompt;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -9,7 +9,11 @@ import java.util.concurrent.ConcurrentMap;
 import org.springframework.stereotype.Component;
 
 @Component
-public class PromptTemplateLoader {
+public class PromptResourceLoader {
+
+    private static final String PROMPT_RESOURCE_NOT_FOUND = "프롬프트 리소스를 찾을 수 없습니다: ";
+    private static final String FAILED_TO_LOAD_PROMPT_RESOURCE =
+        "프롬프트 리소스를 불러오지 못했습니다: ";
 
     private final ConcurrentMap<String, String> cache = new ConcurrentHashMap<>();
 
@@ -26,13 +30,22 @@ public class PromptTemplateLoader {
     }
 
     private String readResource(String resourcePath) {
-        try (InputStream inputStream = Thread.currentThread().getContextClassLoader().getResourceAsStream(resourcePath)) {
+        ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+        try (InputStream inputStream = classLoader.getResourceAsStream(resourcePath)) {
             if (inputStream == null) {
-                throw new IllegalStateException("Prompt resource not found: " + resourcePath);
+                throw new IllegalStateException(promptResourceNotFound(resourcePath));
             }
             return new String(inputStream.readAllBytes(), StandardCharsets.UTF_8).trim();
         } catch (IOException e) {
-            throw new IllegalStateException("Failed to load prompt resource: " + resourcePath, e);
+            throw new IllegalStateException(failedToLoadPromptResource(resourcePath), e);
         }
+    }
+
+    private static String promptResourceNotFound(String resourcePath) {
+        return PROMPT_RESOURCE_NOT_FOUND + resourcePath;
+    }
+
+    private static String failedToLoadPromptResource(String resourcePath) {
+        return FAILED_TO_LOAD_PROMPT_RESOURCE + resourcePath;
     }
 }
