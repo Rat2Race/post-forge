@@ -2,7 +2,7 @@ Project postforge_mvp_erd {
   database_type: 'PostgreSQL'
   Note: '''
   Current code-backed PostForge MVP ERD.
-  Last verified against code: 2026-06-21.
+  Last verified against code: 2026-06-25.
   Source of truth: docs/database/schema-ownership.md.
 
   Product boundary:
@@ -32,6 +32,16 @@ Enum post_category {
   GENERAL
   AI_ANALYSIS
   PRODUCT_LAUNCH_NEWS
+}
+
+Enum post_board_category {
+  GENERAL
+  DIGITAL
+  APPLIANCE
+  LIVING
+  HEALTH
+  BEAUTY
+  SPORTS
 }
 
 Enum post_publish_origin {
@@ -120,6 +130,7 @@ Table posts {
   content varchar(10000) [not null]
   summary varchar(500)
   category post_category [not null, default: 'GENERAL']
+  board_category post_board_category [not null, default: 'GENERAL']
   publish_origin post_publish_origin [not null, default: 'USER']
   views bigint [not null, default: 0]
   like_count bigint [not null, default: 0]
@@ -133,6 +144,9 @@ Table posts {
   indexes {
     created_at [name: 'idx_posts_created_at']
     account_id [name: 'idx_posts_account_id']
+    category [name: 'idx_posts_category']
+    board_category [name: 'idx_posts_board_category']
+    publish_origin [name: 'idx_posts_publish_origin']
   }
 
   Note: 'Owner: board. account_id is a scalar auth reference, not a JPA relation.'

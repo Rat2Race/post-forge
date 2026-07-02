@@ -1,12 +1,9 @@
 package dev.iamrat.auth.account.application;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.BDDMockito.given;
 
 import dev.iamrat.auth.account.domain.Account;
-import dev.iamrat.auth.support.error.AuthErrorCode;
-import dev.iamrat.core.global.exception.CustomException;
 import java.util.Optional;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
@@ -27,8 +24,8 @@ class AccountQueryServiceTest {
     private AccountQueryService accountQueryService;
 
     @Test
-    @DisplayName("accountId로 roles가 포함된 계정을 조회한다")
-    void findWithRolesById_existingAccount_returnsAccount() {
+    @DisplayName("계정 ID로 권한이 포함된 계정을 조회한다")
+    void findWithRolesById_existingAccount_returnsOptionalAccount() {
         Account account = Account.builder()
             .id(1L)
             .username("testuser1")
@@ -39,22 +36,43 @@ class AccountQueryServiceTest {
 
         given(accountStore.findWithRolesById(1L)).willReturn(Optional.of(account));
 
-        assertThat(accountQueryService.findWithRolesById(1L)).isSameAs(account);
+        assertThat(accountQueryService.findWithRolesById(1L)).containsSame(account);
     }
 
     @Test
-    @DisplayName("계정이 없으면 USER_NOT_FOUND 예외를 던진다")
-    void findWithRolesById_missingAccount_throwsUserNotFound() {
+    @DisplayName("권한 포함 계정 조회 결과가 없으면 빈 Optional을 반환한다")
+    void findWithRolesById_missingAccount_returnsEmptyOptional() {
         given(accountStore.findWithRolesById(1L)).willReturn(Optional.empty());
 
-        assertThatThrownBy(() -> accountQueryService.findWithRolesById(1L))
-            .isInstanceOf(CustomException.class)
-            .satisfies(exception -> assertThat(((CustomException) exception).getErrorCode())
-                .isEqualTo(AuthErrorCode.USER_NOT_FOUND));
+        assertThat(accountQueryService.findWithRolesById(1L)).isEmpty();
     }
 
     @Test
-    @DisplayName("username으로 계정을 조회한다")
+    @DisplayName("계정 ID로 계정을 조회한다")
+    void findById_existingAccount_returnsOptionalAccount() {
+        Account account = Account.builder()
+            .id(1L)
+            .username("testuser1")
+            .email("test@example.com")
+            .nickname("tester")
+            .provider("LOCAL")
+            .build();
+
+        given(accountStore.findById(1L)).willReturn(Optional.of(account));
+
+        assertThat(accountQueryService.findById(1L)).containsSame(account);
+    }
+
+    @Test
+    @DisplayName("계정 조회 결과가 없으면 빈 Optional을 반환한다")
+    void findById_missingAccount_returnsEmptyOptional() {
+        given(accountStore.findById(1L)).willReturn(Optional.empty());
+
+        assertThat(accountQueryService.findById(1L)).isEmpty();
+    }
+
+    @Test
+    @DisplayName("사용자명으로 계정을 조회한다")
     void findByUsername_delegatesRepository() {
         Account account = Account.builder()
             .id(1L)
@@ -70,7 +88,7 @@ class AccountQueryServiceTest {
     }
 
     @Test
-    @DisplayName("OAuth provider identity로 계정을 조회한다")
+    @DisplayName("OAuth 제공자 식별자로 계정을 조회한다")
     void findByProviderAndProviderId_delegatesRepository() {
         Account account = Account.builder()
             .id(1L)
@@ -89,7 +107,7 @@ class AccountQueryServiceTest {
     }
 
     @Test
-    @DisplayName("email 존재 여부를 조회한다")
+    @DisplayName("이메일 존재 여부를 조회한다")
     void existsByEmail_delegatesRepository() {
         given(accountStore.existsByEmail("tester@test.com")).willReturn(true);
 

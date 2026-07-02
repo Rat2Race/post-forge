@@ -55,7 +55,7 @@ class OutboxRelayServiceTest {
     }
 
     @Test
-    @DisplayName("claim한 이벤트를 지원 dispatcher로 전달하고 published 상태로 마킹한다")
+    @DisplayName("선점한 이벤트를 지원 디스패처로 전달하고 발행 완료 상태로 마킹한다")
     void relayPending_dispatchesClaimedEvent() {
         OutboxRelayPolicy outboxRelayPolicy = TestOutboxRelayPolicy.enabled();
         given(transactionManager.getTransaction(any())).willReturn(new SimpleTransactionStatus());
@@ -81,7 +81,7 @@ class OutboxRelayServiceTest {
     }
 
     @Test
-    @DisplayName("지원하는 publisher가 없으면 이벤트를 실패 처리하고 retry를 예약한다")
+    @DisplayName("지원하는 발행자가 없으면 이벤트를 실패 처리하고 재시도를 예약한다")
     void relayPending_withoutSupportedPublisher_marksFailed() {
         OutboxRelayPolicy outboxRelayPolicy = TestOutboxRelayPolicy.enabled();
         given(transactionManager.getTransaction(any())).willReturn(new SimpleTransactionStatus());
@@ -104,12 +104,12 @@ class OutboxRelayServiceTest {
         assertThat(publishedCount).isZero();
         assertThat(message.getStatus()).isEqualTo(OutboxStatus.FAILED);
         assertThat(message.getRetryCount()).isEqualTo(1);
-        assertThat(message.getLastError()).contains("No publisher supports event type: PostCreated");
+        assertThat(message.getLastError()).contains("이벤트 타입을 지원하는 퍼블리셔가 없습니다: PostCreated");
         verify(eventPublisher, never()).publish(any(DomainEvent.class));
     }
 
     @Test
-    @DisplayName("publisher 발행 실패는 이벤트를 실패 처리하고 retry를 예약한다")
+    @DisplayName("발행 실패는 이벤트를 실패 처리하고 재시도를 예약한다")
     void relayPending_publisherFails_marksFailed() {
         OutboxRelayPolicy outboxRelayPolicy = TestOutboxRelayPolicy.enabled();
         given(transactionManager.getTransaction(any())).willReturn(new SimpleTransactionStatus());

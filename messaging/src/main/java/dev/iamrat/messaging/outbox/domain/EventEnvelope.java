@@ -1,6 +1,7 @@
 package dev.iamrat.messaging.outbox.domain;
 
 import dev.iamrat.core.event.EventType;
+import dev.iamrat.messaging.support.error.MessagingExceptionMessages;
 
 public record EventEnvelope(
     EventType eventType,
@@ -28,10 +29,10 @@ public record EventEnvelope(
 
     public EventEnvelope {
         if (eventType == null) {
-            throw new IllegalArgumentException("eventType must not be null");
+            throw new IllegalArgumentException(MessagingExceptionMessages.EVENT_TYPE_MUST_NOT_BE_NULL);
         }
         if (payload == null) {
-            throw new IllegalArgumentException("payload must not be null");
+            throw new IllegalArgumentException(MessagingExceptionMessages.PAYLOAD_MUST_NOT_BE_NULL);
         }
     }
 }

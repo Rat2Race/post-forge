@@ -1,6 +1,7 @@
-package dev.iamrat.messaging.outbox.scheduler;
+package dev.iamrat.messaging.outbox.infrastructure.scheduler;
 
 import dev.iamrat.messaging.outbox.application.OutboxRelayService;
+import dev.iamrat.messaging.outbox.infrastructure.scheduler.OutboxRelayScheduler;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 

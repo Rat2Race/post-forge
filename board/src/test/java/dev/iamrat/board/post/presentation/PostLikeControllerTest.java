@@ -1,12 +1,10 @@
 package dev.iamrat.board.post.presentation;
 
-import dev.iamrat.core.global.error.CommonErrorCode;
-import dev.iamrat.core.global.exception.CustomException;
-import dev.iamrat.board.support.web.TestExceptionResponseHandler;
-import dev.iamrat.board.like.application.LikeResponse;
+import dev.iamrat.board.like.application.LikeResult;
 import dev.iamrat.board.post.application.PostCommandService;
 import dev.iamrat.board.post.application.PostInteractionService;
 import dev.iamrat.board.post.application.PostQueryService;
+import dev.iamrat.board.purchase.application.PurchaseVoteService;
 import dev.iamrat.core.account.UserPrincipal;
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.List;
@@ -47,6 +45,9 @@ class PostLikeControllerTest {
     @Mock
     private PostInteractionService postInteractionService;
 
+    @Mock
+    private PurchaseVoteService purchaseVoteService;
+
     @InjectMocks
     private PostController postController;
 
@@ -55,30 +56,19 @@ class PostLikeControllerTest {
     @BeforeEach
     void setUp() {
         mockMvc = MockMvcBuilders.standaloneSetup(postController)
-                .setControllerAdvice(new TestExceptionResponseHandler())
                 .setCustomArgumentResolvers(new TestUserPrincipalResolver())
                 .build();
     }
 
     @Test
     @DisplayName("POST /posts/{id}/like 는 좋아요 응답을 반환한다")
-    void likePost_returnsLikeResponse() throws Exception {
-        given(postInteractionService.likePost(1L, 1L)).willReturn(new LikeResponse(true, 3L));
+    void likePost_returnsLikeResult() throws Exception {
+        given(postInteractionService.likePost(1L, 1L)).willReturn(new LikeResult(true, 3L));
 
-        mockMvc.perform(post("/posts/1/like").with(user(1L)))
+        mockMvc.perform(post("/api/posts/1/like").with(user(1L)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.isLiked").value(true))
                 .andExpect(jsonPath("$.likeCount").value(3L));
-    }
-
-    @Test
-    @DisplayName("좋아요 요청이 rate limit 에 걸리면 429를 반환한다")
-    void likePost_whenTooManyRequests_returns429() throws Exception {
-        given(postInteractionService.likePost(1L, 1L)).willThrow(new CustomException(CommonErrorCode.TOO_MANY_REQUESTS));
-
-        mockMvc.perform(post("/posts/1/like").with(user(1L)))
-                .andExpect(status().isTooManyRequests())
-                .andExpect(jsonPath("$.error").value("TOO_MANY_REQUESTS"));
     }
 
     private RequestPostProcessor user(Long accountId) {

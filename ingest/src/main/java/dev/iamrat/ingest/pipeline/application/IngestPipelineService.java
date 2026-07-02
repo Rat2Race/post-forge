@@ -16,9 +16,14 @@ public class IngestPipelineService {
     private final DocumentChunkStore documentChunkStore;
 
     @Transactional
-    public void store(List<DocumentIngestCommand> commands) {
+    public DocumentIngestResult store(List<DocumentIngestCommand> commands) {
         List<DocumentChunk> chunks = documentChunker.toChunks(commands);
-        documentChunkStore.store(chunks);
-        log.info("{}건의 문서를 벡터 스토어에 저장했습니다.", chunks.size());
+        DocumentStoreResult storeResult = documentChunkStore.store(chunks);
+        if (storeResult.embeddingsStored()) {
+            log.info("{}건의 문서를 벡터 스토어에 저장했습니다.", chunks.size());
+        } else {
+            log.warn("{}건의 문서를 임베딩 없이 접수했습니다. reason={}", chunks.size(), storeResult.degradationReason());
+        }
+        return DocumentIngestResult.from(commands.size(), storeResult);
     }
 }

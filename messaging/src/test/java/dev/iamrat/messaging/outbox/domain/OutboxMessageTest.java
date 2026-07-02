@@ -72,14 +72,14 @@ class OutboxMessageTest {
     }
 
     @Test
-    @DisplayName("event type과 payload는 비어 있을 수 없다")
+    @DisplayName("이벤트 타입과 페이로드는 비어 있을 수 없다")
     void pending_rejectsBlankRequiredFields() {
         assertThatThrownBy(() -> OutboxMessage.pending("", "post", "1", "{}"))
             .isInstanceOf(IllegalArgumentException.class)
-            .hasMessageContaining("eventType");
+            .hasMessageContaining("이벤트 타입");
 
         assertThatThrownBy(() -> OutboxMessage.pending("PostCreated", "post", "1", " "))
             .isInstanceOf(IllegalArgumentException.class)
-            .hasMessageContaining("payload");
+            .hasMessageContaining("페이로드");
     }
 }

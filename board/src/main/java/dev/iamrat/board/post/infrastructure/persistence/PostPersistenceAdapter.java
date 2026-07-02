@@ -2,11 +2,18 @@ package dev.iamrat.board.post.infrastructure.persistence;
 
 import dev.iamrat.board.post.application.PostStore;
 import dev.iamrat.board.post.domain.Post;
+import dev.iamrat.core.board.post.PostBoardCategory;
+import dev.iamrat.core.board.post.PostCategory;
+import dev.iamrat.core.board.post.PostPublishOrigin;
+import jakarta.persistence.criteria.Predicate;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Repository;
 
 @Repository
@@ -51,8 +58,14 @@ public class PostPersistenceAdapter implements PostStore {
     }
 
     @Override
-    public Page<Post> findByKeyword(String keyword, Pageable pageable) {
-        return postRepository.findByKeyword(keyword, pageable);
+    public Page<Post> findByFilters(
+        String keyword,
+        PostCategory category,
+        PostBoardCategory boardCategory,
+        PostPublishOrigin publishOrigin,
+        Pageable pageable
+    ) {
+        return postRepository.findAll(filters(keyword, category, boardCategory, publishOrigin), pageable);
     }
 
     @Override
@@ -63,5 +76,37 @@ public class PostPersistenceAdapter implements PostStore {
     @Override
     public void updateLikeCount(Long postId, long likeCount) {
         postRepository.updateLikeCount(postId, likeCount);
+    }
+
+    private Specification<Post> filters(
+        String keyword,
+        PostCategory category,
+        PostBoardCategory boardCategory,
+        PostPublishOrigin publishOrigin
+    ) {
+        return (root, query, criteriaBuilder) -> {
+            List<Predicate> predicates = new ArrayList<>();
+
+            if (keyword != null && !keyword.isBlank()) {
+                String pattern = "%" + keyword.toLowerCase(Locale.ROOT) + "%";
+                predicates.add(criteriaBuilder.or(
+                    criteriaBuilder.like(criteriaBuilder.lower(root.get("title")), pattern),
+                    criteriaBuilder.like(criteriaBuilder.lower(root.get("content")), pattern)
+                ));
+            }
+            if (category != null) {
+                predicates.add(criteriaBuilder.equal(root.get("category"), category));
+            }
+            if (boardCategory != null) {
+                predicates.add(criteriaBuilder.equal(root.get("boardCategory"), boardCategory));
+            }
+            if (publishOrigin != null) {
+                predicates.add(criteriaBuilder.equal(root.get("publishOrigin"), publishOrigin));
+            }
+
+            return predicates.isEmpty()
+                ? criteriaBuilder.conjunction()
+                : criteriaBuilder.and(predicates.toArray(Predicate[]::new));
+        };
     }
 }

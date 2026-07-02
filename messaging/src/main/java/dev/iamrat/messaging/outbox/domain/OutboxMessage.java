@@ -151,9 +151,21 @@ public class OutboxMessage implements DomainEvent {
 
     private static String requireText(String value, String fieldName) {
         if (value == null || value.isBlank()) {
-            throw new IllegalArgumentException(fieldName + " must not be blank");
+            throw new IllegalArgumentException(requiredFieldMustNotBeBlank(fieldName));
         }
         return value;
+    }
+
+    private static String requiredFieldMustNotBeBlank(String fieldName) {
+        return requiredFieldDisplayName(fieldName) + "은(는) 비어 있을 수 없습니다";
+    }
+
+    private static String requiredFieldDisplayName(String fieldName) {
+        return switch (fieldName) {
+            case "eventType" -> "이벤트 타입";
+            case "payload" -> "페이로드";
+            default -> fieldName;
+        };
     }
 
     private static String blankToNull(String value) {

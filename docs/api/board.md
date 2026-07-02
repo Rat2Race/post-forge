@@ -4,7 +4,7 @@
 
 | Method | Path | Auth | Success | Request | Response |
 | --- | --- | --- | --- | --- | --- |
-| `GET` | `/api/posts` | Optional JWT | `200` | query `keyword?`, pageable | `PageResponse<PostDetailResponse>` |
+| `GET` | `/api/posts` | Optional JWT | `200` | query `keyword?`, `category?`, `boardCategory?`, `publishOrigin?`, pageable | `PageResponse<PostDetailResponse>` |
 | `POST` | `/api/posts` | USER | `201` | `PostRequest` | `PostSummaryResponse` |
 | `GET` | `/api/posts/{postId}` | Optional JWT | `200` | path `postId` | `PostDetailResponse` |
 | `PUT` | `/api/posts/{postId}` | Owner/ADMIN | `200` | `PostRequest` | `PostSummaryResponse` |
@@ -39,7 +39,7 @@
 
 | DTO | Fields |
 | --- | --- |
-| `PostRequest` | `title` required 2-100 no `<`/`>`, `content` required 10-10000, `summary` max 500, `tags` max 20 items and each max 50, `category`, `fileIds` |
+| `PostRequest` | `title` required 2-100 no `<`/`>`, `content` required 10-10000, `tags` max 20 items and each max 50, `boardCategory`, `fileIds`. Public write APIs always store `category=GENERAL`. |
 | `CommentRequest` | `parentId?`, `content` required 2-500, blocks dangerous HTML tags |
 | `PurchaseVoteRequest` | `voteType` required: `BUYABLE`, `UNSURE`, `WAIT` |
 | `ProfileNicknameUpdateRequest` | `nickname` required 2-20 Korean/English/digit/underscore |
@@ -49,8 +49,8 @@
 
 | DTO | Fields |
 | --- | --- |
-| `PostDetailResponse` | `id`, `title`, `content`, `summary`, `tags`, `category`, `accountId`, `nickname`, `views`, `commentCount`, `likeCount`, `isLiked`, `purchaseVote`, `references`, `files`, `createdAt`, `modifiedAt` |
-| `PostSummaryResponse` | `id`, `title`, `summary`, `tags`, `category`, `accountId`, `nickname`, `createdAt`, `modifiedAt` |
+| `PostDetailResponse` | `id`, `title`, `content`, `summary`, `tags`, `category`, `boardCategory`, `publishOrigin`, `accountId`, `nickname`, `views`, `commentCount`, `likeCount`, `isLiked`, `purchaseVote`, `references`, `files`, `createdAt`, `modifiedAt` |
+| `PostSummaryResponse` | `id`, `title`, `summary`, `tags`, `category`, `boardCategory`, `publishOrigin`, `accountId`, `nickname`, `createdAt`, `modifiedAt` |
 | `PostReferenceLinkResponse` | `id`, `keyword`, `productId`, `provider`, `canonicalUrl`, `originalUrl`, `sourceName`, `publishedAt`, `titleSnapshot`, `publishOrigin` |
 | `FileInfoResponse` | `fileId`, `originalFileName`, `fileType` |
 | `CommentDetailResponse` | `id`, `content`, `accountId`, `nickname`, `parentId`, `replyCount`, `likeCount`, `isLiked`, `createdAt`, `modifiedAt` |
@@ -72,6 +72,7 @@
 | Enum | Values |
 | --- | --- |
 | `PostCategory` | `GENERAL`, `AI_ANALYSIS`, `PRODUCT_LAUNCH_NEWS` |
+| `PostBoardCategory` | `GENERAL`, `DIGITAL`, `APPLIANCE`, `LIVING`, `HEALTH`, `BEAUTY`, `SPORTS` |
 | `PurchaseVoteType` | `BUYABLE`, `UNSURE`, `WAIT` |
 | `PostReferenceProvider` | `NAVER_NEWS` |
 | `PostPublishOrigin` | `USER`, `SYSTEM_BATCH`, `ADMIN_BACKFILL` |

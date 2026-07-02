@@ -14,6 +14,13 @@ class AccountPolicyTest {
     private final AccountPolicy accountPolicy = new AccountPolicy();
 
     @Test
+    @DisplayName("활성 계정 여부를 정책으로 판단한다")
+    void isActive_returnsAccountActivationState() {
+        assertThat(accountPolicy.isActive(account(AccountStatus.ACTIVE, Account.LOCAL_PROVIDER))).isTrue();
+        assertThat(accountPolicy.isActive(account(AccountStatus.SUSPENDED, Account.LOCAL_PROVIDER))).isFalse();
+    }
+
+    @Test
     @DisplayName("활성 계정은 통과한다")
     void requireActive_activeAccount_passes() {
         assertThatCode(() -> accountPolicy.requireActive(account(AccountStatus.ACTIVE, Account.LOCAL_PROVIDER)))

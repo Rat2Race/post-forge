@@ -4,6 +4,8 @@
 
 이 문서는 현재 코드에서 확인되는 PostForge 사용자 시나리오를 기능 단위로 정리한다.
 
+> 문서 경계: 각 시나리오의 API 표는 탐색용 힌트다. Canonical endpoint/DTO/status는 `../api/`, 권한/데이터 policy는 `../policy/`, schema source of truth는 `../database/`를 따른다.
+
 포함 범위:
 
 - `auth`: 이메일 인증, 회원가입, 로그인, OAuth2, JWT 재발급, 계정 관리

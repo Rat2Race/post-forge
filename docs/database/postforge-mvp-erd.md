@@ -1,7 +1,7 @@
 # PostForge MVP ERD
 
 > Current status: 현재 구현 기준 code-backed ERD다.
-> Last verified against code: 2026-06-15.
+> Last verified against code: 2026-06-25.
 > 세부 ownership source of truth는 [DB Schema Ownership](./schema-ownership.md)이고, 시각화용 DBML은 [postforge-mvp-erd.dbml](./postforge-mvp-erd.dbml)이다.
 
 이 문서는 현재 PostForge modular monolith가 실제로 저장하는 relational/PgVector schema를 ERD 관점으로 정리한다.
@@ -105,6 +105,8 @@ erDiagram
         varchar content
         varchar summary
         varchar category
+        varchar board_category
+        varchar publish_origin
         bigint views
         bigint like_count
         bigint account_id "logical auth ref"
@@ -429,6 +431,9 @@ ingest document pipeline
 | --- | --- |
 | 게시글 최신순 | `posts(created_at)` |
 | 작성자 게시글 | `posts(account_id)` |
+| 게시글 유형 필터 | `posts(category)` |
+| 게시판 카테고리 필터 | `posts(board_category)` |
+| 발행 출처 필터 | `posts(publish_origin)` |
 | 댓글 조회 | `comments(post_id, created_at)` |
 | 대댓글 조회 | `comments(parent_id)` |
 | 중복 좋아요 방지 | `post_like(post_id, account_id)`, `comment_like(comment_id, account_id)` unique |

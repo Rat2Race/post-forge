@@ -1,9 +1,10 @@
 package dev.iamrat.messaging.outbox.application;
 
 import dev.iamrat.core.event.EventType;
+import dev.iamrat.core.event.EventPublisher;
 import dev.iamrat.messaging.outbox.domain.OutboxMessage;
 import dev.iamrat.messaging.outbox.domain.OutboxStatus;
-import dev.iamrat.messaging.publisher.application.EventPublisher;
+import dev.iamrat.messaging.support.error.MessagingExceptionMessages;
 import java.time.Instant;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
@@ -93,7 +94,9 @@ public class OutboxRelayService {
             .toList();
 
         if (supportedPublishers.isEmpty()) {
-            throw new IllegalStateException("No publisher supports event type: " + message.getEventType());
+            throw new IllegalStateException(
+                MessagingExceptionMessages.noPublisherSupportsEventType(message.getEventType())
+            );
         }
 
         for (EventPublisher publisher : supportedPublishers) {

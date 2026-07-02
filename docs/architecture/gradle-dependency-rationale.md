@@ -193,7 +193,6 @@ S3를 `support`나 `app`에 두지 않은 이유는 파일 업로드/다운로�
 | `spring-boot-starter-validation` | AI request DTO validation에 필요하다. |
 | `micrometer-core` | AI/vector operation latency와 실패율 계측에 사용한다. |
 | `compileOnly jakarta.persistence-api` | catalog entity type을 compile할 때 필요한 JPA annotation API만 참조하고 AI module runtime dependency로 묶지 않는다. |
-| `testImplementation project(':support')` | AI controller slice test에서 공통 exception handler를 사용한다. |
 | `testCompileOnly jakarta.persistence-api` | AI 단위 테스트 compile path에서 JPA annotation type resolution에 필요하다. |
 
 `ai`가 `spring-boot-starter-data-jpa`를 갖지 않는 이유는 JPA entity/repository를 소유하지 않기 때문이다.
@@ -216,7 +215,6 @@ AI는 RAG/vector store와 LLM integration이 핵심이므로 JDBC + Spring AI Pg
 | `spring-ai-vector-store` | `VectorStore` interface만 사용한다. PgVector 구현체는 직접 알지 않는다. |
 | `spring-boot-starter-validation` | ingest request DTO validation에 필요하다. |
 | `micrometer-core` | 수집/문서 적재 operation metric에 사용한다. |
-| `testImplementation project(':support')` | internal controller test에서 표준 exception response handler base를 사용한다. |
 
 ## `source/build.gradle`
 

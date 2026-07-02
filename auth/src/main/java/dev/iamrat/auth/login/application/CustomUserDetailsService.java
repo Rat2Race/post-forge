@@ -2,8 +2,9 @@ package dev.iamrat.auth.login.application;
 
 import dev.iamrat.auth.account.application.AccountQueryService;
 import dev.iamrat.auth.account.domain.Account;
-import dev.iamrat.auth.security.principal.AccountAuthorityMapper;
-import dev.iamrat.auth.security.principal.CustomUserDetails;
+import dev.iamrat.auth.account.domain.AccountPolicy;
+import dev.iamrat.auth.security.infrastructure.principal.AccountAuthorityMapper;
+import dev.iamrat.auth.security.infrastructure.principal.CustomUserDetails;
 import dev.iamrat.auth.support.error.AuthErrorCode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.DisabledException;
@@ -17,6 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class CustomUserDetailsService implements UserDetailsService {
     private final AccountQueryService accountQueryService;
+    private final AccountPolicy accountPolicy = new AccountPolicy();
 
     @Override
     @Transactional(readOnly = true)
@@ -24,7 +26,7 @@ public class CustomUserDetailsService implements UserDetailsService {
         Account account = accountQueryService.findByUsername(username)
             .orElseThrow(() -> new UsernameNotFoundException(AuthErrorCode.INVALID_CREDENTIALS.getMessage()));
 
-        if (!account.isActive()) {
+        if (!accountPolicy.isActive(account)) {
             throw new DisabledException(AuthErrorCode.ACCOUNT_NOT_ACTIVE.getMessage());
         }
 

@@ -26,7 +26,7 @@ class FilePersistenceAdapterTest {
     private FilePersistenceAdapter filePersistenceAdapter;
 
     @Test
-    @DisplayName("save delegates to the Spring Data repository")
+    @DisplayName("save는 Spring Data 저장소에 위임한다")
     void save_delegatesToRepository() {
         PostFile file = file(1L, null);
         given(fileRepository.save(file)).willReturn(file);
@@ -37,7 +37,7 @@ class FilePersistenceAdapterTest {
     }
 
     @Test
-    @DisplayName("findById delegates to the Spring Data repository")
+    @DisplayName("findById는 Spring Data 저장소에 위임한다")
     void findById_delegatesToRepository() {
         PostFile file = file(1L, null);
         given(fileRepository.findById(1L)).willReturn(Optional.of(file));
@@ -48,7 +48,7 @@ class FilePersistenceAdapterTest {
     }
 
     @Test
-    @DisplayName("findAllByIdIn delegates to the Spring Data repository")
+    @DisplayName("findAllByIdIn은 Spring Data 저장소에 위임한다")
     void findAllByIdIn_delegatesToRepository() {
         PostFile file = file(1L, null);
         given(fileRepository.findAllByIdIn(List.of(1L))).willReturn(List.of(file));
@@ -59,7 +59,7 @@ class FilePersistenceAdapterTest {
     }
 
     @Test
-    @DisplayName("findAllByPost delegates to the Spring Data repository")
+    @DisplayName("findAllByPost는 Spring Data 저장소에 위임한다")
     void findAllByPost_delegatesToRepository() {
         Post post = post(1L);
         PostFile file = file(1L, post);
@@ -71,7 +71,7 @@ class FilePersistenceAdapterTest {
     }
 
     @Test
-    @DisplayName("deleteOrphanFilesBefore delegates to the Spring Data repository")
+    @DisplayName("deleteOrphanFilesBefore는 Spring Data 저장소에 위임한다")
     void deleteOrphanFilesBefore_delegatesToRepository() {
         LocalDateTime threshold = LocalDateTime.now().minusHours(24);
         given(fileRepository.deleteOrphanFiles(threshold)).willReturn(3);

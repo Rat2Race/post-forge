@@ -16,14 +16,16 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/auth/email")
+@RequestMapping("/api/auth/email")
 @RequiredArgsConstructor
 @Slf4j
 public class EmailVerificationController {
     private final EmailVerificationService emailVerificationService;
 
     @PostMapping("/send")
-    public ResponseEntity<MessageResponse> sendVerificationEmail(@Valid @RequestBody SendEmailRequest request) {
+    public ResponseEntity<MessageResponse> sendVerificationEmail(
+        @Valid @RequestBody SendEmailRequest request
+    ) {
         emailVerificationService.sendVerificationEmail(request.email());
         return ResponseEntity.ok(MessageResponse.of("인증 메일이 발송되었습니다."));
     }

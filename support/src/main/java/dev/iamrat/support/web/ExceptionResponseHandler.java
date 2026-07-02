@@ -4,6 +4,7 @@ import dev.iamrat.core.global.error.CommonErrorCode;
 import dev.iamrat.core.global.exception.CustomException;
 import dev.iamrat.core.global.error.ErrorCode;
 import dev.iamrat.core.global.dto.ErrorResponse;
+import jakarta.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.HashMap;
@@ -50,8 +51,15 @@ public class ExceptionResponseHandler {
     }
 
     @ExceptionHandler(CustomException.class)
-    public ResponseEntity<ErrorResponse> handleCustomException(CustomException e) {
-        log.error("CustomException: {}", e.getMessage());
+    public ResponseEntity<ErrorResponse> handleCustomException(CustomException e, HttpServletRequest request) {
+        ErrorCode errorCode = e.getErrorCode();
+        if (errorCode.getHttpStatus().is5xxServerError()) {
+            log.error("CustomException: code={}, status={}, uri={}, message={}",
+                errorCode.name(), errorCode.getHttpStatus().value(), request.getRequestURI(), e.getMessage());
+        } else {
+            log.warn("CustomException: code={}, status={}, uri={}, message={}",
+                errorCode.name(), errorCode.getHttpStatus().value(), request.getRequestURI(), e.getMessage());
+        }
         return buildErrorResponse(e.getErrorCode());
     }
 

@@ -40,7 +40,7 @@ class ViewCountServiceTest {
     }
 
     @Test
-    @DisplayName("24시간 내 첫 조회만 조회수를 증가시키고 dirty set에 등록한다")
+    @DisplayName("24시간 내 첫 조회만 조회수를 증가시키고 dirty 집합에 등록한다")
     void incrementIfNew_firstView_incrementsAndMarksDirty() {
         given(viewCountStore.markViewedIfAbsent(1L, 10L)).willReturn(true);
         given(viewCountStore.findViewCount(1L)).willReturn(Optional.of(12L));

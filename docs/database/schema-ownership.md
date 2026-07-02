@@ -3,7 +3,7 @@
 이 문서는 PostForge modular monolith에서 DB와 준영속 저장소를 어느 모듈이 소유하는지 선언한다.
 목표는 DB를 바로 쪼개기 전에 테이블 변경 책임, migration 리뷰 위치, MSA 분리 후보를 명확히 하는 것이다.
 
-Last verified against code: 2026-06-21.
+Last verified against code: 2026-06-25.
 
 ## Ownership Rules
 
@@ -22,7 +22,7 @@ Last verified against code: 2026-06-21.
 | --- | --- | --- | --- |
 | `auth` | `accounts` | `auth/account/domain/Account.java` | 계정 identity, OAuth provider identity, account fields, optimistic lock version |
 | `auth` | `account_roles` | `Account.roles` `@CollectionTable` | account role set; `accounts` lifecycle에 종속 |
-| `board` | `posts` | `board/post/domain/Post.java` | 게시글 본문, summary/tags/category/publish_origin, 조회수, like count, 작성자 account id와 nickname snapshot |
+| `board` | `posts` | `board/post/domain/Post.java` | 게시글 본문, summary/tags/category/board_category/publish_origin, 조회수, like count, 작성자 account id와 nickname snapshot |
 | `board` | `post_tags` | `Post.tags` `@CollectionTable` | 게시글 tag collection; `posts` lifecycle에 종속 |
 | `board` | `comments` | `board/comment/domain/Comment.java` | 댓글/대댓글 tree; 작성자는 `accounts.id` 값을 `account_id` scalar로 보관 |
 | `board` | `post_like` | `board/like/domain/PostLike.java` | 게시글 좋아요 uniqueness: `(post_id, account_id)` |
@@ -113,6 +113,9 @@ Decision:
 There is no active runtime migration directory in the current tree. Local development schema may be evolved by Hibernate `ddl-auto=update` and JDBC initializers; production-like environments use `ddl-auto=validate`.
 
 When a reviewable SQL artifact is needed, use a `VNNNN__description.sql` file in the chosen migration artifact location and keep this document linked to the same change.
+
+Current reviewable SQL artifacts:
+- `docs/database/migrations/V0001__add_post_board_category.sql` adds `posts.board_category`, backfills existing rows to `GENERAL`, and creates post category/origin filter indexes.
 
 Required header:
 

@@ -1,8 +1,8 @@
 package dev.iamrat.ingest.pipeline.domain;
 
-import dev.iamrat.core.ingest.document.NewsDocumentMetadata;
 import dev.iamrat.core.ingest.document.SourceDocumentCommand;
 import java.util.Map;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -10,21 +10,22 @@ import static org.assertj.core.api.Assertions.assertThat;
 class DocumentChunkTest {
 
     @Test
+    @DisplayName("문서 청크 생성 시 source와 metadata를 추가한다")
     void of_addsSourceAndMetadata() {
         DocumentChunk chunk = DocumentChunk.of(
-            "news content",
-            NewsDocumentMetadata.SOURCE_NAVER_NEWS,
-            Map.of("keyword", "AI", "originalLink", "https://news.example/1")
+            "manual content",
+            "manual",
+            Map.of("keyword", "tech")
         );
 
-        assertThat(chunk.content()).isEqualTo("news content");
+        assertThat(chunk.content()).isEqualTo("manual content");
         assertThat(chunk.metadata())
-            .containsEntry(SourceDocumentCommand.SOURCE_METADATA_KEY, NewsDocumentMetadata.SOURCE_NAVER_NEWS)
-            .containsEntry("keyword", "AI")
-            .containsEntry("originalLink", "https://news.example/1");
+            .containsEntry(SourceDocumentCommand.SOURCE_METADATA_KEY, "manual")
+            .containsEntry("keyword", "tech");
     }
 
     @Test
+    @DisplayName("source가 null이면 metadata에서 제외한다")
     void of_nullSource_omitsSource() {
         DocumentChunk chunk = DocumentChunk.of("manual content", null, Map.of("kind", "manual"));
 
@@ -34,10 +35,11 @@ class DocumentChunkTest {
     }
 
     @Test
+    @DisplayName("metadata가 null이면 source만 사용한다")
     void of_nullMetadata_usesOnlySource() {
-        DocumentChunk chunk = DocumentChunk.of("news content", NewsDocumentMetadata.SOURCE_NAVER_NEWS, null);
+        DocumentChunk chunk = DocumentChunk.of("manual content", "manual", null);
 
         assertThat(chunk.metadata())
-            .containsOnly(Map.entry(SourceDocumentCommand.SOURCE_METADATA_KEY, NewsDocumentMetadata.SOURCE_NAVER_NEWS));
+            .containsOnly(Map.entry(SourceDocumentCommand.SOURCE_METADATA_KEY, "manual"));
     }
 }

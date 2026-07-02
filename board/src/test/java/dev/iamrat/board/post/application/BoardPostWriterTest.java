@@ -1,7 +1,9 @@
 package dev.iamrat.board.post.application;
 
 import dev.iamrat.board.post.domain.Post;
+import dev.iamrat.core.board.post.PostBoardCategory;
 import dev.iamrat.core.board.post.PostCategory;
+import dev.iamrat.core.board.post.PostPublishOrigin;
 import dev.iamrat.core.board.post.PostWriteCommand;
 import java.util.List;
 import org.junit.jupiter.api.DisplayName;
@@ -62,5 +64,39 @@ class BoardPostWriterTest {
         assertThat(post.getAccountId()).isNull();
         assertThat(post.getNickname()).isEqualTo("AI 분석가");
         assertThat(post.getCategory()).isEqualTo(PostCategory.AI_ANALYSIS);
+        assertThat(post.getBoardCategory()).isEqualTo(PostBoardCategory.GENERAL);
+        assertThat(post.getPublishOrigin()).isEqualTo(PostPublishOrigin.USER);
+    }
+
+    @Test
+    @DisplayName("PostWriteCommand의 발행 출처를 보존한다")
+    void write_preservesPublishOrigin() {
+        given(postStore.save(any(Post.class))).willReturn(Post.builder()
+            .id(100L)
+            .title("launch")
+            .content("content")
+            .nickname("system")
+            .category(PostCategory.PRODUCT_LAUNCH_NEWS)
+            .publishOrigin(PostPublishOrigin.SYSTEM_BATCH)
+            .build());
+
+        boardPostWriter.write(new PostWriteCommand(
+            "launch",
+            "content",
+            "summary",
+            List.of("news"),
+            null,
+            "system",
+            PostCategory.PRODUCT_LAUNCH_NEWS,
+            PostBoardCategory.DIGITAL,
+            PostPublishOrigin.SYSTEM_BATCH
+        ));
+
+        ArgumentCaptor<Post> postCaptor = ArgumentCaptor.forClass(Post.class);
+        verify(postStore).save(postCaptor.capture());
+
+        assertThat(postCaptor.getValue().getCategory()).isEqualTo(PostCategory.PRODUCT_LAUNCH_NEWS);
+        assertThat(postCaptor.getValue().getBoardCategory()).isEqualTo(PostBoardCategory.DIGITAL);
+        assertThat(postCaptor.getValue().getPublishOrigin()).isEqualTo(PostPublishOrigin.SYSTEM_BATCH);
     }
 }

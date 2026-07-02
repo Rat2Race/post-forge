@@ -19,7 +19,7 @@ PostForge는 커뮤니티 게시판 위에 **신상품 출시 뉴스 자동 포�
 | AI / RAG | Spring AI, OpenAI, PgVector, 문서 적재, AI 게시글 초안 생성 foundation |
 | Architecture Discipline | module dependency policy, DB ownership, service boundary 근거 |
 | Infra / Deployment | Docker Compose, GitHub Actions, Docker Hub runtime image, layered jar 최적화 |
-| Quality Evidence | JUnit, integration tests, loadtest runner, historical API smoke notes |
+| Quality Evidence | JUnit, integration tests, historical k6/Bruno/API smoke evidence |
 
 ---
 
@@ -36,7 +36,7 @@ PostForge는 커뮤니티 게시판 위에 **신상품 출시 뉴스 자동 포�
 | Commerce Ingestion | Implemented MVP | mock/Naver source 계약, 수집 job/log, 상품 정규화 |
 | AI/RAG Foundation | Implemented | Spring AI, OpenAI, PgVector, 문서 검색 foundation |
 | Docker Runtime | Implemented | Spring Boot layered jar runtime image |
-| Testing Docs | Implemented | JUnit, loadtest runner, and historical HTTP smoke notes |
+| Testing Docs | Implemented | JUnit, historical k6/Bruno, and HTTP smoke evidence |
 | Product Expansion | Implemented | external shopping API collection, price history, pgvector matching. 공개 제품 방향은 launch-news/price-check/vote 중심 |
 
 ---
@@ -179,7 +179,7 @@ DDD-lite notes:
 - GitHub Actions에서 Gradle bootJar 후 runtime image build
 - Spring Boot layered jar 기반 Docker runtime image
 - SpringDoc OpenAPI group 문서
-- JUnit과 loadtest runner 기반 검증 흐름
+- JUnit과 historical k6/Bruno/API smoke 기록
 - Prometheus/Grafana/Actuator 기반 모니터링 문서
 
 ---
@@ -467,22 +467,20 @@ curl -X POST http://localhost:8080/api/admin/collection-jobs/manual \
 ./gradlew :app:bootJar -PexcludeTags=integration
 ```
 
-### API Scenario / Load Test
+### API Scenario / Performance Evidence
 
-The old Gradle `:app:smoke` task has been retired. Current executable checks in this repo are app tests.
-The dedicated production/dev loadtest runner lives in the sibling ops repo:
-`../post-forge-ops/loadtest`.
+The old Gradle `:app:smoke` task has been retired, and this repo does not keep a dedicated load testing module or runner.
+Current executable checks in this repo are Gradle tests and bootJar creation.
+Historical k6/Bruno/Grafana/API smoke artifacts remain under `docs/performance/` as quantitative evidence.
 
 ```bash
 ./gradlew :app:test
-cd ../post-forge-ops/loadtest
-./gradlew test bootJar
-./gradlew bootRun
+./gradlew :app:bootJar
 ```
 
 Local schema handling defaults to `SPRING_JPA_HIBERNATE_DDL_AUTO=update` so data is kept across app restarts. Use OpenAPI or dedicated clients for local API checks.
 
-Future smoke automation should live in Bruno or a separate CI smoke suite, not in the retired `app` Gradle source set.
+Future smoke or capacity automation should live in Bruno, a separate CI smoke suite, or an explicitly introduced performance project, not in the retired `app` Gradle source set.
 
 ---
 
@@ -511,12 +509,7 @@ application
 This does not primarily reduce final image size.
 It improves registry/layer cache behavior by separating stable dependencies from the smaller application layer.
 
-관련 문서:
-
-- [Docker Build](./docs/docker/build.md)
-- [Docker Image Tests](./docs/docker/image-tests.md)
-- [Docker Cache A/B](./docs/docker/cache-ab.md)
-- [Docker Docs](./docs/docker/README.md)
+현재 Docker 빌드/실행 기준은 이 README와 루트 `Dockerfile`, `Dockerfile.runtime`, compose 파일을 기준으로 본다.
 
 ---
 
@@ -559,7 +552,6 @@ See:
 | [ADR-002 Refresh Token 회전](./docs/decisions/adr-002-refresh-token-rotation.md) | refresh token rotation 결정 |
 | [ADR-003 모듈러 모놀리스](./docs/decisions/adr-003-modular-monolith.md) | modular monolith / MSA 전환 근거 |
 | [Gradle Dependency Rationale](./docs/architecture/gradle-dependency-rationale.md) | module-level Gradle dependency 결정 |
-| [Docker Docs](./docs/docker/README.md) | Docker build, image, cache, compose 문서 |
 | [성능 리포트](./docs/performance/README.md) | 과거 Grafana, 수용량, 비용 note |
 | [Redis 캐시 전략](./docs/architecture/redis-cache-strategy.md) | Redis key ownership과 TTL policy |
 | [Troubleshooting: Redis 연결 장애](./docs/troubleshooting/redis-connection-failure.md) | Redis 장애 영향과 복구 checklist |

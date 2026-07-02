@@ -23,15 +23,15 @@ import static org.mockito.BDDMockito.given;
 class AccountProfileReaderAdapterTest {
 
     @Mock
-    private AccountStore accountStore;
+    private AccountQueryService accountQueryService;
 
     @InjectMocks
     private AccountProfileReaderAdapter accountProfileReader;
 
     @Test
-    @DisplayName("accountId로 게시판이 필요한 계정 프로필을 반환한다")
+    @DisplayName("계정 ID로 게시판에 필요한 계정 프로필을 반환한다")
     void getProfile_activeAccount_returnsProfile() {
-        given(accountStore.findById(1L)).willReturn(Optional.of(account(AccountStatus.ACTIVE)));
+        given(accountQueryService.findById(1L)).willReturn(Optional.of(account(AccountStatus.ACTIVE)));
 
         AccountProfile profile = accountProfileReader.getProfile(1L);
 
@@ -42,7 +42,7 @@ class AccountProfileReaderAdapterTest {
     @Test
     @DisplayName("비활성 계정이면 프로필을 반환하지 않는다")
     void getProfile_inactiveAccount_throwsAccountNotActive() {
-        given(accountStore.findById(1L)).willReturn(Optional.of(account(AccountStatus.SUSPENDED)));
+        given(accountQueryService.findById(1L)).willReturn(Optional.of(account(AccountStatus.SUSPENDED)));
 
         assertThatThrownBy(() -> accountProfileReader.getProfile(1L))
             .isInstanceOf(CustomException.class)

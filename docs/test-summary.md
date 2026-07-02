@@ -1,12 +1,16 @@
-# PostForge 테스트 결과 종합
+# PostForge Historical Test Summary
 
 작성일: 2026-05-12 KST
+최신화: 2026-06-22 KST
+
+> 현재 상태: 이 문서는 2026-05-12 기준 정량 테스트 기록의 종합이며, 현재 코드의 최신 pass/fail 결과를 증명하지 않는다.
+> 원본 k6/Grafana/Bruno/manual run 산출물은 삭제하지 않고 `docs/performance/` 아래 historical evidence로 보관한다.
 
 ## 종합 결론
 
-현재 `docs/`에 남아 있는 유효한 테스트 결과 기준으로, 최신 로컬 smoke와 Docker 이미지 실행 검증은 통과했다. 성능 이력에서는 로그인 BCrypt 부하와 `GET /posts` 조회 쿼리 문제가 주요 병목으로 확인되었고, 시나리오 분리 및 조회 최적화 이후 읽기 API p95가 크게 개선되었다.
+2026-05-12에 `docs/`에 남아 있던 유효한 테스트 결과 기준으로, 당시 로컬 smoke와 Docker 이미지 실행 검증은 통과했다. 성능 이력에서는 로그인 BCrypt 부하와 `GET /posts` 조회 쿼리 문제가 주요 병목으로 확인되었고, 시나리오 분리 및 조회 최적화 이후 읽기 API p95가 크게 개선되었다.
 
-| 영역 | 최신 판정 | 핵심 근거 |
+| 영역 | 당시 판정 | 핵심 근거 |
 | --- | --- | --- |
 | Docker 이미지 실행 smoke | PASS | `dockerfiles/versions/Dockerfile.v0`-`v4` 모두 jar layer, Java runtime, `/actuator/health` 통과 |
 | Docker 빌드 성능 | PASS | v4 재빌드 평균 6.314s, v0 대비 84.3% 빠름 |
@@ -15,7 +19,7 @@
 | 2026-05-04 prod generated smoke | PASS | `1000/1000` checks, p95 311.45ms, 실패율 0.00% |
 | 장기 부하 병목 분석 | CAUTION | 과거 단일 시나리오에서 CPU 100%, 로그인 p95 3.52s, `GET /posts` N+1 확인 |
 
-## 최신 로컬 수동 smoke
+## 2026-05-12 로컬 수동 smoke
 
 출처: `docs/performance/manual-runs/20260512-140100/run-summary.md`
 

@@ -11,7 +11,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 class EventEnvelopeTest {
 
     @Test
-    @DisplayName("from은 문자열 event type을 core EventType으로 정규화한다")
+    @DisplayName("from은 문자열 이벤트 타입을 core EventType으로 정규화한다")
     void fromString_normalizesEventType() {
         EventEnvelope envelope = EventEnvelope.from(
             "PostCreated",
@@ -27,7 +27,7 @@ class EventEnvelopeTest {
     }
 
     @Test
-    @DisplayName("from은 typed event type을 그대로 보존한다")
+    @DisplayName("from은 타입이 있는 이벤트 타입을 그대로 보존한다")
     void fromTypedEventType_keepsEventType() {
         EventType eventType = EventType.from("PostDeleted");
 
@@ -45,7 +45,7 @@ class EventEnvelopeTest {
     }
 
     @Test
-    @DisplayName("typed event type을 그대로 보존한다")
+    @DisplayName("타입이 있는 이벤트 타입을 그대로 보존한다")
     void typedConstructor_keepsEventType() {
         EventType eventType = EventType.from("PostDeleted");
 
@@ -60,7 +60,7 @@ class EventEnvelopeTest {
     }
 
     @Test
-    @DisplayName("payload는 null일 수 없다")
+    @DisplayName("페이로드는 null일 수 없다")
     void constructor_nullPayload_throwsException() {
         assertThatThrownBy(() -> new EventEnvelope(
             EventType.from("PostCreated"),
@@ -69,6 +69,6 @@ class EventEnvelopeTest {
             null
         ))
             .isInstanceOf(IllegalArgumentException.class)
-            .hasMessage("payload must not be null");
+            .hasMessage("페이로드는 null일 수 없습니다");
     }
 }
