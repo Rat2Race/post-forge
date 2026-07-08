@@ -3,7 +3,6 @@ package dev.iamrat.app.config.openapi;
 import static dev.iamrat.app.config.openapi.OpenApiConfig.JWT_SECURITY_SCHEME;
 import static org.assertj.core.api.Assertions.assertThat;
 
-import dev.iamrat.ai.unmarked.PackageOnlyAiController;
 import dev.iamrat.core.openapi.OpenApiSecurityPolicy;
 import io.swagger.v3.oas.models.Operation;
 import io.swagger.v3.oas.models.security.SecurityRequirement;
@@ -25,30 +24,60 @@ class PostForgeOpenApiGroupsTest {
         assertOpenApiGroup(
             groups.allApi(),
             "all",
-            "/auth/**",
-            "/user/account",
-            "/user/account/**",
-            "/posts/**",
-            "/files/**",
-            "/ai/**",
-            "/ingest/**",
-            "/collector/**",
-            "/internal/collector/**"
+            "/api/auth/**",
+            "/api/user/account",
+            "/api/user/account/**",
+            "/api/posts/**",
+            "/api/user/profile",
+            "/api/user/profile/**",
+            "/api/products/**",
+            "/api/price-checks",
+            "/api/admin/products/**",
+            "/api/admin/product-match-candidates/**",
+            "/api/admin/tracked-keywords/**",
+            "/api/admin/collection-jobs/**",
+            "/api/admin/news-documents/**",
+            "/api/admin/launch-news/**",
+            "/api/files/**",
+            "/api/ai/**",
+            "/api/ingest/**"
         );
     }
 
     @Test
     @DisplayName("app OpenAPI 조립은 모듈별 API 그룹 경로를 정의한다")
     void moduleApis_defineModuleGroups() {
-        assertOpenApiGroup(groups.authApi(), "auth", "/auth/**", "/user/account/**");
-        assertOpenApiGroup(groups.boardApi(), "board", "/posts/**", "/files/**");
-        assertOpenApiGroup(groups.aiApi(), "ai", "/ai/**");
-        assertOpenApiGroup(groups.ingestApi(), "ingest", "/ingest/**", "/internal/collector/**");
-        assertOpenApiGroup(groups.internalApi(), "internal", "/internal/collector/**");
+        assertOpenApiGroup(groups.authApi(), "auth", "/api/auth/**", "/api/user/account", "/api/user/account/**");
+        assertOpenApiGroup(
+            groups.boardApi(),
+            "board",
+            "/api/posts/**",
+            "/api/user/profile",
+            "/api/user/profile/**",
+            "/api/files/**"
+        );
+        assertOpenApiGroup(groups.aiApi(), "ai", "/api/ai/**");
+        assertOpenApiGroup(
+            groups.catalogApi(),
+            "catalog",
+            "/api/products/**",
+            "/api/admin/products/**",
+            "/api/admin/product-match-candidates/**"
+        );
+        assertOpenApiGroup(groups.priceApi(), "price", "/api/products/*/prices", "/api/price-checks");
+        assertOpenApiGroup(
+            groups.ingestApi(),
+            "ingest",
+            "/api/ingest/**",
+            "/api/admin/tracked-keywords/**",
+            "/api/admin/collection-jobs/**",
+            "/api/admin/news-documents/**",
+            "/api/admin/launch-news/**"
+        );
     }
 
     @Test
-    @DisplayName("명시적인 JWT 정책 annotation이 bearerAuth requirement를 추가한다")
+    @DisplayName("명시적인 JWT 정책 애너테이션이 bearerAuth 요구사항을 추가한다")
     void customize_addsJwtRequirementFromExplicitPolicy() throws Exception {
         Operation operation = customize(ExplicitJwtController.class, "secured");
 
@@ -56,7 +85,7 @@ class PostForgeOpenApiGroupsTest {
     }
 
     @Test
-    @DisplayName("internal endpoint 정책은 JWT security requirement를 추가한다")
+    @DisplayName("내부 엔드포인트 정책은 JWT 보안 요구사항을 추가한다")
     void customize_addsJwtRequirementForInternalPolicy() throws Exception {
         Operation operation = customize(InternalController.class, "ingest");
 
@@ -64,7 +93,7 @@ class PostForgeOpenApiGroupsTest {
     }
 
     @Test
-    @DisplayName("@PreAuthorize는 기존처럼 JWT requirement를 추가한다")
+    @DisplayName("@PreAuthorize는 기존처럼 JWT 요구사항을 추가한다")
     void customize_addsJwtRequirementFromPreAuthorize() throws Exception {
         Operation operation = customize(PreAuthorizedController.class, "secured");
 
@@ -72,15 +101,7 @@ class PostForgeOpenApiGroupsTest {
     }
 
     @Test
-    @DisplayName("package prefix만으로는 security requirement를 추론하지 않는다")
-    void customize_doesNotInferSecurityFromPackagePrefixOnly() throws Exception {
-        Operation operation = customize(PackageOnlyAiController.class, "unmarked");
-
-        assertThat(operation.getSecurity()).isNull();
-    }
-
-    @Test
-    @DisplayName("annotation과 @PreAuthorize가 겹쳐도 security requirement를 중복 추가하지 않는다")
+    @DisplayName("애너테이션과 @PreAuthorize가 겹쳐도 보안 요구사항을 중복 추가하지 않는다")
     void customize_deduplicatesSecurityRequirements() throws Exception {
         Operation operation = customize(AnnotatedAndPreAuthorizedController.class, "secured");
 

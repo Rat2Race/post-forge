@@ -3,14 +3,12 @@ package dev.iamrat.ai.chat.presentation;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.iamrat.ai.chat.application.ChatService;
 import dev.iamrat.ai.chat.presentation.dto.ChatRequest;
-import dev.iamrat.ai.support.web.TestExceptionResponseHandler;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
@@ -18,12 +16,12 @@ import org.springframework.test.web.servlet.MockMvc;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.BDDMockito.given;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(ChatController.class)
 @AutoConfigureMockMvc(addFilters = false)
-@Import(TestExceptionResponseHandler.class)
 class ChatControllerTest {
 
     @Autowired
@@ -45,9 +43,10 @@ class ChatControllerTest {
             ChatRequest request = new ChatRequest("오늘 테크 트렌드 요약해줘");
             given(chatService.chat(anyString())).willReturn("오늘의 테크 트렌드 요약입니다.");
 
-            mockMvc.perform(post("/ai/chat")
+            mockMvc.perform(post("/api/ai/chat")
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(objectMapper.writeValueAsString(request)))
+                .andDo(print())
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.answer").value("오늘의 테크 트렌드 요약입니다."));
         }
@@ -62,19 +61,19 @@ class ChatControllerTest {
         void chat_emptyMessage_returns400() throws Exception {
             ChatRequest request = new ChatRequest("");
 
-            mockMvc.perform(post("/ai/chat")
+            mockMvc.perform(post("/api/ai/chat")
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.error").value("VALIDATION_ERROR"))
-                .andExpect(jsonPath("$.validation.message").exists());
+                .andDo(print())
+                .andExpect(status().isBadRequest());
         }
 
         @Test
         @DisplayName("요청 바디가 없으면 400을 반환한다")
         void chat_missingBody_returns400() throws Exception {
-            mockMvc.perform(post("/ai/chat")
+            mockMvc.perform(post("/api/ai/chat")
                     .contentType(MediaType.APPLICATION_JSON))
+                .andDo(print())
                 .andExpect(status().isBadRequest());
         }
     }

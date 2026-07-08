@@ -9,7 +9,7 @@ PostForge는 provider OAuth2 로그인을 backend에서 완료한 뒤, 짧은 �
 3. `OAuth2CodeService.createCode`가 UUID code를 만든다.
 4. `RedisOAuth2CodeStore`가 `oauth2_code:{code}`를 60초 TTL로 저장한다.
 5. backend가 `app.oauth2.redirect-url`에 `?code={code}`를 붙여 redirect한다.
-6. frontend가 code를 담아 `POST /auth/oauth2/exchange`를 호출한다.
+6. frontend가 code를 담아 `POST /api/auth/oauth2/exchange`를 호출한다.
 7. `OAuth2CodeService.exchangeCode`는 Redis `getAndDelete`를 사용하므로 code는 1회만 쓸 수 있다.
 8. `OAuth2LoginService`가 일반 JWT access token과 refresh token을 발급한다.
 
@@ -37,7 +37,7 @@ PostForge가 추가로 관리하는 handoff state는 Redis exchange code다.
 - provider redirect URI가 backend OAuth callback route와 일치하는지 확인한다.
 - `app.oauth2.redirect-url`이 배포된 frontend가 기대하는 callback route를 가리키는지 확인한다.
 - Redis가 healthy이고 `oauth2_code:*` key를 60초 동안 유지하는지 확인한다.
-- frontend가 code 하나당 `POST /auth/oauth2/exchange`를 한 번만 호출하는지 확인한다.
+- frontend가 code 하나당 `POST /api/auth/oauth2/exchange`를 한 번만 호출하는지 확인한다.
 - clock skew 또는 긴 redirect 시간이 60초 code TTL을 넘지 않는지 확인한다.
 
 ## 관련 문서
@@ -45,4 +45,4 @@ PostForge가 추가로 관리하는 handoff state는 Redis exchange code다.
 - `auth/src/main/java/dev/iamrat/auth/security/infrastructure/handler/OAuth2SuccessHandler.java`
 - `auth/src/main/java/dev/iamrat/auth/oauth/application/OAuth2CodeService.java`
 - `auth/src/main/java/dev/iamrat/auth/oauth/infrastructure/redis/RedisOAuth2CodeStore.java`
-- `auth/src/main/resources/docs/auth.md`
+- `auth/src/main/resources/docs/auth-redis.md`

@@ -12,6 +12,7 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class CookieProvider {
     private static final String REFRESH_TOKEN_COOKIE = "refresh_token";
+    private static final String REFRESH_TOKEN_COOKIE_PATH = "/api/auth";
     private final TokenLifetimeSettings tokenLifetimeSettings;
 
     public void addRefreshTokenCookie(HttpServletResponse response, String refreshToken) {
@@ -19,7 +20,7 @@ public class CookieProvider {
             .httpOnly(true)
             .secure(true)
             .sameSite("Lax")
-            .path("/auth")
+            .path(REFRESH_TOKEN_COOKIE_PATH)
             .maxAge(tokenLifetimeSettings.refreshTokenValidityDays() * 24 * 60 * 60)
             .build();
 
@@ -31,7 +32,7 @@ public class CookieProvider {
             .httpOnly(true)
             .secure(true)
             .sameSite("Lax")
-            .path("/auth")
+            .path(REFRESH_TOKEN_COOKIE_PATH)
             .maxAge(0)
             .build();
 

@@ -21,7 +21,7 @@ public class OAuth2Controller {
     private final OAuth2LoginService oAuth2LoginService;
     private final CookieProvider cookieProvider;
 
-    @PostMapping("/auth/oauth2/exchange")
+    @PostMapping("/api/auth/oauth2/exchange")
     public ResponseEntity<AccessTokenResponse> exchange(@RequestBody @Valid OAuth2ExchangeRequest request,
                                                         HttpServletResponse response) {
         TokenIssueResult tokenIssueResult = oAuth2LoginService.exchange(request.code());

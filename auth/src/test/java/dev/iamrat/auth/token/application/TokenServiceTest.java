@@ -6,7 +6,7 @@ import dev.iamrat.auth.account.domain.Account;
 import dev.iamrat.auth.account.domain.AccountStatus;
 import dev.iamrat.auth.account.domain.AccountRole;
 import dev.iamrat.auth.account.application.AccountQueryService;
-import dev.iamrat.auth.security.principal.AuthenticatedAccount;
+import dev.iamrat.auth.security.infrastructure.principal.AuthenticatedAccount;
 import dev.iamrat.auth.token.application.TokenIssueResult;
 import dev.iamrat.core.account.UserPrincipal;
 import org.junit.jupiter.api.DisplayName;
@@ -21,6 +21,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -93,7 +94,7 @@ class TokenServiceTest {
                 .roles(Set.of(AccountRole.USER))
                 .build();
 
-            given(accountQueryService.findWithRolesById(ACCOUNT_ID)).willReturn(account);
+            given(accountQueryService.findWithRolesById(ACCOUNT_ID)).willReturn(Optional.of(account));
 
             given(tokenIssuer.generateAccessToken(eq(ACCOUNT_ID), any())).willReturn("new-access-token");
             given(tokenIssuer.generateRefreshToken(ACCOUNT_ID)).willReturn("new-refresh-token");
@@ -137,7 +138,7 @@ class TokenServiceTest {
                 .roles(Set.of(AccountRole.USER))
                 .build();
 
-            given(accountQueryService.findWithRolesById(ACCOUNT_ID)).willReturn(account);
+            given(accountQueryService.findWithRolesById(ACCOUNT_ID)).willReturn(Optional.of(account));
 
             assertThatThrownBy(() -> tokenService.reissueToken("old-refresh-token"))
                 .isInstanceOf(CustomException.class)
@@ -166,7 +167,7 @@ class TokenServiceTest {
     class DeleteToken {
 
         @Test
-        @DisplayName("accountId로 리프레시 토큰을 삭제한다")
+        @DisplayName("계정 ID로 리프레시 토큰을 삭제한다")
         void deleteToken_accountIdProvided_deletesRefreshToken() {
             tokenService.deleteToken(ACCOUNT_ID);
 
@@ -197,7 +198,7 @@ class TokenServiceTest {
         }
 
         @Test
-        @DisplayName("subject가 빈 값이면 예외가 발생한다")
+        @DisplayName("주체가 빈 값이면 예외가 발생한다")
         void resolveAuthentication_blankSubject_throwsInvalidToken() {
             given(tokenIssuer.parse("token-without-subject"))
                 .willReturn(new TokenClaims("", List.of()));

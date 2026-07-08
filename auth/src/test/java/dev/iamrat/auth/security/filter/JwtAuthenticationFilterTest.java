@@ -1,4 +1,4 @@
-package dev.iamrat.auth.security.filter;
+package dev.iamrat.auth.security.infrastructure.filter;
 
 import dev.iamrat.auth.support.error.AuthErrorCode;
 

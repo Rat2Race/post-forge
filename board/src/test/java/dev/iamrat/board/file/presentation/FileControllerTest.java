@@ -1,7 +1,7 @@
 package dev.iamrat.board.file.presentation;
 
 import dev.iamrat.board.file.application.FileReader;
-import dev.iamrat.board.file.application.FileUploadResponse;
+import dev.iamrat.board.file.application.FileUploadResult;
 import dev.iamrat.board.file.application.FileUploadService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -29,12 +29,12 @@ class FileControllerTest {
     private FileReader fileReader;
 
     @Test
-    @DisplayName("storage-neutral 경로에서 Presigned URL 발급 요청 시 FileUploadResponse 반환")
-    void getPresignedUrl_storageNeutralPath_returnsFileUploadResponse() throws Exception {
-        FileUploadResponse response = new FileUploadResponse(1L, "uuid.jpg", "https://s3.presigned-url.example.com");
+    @DisplayName("스토리지 중립 경로에서 사전 서명 URL 발급 요청 시 FileUploadResult를 반환한다")
+    void getPresignedUrl_storageNeutralPath_returnsFileUploadResult() throws Exception {
+        FileUploadResult response = new FileUploadResult(1L, "uuid.jpg", "https://s3.presigned-url.example.com");
         given(fileUploadService.createPresignedUrl("test.jpg", "image/jpeg")).willReturn(response);
 
-        mockMvc.perform(get("/files/presigned-url")
+        mockMvc.perform(get("/api/files/presigned-url")
                         .param("fileName", "test.jpg")
                         .param("contentType", "image/jpeg"))
                 .andExpect(status().isOk())
@@ -44,12 +44,12 @@ class FileControllerTest {
     }
 
     @Test
-    @DisplayName("legacy S3 경로도 Presigned URL 발급을 유지한다")
-    void getPresignedUrl_legacyS3Path_returnsFileUploadResponse() throws Exception {
-        FileUploadResponse response = new FileUploadResponse(1L, "uuid.jpg", "https://s3.presigned-url.example.com");
+    @DisplayName("S3 경로도 사전 서명 URL 발급을 유지한다")
+    void getPresignedUrl_s3Path_returnsFileUploadResult() throws Exception {
+        FileUploadResult response = new FileUploadResult(1L, "uuid.jpg", "https://s3.presigned-url.example.com");
         given(fileUploadService.createPresignedUrl("test.jpg", "image/jpeg")).willReturn(response);
 
-        mockMvc.perform(get("/files/s3/presigned-url")
+        mockMvc.perform(get("/api/files/s3/presigned-url")
                         .param("fileName", "test.jpg")
                         .param("contentType", "image/jpeg"))
                 .andExpect(status().isOk())
@@ -59,11 +59,11 @@ class FileControllerTest {
     }
 
     @Test
-    @DisplayName("storage-neutral 경로에서 다운로드 URL 요청 시 Presigned Download URL 반환")
+    @DisplayName("스토리지 중립 경로에서 다운로드 URL 요청 시 사전 서명 다운로드 URL을 반환한다")
     void getDownloadUrl_storageNeutralPath_returnsDownloadUrl() throws Exception {
         given(fileReader.createDownloadUrl(1L)).willReturn("https://s3.download-url.example.com");
 
-        mockMvc.perform(get("/files/1/download-url"))
+        mockMvc.perform(get("/api/files/1/download-url"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.url").value("https://s3.download-url.example.com"));
     }

@@ -26,16 +26,11 @@
 | `products`, `product_categories`, `offers` | 정규화 상품, 카테고리, source/mall별 판매 상품 |
 | `product_embeddings`, `product_match_candidates` | pgvector 상품 임베딩과 낮은 확신도 유사 상품 매칭 후보 |
 | `price_snapshots` | 수집 시점별 가격 이력과 프론트 가격 그래프 원천 데이터 |
-| `outbox_events` | standalone messaging 모듈의 발행 대기 이벤트 |
 | `vector_store` | Spring AI PgVector 문서 |
 | Redis `refresh_token:*` | refresh token 저장과 rotation 검증 |
 | Redis `oauth2_code:*` | OAuth2 callback 이후 프론트 교환용 short-lived code |
 | Redis `email_verify_token:*` | 이메일 인증 토큰 |
 | Redis `email_verified:*` | 회원가입 전 이메일 인증 완료 상태 |
-| Redis `email_verify_send:*` | 이메일 인증 발송 cooldown/rate limit 상태 |
-| Redis `auth:login:*` | 로그인 실패 누적, 잠금, rate limit 상태 |
-| Redis `like:*` | 좋아요 요청 cooldown/rate limit 상태 |
-| Redis view count keys | 게시글 조회수 캐시와 중복 조회 방지 상태 |
 
 ### Target Stores
 
@@ -66,10 +61,10 @@
 
 | 유스케이스 | Actor | Read 데이터 | Write 데이터 |
 | --- | --- | --- | --- |
-| 이메일 인증 발송 | Guest | `accounts.email` 중복 여부, Redis `email_verify_send:*` 제한 상태 | `email_verify_token:{token}`, Redis `email_verify_send:*` |
+| 이메일 인증 발송 | Guest | `accounts.email` 중복 여부 | `email_verify_token:{token}` |
 | 이메일 인증 확인 | Guest | `email_verify_token:{token}` | `email_verify_token:{token}` 삭제, `email_verified:{email}` |
 | 회원가입 | Guest | `email_verified:{email}`, `accounts.user_id`, `accounts.email`, `accounts.nickname` 중복 여부 | `accounts`, `account_roles`, 기본 `workspaces` target, `email_verified:{email}` 삭제 |
-| 로그인 | Guest | `accounts.user_id`, `accounts.user_pw`, `accounts.nickname`, `account_roles`, `auth:login:*` 제한 상태 | `refresh_token:{accountId}`, 실패/잠금 키 갱신 또는 삭제 |
+| 로그인 | Guest | `accounts.user_id`, `accounts.user_pw`, `accounts.nickname`, `account_roles` | `refresh_token:{accountId}` |
 | 로그아웃 | Member | 인증 principal | `refresh_token:{accountId}` 삭제 |
 | 토큰 재발급 | Member | refresh token claims, `refresh_token:{accountId}`, `accounts`, `account_roles` | 새 `refresh_token:{accountId}` |
 
@@ -77,12 +72,12 @@
 
 | 유스케이스 | Actor | Read 데이터 | Write 데이터 |
 | --- | --- | --- | --- |
-| 공개 게시글 목록 조회 | Guest, Member | `posts` where `visibility = PUBLIC`, `status = PUBLISHED`, `post_tags`, 파생 count | 없음 |
+| 공개 게시글 목록 조회 | Guest, Member | `posts`, `post_tags`, 파생 count. 현재 schema에는 `visibility`/`status` column이 없고 모든 게시글이 공개다 | 없음 |
 | 공개 게시글 검색/정렬 | Guest, Member | 공개 `posts.title`, `posts.content`, `post_tags`, count/index 기반 정렬 | 없음 |
-| 공개 게시글 상세 조회 | Guest, Member | 공개 `posts`, `post_file`, `post_tags` | Redis view count 증가와 중복 조회 방지 키 |
+| 공개 게시글 상세 조회 | Guest, Member | 공개 `posts`, `post_file`, `post_tags` | `posts.views` 직접 증가 |
 | 게시글 작성 | Member | 인증 principal, 첨부 `post_file` id 유효성 | `posts`, `post_tags`, 필요 시 `post_file.post_id` |
 | 게시글 수정 | Member, Admin | `posts.id`, `posts.account_id`, 기존 `post_file`, 새 첨부 id | `posts.title`, `posts.content`, `posts.updated_at`, `post_file.post_id` 재연결 |
-| 게시글 삭제 | Member, Admin | `posts.id`, `posts.account_id`, 연결된 `post_file`, 댓글/좋아요/조회수 파생 데이터 | `posts.status`, `posts.deleted_at`, `post_file.post_id` 해제, Redis view count 정리 |
+| 게시글 삭제 | Member, Admin | `posts.id`, `posts.account_id`, 연결된 `post_file`, 댓글/좋아요/조회수 파생 데이터 | `posts` row 물리 삭제(댓글/태그 cascade 포함), `post_file.post_id` 해제. soft delete(`status`/`deleted_at`)는 target policy다 |
 
 주의:
 
@@ -140,24 +135,13 @@
 
 - `POST /api/price-checks`는 response-only API이며 `price_snapshots`나 게시글을 만들지 않는다.
 - 요청은 상품명/옵션/판매가/배송비/쿠폰·카드 할인/최종 결제액을 받을 수 있고, `finalPaidPrice`가 있으면 실제 구매가 기준으로 우선 사용한다.
-- Naver Search Shopping 샘플은 배송비 포함 가격을 우선 사용하되, 포함 여부를 확정하지 못하면 `shippingIncludedVerified=false`와 `배송비 포함 여부 미확인` 경고 문구를 포함한다.
-- 배송비 불확실성이 판정을 뒤집을 수 있으면 `LOW` confidence 또는 `INSUFFICIENT_INFO`로 응답한다.
+- 현재 구현은 Naver Search Shopping 샘플의 배송비 포함 여부를 검증하지 않으므로, 모든 응답에 `shippingIncludedVerified=false`와 `배송비 포함 여부 미확인` 경고 문구를 포함하고 confidence는 항상 `LOW`다.
+- 배송비 불확실성이 판정을 뒤집을 수 있는 경계 구간이거나 비교 샘플이 없으면 `INSUFFICIENT_INFO`로 응답한다.
 
 ## Messaging
 
-| 유스케이스 | Actor | Read 데이터 | Write 데이터 |
-| --- | --- | --- | --- |
-| outbox 이벤트 저장 | Messaging/Future Domain Module | aggregate id/type logical reference | `outbox_events(status = PENDING)` |
-| outbox relay claim | System | `outbox_events(status in PENDING, FAILED)`, `available_at` | `outbox_events(status = PROCESSING)` |
-| 이벤트 전달 성공 | System | `outbox_events(status = PROCESSING)` | `outbox_events(status = PUBLISHED)`, `published_at` |
-| 이벤트 전달 실패 | System | `outbox_events(status = PROCESSING)`, 전달 예외 | `outbox_events(status = FAILED)`, `retry_count`, `available_at`, `last_error` |
-
-주의:
-
-- `outbox_events`는 업무 알림 테이블이 아니라 기술 이벤트 envelope이다.
-- 기능 모듈이 `DomainEventRecorder`를 통해 `messaging`을 사용할 수 있고, relay/broker 전송은 opt-in이다.
-- 기능 모듈에 outbox를 연결할 때는 도메인 변경과 같은 `@Transactional` 경계 안에서 저장해야 한다.
-- MQ를 붙이면 relay가 `outbox_events`를 읽어 broker로 publish한다.
+MVP에서 `messaging`은 별도 DB table 없이 transaction commit 이후 같은 프로세스 안에서 event publisher를 호출한다.
+이벤트의 업무 의미와 저장 데이터는 각 기능 모듈이 소유한다.
 
 ## Keyword Notification
 
@@ -172,7 +156,7 @@
 주의:
 
 - 같은 subscription과 collected item 조합은 중복 알림을 만들지 않는다.
-- `outbox_events`는 "어떤 일이 발생했는가"를 전달하고, `notification_events`는 "누구에게 무엇을 알려야 하는가"를 기록한다.
+- domain event는 "어떤 일이 발생했는가"를 전달하고, `notification_events`는 "누구에게 무엇을 알려야 하는가"를 기록한다.
 - 메일 발송 실패는 사용자 요청 실패로 전파하지 않고 상태와 오류 메시지로 남긴다.
 
 ## AI Assist And Cost
@@ -199,16 +183,16 @@
 | 댓글 작성 | Member | 공개 `posts.id`, 대댓글이면 부모 `comments.id`, 부모 댓글의 `post_id`와 depth | `comments`, 필요 시 부모-자식 관계 |
 | 댓글 조회 | Guest, Member | 공개 게시글의 `comments.post_id`, 댓글 좋아요 수, 회원이면 본인 댓글 좋아요 여부 | 없음 |
 | 댓글 수정 | Member, Admin | `comments.id`, `comments.account_id` | `comments.content`, `comments.updated_at` |
-| 댓글 삭제 | Member, Admin | `comments.id`, `comments.account_id`, 하위 댓글 관계, 댓글 좋아요 파생 데이터 | `comments.status`, `comments.deleted_at`, 하위 댓글 상태, 댓글 수/좋아요 수 갱신 |
+| 댓글 삭제 | Member, Admin | `comments.id`, `comments.account_id`, 하위 댓글 관계, 댓글 좋아요 파생 데이터 | `comments` row 물리 삭제(하위 대댓글 cascade 포함), 댓글 수 파생 데이터 갱신. soft delete(`status`/`deleted_at`)는 target policy다 |
 
 ## Like
 
 | 유스케이스 | Actor | Read 데이터 | Write 데이터 |
 | --- | --- | --- | --- |
-| 게시글 좋아요 | Member | 공개 `posts.id`, `post_like(post_id, account_id)` 존재 여부, Redis `like:*` 제한 상태 | `post_like`, `posts.like_count`, Redis `like:*` |
-| 게시글 좋아요 취소 | Member | 공개 `posts.id`, `post_like(post_id, account_id)`, Redis `like:*` 제한 상태 | `post_like` 삭제, `posts.like_count`, Redis `like:*` |
-| 댓글 좋아요 | Member | `comments.id`, `comment_like(comment_id, account_id)` 존재 여부, Redis `like:*` 제한 상태 | `comment_like`, `comments.like_count`, Redis `like:*` |
-| 댓글 좋아요 취소 | Member | `comments.id`, `comment_like(comment_id, account_id)`, Redis `like:*` 제한 상태 | `comment_like` 삭제, `comments.like_count`, Redis `like:*` |
+| 게시글 좋아요 | Member | 공개 `posts.id`, `post_like(post_id, account_id)` 존재 여부 | `post_like`, `posts.like_count` |
+| 게시글 좋아요 취소 | Member | 공개 `posts.id`, `post_like(post_id, account_id)` | `post_like` 삭제, `posts.like_count` |
+| 댓글 좋아요 | Member | `comments.id`, `comment_like(comment_id, account_id)` 존재 여부 | `comment_like`, `comments.like_count` |
+| 댓글 좋아요 취소 | Member | `comments.id`, `comment_like(comment_id, account_id)` | `comment_like` 삭제, `comments.like_count` |
 
 ## Purchase Vote
 
@@ -230,7 +214,7 @@
 | 프로필 조회 | Member | `accounts`, `account_roles`, `account_subscriptions` target | 없음 |
 | 닉네임 변경 | Member | `accounts.user_id`, `accounts.nickname` 중복 여부 | `accounts.nickname`, `accounts.updated_at` |
 | 비밀번호 변경 | Member | `accounts.id`, `accounts.user_pw`, `accounts.provider` | `accounts.user_pw`, `accounts.updated_at`, `refresh_token:{accountId}` 삭제 |
-| 회원 탈퇴 | Member | `accounts.id`, 계정 상태, 보존 대상 게시글/댓글/workspace 스냅샷 | `accounts.status`, `accounts.deleted_at`, `refresh_token:{accountId}` 삭제, subscription 상태 갱신 target |
+| 회원 탈퇴 (target — 탈퇴 API 미구현) | Member | `accounts.id`, 계정 상태, 보존 대상 게시글/댓글 스냅샷 | `accounts.status = DELETED`, `refresh_token:{accountId}` 삭제. `AccountStatus`는 `ACTIVE`/`SUSPENDED`/`DELETED`이며 `deleted_at` column은 없다 |
 
 ## Boundaries
 
@@ -238,7 +222,7 @@
 - Member 쓰기 유스케이스는 인증 principal의 `account_id`로 소유권을 확인한다.
 - Admin 예외 권한은 공개 게시글/댓글 moderation과 상품 source/ingest 운영에 한정한다.
 - private workspace는 owner/member 권한으로만 접근한다.
-- Redis 데이터는 토큰, 인증 보호, 좋아요 보호, 조회수처럼 보조 상태만 관리한다.
+- Redis 데이터는 refresh token, 이메일 인증 token/state, OAuth2 exchange code처럼 인증 기능 상태만 관리한다.
 - `like_count`, `comment_count`, `view_count`는 원본이 아니라 다시 계산 가능한 파생 데이터다.
 - AI 비용은 `ai_usage_logs`와 `ai_budget_windows` 없이는 운영할 수 없다.
 - 공개 게시판 신뢰 신호는 plan으로 나누지 않는다.

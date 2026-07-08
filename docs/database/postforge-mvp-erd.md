@@ -1,7 +1,7 @@
 # PostForge MVP ERD
 
 > Current status: 현재 구현 기준 code-backed ERD다.
-> Last verified against code: 2026-06-15.
+> Last verified against code: 2026-06-25.
 > 세부 ownership source of truth는 [DB Schema Ownership](./schema-ownership.md)이고, 시각화용 DBML은 [postforge-mvp-erd.dbml](./postforge-mvp-erd.dbml)이다.
 
 이 문서는 현재 PostForge modular monolith가 실제로 저장하는 relational/PgVector schema를 ERD 관점으로 정리한다.
@@ -19,7 +19,7 @@ PostForge는 외부 상품/뉴스 source를 조회하고, 상품 수집 결과�
 - `price`는 수집 시점별 가격 snapshot history를 소유한다.
 - `board`는 게시글/댓글/좋아요/파일에 더해 상품-게시글 link를 소유한다.
 - `ai`는 RAG용 Spring AI `vector_store`를 소유하고, `catalog`의 `product_embeddings`와 분리된다.
-- `messaging`의 `outbox_events`는 도메인 table과 FK를 맺지 않는 standalone event handoff table이다.
+- `messaging`은 현재 DB table 없이 in-process event dispatch만 담당한다.
 
 ## Scope
 
@@ -32,7 +32,6 @@ PostForge는 외부 상품/뉴스 source를 조회하고, 상품 수집 결과�
 | ingest | `tracked_keywords`, `collection_jobs`, `raw_products` | 수집 대상 키워드, 실행 단위 상태, 외부 API 원본 payload |
 | catalog | `product_categories`, `products`, `offers`, `product_embeddings`, `product_match_candidates` | 상품 표준 모델, source/mall별 offer, matching vector와 후보 |
 | price | `price_snapshots` | offer별 가격 이력과 프론트 가격 그래프 원천 데이터 |
-| messaging | `outbox_events` | 기능 모듈과 직접 결합하지 않는 독립 outbox 인프라 |
 | ai | `vector_store` | Spring AI PgVectorStore가 관리하는 RAG document embeddings |
 
 ### Deferred / Target Only
@@ -43,7 +42,6 @@ PostForge는 외부 상품/뉴스 source를 조회하고, 상품 수집 결과�
 | workspace | private report workspace는 target 후보이며 현재 schema에는 없다. |
 | billing | plan/subscription/quota table은 target 후보이며 현재 schema에는 없다. |
 | post ranking | `post_rank_scores`는 추천/랭킹 확장 시 다시 검토한다. `post_reference_links`는 출시 뉴스 evidence로 현재 board 소유 범위에 포함된다. |
-| external MQ broker | 현재는 DB outbox가 publish 전 source of truth다. |
 
 ## Boundary Rules
 
@@ -51,7 +49,6 @@ PostForge는 외부 상품/뉴스 source를 조회하고, 상품 수집 결과�
 - 다른 module의 id를 저장하는 column은 대부분 scalar logical reference이며, 실제 JPA relation/FK와 구분한다.
 - `board.account_id`, `comment.account_id`, like의 `account_id`는 `auth.accounts.id`에 대한 logical reference다.
 - `board.post_product_links.product_id`, `price.product_id`, `price.offer_id`는 catalog id에 대한 logical reference다.
-- `messaging.outbox_events`는 어떤 도메인 table과도 FK를 맺지 않는다.
 - PgVector는 두 용도로 분리한다. `ai.vector_store`는 RAG document, `catalog.product_embeddings`는 product matching 용도다.
 
 ## ERD
@@ -67,6 +64,8 @@ erDiagram
     COMMENTS ||--o{ COMMENT_LIKE : receives
     POSTS ||--o{ POST_FILE : attaches
     POSTS ||--o{ POST_PRODUCT_LINKS : links_product
+    POSTS ||--o{ POST_REFERENCE_LINKS : cites_source
+    POSTS ||--o{ POST_PURCHASE_VOTE : receives_vote
 
     COLLECTION_JOBS ||--o{ RAW_PRODUCTS : produces
 
@@ -76,9 +75,7 @@ erDiagram
     PRODUCTS ||--o{ PRODUCT_MATCH_CANDIDATES : logical_candidate
     PRODUCTS ||--o{ PRICE_SNAPSHOTS : logical_product
     OFFERS ||--o{ PRICE_SNAPSHOTS : logical_offer
-    PRODUCTS ||--|| LOWEST_PRICE_SNAPSHOTS : logical_lowest
     PRODUCTS ||--o{ POST_PRODUCT_LINKS : logical_board_link
-    PRODUCTS ||--o{ AUTO_POST_DRAFTS : logical_auto_draft
 
     ACCOUNTS {
         bigint id PK
@@ -105,6 +102,8 @@ erDiagram
         varchar content
         varchar summary
         varchar category
+        varchar board_category
+        varchar publish_origin
         bigint views
         bigint like_count
         bigint account_id "logical auth ref"
@@ -165,16 +164,29 @@ erDiagram
         timestamp created_at
     }
 
-    AUTO_POST_DRAFTS {
+    POST_REFERENCE_LINKS {
         bigint id PK
+        bigint post_id FK
+        varchar keyword
         bigint product_id "logical catalog ref"
-        varchar event_id UK
-        varchar title
-        varchar content
-        varchar status
-        bigint post_id "logical board ref"
-        timestamp created_at
+        varchar provider
+        varchar canonical_url
+        varchar original_url
+        varchar source_name
         timestamp published_at
+        varchar title_snapshot
+        varchar publish_origin
+    }
+
+    POST_PURCHASE_VOTE {
+        bigint id PK
+        bigint post_id FK
+        bigint account_id "logical auth ref"
+        varchar vote_type
+        timestamp created_at
+        varchar created_by
+        timestamp modified_at
+        varchar modified_by
     }
 
     POST_PRODUCT_LINKS {
@@ -296,23 +308,6 @@ erDiagram
         timestamp collected_at
     }
 
-    OUTBOX_EVENTS {
-        bigint id PK
-        varchar event_id UK
-        varchar event_type
-        varchar aggregate_type
-        varchar aggregate_id
-        text payload
-        varchar status
-        int retry_count
-        timestamptz available_at
-        timestamptz occurred_at
-        timestamptz published_at
-        varchar last_error
-        timestamptz created_at
-        timestamptz updated_at
-    }
-
     VECTOR_STORE {
         uuid id PK
         text content
@@ -359,11 +354,6 @@ Spring AI `VectorStore`가 쓰는 `vector_store`와 별개이며, product matchi
 
 `price`가 소유하는 수집 시점별 가격 이력이다.
 `product_id`, `offer_id`는 catalog id에 대한 logical reference로 저장하고, cross-module FK를 두지 않는다.
-
-### outbox_events
-
-`messaging` 소유의 reliable event handoff table이다.
-`aggregate_type`, `aggregate_id`는 logical reference이며 도메인 table과 FK를 맺지 않는다.
 
 ### vector_store
 
@@ -429,6 +419,9 @@ ingest document pipeline
 | --- | --- |
 | 게시글 최신순 | `posts(created_at)` |
 | 작성자 게시글 | `posts(account_id)` |
+| 게시글 유형 필터 | `posts(category)` |
+| 게시판 카테고리 필터 | `posts(board_category)` |
+| 발행 출처 필터 | `posts(publish_origin)` |
 | 댓글 조회 | `comments(post_id, created_at)` |
 | 대댓글 조회 | `comments(parent_id)` |
 | 중복 좋아요 방지 | `post_like(post_id, account_id)`, `comment_like(comment_id, account_id)` unique |
@@ -437,7 +430,6 @@ ingest document pipeline
 | offer upsert | `offers(source, external_product_id)` unique |
 | product name search/matching | `products(normalized_name)`, `product_embeddings(embedding)` |
 | price history | `price_snapshots(product_id, collected_at)`, `price_snapshots(offer_id, collected_at)` |
-| outbox relay polling | `outbox_events(status, available_at)` |
 
 ## Future Extension Boundary
 

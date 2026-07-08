@@ -1,15 +1,23 @@
 package dev.iamrat.board.post.presentation;
 
-import dev.iamrat.board.like.application.LikeResponse;
+import dev.iamrat.board.like.application.LikeResult;
+import dev.iamrat.board.like.presentation.dto.LikeResponse;
 import dev.iamrat.board.post.application.PostCommandService;
 import dev.iamrat.board.post.application.PostInteractionService;
 import dev.iamrat.board.post.application.PostQueryService;
-import dev.iamrat.board.post.dto.PostDetailResponse;
-import dev.iamrat.board.post.dto.PostRequest;
-import dev.iamrat.board.post.dto.PostSummaryResponse;
+import dev.iamrat.board.post.presentation.dto.PostDetailResponse;
+import dev.iamrat.board.post.presentation.dto.PostRequest;
+import dev.iamrat.board.post.presentation.dto.PostSummaryResponse;
+import dev.iamrat.board.purchase.application.PurchaseVoteService;
+import dev.iamrat.board.purchase.application.PurchaseVoteSummary;
+import dev.iamrat.board.purchase.presentation.dto.PurchaseVoteRequest;
+import dev.iamrat.board.purchase.presentation.dto.PurchaseVoteResponse;
 import dev.iamrat.core.global.dto.MessageResponse;
 import dev.iamrat.core.global.dto.PageResponse;
 import dev.iamrat.core.account.UserPrincipal;
+import dev.iamrat.core.board.post.PostBoardCategory;
+import dev.iamrat.core.board.post.PostCategory;
+import dev.iamrat.core.board.post.PostPublishOrigin;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -24,12 +32,13 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/posts")
+@RequestMapping("/api/posts")
 public class PostController {
 
     private final PostCommandService postCommandService;
     private final PostQueryService postQueryService;
     private final PostInteractionService postInteractionService;
+    private final PurchaseVoteService purchaseVoteService;
 
     @PostMapping
     @PreAuthorize("hasRole('USER')")
@@ -40,6 +49,8 @@ public class PostController {
         PostSummaryResponse savedPost = postCommandService.savePost(
             postRequest.title(),
             postRequest.content(),
+            postRequest.tags(),
+            postRequest.boardCategory(),
             accountId(user),
             postRequest.fileIds()
         );
@@ -52,14 +63,22 @@ public class PostController {
     @GetMapping
     public ResponseEntity<PageResponse<PostDetailResponse>> getPosts(
         @RequestParam(required = false) String keyword,
+        @RequestParam(required = false) PostCategory category,
+        @RequestParam(required = false) PostBoardCategory boardCategory,
+        @RequestParam(required = false) PostPublishOrigin publishOrigin,
         @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable,
         @AuthenticationPrincipal UserPrincipal user
     ) {
         Long accountId = optionalAccountId(user);
 
-        Page<PostDetailResponse> posts = keyword != null
-            ? postQueryService.searchPosts(keyword, pageable, accountId)
-            : postQueryService.getPosts(pageable, accountId);
+        Page<PostDetailResponse> posts = postQueryService.getPosts(
+            keyword,
+            category,
+            boardCategory,
+            publishOrigin,
+            pageable,
+            accountId
+        );
 
         return ResponseEntity.ok(PageResponse.from(posts));
     }
@@ -85,6 +104,8 @@ public class PostController {
             postId,
             postRequest.title(),
             postRequest.content(),
+            postRequest.tags(),
+            postRequest.boardCategory(),
             postRequest.fileIds()
         );
 
@@ -107,9 +128,9 @@ public class PostController {
         @PathVariable("postId") Long postId,
         @AuthenticationPrincipal UserPrincipal user
     ) {
-        LikeResponse likeStatus = postInteractionService.likePost(postId, accountId(user));
+        LikeResult likeStatus = postInteractionService.likePost(postId, accountId(user));
 
-        return ResponseEntity.ok(likeStatus);
+        return ResponseEntity.ok(LikeResponse.from(likeStatus));
     }
 
     @DeleteMapping("/{postId:\\d+}/like")
@@ -118,9 +139,30 @@ public class PostController {
         @PathVariable("postId") Long postId,
         @AuthenticationPrincipal UserPrincipal user
     ) {
-        LikeResponse likeStatus = postInteractionService.unlikePost(postId, accountId(user));
+        LikeResult likeStatus = postInteractionService.unlikePost(postId, accountId(user));
 
-        return ResponseEntity.ok(likeStatus);
+        return ResponseEntity.ok(LikeResponse.from(likeStatus));
+    }
+
+    @PutMapping("/{postId:\\d+}/purchase-vote")
+    @PreAuthorize("hasRole('USER')")
+    public ResponseEntity<PurchaseVoteResponse> votePurchase(
+        @PathVariable("postId") Long postId,
+        @RequestBody @Valid PurchaseVoteRequest request,
+        @AuthenticationPrincipal UserPrincipal user
+    ) {
+        PurchaseVoteSummary summary = purchaseVoteService.vote(postId, accountId(user), request.voteType());
+        return ResponseEntity.ok(PurchaseVoteResponse.from(summary));
+    }
+
+    @DeleteMapping("/{postId:\\d+}/purchase-vote")
+    @PreAuthorize("hasRole('USER')")
+    public ResponseEntity<PurchaseVoteResponse> unvotePurchase(
+        @PathVariable("postId") Long postId,
+        @AuthenticationPrincipal UserPrincipal user
+    ) {
+        PurchaseVoteSummary summary = purchaseVoteService.unvote(postId, accountId(user));
+        return ResponseEntity.ok(PurchaseVoteResponse.from(summary));
     }
 
     private static Long optionalAccountId(UserPrincipal user) {

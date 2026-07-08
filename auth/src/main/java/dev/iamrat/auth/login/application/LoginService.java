@@ -1,7 +1,6 @@
 package dev.iamrat.auth.login.application;
 
-import dev.iamrat.auth.security.principal.CustomUserDetails;
-import dev.iamrat.auth.login.support.LoginAttemptGuard;
+import dev.iamrat.auth.security.infrastructure.principal.CustomUserDetails;
 import dev.iamrat.auth.token.application.TokenIssueResult;
 import dev.iamrat.auth.token.application.TokenService;
 import lombok.RequiredArgsConstructor;
@@ -18,11 +17,8 @@ import org.springframework.stereotype.Service;
 public class LoginService {
     private final AuthenticationManager authenticationManager;
     private final TokenService tokenService;
-    private final LoginAttemptGuard loginAttemptGuard;
     
     public TokenIssueResult login(String username, String password, String clientIp) {
-        loginAttemptGuard.guard(username, clientIp);
-
         UsernamePasswordAuthenticationToken authenticationToken =
             UsernamePasswordAuthenticationToken.unauthenticated(username, password);
 
@@ -30,11 +26,9 @@ public class LoginService {
         try {
             authentication = authenticationManager.authenticate(authenticationToken);
         } catch (AuthenticationException e) {
-            loginAttemptGuard.recordFailure(username);
             throw e;
         }
 
-        loginAttemptGuard.clearFailure(username);
         log.info("사용자 로그인: {}", authentication.getName());
         
         CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();

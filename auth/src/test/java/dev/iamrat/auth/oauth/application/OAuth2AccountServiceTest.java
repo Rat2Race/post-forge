@@ -102,7 +102,7 @@ class OAuth2AccountServiceTest {
     }
 
     @Test
-    @DisplayName("OAuth 생성 실패 후 같은 provider identity 계정이 없으면 원래 무결성 예외를 유지한다")
+    @DisplayName("OAuth 생성 실패 후 같은 제공자 식별자 계정이 없으면 원래 무결성 예외를 유지한다")
     void getOrCreateAccount_integrityViolationWithoutConcurrentAccount_rethrows() {
         given(oAuth2UserProfile.getId()).willReturn("google-user-123");
         given(oAuth2UserProfile.getEmail()).willReturn("test@gmail.com");

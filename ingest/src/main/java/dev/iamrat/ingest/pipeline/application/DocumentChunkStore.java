@@ -5,5 +5,5 @@ import java.util.List;
 
 public interface DocumentChunkStore {
 
-    void store(List<DocumentChunk> chunks);
+    DocumentStoreResult store(List<DocumentChunk> chunks);
 }

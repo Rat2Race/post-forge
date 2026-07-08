@@ -1,5 +1,8 @@
 # Access Policy
 
+> Current status: 공개 게시판(Guest/Member/Admin 권한, 좋아요/댓글/투표/가격 판정)은 현재 구현 범위다.
+> 무료/유료 plan, private workspace/draft, saved trend bundle, AI quota, `UNLISTED` content, 회원 탈퇴 API는 target policy이며 현재 code-backed가 아니다.
+
 PostForge 접근 정책은 공개 게시판, 개인 작업공간, AI 보조 기능을 분리한다.
 권한 판단은 닉네임이나 로그인 `userId`가 아니라 인증된 `account_id`를 기준으로 한다.
 

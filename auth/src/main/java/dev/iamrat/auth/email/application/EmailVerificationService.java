@@ -44,9 +44,7 @@ public class EmailVerificationService {
     }
 
     public boolean isEmailVerified(String email) {
-        String normalizedEmail = EmailNormalizer.normalize(email);
-
-        return emailVerificationStore.isVerified(normalizedEmail);
+        return emailVerificationStore.isVerified(EmailNormalizer.normalize(email));
     }
 
     public void removeVerifiedEmail(String email) {

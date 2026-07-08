@@ -12,7 +12,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 class PgVectorConfigTest {
 
     @Test
-    @DisplayName("PgVectorStore 설정은 OpenAI 구현체가 아닌 EmbeddingModel 인터페이스에 의존한다")
+    @DisplayName("PgVectorStore 설정은 특정 LLM 구현체가 아닌 EmbeddingModel 인터페이스에 의존한다")
     void vectorStore_dependsOnEmbeddingModelInterface() throws NoSuchMethodException {
         Method method = PgVectorConfig.class.getMethod("vectorStore", JdbcTemplate.class, EmbeddingModel.class);
 

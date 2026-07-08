@@ -13,13 +13,13 @@ PostForge는 커뮤니티 게시판 위에 **신상품 출시 뉴스 자동 포�
 | Area | What It Shows |
 | --- | --- |
 | Modular Monolith | DDD-lite style modular monolith. `auth`, `board`, `source`, `ingest`, `catalog`, `price`, `ai`, `messaging`, `core`, `support`, `app` 모듈 분리 |
-| Auth / Security | JWT, Redis refresh token, OAuth2, 이메일 인증, 로그인 보호, route policy |
+| Auth / Security | JWT, Redis refresh token, OAuth2, 이메일 인증, route policy |
 | Board Domain | 게시글, 댓글/대댓글, 좋아요, 조회수, 파일 업로드, 작성자 소유권 검증 |
 | Price + Launch-News Direction | gated launch-news auto posting, response-only price judgement, source API 제어, price snapshot history 분리 |
 | AI / RAG | Spring AI, OpenAI, PgVector, 문서 적재, AI 게시글 초안 생성 foundation |
 | Architecture Discipline | module dependency policy, DB ownership, service boundary 근거 |
 | Infra / Deployment | Docker Compose, GitHub Actions, Docker Hub runtime image, layered jar 최적화 |
-| Quality Evidence | JUnit, integration tests, loadtest runner, historical API smoke notes |
+| Quality Evidence | JUnit, integration tests, API smoke evidence |
 
 ---
 
@@ -36,7 +36,7 @@ PostForge는 커뮤니티 게시판 위에 **신상품 출시 뉴스 자동 포�
 | Commerce Ingestion | Implemented MVP | mock/Naver source 계약, 수집 job/log, 상품 정규화 |
 | AI/RAG Foundation | Implemented | Spring AI, OpenAI, PgVector, 문서 검색 foundation |
 | Docker Runtime | Implemented | Spring Boot layered jar runtime image |
-| Testing Docs | Implemented | JUnit, loadtest runner, and historical HTTP smoke notes |
+| Testing Docs | Implemented | JUnit and HTTP smoke evidence |
 | Product Expansion | Implemented | external shopping API collection, price history, pgvector matching. 공개 제품 방향은 launch-news/price-check/vote 중심 |
 
 ---
@@ -52,7 +52,7 @@ PostForge는 커뮤니티 게시판 위에 **신상품 출시 뉴스 자동 포�
 2. **네이버 쇼핑 기준 가격 판정**
    - 사용자가 상품명/옵션/판매가/쿠폰/카드할인/최종 결제액을 입력하면 `POST /api/price-checks`가 Naver Shopping 샘플과 비교해 response-only 결과를 반환합니다.
    - 판정 결과는 저장하지 않고 게시글도 만들지 않습니다.
-   - 비교는 배송비 포함 가격을 우선 사용하되, 배송비 포함 여부가 확인되지 않은 샘플은 `배송비 포함 여부 미확인` 경고와 낮은 confidence를 표시합니다.
+   - 현재 구현은 샘플의 배송비 포함 여부를 검증하지 않으므로 항상 `배송비 포함 여부 미확인` 경고와 `LOW` confidence를 표시하고, 배송비 불확실성이 판정을 뒤집을 수 있는 경계 구간에서는 `INSUFFICIENT_INFO`로 응답합니다.
 
 3. **출시 뉴스 구매 판단 투표**
    - `PRODUCT_LAUNCH_NEWS` + `SYSTEM_BATCH` 게시글에만 `BUYABLE`, `UNSURE`, `WAIT` 투표를 허용합니다.
@@ -68,16 +68,16 @@ PostForge는 커뮤니티 게시판 위에 **신상품 출시 뉴스 자동 포�
 
 ```text
 app       실행 모듈. feature 모듈 조립, route/security/OpenAPI 정책 조립
-auth      계정, 로그인, OAuth2, JWT, 이메일 인증, 로그인 보호
+auth      계정, 로그인, OAuth2, JWT, 이메일 인증
 board     게시글, 댓글, 좋아요, 파일, 조회수, 게시글 작성 port 구현
 source    외부 상품/뉴스 API adapter와 호출 실행 계약
 ingest    상품/뉴스 수집 orchestration, tracked keyword, collection job, raw product, 문서 적재와 vector 저장 경계
 catalog   정규화 상품, 카테고리, offer, product embedding, 유사 상품 매칭 후보
 price     가격 스냅샷 이력 저장, 가격 이력 조회, response-only 가격 판정
 ai        AI 채팅, 문서 검색, product embedding 생성 adapter, 게시글 초안 생성
-messaging outbox event 저장 foundation, relay disabled by default, future MQ adapter 경계
+messaging in-process domain event dispatch
 core      모듈 간 port/contract, 공통 DTO/error/security metadata
-support   Redis, JPA auditing, web exception handler 등 Spring infrastructure
+support   JPA auditing, web exception handler 등 Spring infrastructure
 ```
 
 ### Dependency Direction
@@ -124,7 +124,7 @@ DDD-lite notes:
 | Auth | JWT, OAuth2, Gmail SMTP |
 | Storage | S3-compatible storage, presigned URL |
 | API Docs | SpringDoc OpenAPI 2.8.17 |
-| Test | JUnit 5, Spring Boot Test, k6 load scenarios |
+| Test | JUnit 5, Spring Boot Test |
 | Infra | Docker, Docker Compose, Nginx, Let's Encrypt |
 | CI/CD | GitHub Actions, Docker Hub |
 | Monitoring | Spring Actuator, Prometheus, Grafana |
@@ -140,7 +140,6 @@ DDD-lite notes:
 - Redis refresh token 저장 및 재발급 rotation
 - OAuth2 로그인: Google, Naver, Kakao
 - 이메일 인증 token/state를 Redis TTL로 관리
-- 로그인 실패 보호와 계정 잠금
 - role 기반 접근 제어
 - Actuator 상세 엔드포인트 Basic 인증
 
@@ -149,7 +148,7 @@ DDD-lite notes:
 - 게시글 CRUD와 검색
 - 댓글과 1-depth 대댓글
 - 게시글/댓글 좋아요 등록/취소
-- Redis 기반 조회수 중복 방지와 sync
+- DB 기반 조회수 증가와 조회
 - S3 presigned URL 기반 파일 업로드/다운로드
 - 작성자 snapshot과 소유권 검증
 - 자동 게시된 `PRODUCT_LAUNCH_NEWS` 게시글의 구매 판단 투표와 출처 evidence 노출
@@ -163,11 +162,11 @@ DDD-lite notes:
 - `catalog` 모듈의 Product/ProductCategory 정규화 상품 도메인
 - `price` 모듈의 price snapshot history, 가격 이력 조회, `POST /api/price-checks` response-only 가격 판정
 - `source -> ingest -> catalog -> price` 수집 흐름
-- 가격 판정은 Naver Shopping 검색 가격을 기준으로 하며 `basePrice`, `shippingFee`, `discountAmount`, `finalPaidPrice` 입력을 반영한다. 배송비 포함 여부를 확인하지 못하면 `배송비 포함 여부 미확인` 경고와 낮은 confidence 또는 `INSUFFICIENT_INFO`로 응답
+- 가격 판정은 Naver Shopping 검색 가격을 기준으로 하며 `basePrice`, `shippingFee`, `discountAmount`, `finalPaidPrice` 입력을 반영한다. 현재 구현은 배송비 포함 여부를 검증하지 않아 항상 `배송비 포함 여부 미확인` 경고와 `LOW` confidence로 응답하고, 판정 경계 구간에서는 `INSUFFICIENT_INFO`로 응답
 
 ### AI
 
-- Spring AI + OpenAI 기반 채팅 foundation
+- Spring AI 기반 채팅 foundation. chat은 OpenAI-compatible API로 로컬 LLM gateway(기본 provider `ollama`, 기본 모델 `qwen3:8b`)를 호출하고, embedding은 provider 설정에 따라 OpenAI를 사용할 수 있다
 - PgVector 기반 문서 검색/RAG
 - prompt template loader
 - AI 게시글 초안 생성 foundation
@@ -179,7 +178,7 @@ DDD-lite notes:
 - GitHub Actions에서 Gradle bootJar 후 runtime image build
 - Spring Boot layered jar 기반 Docker runtime image
 - SpringDoc OpenAPI group 문서
-- JUnit과 loadtest runner 기반 검증 흐름
+- JUnit과 API smoke 기록
 - Prometheus/Grafana/Actuator 기반 모니터링 문서
 
 ---
@@ -227,9 +226,8 @@ Current implemented storage:
 | catalog | `products`, `product_categories`, `offers` | 상품 정규화와 source/mall 판매 상품 |
 | catalog | `product_embeddings`, `product_match_candidates` | pgvector 상품 임베딩과 낮은 확신도 유사 상품 매칭 후보 |
 | price | `price_snapshots` | offer 가격 이력과 수집 시점별 가격 그래프 원천 데이터 |
-| messaging | `outbox_events` | standalone event envelope, optional relay/MQ handoff |
 | ai | `vector_store` | Spring AI PgVector 문서 임베딩 |
-| Redis | `refresh_token:*`, `oauth2_code:*`, `email_verify_token:*`, `email_verified:*`, `email_verify_send:*`, `auth:login:*`, `post:views:*`, `post:viewed:*`, `like:*` | 인증 상태, 이메일/OAuth2 인증, 요청 보호, 조회수 cache |
+| Redis | `refresh_token:*`, `oauth2_code:*`, `email_verify_token:*`, `email_verified:*` | refresh token, 이메일 인증, OAuth2 exchange 기능 상태 |
 
 Detailed schema and migration notes are kept under `docs/` instead of expanding this README:
 
@@ -249,16 +247,15 @@ Actual request/response schemas are available through OpenAPI when the app is ru
 
 | Method | Endpoint | Purpose |
 | --- | --- | --- |
-| `POST` | `/auth/register` | 회원가입 |
-| `POST` | `/auth/login` | ID/PW 로그인 |
-| `POST` | `/auth/token/reissue` | Access Token 재발급 |
-| `POST` | `/auth/oauth2/exchange` | OAuth2 code exchange |
-| `POST` | `/auth/email/send` | 인증 메일 발송 |
-| `GET` | `/auth/email/verify` | 이메일 인증 |
-| `GET` | `/posts` | 게시글 목록/검색 |
-| `GET` | `/posts/{postId}` | 게시글 상세 |
-| `GET` | `/api/posts` | 게시글 목록 |
-| `GET` | `/posts/{postId}/comments` | 댓글 목록 |
+| `POST` | `/api/auth/register` | 회원가입 |
+| `POST` | `/api/auth/login` | ID/PW 로그인 |
+| `POST` | `/api/auth/token/reissue` | Access Token 재발급 |
+| `POST` | `/api/auth/oauth2/exchange` | OAuth2 code exchange |
+| `POST` | `/api/auth/email/send` | 인증 메일 발송 |
+| `GET` | `/api/auth/email/verify` | 이메일 인증 |
+| `GET` | `/api/posts` | 게시글 목록/검색 |
+| `GET` | `/api/posts/{postId}` | 게시글 상세 |
+| `GET` | `/api/posts/{postId}/comments` | 댓글 목록 |
 | `GET` | `/api/products` | 상품 목록 |
 | `GET` | `/api/products/search?query={query}` | 상품 검색 |
 | `GET` | `/api/products/{productId}` | 상품 상세 |
@@ -272,33 +269,36 @@ Actual request/response schemas are available through OpenAPI when the app is ru
 
 | Method | Endpoint | Purpose |
 | --- | --- | --- |
-| `GET` | `/user/account` | 내 계정 조회 |
-| `PATCH` | `/user/account/nickname` | 닉네임 변경 |
-| `PATCH` | `/user/account/password` | 비밀번호 변경 |
-| `GET` | `/user/profile` | 내 프로필 조회 |
-| `PATCH` | `/user/profile/nickname` | 프로필 닉네임 변경 |
-| `PATCH` | `/user/profile/password` | 프로필 비밀번호 변경 |
-| `POST` | `/posts` | 게시글 작성 |
-| `PUT` | `/posts/{postId}` | 게시글 수정 |
-| `DELETE` | `/posts/{postId}` | 게시글 삭제 |
-| `POST` | `/posts/{postId}/like` | 게시글 좋아요 |
-| `DELETE` | `/posts/{postId}/like` | 게시글 좋아요 취소 |
+| `GET` | `/api/user/account` | 내 계정 조회 |
+| `PATCH` | `/api/user/account/nickname` | 닉네임 변경 |
+| `PATCH` | `/api/user/account/password` | 비밀번호 변경 |
+| `GET` | `/api/user/profile` | 내 프로필 조회 |
+| `PATCH` | `/api/user/profile/nickname` | 프로필 닉네임 변경 |
+| `PATCH` | `/api/user/profile/password` | 프로필 비밀번호 변경 |
+| `POST` | `/api/posts` | 게시글 작성 |
+| `PUT` | `/api/posts/{postId}` | 게시글 수정 |
+| `DELETE` | `/api/posts/{postId}` | 게시글 삭제 |
+| `POST` | `/api/posts/{postId}/like` | 게시글 좋아요 |
+| `DELETE` | `/api/posts/{postId}/like` | 게시글 좋아요 취소 |
 | `PUT` | `/api/posts/{postId}/purchase-vote` | 출시 뉴스 구매 판단 투표 등록/변경 |
 | `DELETE` | `/api/posts/{postId}/purchase-vote` | 출시 뉴스 구매 판단 투표 취소 |
 | `POST` | `/api/price-checks` | Naver Shopping 기준 response-only 가격 판정 |
-| `POST` | `/posts/{postId}/comments` | 댓글 작성 |
-| `PUT` | `/posts/{postId}/comments/{commentId}` | 댓글 수정 |
-| `DELETE` | `/posts/{postId}/comments/{commentId}` | 댓글 삭제 |
-| `GET` | `/files/presigned-url` | 파일 업로드 URL 발급 |
-| `GET` | `/files/{fileId}/download-url` | 파일 다운로드 URL 발급 |
+| `POST` | `/api/posts/{postId}/comments` | 댓글 작성 |
+| `PUT` | `/api/posts/{postId}/comments/{commentId}` | 댓글 수정 |
+| `DELETE` | `/api/posts/{postId}/comments/{commentId}` | 댓글 삭제 |
+| `POST` | `/api/posts/{postId}/comments/{commentId}/like` | 댓글 좋아요 |
+| `DELETE` | `/api/posts/{postId}/comments/{commentId}/like` | 댓글 좋아요 취소 |
+| `POST` | `/api/auth/logout` | 로그아웃 |
+| `GET` | `/api/files/presigned-url` | 파일 업로드 URL 발급 |
+| `GET` | `/api/files/{fileId}/download-url` | 파일 다운로드 URL 발급 |
 
 ### AI / Ingest
 
 | Method | Endpoint | Purpose |
 | --- | --- | --- |
-| `POST` | `/ai/chat` | AI 채팅 |
-| `POST` | `/ai/generate` | AI 게시글 초안 생성 |
-| `POST` | `/ingest/documents` | 문서 저장 |
+| `POST` | `/api/ai/chat` | AI 채팅 |
+| `POST` | `/api/ai/generate` | AI 게시글 초안 생성 |
+| `POST` | `/api/ingest/documents` | 문서 저장 |
 
 ### Admin Product Collection
 
@@ -397,9 +397,7 @@ NAVER_NEWS_DISPLAY=10
 Not current-code-backed:
 
 - `DART_API_KEY`
-- `OUTBOX_*` relay/broker keys
-
-The `messaging` module remains in the codebase, but its outbox relay is disabled unless `postforge.messaging.outbox.relay-enabled=true` is set explicitly in Spring config.
+- external broker relay keys
 
 ### Local LLM Layout
 
@@ -467,22 +465,19 @@ curl -X POST http://localhost:8080/api/admin/collection-jobs/manual \
 ./gradlew :app:bootJar -PexcludeTags=integration
 ```
 
-### API Scenario / Load Test
+### API Scenario / Verification
 
-The old Gradle `:app:smoke` task has been retired. Current executable checks in this repo are app tests.
-The dedicated production/dev loadtest runner lives in the sibling ops repo:
-`../post-forge-ops/loadtest`.
+The old Gradle `:app:smoke` task has been retired, and this repo does not keep a dedicated load testing module or runner.
+Current executable checks in this repo are Gradle tests and bootJar creation.
 
 ```bash
 ./gradlew :app:test
-cd ../post-forge-ops/loadtest
-./gradlew test bootJar
-./gradlew bootRun
+./gradlew :app:bootJar
 ```
 
 Local schema handling defaults to `SPRING_JPA_HIBERNATE_DDL_AUTO=update` so data is kept across app restarts. Use OpenAPI or dedicated clients for local API checks.
 
-Future smoke automation should live in Bruno or a separate CI smoke suite, not in the retired `app` Gradle source set.
+Future smoke or capacity automation should live outside this MVP branch unless it is intentionally reintroduced.
 
 ---
 
@@ -511,12 +506,7 @@ application
 This does not primarily reduce final image size.
 It improves registry/layer cache behavior by separating stable dependencies from the smaller application layer.
 
-관련 문서:
-
-- [Docker Build](./docs/docker/build.md)
-- [Docker Image Tests](./docs/docker/image-tests.md)
-- [Docker Cache A/B](./docs/docker/cache-ab.md)
-- [Docker Docs](./docs/docker/README.md)
+현재 Docker 빌드/실행 기준은 이 README와 루트 `Dockerfile`, `Dockerfile.runtime`, compose 파일을 기준으로 본다.
 
 ---
 
@@ -554,14 +544,9 @@ See:
 | [Access Policy](./docs/policy/access-policy.md) | public/private/admin 접근 경계 |
 | [AI Cost Policy](./docs/policy/ai-cost-policy.md) | AI/API 비용 제어 규칙 |
 | [Module Dependencies](./docs/architecture/module-dependencies.md) | module boundary와 dependency policy |
-| [이벤트 기반 아웃박스](./docs/architecture/event-driven-outbox.md) | outbox table, relay, idempotency 정책 |
-| [ADR-001 조회수에 Redis 사용](./docs/decisions/adr-001-use-redis-for-view-count.md) | Redis 조회수 버퍼링 결정 |
 | [ADR-002 Refresh Token 회전](./docs/decisions/adr-002-refresh-token-rotation.md) | refresh token rotation 결정 |
 | [ADR-003 모듈러 모놀리스](./docs/decisions/adr-003-modular-monolith.md) | modular monolith / MSA 전환 근거 |
 | [Gradle Dependency Rationale](./docs/architecture/gradle-dependency-rationale.md) | module-level Gradle dependency 결정 |
-| [Docker Docs](./docs/docker/README.md) | Docker build, image, cache, compose 문서 |
-| [성능 리포트](./docs/performance/README.md) | 과거 Grafana, 수용량, 비용 note |
-| [Redis 캐시 전략](./docs/architecture/redis-cache-strategy.md) | Redis key ownership과 TTL policy |
 | [Troubleshooting: Redis 연결 장애](./docs/troubleshooting/redis-connection-failure.md) | Redis 장애 영향과 복구 checklist |
 | [Troubleshooting: Nginx 502/504](./docs/troubleshooting/nginx-502-504.md) | proxy upstream과 timeout 진단 |
 | [Troubleshooting: OAuth2 상태 흐름](./docs/troubleshooting/oauth2-state-flow.md) | OAuth2 redirect code exchange 실패 진단 |

@@ -24,7 +24,7 @@ public class LoggingEventPublisher implements EventPublisher {
     @Override
     public void publish(DomainEvent message) {
         log.info(
-            "Outbox message published through logging adapter. eventId={}, eventType={}, aggregateType={}, aggregateId={}",
+            "Domain event published through logging adapter. eventId={}, eventType={}, aggregateType={}, aggregateId={}",
             message.getEventId(),
             message.getEventType(),
             message.getAggregateType(),

@@ -2,12 +2,12 @@ Project postforge_mvp_erd {
   database_type: 'PostgreSQL'
   Note: '''
   Current code-backed PostForge MVP ERD.
-  Last verified against code: 2026-06-21.
+  Last verified against code: 2026-06-25.
   Source of truth: docs/database/schema-ownership.md.
 
   Product boundary:
   auth + board community + source/ingest product collection + catalog normalization
-  + price tracking + AI draft/search storage + standalone outbox.
+  + price tracking + AI draft/search storage.
 
   FK rule:
   DBML Ref entries model only actual local JPA/JDBC foreign keys.
@@ -32,6 +32,16 @@ Enum post_category {
   GENERAL
   AI_ANALYSIS
   PRODUCT_LAUNCH_NEWS
+}
+
+Enum post_board_category {
+  GENERAL
+  DIGITAL
+  APPLIANCE
+  LIVING
+  HEALTH
+  BEAUTY
+  SPORTS
 }
 
 Enum post_publish_origin {
@@ -70,13 +80,6 @@ Enum product_match_status {
   PENDING
   APPROVED
   REJECTED
-}
-
-Enum outbox_status {
-  PENDING
-  PROCESSING
-  PUBLISHED
-  FAILED
 }
 
 Table accounts {
@@ -120,6 +123,7 @@ Table posts {
   content varchar(10000) [not null]
   summary varchar(500)
   category post_category [not null, default: 'GENERAL']
+  board_category post_board_category [not null, default: 'GENERAL']
   publish_origin post_publish_origin [not null, default: 'USER']
   views bigint [not null, default: 0]
   like_count bigint [not null, default: 0]
@@ -133,6 +137,9 @@ Table posts {
   indexes {
     created_at [name: 'idx_posts_created_at']
     account_id [name: 'idx_posts_account_id']
+    category [name: 'idx_posts_category']
+    board_category [name: 'idx_posts_board_category']
+    publish_origin [name: 'idx_posts_publish_origin']
   }
 
   Note: 'Owner: board. account_id is a scalar auth reference, not a JPA relation.'
@@ -437,31 +444,6 @@ Table price_snapshots {
   }
 
   Note: 'Owner: price. product_id and offer_id are logical catalog references.'
-}
-
-Table outbox_events {
-  id bigint [pk, increment, not null]
-  event_id varchar(36) [not null, unique]
-  event_type varchar(150) [not null]
-  aggregate_type varchar(80)
-  aggregate_id varchar(100)
-  payload text [not null]
-  status outbox_status [not null, default: 'PENDING']
-  retry_count int [not null, default: 0]
-  available_at timestamptz [not null]
-  occurred_at timestamptz [not null]
-  published_at timestamptz
-  last_error varchar(2000)
-  created_at timestamptz [not null]
-  updated_at timestamptz [not null]
-
-  indexes {
-    (status, available_at) [name: 'idx_outbox_events_status_available_at']
-    (event_type, created_at) [name: 'idx_outbox_events_event_type_created_at']
-    (aggregate_type, aggregate_id) [name: 'idx_outbox_events_aggregate']
-  }
-
-  Note: 'Owner: messaging. Standalone reliable event handoff table; no domain-table FK.'
 }
 
 Table vector_store {

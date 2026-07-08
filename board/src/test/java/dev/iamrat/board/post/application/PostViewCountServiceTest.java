@@ -66,6 +66,14 @@ class PostViewCountServiceTest {
         verify(postStore).updateViews(1L, 12L);
     }
 
+    @Test
+    @DisplayName("postId로 DB 조회수를 1 증가시킨다")
+    void incrementViewCount_delegatesRepository() {
+        postViewCountService.incrementViewCount(1L);
+
+        verify(postStore).incrementViews(1L);
+    }
+
     private static Post post(Long id, Long views) {
         return Post.builder()
             .id(id)

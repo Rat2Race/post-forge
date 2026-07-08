@@ -27,4 +27,4 @@ refresh token은 계정별 Redis key `refresh_token:{accountId}`에 저장하고
 
 - `auth/src/main/java/dev/iamrat/auth/token/application/TokenService.java`
 - `auth/src/main/java/dev/iamrat/auth/token/infrastructure/redis/RefreshTokenRepository.java`
-- `auth/src/main/resources/docs/auth.md`
+- `auth/src/main/resources/docs/auth-redis.md`

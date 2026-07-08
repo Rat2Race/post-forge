@@ -16,6 +16,8 @@ aws:
   s3:
     bucket: test-bucket
     region: ap-northeast-2
+    access-key-id: test-access-key
+    secret-access-key: test-secret-key
 
 logging:
   level:

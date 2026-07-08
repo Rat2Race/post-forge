@@ -2,12 +2,13 @@ package dev.iamrat.board.integration;
 
 import dev.iamrat.board.comment.application.CommentCommandService;
 import dev.iamrat.board.comment.application.CommentQueryService;
-import dev.iamrat.board.comment.dto.CommentDetailResponse;
-import dev.iamrat.board.comment.dto.CommentSummaryResponse;
+import dev.iamrat.board.comment.presentation.dto.CommentDetailResponse;
+import dev.iamrat.board.comment.presentation.dto.CommentSummaryResponse;
 import dev.iamrat.board.integration.security.WithMockAccount;
 import dev.iamrat.board.post.application.PostCommandService;
-import dev.iamrat.board.post.dto.PostSummaryResponse;
+import dev.iamrat.board.post.presentation.dto.PostSummaryResponse;
 import dev.iamrat.core.account.AccountProfile;
+import dev.iamrat.core.account.AccountProfileManager;
 import dev.iamrat.core.account.AccountProfileReader;
 import dev.iamrat.core.event.DomainEventRecorder;
 import jakarta.transaction.Transactional;
@@ -43,6 +44,9 @@ class CommentIntegrationTest {
 
     @MockitoBean
     private AccountProfileReader accountProfileReader;
+
+    @MockitoBean
+    private AccountProfileManager accountProfileManager;
 
     @MockitoBean
     private DomainEventRecorder domainEventRecorder;

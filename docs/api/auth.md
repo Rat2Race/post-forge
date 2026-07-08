@@ -53,7 +53,7 @@
 
 - Body: `SendEmailRequest`
 - Success: `200 MessageResponse`
-- 주요 오류: `400` validation, `409` duplicate email, `429` request protection/rate limit, `500` mail send failure
+- 주요 오류: `400` validation, `409` duplicate email, `500` mail send failure
 
 ### GET `/api/auth/email/verify`
 
@@ -78,7 +78,7 @@ username/password로 로그인하고 access token과 refresh cookie를 발급한
 - Body: `LoginRequest`
 - Success: `200 AccessTokenResponse`
 - Headers: `Set-Cookie: refresh_token=...; Path=/api/auth; HttpOnly; Secure; SameSite=Lax`
-- 주요 오류: `400` validation, `401` invalid credentials, `403` inactive account, `429` login protection
+- 주요 오류: `400` validation, `401` invalid credentials, `403` inactive account
 
 ### POST `/api/auth/logout`
 

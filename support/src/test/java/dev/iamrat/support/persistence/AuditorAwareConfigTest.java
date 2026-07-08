@@ -36,7 +36,7 @@ class AuditorAwareConfigTest {
     }
 
     @Test
-    @DisplayName("UserDetails principal은 username을 감사자로 사용한다")
+    @DisplayName("UserDetails principal은 사용자명을 감사자로 사용한다")
     void auditorProvider_usesUserDetailsUsername() {
         User user = new User("auditor", "password", List.of());
         SecurityContextHolder.getContext()
@@ -46,7 +46,7 @@ class AuditorAwareConfigTest {
     }
 
     @Test
-    @DisplayName("UserDetails가 아닌 인증은 authentication name을 감사자로 사용한다")
+    @DisplayName("UserDetails가 아닌 인증은 인증 이름을 감사자로 사용한다")
     void auditorProvider_usesAuthenticationNameForOtherPrincipal() {
         SecurityContextHolder.getContext()
             .setAuthentication(authenticatedToken("batch-runner"));

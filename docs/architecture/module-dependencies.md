@@ -23,15 +23,15 @@ DB/table ownership과 migration convention은 [DB Schema Ownership](../database/
 |------|------|------------------------------|
 | `app` | 실행 진입점, 전체 모듈 조립, JPA repository/entity scan bootstrap, route/security/OpenAPI/error 정책, 로컬 테스트 콘솔 | Spring Web, Actuator, Spring Data JPA, SpringDoc, Prometheus, PostgreSQL runtime, `support` |
 | `core` | 공통 DTO, 공통 예외 타입, 공통 security principal/API metadata 계약, 모듈 간 board/AI/ingest/price/account port 계약 | Spring Web API, Spring Data Commons, Jackson annotations |
-| `support` | Spring infrastructure 지원, 공통 Redis guard primitive, JPA auditing, request logging, exception response base | Redis, Spring MVC, Spring Data JPA, Spring Security Core |
+| `support` | Spring infrastructure 지원, JPA auditing, request logging, exception response base | Spring MVC, Spring Data JPA, Spring Security Core |
 | `auth` | 회원, 로그인, JWT, OAuth2, 이메일 인증, security filter chain | Web, Validation, JPA, Redis, Security, JJWT, Mail, OAuth2 Client |
-| `board` | 게시글, 댓글, 좋아요, 파일/S3, 조회수 | Web, Validation, JPA, Redis, Security, AWS S3 SDK |
+| `board` | 게시글, 댓글, 좋아요, 파일/S3, 조회수 | Web, Validation, JPA, Security, AWS S3 SDK |
 | `source` | 외부 상품/뉴스 source adapter, `MOCK`/`NAVER` 상품 routing contract, Naver News client | Web, Validation |
 | `ingest` | 문서 적재 API, 상품 수집 orchestration, 뉴스 문서 수집, tracked keyword, collection job, raw product | Web, Validation, JPA, Security, Spring TX, Spring AI VectorStore API, Micrometer |
 | `catalog` | 정규화 상품, offer, 카테고리, product embedding, 유사 상품 매칭 후보 | Web, Validation, JPA, JDBC, Security, Micrometer |
 | `price` | 가격 스냅샷 이력 저장, 가격 이력 조회, response-only 가격 판정 | Web, Validation, JPA, Security, Micrometer |
 | `ai` | AI 채팅, 게시글 초안, product embedding adapter, OpenAI/PgVector 설정 | Web, Validation, JDBC, Spring AI OpenAI, Spring AI PgVector, Micrometer |
-| `messaging` | 공통 outbox 이벤트 저장, in-process dispatch, optional relay/MQ adapter 확장 지점 | JPA, Jackson |
+| `messaging` | in-process domain event dispatch | Spring Context/TX, Jackson |
 
 ## Core vs Support
 
@@ -48,7 +48,7 @@ support = Spring 애플리케이션을 띄우기 위한 공통 infrastructure �
 | 실무 표현 | shared kernel, contract module, port definition layer | infrastructure support module, shared Spring configuration module |
 | 성격 | 계약 | 인프라 구현 |
 | 주 역할 | 모듈 간 약속 정의 | Spring 실행에 필요한 공통 bean/config/advice 제공 |
-| 들어가는 것 | interface, record, 공통 DTO, 공통 예외 타입, principal 계약 | `@Configuration`, `@Bean`, 공통 web/redis/persistence helper |
+| 들어가는 것 | interface, record, 공통 DTO, 공통 예외 타입, principal 계약 | `@Configuration`, `@Bean`, 공통 web/persistence helper |
 | 들어가면 안 되는 것 | Redis/OpenAPI 설정, S3/OpenAI 구현, JPA 구현, feature service | 도메인 port 계약, 비즈니스 규칙, feature service |
 | 의존성 방향 | 기능 모듈이 compile-time으로 참조 가능 | 주로 `app`이 runtime에 조립하고, slice test에서 일부 참조 |
 | MSA 전환 시 의미 | HTTP API/message schema/client contract로 치환될 후보 | 서비스별 starter/config 또는 각 서비스 local config로 분화될 후보 |
@@ -82,8 +82,6 @@ support = Spring 애플리케이션을 띄우기 위한 공통 infrastructure �
 
 | 클래스 | 책임 |
 |--------|------|
-| `dev.iamrat.support.redis.RedisConfig` | 공통 `RedisTemplate<String, String>` bean 생성 |
-| `dev.iamrat.support.redis.RedisGuardOperations` | rate/cooldown/lock guard에서 반복되는 Redis TTL primitive 제공 |
 | `dev.iamrat.support.persistence.AuditorAwareConfig` | JPA auditing에서 현재 인증 principal name을 감사자 값으로 제공 |
 | `dev.iamrat.support.web.ExceptionResponseHandler` | MVC 예외를 표준 `ErrorResponse`로 변환하는 공통 handler base |
 | `dev.iamrat.support.web.RequestLoggingFilter` | 요청 method/path/status/duration 로깅 |
@@ -110,14 +108,14 @@ OpenAPI metadata/security scheme과 실제 `@RestControllerAdvice` 등록은 실
 
 - `UserPrincipal`은 `core`의 공통 계약이므로 `dev.iamrat.core.account.UserPrincipal`에 둔다.
 - `OpenApiSecurityPolicy`는 runtime 보안 구현이 아니라 문서화 metadata 계약이므로 `core`에 둔다.
-- Redis guard/JPA auditing/request logging/exception response base는 `support`에 둔다.
+- JPA auditing/request logging/exception response base는 `support`에 둔다.
 - OpenAPI 설정과 실제 global web exception advice 등록은 `app`에 둔다.
 - `board`는 인증 구현 모듈인 `auth`를 의존하지 않는다. 컨트롤러는 공통 principal 계약만 참조한다.
 - `ingest`는 AI 구현 모듈인 `ai`를 의존하지 않는다. 문서 적재는 `VectorStore` API만 사용하고, launch-news 게시 초안은 `core`의 draft generation port로 호출하며, system batch scheduler는 active tracked keyword를 `SYSTEM_BATCH` origin command로 변환한다. Launch-news 후보 필터와 daily cap 규칙은 [AI Cost Policy](../policy/ai-cost-policy.md)와 [Ingest API](../api/ingest.md)에 두고, 이 문서는 module boundary만 기록한다. 상품 수집은 `source`/`catalog`/`price` application 경계를 통해 처리한다.
 - `price`의 response-only 가격 판정은 Naver Shopping 샘플을 읽기 위해 `source` contract를 사용하지만, price-check 결과를 저장하거나 board post를 만들지 않는다. Request/response field와 배송비 caveat는 [Price API](../api/price.md)와 [Use Case Data Policy](../policy/usecase-data-policy.md)에 두고, 이 문서는 dependency boundary만 기록한다.
 - `board`의 `PostWriter` 구현체는 `board.post.adapter`에 둔다. `board.port.*`처럼 구현체를 별도 루트 port 패키지에 모으지 않는다.
 - `source`와 `ingest` 사이의 상품 source 선택은 `SourceType`과 `SourceRequestExecutor` 계약으로만 전달한다.
-- `messaging`은 도메인 의미를 해석하지 않고 outbox envelope 저장/relay/retry와 in-process dispatch만 소유한다. Relay는 명시적으로 켤 때만 동작한다.
+- `messaging`은 도메인 의미를 해석하지 않고 현재 프로세스 안에서 after-commit event dispatch만 소유한다.
 - `ingest`는 PgVector 구현을 직접 알 필요가 없고, `VectorStore` API만 사용한다. 현재 단일 runtime에서는 실제 `VectorStore` bean을 `ai` 모듈의 설정이 만든다.
 - `ai`와 `ingest`의 Spring AI BOM은 루트 `springAiVersion`으로 통일한다.
 - `app`의 route/security 조립은 `PostForgeAuthorizationRules`와 `PostForgeOpenApiRoutes`를 기준으로 하고, OpenAPI security requirement는 package prefix가 아니라 `@PreAuthorize` 또는 `OpenApiSecurityPolicy`로 결정한다.

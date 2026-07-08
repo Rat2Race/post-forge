@@ -48,7 +48,7 @@ Gradle 의존성 키워드는 모듈 경계를 표현하는 언어다.
 | `id "java"` + `id "org.springframework.boot"` | 최종 실행 artifact인 `bootJar`를 만드는 유일한 module이다. |
 | `bootJar.mainClass` | 실행 진입점 `ApplicationServer`를 명시한다. |
 | `implementation project(':core')` | 실행 app도 공통 계약/예외 타입을 runtime graph에 포함해야 한다. |
-| `implementation project(':support')` | Redis/OpenAPI/global exception handler 같은 Spring infrastructure bean을 최종 app에 조립한다. |
+| `implementation project(':support')` | OpenAPI/global exception handler 같은 Spring infrastructure bean을 최종 app에 조립한다. |
 | `implementation project(':auth')`, `:board`, `:source`, `:ingest`, `:catalog`, `:price`, `:ai`, `:messaging` | 기능 module을 하나의 monolith runtime에 조립한다. `app`이 module composition을 담당한다는 뜻이다. |
 | `spring-boot-starter-web` | 최종 app이 HTTP server와 Spring MVC runtime을 실행한다. |
 | `spring-boot-starter-actuator` | health/metrics endpoint를 제공한다. |
@@ -88,7 +88,7 @@ runtime security filter나 SpringDoc 구현은 `core`에 들어오지 않는다.
 
 `core`에 넣으면 안 되는 것은 다음이다.
 
-- Redis, JPA starter, Spring Security 구현체
+- JPA starter, Spring Security 구현체, auth 상태용 Redis 구현체
 - OpenAPI/SpringDoc 설정
 - S3/OpenAI/Naver/Gmail 같은 외부 adapter
 - 기능 module의 service/repository/entity 구현
@@ -106,7 +106,6 @@ MSA 전환 관점에서는 `core`가 "계약만 담은 얇은 module"이어야 �
 | `implementation project(':core')` | `ExceptionResponseHandler`가 `ErrorCode`, `ErrorResponse`, `CustomException`을 사용한다. |
 | `spring-webmvc` | MVC exception type, `NoResourceFoundException`, request logging filter, handler base에 필요하다. |
 | `spring-data-jpa` | auditing helper에서 Spring Data JPA auditing infrastructure를 사용한다. |
-| `spring-boot-starter-data-redis` | 공통 `RedisTemplate<String, String>` bean 설정과 Redis guard primitive를 제공한다. |
 | `spring-security-core` | security metadata와 공통 security type을 사용하는 infrastructure 확장에 대비한다. |
 | `compileOnly jakarta.servlet-api` | servlet API는 보통 embedded container/runtime이 제공하므로 support artifact에 implementation으로 묶지 않는다. |
 | `testImplementation spring-boot-starter-test` | infrastructure 설정과 handler unit/slice test에 필요하다. |
@@ -115,23 +114,22 @@ MSA 전환 관점에서는 `core`가 "계약만 담은 얇은 module"이어야 �
 중요한 점은 `support`가 외부 API 연동 module이 아니라는 것이다.
 S3는 `board`, OpenAI는 `ai`, OAuth/Gmail은 `auth`, Naver Shopping/News API는 `source`가 소유한다.
 `support`는 Spring infrastructure glue만 맡는다.
-Redis guard primitive는 key namespace나 limit 정책을 알지 않고, TTL counter와 cooldown marker 같은 반복 infrastructure 동작만 제공한다.
 OpenAPI 설정과 실제 `@RestControllerAdvice` 등록은 실행 정책이므로 `app`이 소유하고, `support`는 재사용 가능한 handler base를 제공한다.
 
 ## `messaging/build.gradle`
 
-`messaging`은 공통 outbox infrastructure module이다.
-현재는 독립 module로 유지하되, outbox relay는 기본 비활성화하고 in-process dispatch로 성공 경로 이벤트를 직접 전달한다.
+`messaging`은 MVP에서 in-process domain event dispatch만 맡는 module이다.
 
 | 의존성 | 이유 |
 |--------|------|
-| `java-library` plugin | 후속 phase에서 `OutboxWriter`, `EventPublisher` contract를 필요한 module에 노출할 수 있는 library module이다. |
-| `spring-boot-starter-data-jpa` | `outbox_events` entity/repository와 relay claim query를 소유한다. |
-| `jackson-databind` | payload object를 JSON 문자열로 직렬화해 outbox에 저장한다. |
-| `testImplementation spring-boot-starter-test` | outbox 상태 전이와 publisher 단위 테스트에 필요하다. |
+| `java-library` plugin | in-process event recorder와 publisher contract를 필요한 module에 노출할 수 있는 library module이다. |
+| `spring-context`, `spring-tx` | `@Service` 등록과 transaction after-commit hook에 필요하다. |
+| `spring-boot-autoconfigure` | logging publisher의 property 조건 등록에 필요하다. |
+| `jackson-databind` | payload object를 JSON 문자열로 직렬화해 in-process event로 전달한다. |
+| `testImplementation spring-boot-starter-test` | in-process publisher 단위 테스트에 필요하다. |
 
 `messaging`은 도메인 이벤트의 의미를 알지 않는다.
-`PriceSnapshotCreatedEvent`, `PostCreatedEvent` 같은 이벤트 타입과 발행 시점은 각 도메인 module이 결정하고, `messaging`은 저장/상태/재시도/전달 계약만 맡는다.
+`PriceSnapshotCreatedEvent`, `PostCreatedEvent` 같은 이벤트 타입과 발행 시점은 각 도메인 module이 결정하고, `messaging`은 현재 프로세스 안에서 after-commit 전달만 맡는다.
 
 ## `auth/build.gradle`
 
@@ -141,7 +139,7 @@ OpenAPI 설정과 실제 `@RestControllerAdvice` 등록은 실행 정책이므�
 | 의존성 | 이유 |
 |--------|------|
 | `implementation project(':core')` | 공통 예외, principal 계약, 응답 타입을 사용한다. |
-| `implementation project(':support')` | 로그인/이메일 인증 guard가 공통 Redis TTL primitive를 사용한다. 정책과 key ownership은 auth에 남긴다. |
+| `implementation project(':support')` | 공통 web/persistence/security support를 사용한다. |
 | `spring-boot-starter-web` | 인증/프로필/토큰 controller를 제공한다. |
 | `spring-boot-starter-validation` | request DTO validation에 필요하다. |
 | `spring-boot-starter-data-jpa` | `Account` 등 인증 도메인 entity/repository를 소유한다. |
@@ -163,11 +161,10 @@ OpenAPI 설정과 실제 `@RestControllerAdvice` 등록은 실행 정책이므�
 | 의존성 | 이유 |
 |--------|------|
 | `implementation project(':core')` | `UserPrincipal`, 공통 예외, `PostWriter` 등 board port 계약을 사용/구현한다. |
-| `implementation project(':support')` | 좋아요 요청 guard가 공통 Redis TTL primitive를 사용한다. 게시판 정책과 key ownership은 board에 남긴다. |
+| `implementation project(':support')` | 게시판 예외 응답과 공통 Spring infrastructure를 사용한다. |
 | `spring-boot-starter-web` | 게시글/댓글/파일 controller를 제공한다. |
 | `spring-boot-starter-validation` | 게시글/댓글 request DTO validation에 필요하다. |
 | `spring-boot-starter-data-jpa` | post/comment/like/file entity와 repository를 소유한다. |
-| `spring-boot-starter-data-redis` | 조회수 중복 방지, view count sync 등 Redis 기반 상태에 필요하다. |
 | `spring-boot-starter-security` | `@PreAuthorize`, `@AuthenticationPrincipal`, method security 표현식에 필요하다. |
 | AWS SDK BOM + `software.amazon.awssdk:s3` | S3 presigned URL과 object metadata 연동은 board 파일 도메인의 외부 adapter다. |
 | `spring-security-test` | 인증 principal과 권한 검증 test에 필요하다. |
@@ -193,7 +190,6 @@ S3를 `support`나 `app`에 두지 않은 이유는 파일 업로드/다운로�
 | `spring-boot-starter-validation` | AI request DTO validation에 필요하다. |
 | `micrometer-core` | AI/vector operation latency와 실패율 계측에 사용한다. |
 | `compileOnly jakarta.persistence-api` | catalog entity type을 compile할 때 필요한 JPA annotation API만 참조하고 AI module runtime dependency로 묶지 않는다. |
-| `testImplementation project(':support')` | AI controller slice test에서 공통 exception handler를 사용한다. |
 | `testCompileOnly jakarta.persistence-api` | AI 단위 테스트 compile path에서 JPA annotation type resolution에 필요하다. |
 
 `ai`가 `spring-boot-starter-data-jpa`를 갖지 않는 이유는 JPA entity/repository를 소유하지 않기 때문이다.
@@ -216,7 +212,6 @@ AI는 RAG/vector store와 LLM integration이 핵심이므로 JDBC + Spring AI Pg
 | `spring-ai-vector-store` | `VectorStore` interface만 사용한다. PgVector 구현체는 직접 알지 않는다. |
 | `spring-boot-starter-validation` | ingest request DTO validation에 필요하다. |
 | `micrometer-core` | 수집/문서 적재 operation metric에 사용한다. |
-| `testImplementation project(':support')` | internal controller test에서 표준 exception response handler base를 사용한다. |
 
 ## `source/build.gradle`
 

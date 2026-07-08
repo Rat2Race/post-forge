@@ -1,4 +1,4 @@
-package dev.iamrat.auth.security.handler;
+package dev.iamrat.auth.security.infrastructure.handler;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;

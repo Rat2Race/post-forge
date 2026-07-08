@@ -1,9 +1,9 @@
 package dev.iamrat.ingest.pipeline.application;
 
-import dev.iamrat.core.ingest.document.NewsDocumentMetadata;
 import dev.iamrat.core.ingest.document.SourceDocumentCommand;
 import dev.iamrat.ingest.pipeline.domain.DocumentChunk;
 import java.util.List;
+import java.util.Map;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -12,6 +12,8 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
@@ -28,17 +30,18 @@ class IngestPipelineServiceTest {
             documentChunkStore
         );
         DocumentIngestCommand command = new DocumentIngestCommand(
-            "news content",
-            NewsDocumentMetadata.SOURCE_NAVER_NEWS,
-            NewsDocumentMetadata.autoPostEligible(
-                "AI",
-                "AI 반도체 수요 증가",
-                "https://news.example/1",
-                ""
-            ).toMap()
+            "manual content",
+            "manual",
+            Map.of("keyword", "tech")
         );
 
-        ingestPipelineService.store(List.of(command));
+        given(documentChunkStore.store(anyList())).willReturn(DocumentStoreResult.stored(1));
+
+        DocumentIngestResult result = ingestPipelineService.store(List.of(command));
+
+        assertThat(result.count()).isEqualTo(1);
+        assertThat(result.chunkCount()).isEqualTo(1);
+        assertThat(result.embeddingsStored()).isTrue();
 
         @SuppressWarnings("unchecked")
         ArgumentCaptor<List<DocumentChunk>> chunksCaptor = ArgumentCaptor.forClass(List.class);
@@ -46,10 +49,9 @@ class IngestPipelineServiceTest {
 
         List<DocumentChunk> chunks = chunksCaptor.getValue();
         assertThat(chunks).hasSize(1);
-        assertThat(chunks.getFirst().content()).isEqualTo("news content");
+        assertThat(chunks.getFirst().content()).isEqualTo("manual content");
         assertThat(chunks.getFirst().metadata())
-            .containsEntry(SourceDocumentCommand.SOURCE_METADATA_KEY, NewsDocumentMetadata.SOURCE_NAVER_NEWS)
-            .containsEntry(NewsDocumentMetadata.KEYWORD, "AI")
-            .containsEntry(NewsDocumentMetadata.ORIGINAL_LINK, "https://news.example/1");
+            .containsEntry(SourceDocumentCommand.SOURCE_METADATA_KEY, "manual")
+            .containsEntry("keyword", "tech");
     }
 }

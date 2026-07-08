@@ -1,6 +1,7 @@
 # Account Policy
 
 > Current status: 계정/로그인/프로필/닉네임/비밀번호 변경은 현재 구현 범위다.
+> 회원 탈퇴는 target policy다. 탈퇴 API는 아직 구현되지 않았고, 계정 상태 enum은 `ACTIVE`/`SUSPENDED`/`DELETED`로 준비되어 있다.
 > plan, private workspace, draft, saved trend bundle, AI usage retention은 target policy이며 2026-06-22 현재 code-backed schema가 아니다.
 
 PostForge 계정 정책은 회원가입, 로그인, 프로필, 닉네임 변경, 비밀번호 변경, 회원 탈퇴를 다룬다.
@@ -23,7 +24,7 @@ PostForge 계정 정책은 회원가입, 로그인, 프로필, 닉네임 변경,
 - 로그인 성공 시 access token과 refresh token을 발급한다.
 - refresh token은 서버 저장소에 보관하고 재발급 시 rotation한다.
 - 로그아웃은 서버에 저장된 refresh token을 무효화한다.
-- 반복 실패와 과도한 로그인 시도는 rate limit과 잠금 정책으로 제한한다.
+- MVP 로그인은 인증 검증과 token 발급/폐기에 집중하며, 반복 실패 잠금 정책은 후속 hardening 범위다.
 
 ## Profile
 
@@ -48,8 +49,10 @@ PostForge 계정 정책은 회원가입, 로그인, 프로필, 닉네임 변경,
 
 ## Withdrawal
 
+> 탈퇴 API는 현재 구현되지 않았다. 아래는 target policy다.
+
 - 회원은 본인 계정만 탈퇴할 수 있다.
-- 탈퇴는 계정을 `WITHDRAWN` 상태로 바꾸는 soft delete로 처리한다.
+- 탈퇴는 계정을 `AccountStatus.DELETED` 상태로 바꾸는 soft delete로 처리한다.
 - 탈퇴한 계정의 `userId`, 이메일, 닉네임, provider identity는 재사용하지 않는다.
 - 탈퇴 계정은 로그인, 토큰 재발급, 프로필 조회, 게시글/댓글 작성, 좋아요 변경을 할 수 없다.
 - 탈퇴 후에도 기존 게시글과 댓글의 작성자 스냅샷은 보존한다.

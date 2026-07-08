@@ -12,9 +12,11 @@ dependencies {
     implementation project(':support')
     implementation project(':auth')
     implementation project(':board')
+    implementation project(':source')
+    implementation project(':catalog')
+    implementation project(':price')
     implementation project(':ai')
     implementation project(':ingest')
-    implementation project(':collector')
     implementation project(':messaging')
 
     implementation 'org.springframework.boot:spring-boot-starter-web'
@@ -25,6 +27,8 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-oauth2-client'
     implementation "org.springdoc:springdoc-openapi-starter-webmvc-ui:${springdocOpenapiVersion}"
     implementation 'io.micrometer:micrometer-registry-prometheus'
+    implementation 'org.flywaydb:flyway-core'
+    implementation 'org.flywaydb:flyway-database-postgresql'
     runtimeOnly "org.postgresql:postgresql"
 
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
@@ -37,4 +41,10 @@ tasks.named('bootJar') {
     layered {
         enabled = true
     }
+}
+
+tasks.named('bootRun') {
+    workingDir = rootProject.projectDir
+    systemProperty 'spring.config.import',
+        "optional:classpath:application-monitoring.yml,optional:file:${rootProject.projectDir}/.env[.properties]"
 }

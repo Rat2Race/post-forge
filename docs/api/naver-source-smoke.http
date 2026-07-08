@@ -1,0 +1,84 @@
+# Naver source smoke requests.
+# Direct Naver calls verify credentials/API availability.
+# App calls verify PostForge source adapters, mapping, persistence, and metrics.
+# Keep real Naver credentials and access tokens in local IDE environment variables.
+
+@appBaseUrl = http://localhost:8080
+@naverBaseUrl = https://openapi.naver.com
+@naverClientId = paste-naver-search-client-id-here
+@naverClientSecret = paste-naver-search-client-secret-here
+@userAccessToken = paste-user-access-token-here
+@adminAccessToken = paste-admin-access-token-here
+@monitoringUsername = monitor
+@monitoringPassword = monitor-secret
+
+### Direct Naver Shopping search: verify external API and credentials
+GET {{naverBaseUrl}}/v1/search/shop.json?query=무선%20키보드&display=5&start=1&sort=sim&exclude=used:rental:cbshop
+X-Naver-Client-Id: {{naverClientId}}
+X-Naver-Client-Secret: {{naverClientSecret}}
+
+### Direct Naver News search: verify external API and credentials
+GET {{naverBaseUrl}}/v1/search/news.json?query=아이폰%20출시&display=5&start=1&sort=date
+X-Naver-Client-Id: {{naverClientId}}
+X-Naver-Client-Secret: {{naverClientSecret}}
+
+### App price check: USER/ADMIN, reads Naver Shopping when NAVER_SHOPPING_ENABLED=true
+POST {{appBaseUrl}}/api/price-checks
+Content-Type: application/json
+Authorization: Bearer {{userAccessToken}}
+
+{
+  "keyword": "무선 키보드",
+  "basePrice": 79000,
+  "shippingFee": 3000,
+  "discountAmount": 5000,
+  "finalPaidPrice": 77000
+}
+
+### App manual product collection: ADMIN, persists collection job/raw products
+# Requires NAVER_SHOPPING_ENABLED=true and NAVER_SEARCH_CLIENT_ID/NAVER_SEARCH_CLIENT_SECRET.
+POST {{appBaseUrl}}/api/admin/collection-jobs/manual
+Content-Type: application/json
+Authorization: Bearer {{adminAccessToken}}
+
+{
+  "source": "NAVER",
+  "keyword": "무선 키보드",
+  "displayCount": 5
+}
+
+### App manual news document collection: ADMIN, fetches Naver News and stores document chunks/embeddings
+# Requires NAVER_NEWS_ENABLED=true and NAVER_SEARCH_CLIENT_ID/NAVER_SEARCH_CLIENT_SECRET.
+POST {{appBaseUrl}}/api/admin/news-documents/manual
+Content-Type: application/json
+Authorization: Bearer {{adminAccessToken}}
+
+{
+  "keyword": "아이폰 출시",
+  "displayCount": 5,
+  "topics": [
+    "출시",
+    "가격",
+    "예약판매"
+  ]
+}
+
+### App manual launch-news posting: ADMIN, may create PRODUCT_LAUNCH_NEWS posts
+# Use carefully: this can create posts after Naver News gate + AI draft generation.
+POST {{appBaseUrl}}/api/admin/launch-news/manual
+Content-Type: application/json
+Authorization: Bearer {{adminAccessToken}}
+
+{
+  "keyword": "아이폰 출시",
+  "displayCount": 5,
+  "dailyCap": 1,
+  "topics": [
+    "출시",
+    "공식 발표"
+  ]
+}
+
+### App Naver source metrics: verify external_naver_fetch_* metrics
+GET {{appBaseUrl}}/actuator/prometheus
+Authorization: Basic {{monitoringUsername}} {{monitoringPassword}}

@@ -4,6 +4,8 @@
 
 이 문서는 현재 코드에서 확인되는 PostForge 사용자 시나리오를 기능 단위로 정리한다.
 
+> 문서 경계: 각 시나리오의 API 표는 탐색용 힌트다. Canonical endpoint/DTO/status는 `../api/`, 권한/데이터 policy는 `../policy/`, schema source of truth는 `../database/`를 따른다.
+
 포함 범위:
 
 - `auth`: 이메일 인증, 회원가입, 로그인, OAuth2, JWT 재발급, 계정 관리
@@ -13,7 +15,7 @@
 - `source`: 외부 상품/뉴스 source adapter
 - `ingest`: 상품 수집, tracked keyword, collection job, 뉴스/문서 적재, 출시 뉴스 자동 게시 orchestration
 - `ai`: AI 채팅, 게시글 초안 생성
-- `messaging`: outbox event 저장/relay와 in-process event dispatch
+- `messaging`: in-process event dispatch
 - `core`, `support`, `app`: 공통 계약, 인프라, 실행 조립
 
 제외 범위:
@@ -52,7 +54,7 @@
 | UC-ADMIN-04 | 상품 관련 뉴스 문서 수집 | Admin | `ingest`, `source`, `ai` |
 | UC-ADMIN-05 | 출시 뉴스 자동 게시 실행 | Admin, System | `ingest`, `source`, `ai`, `board` |
 | UC-SYSTEM-01 | 가격 스냅샷 기록 | System | `ingest`, `catalog`, `price` |
-| UC-SYSTEM-02 | outbox event relay | System | `messaging`, `core` |
+| UC-SYSTEM-02 | in-process event dispatch | System | `messaging`, `core` |
 
 ## UC-AUTH-01 이메일 인증 후 회원가입
 
@@ -63,7 +65,7 @@ Guest가 이메일 인증을 완료한 뒤 PostForge 계정을 만든다.
 ### 주요 흐름
 
 1. Guest가 이메일 인증 메일 발송을 요청한다.
-2. `auth`는 이메일 중복 여부와 Redis 발송 제한 상태를 확인한다.
+2. `auth`는 이메일 중복 여부를 확인한다.
 3. `auth`는 인증 token을 Redis TTL 상태로 저장하고 메일을 발송한다.
 4. Guest가 인증 링크의 token으로 이메일 인증을 완료한다.
 5. `auth`는 token을 삭제하고 인증 완료 상태를 Redis에 표시한다.
@@ -75,15 +77,15 @@ Guest가 이메일 인증을 완료한 뒤 PostForge 계정을 만든다.
 
 | Method | Endpoint | 설명 |
 | --- | --- | --- |
-| `POST` | `/auth/email/send` | 인증 메일 발송 |
-| `GET` | `/auth/email/verify?token=...` | 이메일 인증 확인 |
-| `POST` | `/auth/register` | 회원가입 |
+| `POST` | `/api/auth/email/send` | 인증 메일 발송 |
+| `GET` | `/api/auth/email/verify?token=...` | 이메일 인증 확인 |
+| `POST` | `/api/auth/register` | 회원가입 |
 
 ### 예외/정책
 
 - 이미 사용 중인 email, username, nickname은 거부한다.
 - 인증되지 않은 email로 회원가입할 수 없다.
-- 이메일 인증 요청은 Redis guard로 과도한 재발송을 제한한다.
+- MVP에서는 이메일 인증 token/state만 Redis TTL로 관리하며 재발송 guard는 두지 않는다.
 
 ## UC-AUTH-02 로그인, 토큰 재발급, 로그아웃
 
@@ -94,7 +96,7 @@ Guest가 로그인해 access token과 refresh token cookie를 받고, Member는 
 ### 주요 흐름
 
 1. Guest가 username/password로 로그인한다.
-2. `auth`는 사용자/IP별 로그인 시도 제한과 잠금 상태를 확인한다.
+2. `auth`는 Spring Security authentication manager로 username/password를 검증한다.
 3. 인증 성공 시 access token을 응답 body로 반환하고 refresh token을 cookie에 저장한다.
 4. access token 만료 시 클라이언트가 refresh token cookie로 재발급을 요청한다.
 5. `auth`는 refresh token 저장소를 검증하고 새 access/refresh token을 발급한다.
@@ -104,14 +106,13 @@ Guest가 로그인해 access token과 refresh token cookie를 받고, Member는 
 
 | Method | Endpoint | 설명 |
 | --- | --- | --- |
-| `POST` | `/auth/login` | ID/PW 로그인 |
-| `POST` | `/auth/token/reissue` | access token 재발급 |
-| `POST` | `/auth/logout` | 로그아웃 |
-| `POST` | `/auth/oauth2/exchange` | OAuth2 exchange code로 로그인 |
+| `POST` | `/api/auth/login` | ID/PW 로그인 |
+| `POST` | `/api/auth/token/reissue` | access token 재발급 |
+| `POST` | `/api/auth/logout` | 로그아웃 |
+| `POST` | `/api/auth/oauth2/exchange` | OAuth2 exchange code로 로그인 |
 
 ### 예외/정책
 
-- 로그인 실패가 누적되면 사용자별 잠금 상태를 만든다.
 - refresh token은 Redis 저장값과 일치해야 한다.
 - OAuth2 로그인은 provider profile을 계정으로 연결한 뒤 동일한 token 발급 흐름을 사용한다.
 
@@ -133,12 +134,12 @@ Member가 자신의 계정과 프로필 정보를 확인하고 닉네임 또는 
 
 | Method | Endpoint | 설명 |
 | --- | --- | --- |
-| `GET` | `/user/account` | 내 계정 조회 |
-| `PATCH` | `/user/account/nickname` | 계정 닉네임 변경 |
-| `PATCH` | `/user/account/password` | 계정 비밀번호 변경 |
-| `GET` | `/user/profile` | 내 프로필 조회 |
-| `PATCH` | `/user/profile/nickname` | 프로필 닉네임 변경 |
-| `PATCH` | `/user/profile/password` | 프로필 비밀번호 변경 |
+| `GET` | `/api/user/account` | 내 계정 조회 |
+| `PATCH` | `/api/user/account/nickname` | 계정 닉네임 변경 |
+| `PATCH` | `/api/user/account/password` | 계정 비밀번호 변경 |
+| `GET` | `/api/user/profile` | 내 프로필 조회 |
+| `PATCH` | `/api/user/profile/nickname` | 프로필 닉네임 변경 |
+| `PATCH` | `/api/user/profile/password` | 프로필 비밀번호 변경 |
 
 ### 예외/정책
 
@@ -189,7 +190,7 @@ Guest 또는 Member가 공개 게시글 목록, 검색 결과, 상세, 댓글을
 1. 사용자가 게시글 목록을 조회한다.
 2. 사용자가 keyword를 입력하면 게시글 검색을 수행한다.
 3. 사용자가 게시글 상세를 조회한다.
-4. `board`는 Redis로 중복 조회를 방지하면서 조회수 cache를 갱신한다.
+4. `board`는 게시글 조회수를 DB에 직접 증가시킨다.
 5. 사용자가 댓글 목록을 조회한다.
 6. 인증된 Member라면 응답에 본인의 좋아요 여부가 포함될 수 있다.
 
@@ -197,10 +198,9 @@ Guest 또는 Member가 공개 게시글 목록, 검색 결과, 상세, 댓글을
 
 | Method | Endpoint | 설명 |
 | --- | --- | --- |
-| `GET` | `/posts` | 게시글 목록/검색 |
-| `GET` | `/api/posts` | 게시글 목록/검색 alias |
-| `GET` | `/posts/{postId}` | 게시글 상세 |
-| `GET` | `/posts/{postId}/comments` | 댓글 목록 |
+| `GET` | `/api/posts` | 게시글 목록/검색 |
+| `GET` | `/api/posts/{postId}` | 게시글 상세 |
+| `GET` | `/api/posts/{postId}/comments` | 댓글 목록 |
 
 ### 예외/정책
 
@@ -274,15 +274,15 @@ Member가 게시글을 작성하고, 작성자 또는 Admin이 게시글을 수�
 3. 첨부 file id가 있으면 게시글과 파일 metadata를 연결한다.
 4. 작성자 또는 Admin이 게시글을 수정한다.
 5. 작성자 또는 Admin이 게시글을 삭제한다.
-6. 삭제 시 일반 조회에서 제외되고 관련 파일 연결/조회수 cache가 정리된다.
+6. 삭제 시 일반 조회에서 제외되고 관련 파일 연결이 정리된다.
 
 ### API
 
 | Method | Endpoint | 설명 |
 | --- | --- | --- |
-| `POST` | `/posts` | 게시글 작성 |
-| `PUT` | `/posts/{postId}` | 게시글 수정 |
-| `DELETE` | `/posts/{postId}` | 게시글 삭제 |
+| `POST` | `/api/posts` | 게시글 작성 |
+| `PUT` | `/api/posts/{postId}` | 게시글 수정 |
+| `DELETE` | `/api/posts/{postId}` | 게시글 삭제 |
 
 ### 예외/정책
 
@@ -307,10 +307,10 @@ Member가 게시글에 댓글 또는 1-depth 대댓글을 남기고, 작성자 �
 
 | Method | Endpoint | 설명 |
 | --- | --- | --- |
-| `POST` | `/posts/{postId}/comments` | 댓글 작성 |
-| `GET` | `/posts/{postId}/comments` | 댓글 목록 |
-| `PUT` | `/posts/{postId}/comments/{commentId}` | 댓글 수정 |
-| `DELETE` | `/posts/{postId}/comments/{commentId}` | 댓글 삭제 |
+| `POST` | `/api/posts/{postId}/comments` | 댓글 작성 |
+| `GET` | `/api/posts/{postId}/comments` | 댓글 목록 |
+| `PUT` | `/api/posts/{postId}/comments/{commentId}` | 댓글 수정 |
+| `DELETE` | `/api/posts/{postId}/comments/{commentId}` | 댓글 삭제 |
 
 ### 예외/정책
 
@@ -335,14 +335,14 @@ Member가 공개 게시글이나 댓글에 좋아요를 누르고 취소한다.
 
 | Method | Endpoint | 설명 |
 | --- | --- | --- |
-| `POST` | `/posts/{postId}/like` | 게시글 좋아요 |
-| `DELETE` | `/posts/{postId}/like` | 게시글 좋아요 취소 |
-| `POST` | `/posts/{postId}/comments/{commentId}/like` | 댓글 좋아요 |
-| `DELETE` | `/posts/{postId}/comments/{commentId}/like` | 댓글 좋아요 취소 |
+| `POST` | `/api/posts/{postId}/like` | 게시글 좋아요 |
+| `DELETE` | `/api/posts/{postId}/like` | 게시글 좋아요 취소 |
+| `POST` | `/api/posts/{postId}/comments/{commentId}/like` | 댓글 좋아요 |
+| `DELETE` | `/api/posts/{postId}/comments/{commentId}/like` | 댓글 좋아요 취소 |
 
 ### 예외/정책
 
-- 좋아요 요청은 Redis guard로 짧은 시간의 중복/과다 요청을 제한한다.
+- MVP에서는 원본 like row를 기준으로 좋아요 상태를 판단한다.
 - count는 원본 like row에서 다시 계산 가능한 파생 데이터다.
 
 ## UC-BOARD-04 출시 뉴스 구매 판단 투표
@@ -390,10 +390,10 @@ Member 또는 Admin이 S3 presigned URL을 받아 게시글 첨부 파일을 업
 
 | Method | Endpoint | 설명 |
 | --- | --- | --- |
-| `GET` | `/files/presigned-url` | 업로드 URL 발급 |
-| `GET` | `/files/s3/presigned-url` | 업로드 URL 발급 alias |
-| `GET` | `/files/{fileId}/download-url` | 다운로드 URL 발급 |
-| `GET` | `/files/s3/{fileId}/download-url` | 다운로드 URL 발급 alias |
+| `GET` | `/api/files/presigned-url` | 업로드 URL 발급 |
+| `GET` | `/api/files/s3/presigned-url` | 업로드 URL 발급 alias |
+| `GET` | `/api/files/{fileId}/download-url` | 다운로드 URL 발급 |
+| `GET` | `/api/files/s3/{fileId}/download-url` | 다운로드 URL 발급 alias |
 
 ### 예외/정책
 
@@ -408,9 +408,9 @@ Member가 명시적으로 AI 기능을 실행해 질문 답변 또는 게시글 
 
 ### 주요 흐름
 
-1. Member가 `/ai/chat`에 메시지를 보낸다.
+1. Member가 `/api/ai/chat`에 메시지를 보낸다.
 2. `ai`는 text generation client를 통해 답변을 생성한다.
-3. Member가 `/ai/generate`에 topic, prompt, tags, category 등을 전달한다.
+3. Member가 `/api/ai/generate`에 topic, prompt, tags, category 등을 전달한다.
 4. `ai`는 게시글 초안 응답을 생성한다.
 5. 사용자가 초안을 게시글로 저장하려면 별도의 게시글 작성 API를 호출한다.
 
@@ -418,8 +418,8 @@ Member가 명시적으로 AI 기능을 실행해 질문 답변 또는 게시글 
 
 | Method | Endpoint | 설명 |
 | --- | --- | --- |
-| `POST` | `/ai/chat` | AI 채팅 |
-| `POST` | `/ai/generate` | AI 게시글 초안 생성 |
+| `POST` | `/api/ai/chat` | AI 채팅 |
+| `POST` | `/api/ai/generate` | AI 게시글 초안 생성 |
 
 ### 예외/정책
 
@@ -532,12 +532,12 @@ Admin이 상품 관련 뉴스 문서를 수집해 검색/RAG에 사용할 문서
 | Method | Endpoint | 설명 |
 | --- | --- | --- |
 | `POST` | `/api/admin/news-documents/manual` | 상품 관련 뉴스 문서 수집 |
-| `POST` | `/ingest/documents` | 문서 직접 적재 |
+| `POST` | `/api/ingest/documents` | 문서 직접 적재 |
 
 ### 예외/정책
 
 - 뉴스 수집은 Admin 권한이 필요하다.
-- `/ingest/documents`는 JWT 보안 정책이 적용되는 문서 적재 API다.
+- `/api/ingest/documents`는 JWT 보안 정책이 적용되는 문서 적재 API다.
 - vector store가 불가한 경우 문서를 임베딩 없이 접수할 수 있다.
 
 ## UC-ADMIN-05 출시 뉴스 자동 게시 실행
@@ -579,7 +579,7 @@ Admin 또는 System이 Naver News 후보를 필터링하고 AI 초안을 생성�
 2. 같은 상품의 가격이 오르거나 내려도 모두 `price_snapshots`에 별도 행으로 저장한다.
 3. `/api/products/{productId}/prices`는 저장된 snapshot을 반환한다.
 4. 프론트는 반환된 이력을 기반으로 그래프와 가격 변동성 지표를 계산한다.
-5. 이 흐름은 AI 게시글 생성이나 outbox event 발행을 유발하지 않는다.
+5. 이 흐름은 AI 게시글 생성을 유발하지 않는다.
 
 ### 관련 모듈
 
@@ -595,25 +595,22 @@ Admin 또는 System이 Naver News 후보를 필터링하고 AI 초안을 생성�
 - 가격 변동 이벤트와 AI 게시글은 이 흐름에서 생성하지 않는다.
 - 가격 이력은 프론트 그래프를 위한 원천 데이터이며, backend volatility 지표 계산은 하지 않는다.
 
-## UC-SYSTEM-02 outbox event relay
+## UC-SYSTEM-02 in-process event dispatch
 
 ### 목표
 
-도메인 이벤트를 transaction boundary 안에서 저장하고, relay가 나중에 안전하게 publish한다.
+도메인 이벤트를 transaction commit 이후 같은 프로세스 안에서 publish한다.
 
 ### 주요 흐름
 
 1. 도메인 모듈이 이벤트를 기록한다.
-2. `messaging`은 `outbox_events`에 pending event를 저장한다.
-3. relay가 enabled이고 publisher가 있으면 claimable event를 processing 상태로 claim한다.
-4. relay가 event type을 지원하는 publisher에 dispatch한다.
-5. 성공하면 published 상태로 표시한다.
-6. 실패하면 retry count, availableAt, lastError를 갱신한다.
+2. `messaging`은 transaction synchronization이 활성화되어 있으면 after-commit hook을 등록한다.
+3. commit 이후 event type을 지원하는 in-process publisher에 dispatch한다.
 
 ### 예외/정책
 
-- relay가 비활성화되어 있거나 publisher가 없으면 아무 event도 publish하지 않는다.
-- `messaging`은 이벤트의 업무 의미를 해석하지 않고 envelope 상태와 전달만 관리한다.
+- publisher가 없으면 아무 event도 publish하지 않는다.
+- `messaging`은 이벤트의 업무 의미를 해석하지 않고 현재 프로세스 안의 전달만 관리한다.
 
 ## 현재 구현 기준에서 제외하거나 향후로 남길 시나리오
 

@@ -46,10 +46,12 @@ class EmailVerificationServiceTest {
             .satisfies(exception ->
                 assertThat(((CustomException) exception).getErrorCode())
                     .isEqualTo(AuthErrorCode.DUPLICATE_EMAIL));
+
+        verify(emailVerificationStore, org.mockito.Mockito.never()).saveToken(anyString(), anyString());
     }
 
     @Test
-    @DisplayName("인증 메일 발송 시 이메일을 정규화해서 중복 확인, 토큰 저장, 발송에 사용한다")
+    @DisplayName("인증 메일 발송 시 이메일을 정규화한 뒤 중복 확인, 토큰 저장, 발송에 사용한다")
     void sendEmail_normalizesEmail() {
         String rawEmail = " Tester@Test.COM ";
         String normalizedEmail = "tester@test.com";

@@ -1,9 +1,11 @@
 package dev.iamrat.board.post.domain;
 
-import dev.iamrat.core.board.post.PostCategory;
 import dev.iamrat.board.support.persistence.AuditingFields;
 import dev.iamrat.board.comment.domain.Comment;
 import dev.iamrat.board.file.domain.PostFile;
+import dev.iamrat.core.board.post.PostBoardCategory;
+import dev.iamrat.core.board.post.PostCategory;
+import dev.iamrat.core.board.post.PostPublishOrigin;
 import jakarta.persistence.*;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
@@ -20,7 +22,10 @@ import lombok.ToString;
 	name = "posts",
 	indexes = {
 		@Index(name = "idx_posts_created_at", columnList = "created_at"),
-		@Index(name = "idx_posts_account_id", columnList = "account_id")
+		@Index(name = "idx_posts_account_id", columnList = "account_id"),
+		@Index(name = "idx_posts_category", columnList = "category"),
+		@Index(name = "idx_posts_board_category", columnList = "board_category"),
+		@Index(name = "idx_posts_publish_origin", columnList = "publish_origin")
 	}
 )
 @Getter
@@ -56,6 +61,16 @@ public class Post extends AuditingFields {
 	@Column(name = "category", nullable = false, length = 30)
 	@Builder.Default
 	private PostCategory category = PostCategory.GENERAL;
+
+	@Enumerated(EnumType.STRING)
+	@Column(name = "board_category", nullable = false, length = 30)
+	@Builder.Default
+	private PostBoardCategory boardCategory = PostBoardCategory.GENERAL;
+
+	@Enumerated(EnumType.STRING)
+	@Column(name = "publish_origin", nullable = false, length = 30, updatable = false)
+	@Builder.Default
+	private PostPublishOrigin publishOrigin = PostPublishOrigin.USER;
 
 	@Column(name = "views", nullable = false)
 	@Builder.Default
@@ -95,12 +110,74 @@ public class Post extends AuditingFields {
 		Long accountId,
 		String nickname
 	) {
+		return create(title, content, summary, tags, category, PostPublishOrigin.USER, accountId, nickname);
+	}
+
+	public static Post create(
+		String title,
+		String content,
+		String summary,
+		List<String> tags,
+		PostCategory category,
+		PostBoardCategory boardCategory,
+		Long accountId,
+		String nickname
+	) {
+		return create(
+			title,
+			content,
+			summary,
+			tags,
+			category,
+			boardCategory,
+			PostPublishOrigin.USER,
+			accountId,
+			nickname
+		);
+	}
+
+	public static Post create(
+		String title,
+		String content,
+		String summary,
+		List<String> tags,
+		PostCategory category,
+		PostPublishOrigin publishOrigin,
+		Long accountId,
+		String nickname
+	) {
+		return create(
+			title,
+			content,
+			summary,
+			tags,
+			category,
+			PostBoardCategory.GENERAL,
+			publishOrigin,
+			accountId,
+			nickname
+		);
+	}
+
+	public static Post create(
+		String title,
+		String content,
+		String summary,
+		List<String> tags,
+		PostCategory category,
+		PostBoardCategory boardCategory,
+		PostPublishOrigin publishOrigin,
+		Long accountId,
+		String nickname
+	) {
 		return Post.builder()
 			.title(title)
 			.content(content)
 			.summary(summary)
 			.tags(tags == null ? new ArrayList<>() : new ArrayList<>(tags))
 			.category(category == null ? PostCategory.GENERAL : category)
+			.boardCategory(boardCategory == null ? PostBoardCategory.GENERAL : boardCategory)
+			.publishOrigin(publishOrigin == null ? PostPublishOrigin.USER : publishOrigin)
 			.accountId(accountId)
 			.nickname(nickname)
 			.build();
@@ -111,8 +188,37 @@ public class Post extends AuditingFields {
 	}
 
 	public void update(String title, String content) {
+		update(title, content, this.summary, this.tags, this.category, this.boardCategory);
+	}
+
+	public void update(String title, String content, String summary, List<String> tags, PostCategory category) {
+		update(title, content, summary, tags, category, this.boardCategory);
+	}
+
+	public void update(
+		String title,
+		String content,
+		List<String> tags,
+		PostCategory category,
+		PostBoardCategory boardCategory
+	) {
+		update(title, content, this.summary, tags, category, boardCategory);
+	}
+
+	public void update(
+		String title,
+		String content,
+		String summary,
+		List<String> tags,
+		PostCategory category,
+		PostBoardCategory boardCategory
+	) {
 		this.title = title;
 		this.content = content;
+		this.summary = summary;
+		this.tags = tags == null ? new ArrayList<>() : new ArrayList<>(tags);
+		this.category = category == null ? PostCategory.GENERAL : category;
+		this.boardCategory = boardCategory == null ? PostBoardCategory.GENERAL : boardCategory;
 	}
 
 	public void updateViews(Long count) {

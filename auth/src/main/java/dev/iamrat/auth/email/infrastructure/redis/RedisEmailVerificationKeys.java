@@ -15,4 +15,5 @@ final class RedisEmailVerificationKeys {
     static String emailVerifiedKey(String email) {
         return EMAIL_VERIFIED_PREFIX + email;
     }
+
 }
