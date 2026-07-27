@@ -30,18 +30,18 @@ class LikeRequestGuardTest {
     }
 
     @Test
-    @DisplayName("첫 like 요청은 cooldown과 rate limit을 통과한다")
+    @DisplayName("첫 좋아요 요청은 쿨다운과 요청 한도를 통과한다")
     void guardPostLike_whenFirstRequest_allows() {
         given(likeRequestWindow.markCooldownIfAbsent("post", 1L, 1L, "like")).willReturn(true);
-        given(likeRequestWindow.incrementRateCount(1L)).willReturn(1L);
+        given(likeRequestWindow.incrementRateCount(1L, 60L)).willReturn(1L);
 
         likeRequestGuard.guardPostLike(1L, 1L);
 
-        verify(likeRequestWindow).startRateWindow(1L);
+        verify(likeRequestWindow).incrementRateCount(1L, 60L);
     }
 
     @Test
-    @DisplayName("같은 액션을 cooldown 안에 반복하면 TOO_MANY_REQUESTS 예외를 던진다")
+    @DisplayName("같은 액션을 쿨다운 안에 반복하면 TOO_MANY_REQUESTS 예외를 던진다")
     void guardPostLike_whenCooldownHit_throwsTooManyRequests() {
         given(likeRequestWindow.markCooldownIfAbsent("post", 1L, 1L, "like")).willReturn(false);
 
@@ -55,7 +55,7 @@ class LikeRequestGuardTest {
     @DisplayName("분당 요청 수가 제한을 넘으면 TOO_MANY_REQUESTS 예외를 던진다")
     void guardPostUnlike_whenRateExceeded_throwsTooManyRequests() {
         given(likeRequestWindow.markCooldownIfAbsent("post", 1L, 1L, "unlike")).willReturn(true);
-        given(likeRequestWindow.incrementRateCount(1L)).willReturn(31L);
+        given(likeRequestWindow.incrementRateCount(1L, 60L)).willReturn(31L);
 
         assertThatThrownBy(() -> likeRequestGuard.guardPostUnlike(1L, 1L))
                 .isInstanceOf(CustomException.class)
@@ -64,13 +64,16 @@ class LikeRequestGuardTest {
     }
 
     @Test
-    @DisplayName("Redis 장애가 나면 fail-open으로 요청을 통과시킨다")
-    void guardCommentLike_whenRedisFails_allowsRequest() {
+    @DisplayName("Redis 장애가 나면 fail-closed로 요청을 제한한다")
+    void guardCommentLike_whenRedisFails_throwsTooManyRequests() {
         given(likeRequestWindow.markCooldownIfAbsent("comment", 7L, 1L, "like"))
             .willThrow(new RuntimeException("redis down"));
 
-        likeRequestGuard.guardCommentLike(7L, 1L);
+        assertThatThrownBy(() -> likeRequestGuard.guardCommentLike(7L, 1L))
+            .isInstanceOf(CustomException.class)
+            .extracting(ex -> ((CustomException) ex).getErrorCode())
+            .isEqualTo(CommonErrorCode.TOO_MANY_REQUESTS);
 
-        verify(likeRequestWindow, never()).incrementRateCount(1L);
+        verify(likeRequestWindow, never()).incrementRateCount(1L, 60L);
     }
 }

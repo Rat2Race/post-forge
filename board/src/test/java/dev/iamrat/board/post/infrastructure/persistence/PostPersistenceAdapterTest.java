@@ -1,6 +1,9 @@
 package dev.iamrat.board.post.infrastructure.persistence;
 
 import dev.iamrat.board.post.domain.Post;
+import dev.iamrat.core.board.post.PostBoardCategory;
+import dev.iamrat.core.board.post.PostCategory;
+import dev.iamrat.core.board.post.PostPublishOrigin;
 import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.DisplayName;
@@ -12,8 +15,11 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.jpa.domain.Specification;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
 
@@ -27,7 +33,7 @@ class PostPersistenceAdapterTest {
     private PostPersistenceAdapter postPersistenceAdapter;
 
     @Test
-    @DisplayName("save delegates to the Spring Data repository")
+    @DisplayName("save는 Spring Data 저장소에 위임한다")
     void save_delegatesToRepository() {
         Post post = post(1L);
         given(postRepository.save(post)).willReturn(post);
@@ -38,7 +44,7 @@ class PostPersistenceAdapterTest {
     }
 
     @Test
-    @DisplayName("findById delegates to the Spring Data repository")
+    @DisplayName("findById는 Spring Data 저장소에 위임한다")
     void findById_delegatesToRepository() {
         Post post = post(1L);
         given(postRepository.findById(1L)).willReturn(Optional.of(post));
@@ -49,7 +55,7 @@ class PostPersistenceAdapterTest {
     }
 
     @Test
-    @DisplayName("findAll delegates to the Spring Data repository")
+    @DisplayName("findAll은 Spring Data 저장소에 위임한다")
     void findAll_delegatesToRepository() {
         PageRequest pageable = PageRequest.of(0, 10);
         Post post = post(1L);
@@ -61,20 +67,27 @@ class PostPersistenceAdapterTest {
     }
 
     @Test
-    @DisplayName("findByKeyword delegates to the Spring Data repository")
-    void findByKeyword_delegatesToRepository() {
+    @DisplayName("findByFilters는 Spring Data 저장소에 위임한다")
+    void findByFilters_delegatesToRepository() {
         PageRequest pageable = PageRequest.of(0, 10);
         Post post = post(1L);
-        given(postRepository.findByKeyword("keyword", pageable))
+        given(postRepository.findAll(anySpecification(), eq(pageable)))
             .willReturn(new PageImpl<>(List.of(post), pageable, 1));
 
-        Page<Post> result = postPersistenceAdapter.findByKeyword("keyword", pageable);
+        Page<Post> result = postPersistenceAdapter.findByFilters(
+            "keyword",
+            PostCategory.PRODUCT_LAUNCH_NEWS,
+            PostBoardCategory.DIGITAL,
+            PostPublishOrigin.SYSTEM_BATCH,
+            pageable
+        );
 
         assertThat(result.getContent()).containsExactly(post);
+        verify(postRepository).findAll(anySpecification(), eq(pageable));
     }
 
     @Test
-    @DisplayName("update counters delegate to the Spring Data repository")
+    @DisplayName("카운터 갱신은 Spring Data 저장소에 위임한다")
     void updateCounters_delegateToRepository() {
         postPersistenceAdapter.updateViews(1L, 10L);
         postPersistenceAdapter.updateLikeCount(1L, 3L);
@@ -84,7 +97,7 @@ class PostPersistenceAdapterTest {
     }
 
     @Test
-    @DisplayName("delete delegates to the Spring Data repository")
+    @DisplayName("delete는 Spring Data 저장소에 위임한다")
     void delete_delegatesToRepository() {
         Post post = post(1L);
 
@@ -101,5 +114,9 @@ class PostPersistenceAdapterTest {
             .accountId(1L)
             .nickname("writer")
             .build();
+    }
+
+    private Specification<Post> anySpecification() {
+        return any();
     }
 }
