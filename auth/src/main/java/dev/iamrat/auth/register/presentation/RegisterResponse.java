@@ -1,4 +1,4 @@
-package dev.iamrat.auth.register.presentation.dto;
+package dev.iamrat.auth.register.presentation;
 
 public record RegisterResponse(
     Long accountId,

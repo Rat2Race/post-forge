@@ -1,4 +1,4 @@
-package dev.iamrat.auth.security.handler;
+package dev.iamrat.auth.security.infrastructure.handler;
 
 import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;

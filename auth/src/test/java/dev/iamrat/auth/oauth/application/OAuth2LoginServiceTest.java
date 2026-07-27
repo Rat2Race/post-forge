@@ -5,7 +5,7 @@ import dev.iamrat.core.global.exception.CustomException;
 import dev.iamrat.auth.account.domain.Account;
 import dev.iamrat.auth.account.domain.AccountStatus;
 import dev.iamrat.auth.account.domain.AccountRole;
-import dev.iamrat.auth.security.principal.AccountAuthorityMapper;
+import dev.iamrat.auth.security.infrastructure.principal.AccountAuthorityMapper;
 import dev.iamrat.auth.support.error.AuthErrorCode;
 import dev.iamrat.auth.token.application.TokenIssueResult;
 import dev.iamrat.auth.token.application.TokenService;
@@ -16,6 +16,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -51,7 +53,7 @@ class OAuth2LoginServiceTest {
             .build();
 
         given(oAuth2CodeService.exchangeCode("exchange-code")).willReturn(1L);
-        given(accountQueryService.findWithRolesById(1L)).willReturn(account);
+        given(accountQueryService.findWithRolesById(1L)).willReturn(Optional.of(account));
         given(tokenService.createToken(account.getId(), AccountAuthorityMapper.toAuthorities(account))).willReturn(tokenIssueResult);
 
         TokenIssueResult result = oAuth2LoginService.exchange("exchange-code");
@@ -75,7 +77,7 @@ class OAuth2LoginServiceTest {
         Account account = account("oauth-user", "tester", AccountStatus.SUSPENDED);
 
         given(oAuth2CodeService.exchangeCode("exchange-code")).willReturn(1L);
-        given(accountQueryService.findWithRolesById(1L)).willReturn(account);
+        given(accountQueryService.findWithRolesById(1L)).willReturn(Optional.of(account));
 
         assertThatThrownBy(() -> oAuth2LoginService.exchange("exchange-code"))
             .isInstanceOf(CustomException.class)

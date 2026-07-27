@@ -29,7 +29,7 @@ class RedisEmailVerificationStoreTest {
     RedisEmailVerificationStore redisEmailVerificationStore;
 
     @Test
-    @DisplayName("인증 토큰은 email_verify_token prefix와 30분 TTL로 저장한다")
+    @DisplayName("인증 토큰은 email_verify_token 접두사와 30분 TTL로 저장한다")
     void saveToken_storesTokenWithTtl() {
         given(redisTemplate.opsForValue()).willReturn(valueOperations);
 
@@ -48,7 +48,7 @@ class RedisEmailVerificationStoreTest {
     }
 
     @Test
-    @DisplayName("인증 완료 상태는 email_verified prefix와 1시간 TTL로 저장한다")
+    @DisplayName("인증 완료 상태는 email_verified 접두사와 1시간 TTL로 저장한다")
     void markVerified_storesVerifiedFlagWithTtl() {
         given(redisTemplate.opsForValue()).willReturn(valueOperations);
 

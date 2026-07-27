@@ -1,4 +1,4 @@
-package dev.iamrat.auth.security.principal;
+package dev.iamrat.auth.security.infrastructure.principal;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -13,7 +13,7 @@ import org.junit.jupiter.api.Test;
 class AccountAuthorityMapperTest {
 
     @Test
-    @DisplayName("계정 role을 Spring Security 권한으로 변환한다")
+    @DisplayName("계정 권한을 Spring Security 권한으로 변환한다")
     void toAuthorities_mapsAccountRolesToGrantedAuthorities() {
         Account account = Account.builder()
             .username("admin")

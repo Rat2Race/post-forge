@@ -5,6 +5,7 @@ import dev.iamrat.auth.account.domain.AccountPolicy;
 import dev.iamrat.auth.account.domain.AccountStatus;
 import dev.iamrat.auth.support.error.AuthErrorCode;
 import dev.iamrat.auth.support.normalizer.EmailNormalizer;
+import dev.iamrat.auth.token.application.RefreshTokenStore;
 import dev.iamrat.core.global.exception.CustomException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -16,7 +17,9 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional(readOnly = true)
 public class AccountCommandService {
     private final AccountStore accountStore;
+    private final AccountQueryService accountQueryService;
     private final PasswordEncoder passwordEncoder;
+    private final RefreshTokenStore refreshTokenStore;
     private final AccountPolicy accountPolicy = new AccountPolicy();
 
     @Transactional
@@ -43,11 +46,6 @@ public class AccountCommandService {
         return accountStore.saveAndFlush(account);
     }
 
-    private Account findWithRolesById(Long accountId) {
-        return accountStore.findWithRolesById(accountId)
-            .orElseThrow(() -> new CustomException(AuthErrorCode.USER_NOT_FOUND));
-    }
-
     @Transactional
     public void updateNickname(Long accountId, String nickname) {
         Account account = findWithRolesById(accountId);
@@ -72,6 +70,7 @@ public class AccountCommandService {
         }
 
         account.updatePassword(passwordEncoder.encode(newPassword));
+        refreshTokenStore.delete(accountId);
     }
 
     @Transactional
@@ -80,5 +79,10 @@ public class AccountCommandService {
 
         Account account = findWithRolesById(accountId);
         account.updateStatus(status);
+    }
+
+    private Account findWithRolesById(Long accountId) {
+        return accountQueryService.findWithRolesById(accountId)
+            .orElseThrow(() -> new CustomException(AuthErrorCode.USER_NOT_FOUND));
     }
 }

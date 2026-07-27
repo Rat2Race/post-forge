@@ -4,7 +4,7 @@ import dev.iamrat.core.global.error.CommonErrorCode;
 import dev.iamrat.core.global.exception.CustomException;
 import dev.iamrat.auth.account.application.AccountQueryService;
 import dev.iamrat.auth.account.domain.Account;
-import dev.iamrat.auth.security.principal.AccountAuthorityMapper;
+import dev.iamrat.auth.security.infrastructure.principal.AccountAuthorityMapper;
 import dev.iamrat.auth.support.error.AuthErrorCode;
 import dev.iamrat.auth.token.application.TokenIssueResult;
 import dev.iamrat.auth.token.application.TokenService;
@@ -26,7 +26,8 @@ public class OAuth2LoginService {
         }
 
         Long accountId = oAuth2CodeService.exchangeCode(code.trim());
-        Account account = accountQueryService.findWithRolesById(accountId);
+        Account account = accountQueryService.findWithRolesById(accountId)
+            .orElseThrow(() -> new CustomException(AuthErrorCode.USER_NOT_FOUND));
         if (!account.isActive()) {
             throw new CustomException(AuthErrorCode.ACCOUNT_NOT_ACTIVE);
         }

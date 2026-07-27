@@ -2,8 +2,8 @@ package dev.iamrat.auth.token.application;
 
 import dev.iamrat.auth.account.application.AccountQueryService;
 import dev.iamrat.auth.account.domain.Account;
-import dev.iamrat.auth.security.principal.AccountAuthorityMapper;
-import dev.iamrat.auth.security.principal.AuthenticatedAccount;
+import dev.iamrat.auth.security.infrastructure.principal.AccountAuthorityMapper;
+import dev.iamrat.auth.security.infrastructure.principal.AuthenticatedAccount;
 import dev.iamrat.auth.support.error.AuthErrorCode;
 import dev.iamrat.core.global.exception.CustomException;
 import java.util.Collection;
@@ -43,7 +43,8 @@ public class TokenService {
 
         refreshTokenStore.validate(accountId, refreshToken);
 
-        Account account = accountQueryService.findWithRolesById(accountId);
+        Account account = accountQueryService.findWithRolesById(accountId)
+            .orElseThrow(() -> new CustomException(AuthErrorCode.USER_NOT_FOUND));
         if (!account.isActive()) {
             throw new CustomException(AuthErrorCode.ACCOUNT_NOT_ACTIVE);
         }

@@ -9,7 +9,7 @@ import dev.iamrat.auth.account.application.AccountQueryService;
 import dev.iamrat.auth.account.domain.Account;
 import dev.iamrat.auth.account.domain.AccountStatus;
 import dev.iamrat.auth.account.domain.AccountRole;
-import dev.iamrat.auth.security.principal.CustomUserDetails;
+import dev.iamrat.auth.security.infrastructure.principal.CustomUserDetails;
 import dev.iamrat.auth.support.error.AuthErrorCode;
 import java.util.Optional;
 import org.junit.jupiter.api.DisplayName;

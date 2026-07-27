@@ -1,8 +1,6 @@
 package dev.iamrat.auth.account.application;
 
 import dev.iamrat.auth.account.domain.Account;
-import dev.iamrat.auth.support.error.AuthErrorCode;
-import dev.iamrat.core.global.exception.CustomException;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -14,9 +12,12 @@ import org.springframework.transaction.annotation.Transactional;
 public class AccountQueryService {
     private final AccountStore accountStore;
 
-    public Account findWithRolesById(Long accountId) {
-        return accountStore.findWithRolesById(accountId)
-            .orElseThrow(() -> new CustomException(AuthErrorCode.USER_NOT_FOUND));
+    public Optional<Account> findById(Long accountId) {
+        return accountStore.findById(accountId);
+    }
+
+    public Optional<Account> findWithRolesById(Long accountId) {
+        return accountStore.findWithRolesById(accountId);
     }
 
     public Optional<Account> findByUsername(String username) {

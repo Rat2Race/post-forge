@@ -3,10 +3,9 @@ package dev.iamrat.auth.login.presentation;
 import dev.iamrat.core.account.UserPrincipal;
 import dev.iamrat.core.global.dto.MessageResponse;
 import dev.iamrat.auth.login.application.LoginService;
-import dev.iamrat.auth.login.presentation.dto.LoginRequest;
 import dev.iamrat.auth.token.application.TokenIssueResult;
 import dev.iamrat.auth.token.presentation.CookieProvider;
-import dev.iamrat.auth.token.presentation.dto.AccessTokenResponse;
+import dev.iamrat.auth.token.presentation.AccessTokenResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
@@ -24,7 +23,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/auth")
+@RequestMapping("/api/auth")
 @RequiredArgsConstructor
 @Slf4j
 public class LoginController {
@@ -57,6 +56,7 @@ public class LoginController {
 			HttpServletResponse response) {
 		loginService.logout(userDetails.getAccountId());
 		cookieProvider.removeRefreshTokenCookie(response);
+
 		return ResponseEntity.ok(MessageResponse.of("로그아웃되었습니다."));
 	}
 }

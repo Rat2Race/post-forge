@@ -3,9 +3,8 @@ package dev.iamrat.auth.account.presentation;
 import dev.iamrat.auth.account.application.AccountCommandService;
 import dev.iamrat.auth.account.application.AccountQueryService;
 import dev.iamrat.auth.account.domain.Account;
-import dev.iamrat.auth.account.presentation.dto.AccountResponse;
-import dev.iamrat.auth.account.presentation.dto.AccountUpdateRequest;
-import dev.iamrat.auth.account.presentation.dto.PasswordUpdateRequest;
+import dev.iamrat.auth.support.error.AuthErrorCode;
+import dev.iamrat.core.global.exception.CustomException;
 import dev.iamrat.core.global.dto.MessageResponse;
 import dev.iamrat.core.account.UserPrincipal;
 import jakarta.validation.Valid;
@@ -17,7 +16,7 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/user/account")
+@RequestMapping("/api/user/account")
 @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
 public class AccountController {
 
@@ -28,7 +27,8 @@ public class AccountController {
     public ResponseEntity<AccountResponse> getMyAccount(
             @AuthenticationPrincipal UserPrincipal userDetails) {
 
-        Account account = accountQueryService.findWithRolesById(userDetails.getAccountId());
+        Account account = accountQueryService.findWithRolesById(userDetails.getAccountId())
+            .orElseThrow(() -> new CustomException(AuthErrorCode.USER_NOT_FOUND));
         return ResponseEntity.ok(AccountResponse.from(account));
     }
 
@@ -37,7 +37,9 @@ public class AccountController {
             @AuthenticationPrincipal UserPrincipal userDetails,
             @RequestBody @Valid AccountUpdateRequest request) {
 
-        accountCommandService.updateNickname(userDetails.getAccountId(), request.nickname());
+        accountCommandService.updateNickname(
+                userDetails.getAccountId(),
+                request.nickname());
         return ResponseEntity.ok(MessageResponse.of("닉네임 변경 완료"));
     }
 

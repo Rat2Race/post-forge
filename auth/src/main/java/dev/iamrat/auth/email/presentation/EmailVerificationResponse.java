@@ -1,4 +1,4 @@
-package dev.iamrat.auth.email.presentation.dto;
+package dev.iamrat.auth.email.presentation;
 
 public record EmailVerificationResponse(
     String message,

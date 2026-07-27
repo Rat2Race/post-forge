@@ -10,7 +10,7 @@ import org.junit.jupiter.api.Test;
 class AccountTest {
 
     @Test
-    @DisplayName("Local 계정 factory는 기본 provider와 회원 role을 설정한다")
+    @DisplayName("로컬 계정 팩토리는 기본 제공자와 회원 권한을 설정한다")
     void createLocal_setsDefaultProviderAndUserRole() {
         Account account = Account.createLocal(
             "testuser1",
@@ -30,7 +30,7 @@ class AccountTest {
     }
 
     @Test
-    @DisplayName("OAuth 계정 factory는 provider identity와 회원 role을 설정한다")
+    @DisplayName("OAuth 계정 팩토리는 제공자 식별자와 회원 권한을 설정한다")
     void createOAuth_setsProviderIdentityAndUserRole() {
         Account account = Account.createOAuth(
             "GOOGLE",

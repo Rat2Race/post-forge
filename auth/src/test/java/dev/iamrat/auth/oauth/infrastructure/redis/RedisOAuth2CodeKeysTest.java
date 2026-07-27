@@ -8,7 +8,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 class RedisOAuth2CodeKeysTest {
 
     @Test
-    @DisplayName("OAuth2 교환 코드 key는 code 단위로 생성한다")
+    @DisplayName("OAuth2 교환 코드 키는 코드 단위로 생성한다")
     void exchangeCodeKey_includesCode() {
         assertThat(RedisOAuth2CodeKeys.exchangeCodeKey("exchange-code"))
             .isEqualTo("oauth2_code:exchange-code");

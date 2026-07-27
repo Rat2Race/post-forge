@@ -5,8 +5,12 @@ import dev.iamrat.core.global.exception.CustomException;
 
 public class AccountPolicy {
 
+    public boolean isActive(Account account) {
+        return account.isActive();
+    }
+
     public void requireActive(Account account) {
-        if (!account.isActive()) {
+        if (!isActive(account)) {
             throw new CustomException(AuthErrorCode.ACCOUNT_NOT_ACTIVE);
         }
     }

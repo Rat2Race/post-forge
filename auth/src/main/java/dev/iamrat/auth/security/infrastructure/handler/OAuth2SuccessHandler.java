@@ -1,4 +1,4 @@
-package dev.iamrat.auth.security.handler;
+package dev.iamrat.auth.security.infrastructure.handler;
 
 import dev.iamrat.auth.oauth.application.OAuth2CodeService;
 import dev.iamrat.core.account.UserPrincipal;
@@ -7,6 +7,8 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+
+import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.Authentication;
@@ -37,6 +39,11 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
                 oAuth2RedirectProperties.getRedirectUrl(),
                 code
             );
+
+            HttpSession session = request.getSession(false);
+            if (session != null) {
+                session.invalidate();
+            }
 
             response.sendRedirect(redirectUrl);
         } catch (Exception e) {

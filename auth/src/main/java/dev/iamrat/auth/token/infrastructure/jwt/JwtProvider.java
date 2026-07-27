@@ -62,7 +62,7 @@ public class JwtProvider implements TokenIssuer {
             log.debug("JWT 만료: {}", e.getMessage());
             throw new CustomException(AuthErrorCode.EXPIRED_TOKEN);
         } catch (JwtException | IllegalArgumentException e) {
-            log.error("JWT 검증 실패: {}", e.getMessage());
+            log.debug("JWT 검증 실패: {}", e.getMessage());
             throw new CustomException(AuthErrorCode.INVALID_TOKEN);
         }
     }

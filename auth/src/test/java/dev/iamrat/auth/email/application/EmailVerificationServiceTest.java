@@ -5,15 +5,20 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.BDDMockito.willThrow;
+import static org.mockito.Mockito.inOrder;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
 import dev.iamrat.auth.account.application.AccountQueryService;
 import dev.iamrat.auth.support.error.AuthErrorCode;
+import dev.iamrat.core.global.error.CommonErrorCode;
 import dev.iamrat.core.global.exception.CustomException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InOrder;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -31,6 +36,9 @@ class EmailVerificationServiceTest {
     @Mock
     EmailSender emailSender;
 
+    @Mock
+    EmailVerificationRequestGuard emailVerificationRequestGuard;
+
     @InjectMocks
     EmailVerificationService emailVerificationService;
 
@@ -46,10 +54,12 @@ class EmailVerificationServiceTest {
             .satisfies(exception ->
                 assertThat(((CustomException) exception).getErrorCode())
                     .isEqualTo(AuthErrorCode.DUPLICATE_EMAIL));
+
+        verify(emailVerificationRequestGuard).guard(mockEmail);
     }
 
     @Test
-    @DisplayName("인증 메일 발송 시 이메일을 정규화해서 중복 확인, 토큰 저장, 발송에 사용한다")
+    @DisplayName("인증 메일 발송 시 요청 가드를 먼저 통과한 뒤 중복 확인, 토큰 저장, 발송에 사용한다")
     void sendEmail_normalizesEmail() {
         String rawEmail = " Tester@Test.COM ";
         String normalizedEmail = "tester@test.com";
@@ -58,9 +68,28 @@ class EmailVerificationServiceTest {
 
         emailVerificationService.sendVerificationEmail(rawEmail);
 
-        verify(accountQueryService).existsByEmail(normalizedEmail);
+        InOrder inOrder = inOrder(emailVerificationRequestGuard, accountQueryService);
+        inOrder.verify(emailVerificationRequestGuard).guard(normalizedEmail);
+        inOrder.verify(accountQueryService).existsByEmail(normalizedEmail);
         verify(emailVerificationStore).saveToken(anyString(), eq(normalizedEmail));
         verify(emailSender).sendVerificationEmail(eq(normalizedEmail), anyString());
+    }
+
+    @Test
+    @DisplayName("요청 가드에서 막히면 이메일 중복 조회를 하지 않는다")
+    void sendEmail_whenGuardRejects_doesNotQueryDuplicateEmail() {
+        String normalizedEmail = "tester@test.com";
+        willThrow(new CustomException(CommonErrorCode.TOO_MANY_REQUESTS))
+            .given(emailVerificationRequestGuard)
+            .guard(normalizedEmail);
+
+        assertThatThrownBy(() -> emailVerificationService.sendVerificationEmail(normalizedEmail))
+            .isInstanceOf(CustomException.class)
+            .satisfies(exception ->
+                assertThat(((CustomException) exception).getErrorCode())
+                    .isEqualTo(CommonErrorCode.TOO_MANY_REQUESTS));
+
+        verify(accountQueryService, never()).existsByEmail(anyString());
     }
 
     @Test

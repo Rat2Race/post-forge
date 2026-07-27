@@ -1,4 +1,4 @@
-package dev.iamrat.auth.oauth.presentation.dto;
+package dev.iamrat.auth.oauth.presentation;
 
 import jakarta.validation.constraints.NotBlank;
 

@@ -1,8 +1,6 @@
 package dev.iamrat.auth.register.presentation;
 
 import dev.iamrat.auth.register.application.RegisterService;
-import dev.iamrat.auth.register.presentation.dto.RegisterRequest;
-import dev.iamrat.auth.register.presentation.dto.RegisterResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -14,7 +12,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/auth/register")
+@RequestMapping("/api/auth/register")
 @RequiredArgsConstructor
 @Slf4j
 public class RegisterController {

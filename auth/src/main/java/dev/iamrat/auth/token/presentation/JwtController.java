@@ -4,7 +4,6 @@ import dev.iamrat.auth.support.error.AuthErrorCode;
 import dev.iamrat.core.global.exception.CustomException;
 import dev.iamrat.auth.token.application.TokenIssueResult;
 import dev.iamrat.auth.token.application.TokenService;
-import dev.iamrat.auth.token.presentation.dto.AccessTokenResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -18,7 +17,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/auth/token")
+@RequestMapping("/api/auth/token")
 @RequiredArgsConstructor
 @Slf4j
 public class JwtController {
@@ -31,7 +30,7 @@ public class JwtController {
 		String refreshToken = cookieProvider.extractRefreshToken(request.getCookies());
 
 		if (refreshToken == null || refreshToken.isBlank()) {
-			throw new CustomException(AuthErrorCode.INVALID_TOKEN);
+			throw new CustomException(AuthErrorCode.UNAUTHORIZED);
 		}
 
 		TokenIssueResult tokenIssueResult = tokenService.reissueToken(refreshToken);

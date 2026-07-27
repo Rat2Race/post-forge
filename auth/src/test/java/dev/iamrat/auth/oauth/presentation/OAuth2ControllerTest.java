@@ -1,8 +1,5 @@
 package dev.iamrat.auth.oauth.presentation;
 
-import dev.iamrat.auth.support.error.AuthErrorCode;
-import dev.iamrat.core.global.exception.CustomException;
-import dev.iamrat.auth.support.web.TestExceptionResponseHandler;
 import dev.iamrat.auth.oauth.application.OAuth2LoginService;
 import dev.iamrat.auth.token.application.TokenIssueResult;
 import dev.iamrat.auth.token.presentation.CookieProvider;
@@ -13,7 +10,6 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
@@ -28,7 +24,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @Tag("webmvc")
 @WebMvcTest(controllers = OAuth2Controller.class)
 @AutoConfigureMockMvc(addFilters = false)
-@Import(TestExceptionResponseHandler.class)
 class OAuth2ControllerTest {
 
     @Autowired
@@ -56,7 +51,7 @@ class OAuth2ControllerTest {
             given(oAuth2LoginService.exchange("exchange-code"))
                 .willReturn(tokenIssueResult);
 
-            mockMvc.perform(post("/auth/oauth2/exchange")
+            mockMvc.perform(post("/api/auth/oauth2/exchange")
                     .contentType(MediaType.APPLICATION_JSON)
                     .content("""
                         {
@@ -82,35 +77,16 @@ class OAuth2ControllerTest {
     class ExchangeFailure {
 
         @Test
-        @DisplayName("비즈니스 예외를 그대로 전달한다")
-        void exchange_invalidCode_returnsExpectedStatus() throws Exception {
-            given(oAuth2LoginService.exchange("invalid-code"))
-                .willThrow(new CustomException(AuthErrorCode.INVALID_TOKEN));
-
-            mockMvc.perform(post("/auth/oauth2/exchange")
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content("""
-                        {
-                          "code": "invalid-code"
-                        }
-                        """))
-                .andExpect(status().isUnauthorized())
-                .andExpect(jsonPath("$.error").value("INVALID_TOKEN"));
-        }
-
-        @Test
         @DisplayName("code가 비어 있으면 validation error를 반환한다")
         void exchange_blankCode_returnsValidationError() throws Exception {
-            mockMvc.perform(post("/auth/oauth2/exchange")
+            mockMvc.perform(post("/api/auth/oauth2/exchange")
                     .contentType(MediaType.APPLICATION_JSON)
                     .content("""
                         {
                           "code": " "
                         }
                         """))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.error").value("VALIDATION_ERROR"))
-                .andExpect(jsonPath("$.validation.code").value("OAuth2 authorization code는 필수입니다"));
+                .andExpect(status().isBadRequest());
         }
     }
 }

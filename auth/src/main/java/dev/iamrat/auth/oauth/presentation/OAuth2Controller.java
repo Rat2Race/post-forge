@@ -1,10 +1,9 @@
 package dev.iamrat.auth.oauth.presentation;
 
 import dev.iamrat.auth.oauth.application.OAuth2LoginService;
-import dev.iamrat.auth.oauth.presentation.dto.OAuth2ExchangeRequest;
 import dev.iamrat.auth.token.application.TokenIssueResult;
 import dev.iamrat.auth.token.presentation.CookieProvider;
-import dev.iamrat.auth.token.presentation.dto.AccessTokenResponse;
+import dev.iamrat.auth.token.presentation.AccessTokenResponse;
 import jakarta.validation.Valid;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -21,7 +20,7 @@ public class OAuth2Controller {
     private final OAuth2LoginService oAuth2LoginService;
     private final CookieProvider cookieProvider;
 
-    @PostMapping("/auth/oauth2/exchange")
+    @PostMapping("/api/auth/oauth2/exchange")
     public ResponseEntity<AccessTokenResponse> exchange(@RequestBody @Valid OAuth2ExchangeRequest request,
                                                         HttpServletResponse response) {
         TokenIssueResult tokenIssueResult = oAuth2LoginService.exchange(request.code());

@@ -1,7 +1,7 @@
-package dev.iamrat.auth.security.handler;
+package dev.iamrat.auth.security.infrastructure.handler;
 
 import dev.iamrat.auth.oauth.application.OAuth2CodeService;
-import dev.iamrat.auth.security.principal.AuthenticatedAccount;
+import dev.iamrat.auth.security.infrastructure.principal.AuthenticatedAccount;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
@@ -35,7 +35,7 @@ class OAuth2SuccessHandlerTest {
     }
 
     @Test
-    @DisplayName("OAuth2 인증 성공 시 accountId로 코드를 발급하고 프론트 콜백 URL로 리다이렉트한다")
+    @DisplayName("OAuth2 인증 성공 시 계정 ID로 코드를 발급하고 프론트 콜백 URL로 리다이렉트한다")
     void onAuthenticationSuccess_redirectsWithIssuedCode() throws Exception {
         given(oAuth2CodeService.createCode(42L)).willReturn("oauth-code-42");
         TestingAuthenticationToken authentication = new TestingAuthenticationToken(

@@ -15,9 +15,12 @@ public class EmailVerificationService {
     private final AccountQueryService accountQueryService;
     private final EmailVerificationStore emailVerificationStore;
     private final EmailSender emailSender;
+    private final EmailVerificationRequestGuard emailVerificationRequestGuard;
 
     public void sendVerificationEmail(String email) {
         String normalizedEmail = EmailNormalizer.normalize(email);
+
+        emailVerificationRequestGuard.guard(normalizedEmail);
 
         if (accountQueryService.existsByEmail(normalizedEmail)) {
             throw new CustomException(AuthErrorCode.DUPLICATE_EMAIL);
@@ -44,9 +47,7 @@ public class EmailVerificationService {
     }
 
     public boolean isEmailVerified(String email) {
-        String normalizedEmail = EmailNormalizer.normalize(email);
-
-        return emailVerificationStore.isVerified(normalizedEmail);
+        return emailVerificationStore.isVerified(EmailNormalizer.normalize(email));
     }
 
     public void removeVerifiedEmail(String email) {

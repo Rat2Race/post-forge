@@ -29,7 +29,7 @@ class JwtProviderTest {
     }
 
     @Test
-    @DisplayName("올바른 파라미터로 생성한 토큰을 파싱하면 subject와 roles가 일치한다")
+    @DisplayName("올바른 파라미터로 생성한 토큰을 파싱하면 주체와 권한이 일치한다")
     void generateToken_validParams_claimsMatch() {
         Long accountId = 1L;
         List<String> authorities = List.of("ROLE_USER");

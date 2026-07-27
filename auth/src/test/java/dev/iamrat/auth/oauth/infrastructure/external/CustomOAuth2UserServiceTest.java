@@ -5,7 +5,7 @@ import dev.iamrat.auth.account.domain.AccountStatus;
 import dev.iamrat.auth.account.domain.AccountRole;
 import dev.iamrat.auth.oauth.application.OAuth2AccountService;
 import dev.iamrat.auth.oauth.application.OAuth2UserProfile;
-import dev.iamrat.auth.security.principal.CustomOAuth2User;
+import dev.iamrat.auth.security.infrastructure.principal.CustomOAuth2User;
 import dev.iamrat.auth.support.error.AuthErrorCode;
 import java.util.Collections;
 import java.util.Map;

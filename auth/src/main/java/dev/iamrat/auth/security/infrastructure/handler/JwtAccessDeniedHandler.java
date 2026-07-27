@@ -1,8 +1,7 @@
-package dev.iamrat.auth.security.handler;
+package dev.iamrat.auth.security.infrastructure.handler;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.iamrat.core.global.dto.ErrorResponse;
-import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
@@ -11,30 +10,30 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
-import org.springframework.security.core.AuthenticationException;
-import org.springframework.security.web.AuthenticationEntryPoint;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.stereotype.Component;
 
-@Component
 @Slf4j
+@Component
 @RequiredArgsConstructor
-public class JwtAuthenticationEntryPoint implements AuthenticationEntryPoint {
+public class JwtAccessDeniedHandler implements AccessDeniedHandler {
     private final ObjectMapper objectMapper;
 
     @Override
-    public void commence(HttpServletRequest request, HttpServletResponse response,
-        AuthenticationException authException) throws IOException, ServletException {
+    public void handle(HttpServletRequest request, HttpServletResponse response,
+        AccessDeniedException accessDeniedException) throws IOException {
 
-        log.debug("Unauthorized error: {}", authException.getMessage());
+        log.debug("Access denied: {}, uri: {}", accessDeniedException.getMessage(), request.getRequestURI());
 
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
-        response.setStatus(HttpStatus.UNAUTHORIZED.value());
+        response.setStatus(HttpStatus.FORBIDDEN.value());
         response.setCharacterEncoding("UTF-8");
 
         ErrorResponse errorResponse = ErrorResponse.builder()
-            .status(HttpStatus.UNAUTHORIZED.value())
-            .error("UNAUTHORIZED")
-            .message("인증이 필요합니다.")
+            .status(HttpStatus.FORBIDDEN.value())
+            .error("FORBIDDEN")
+            .message("접근 권한이 없습니다.")
             .timestamp(LocalDateTime.now())
             .build();
 

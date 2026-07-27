@@ -28,7 +28,7 @@ class OAuth2CodeServiceTest {
     OAuth2CodeService oAuth2CodeService;
 
     @Test
-    @DisplayName("accountId로 OAuth2 교환 코드를 생성하고 저장한다")
+    @DisplayName("계정 ID로 OAuth2 교환 코드를 생성하고 저장한다")
     void createCode_storesExchangeCode() {
         String code = oAuth2CodeService.createCode(1L);
 
@@ -39,7 +39,7 @@ class OAuth2CodeServiceTest {
     }
 
     @Test
-    @DisplayName("code 교환은 값을 삭제하면서 accountId를 반환한다")
+    @DisplayName("코드 교환은 값을 삭제하면서 계정 ID를 반환한다")
     void exchangeCode_existingCode_returnsAccountId() {
         given(oAuth2CodeStore.getAndDelete("exchange-code")).willReturn("1");
 
@@ -47,7 +47,7 @@ class OAuth2CodeServiceTest {
     }
 
     @Test
-    @DisplayName("저장된 code가 없으면 INVALID_TOKEN 예외를 던진다")
+    @DisplayName("저장된 코드가 없으면 INVALID_TOKEN 예외를 던진다")
     void exchangeCode_missingCode_throwsInvalidToken() {
         given(oAuth2CodeStore.getAndDelete("missing-code")).willReturn(null);
 
@@ -58,7 +58,7 @@ class OAuth2CodeServiceTest {
     }
 
     @Test
-    @DisplayName("저장된 accountId가 숫자가 아니면 INVALID_TOKEN 예외를 던진다")
+    @DisplayName("저장된 계정 ID가 숫자가 아니면 INVALID_TOKEN 예외를 던진다")
     void exchangeCode_invalidStoredAccountId_throwsInvalidToken() {
         given(oAuth2CodeStore.getAndDelete("exchange-code")).willReturn("not-number");
 
@@ -69,7 +69,7 @@ class OAuth2CodeServiceTest {
     }
 
     @Test
-    @DisplayName("accountId가 없으면 code를 만들지 않는다")
+    @DisplayName("계정 ID가 없으면 코드를 만들지 않는다")
     void createCode_nullAccountId_throwsInvalidToken() {
         assertThatThrownBy(() -> oAuth2CodeService.createCode(null))
             .isInstanceOf(CustomException.class)

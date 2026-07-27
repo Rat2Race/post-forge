@@ -11,18 +11,15 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.iamrat.auth.account.application.AccountCommandService;
 import dev.iamrat.auth.account.application.AccountQueryService;
 import dev.iamrat.auth.account.domain.Account;
-import dev.iamrat.auth.account.presentation.dto.AccountUpdateRequest;
-import dev.iamrat.auth.account.presentation.dto.PasswordUpdateRequest;
-import dev.iamrat.auth.security.principal.AuthenticatedAccount;
-import dev.iamrat.auth.support.web.TestExceptionResponseHandler;
+import dev.iamrat.auth.security.infrastructure.principal.AuthenticatedAccount;
 import java.util.List;
+import java.util.Optional;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -32,7 +29,6 @@ import org.springframework.test.web.servlet.MockMvc;
 
 @WebMvcTest(AccountController.class)
 @AutoConfigureMockMvc(addFilters = false)
-@Import(TestExceptionResponseHandler.class)
 class AccountControllerTest {
 
     @Autowired
@@ -57,9 +53,9 @@ class AccountControllerTest {
     void getMyAccount_authenticatedUser_returnsAccountResponse() throws Exception {
         authenticateAccount(1L);
         Account account = Account.createLocal("testuser1", "encoded-password", "test@example.com", "길동이");
-        given(accountQueryService.findWithRolesById(1L)).willReturn(account);
+        given(accountQueryService.findWithRolesById(1L)).willReturn(Optional.of(account));
 
-        mockMvc.perform(get("/user/account"))
+        mockMvc.perform(get("/api/user/account"))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.username").value("testuser1"))
             .andExpect(jsonPath("$.nickname").value("길동이"))
@@ -74,7 +70,7 @@ class AccountControllerTest {
         authenticateAccount(1L);
         AccountUpdateRequest request = new AccountUpdateRequest("새닉네임");
 
-        mockMvc.perform(patch("/user/account/nickname")
+        mockMvc.perform(patch("/api/user/account/nickname")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
             .andExpect(status().isOk())
@@ -89,7 +85,7 @@ class AccountControllerTest {
         authenticateAccount(1L);
         PasswordUpdateRequest request = new PasswordUpdateRequest("Old1234!", "New1234!");
 
-        mockMvc.perform(patch("/user/account/password")
+        mockMvc.perform(patch("/api/user/account/password")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
             .andExpect(status().isOk())
