@@ -4,11 +4,14 @@ import dev.iamrat.core.global.error.CommonErrorCode;
 import dev.iamrat.core.global.exception.CustomException;
 import dev.iamrat.core.global.error.ErrorCode;
 import dev.iamrat.core.global.dto.ErrorResponse;
+import jakarta.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.core.Ordered;
+import org.springframework.core.annotation.Order;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.http.ResponseEntity;
@@ -17,10 +20,13 @@ import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 @Slf4j
+@Order(Ordered.LOWEST_PRECEDENCE)
+@RestControllerAdvice
 public class ExceptionResponseHandler {
 
     private ResponseEntity<ErrorResponse> buildErrorResponse(ErrorCode errorCode) {
@@ -50,8 +56,15 @@ public class ExceptionResponseHandler {
     }
 
     @ExceptionHandler(CustomException.class)
-    public ResponseEntity<ErrorResponse> handleCustomException(CustomException e) {
-        log.error("CustomException: {}", e.getMessage());
+    public ResponseEntity<ErrorResponse> handleCustomException(CustomException e, HttpServletRequest request) {
+        ErrorCode errorCode = e.getErrorCode();
+        if (errorCode.getHttpStatus().is5xxServerError()) {
+            log.error("CustomException: code={}, status={}, uri={}, message={}",
+                errorCode.name(), errorCode.getHttpStatus().value(), request.getRequestURI(), e.getMessage());
+        } else {
+            log.warn("CustomException: code={}, status={}, uri={}, message={}",
+                errorCode.name(), errorCode.getHttpStatus().value(), request.getRequestURI(), e.getMessage());
+        }
         return buildErrorResponse(e.getErrorCode());
     }
 
