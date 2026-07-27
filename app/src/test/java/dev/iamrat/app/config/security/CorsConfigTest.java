@@ -13,7 +13,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 class CorsConfigTest {
 
     @Test
-    @DisplayName("CORS 설정은 app 모듈 전용 properties에서 허용 origin을 읽는다")
+    @DisplayName("CORS 설정은 app 모듈 전용 설정에서 허용 출처를 읽는다")
     void corsConfigurationSource_usesAppCorsProperties() {
         CorsProperties properties = new CorsProperties();
         properties.setAllowedOrigins(List.of("https://front.example"));
@@ -21,7 +21,7 @@ class CorsConfigTest {
 
         CorsConfigurationSource source = config.corsConfigurationSource();
         CorsConfiguration corsConfiguration =
-            source.getCorsConfiguration(new MockHttpServletRequest("GET", "/posts"));
+            source.getCorsConfiguration(new MockHttpServletRequest("GET", "/api/posts"));
 
         assertThat(corsConfiguration).isNotNull();
         assertThat(corsConfiguration.getAllowedOrigins()).containsExactly("https://front.example");

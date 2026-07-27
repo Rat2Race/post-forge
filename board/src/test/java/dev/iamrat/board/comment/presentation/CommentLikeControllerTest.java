@@ -3,11 +3,8 @@ package dev.iamrat.board.comment.presentation;
 import dev.iamrat.board.comment.application.CommentCommandService;
 import dev.iamrat.board.comment.application.CommentInteractionService;
 import dev.iamrat.board.comment.application.CommentQueryService;
-import dev.iamrat.board.like.application.LikeResponse;
-import dev.iamrat.core.global.error.CommonErrorCode;
-import dev.iamrat.core.global.exception.CustomException;
+import dev.iamrat.board.like.application.LikeResult;
 import dev.iamrat.core.account.UserPrincipal;
-import dev.iamrat.board.support.web.TestExceptionResponseHandler;
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
@@ -55,31 +52,19 @@ class CommentLikeControllerTest {
     @BeforeEach
     void setUp() {
         mockMvc = MockMvcBuilders.standaloneSetup(commentController)
-                .setControllerAdvice(new TestExceptionResponseHandler())
                 .setCustomArgumentResolvers(new TestUserPrincipalResolver())
                 .build();
     }
 
     @Test
     @DisplayName("POST /comments/{id}/like 는 좋아요 응답을 반환한다")
-    void likeComment_returnsLikeResponse() throws Exception {
-        given(commentInteractionService.likeComment(2L, 1L)).willReturn(new LikeResponse(true, 4L));
+    void likeComment_returnsLikeResult() throws Exception {
+        given(commentInteractionService.likeComment(2L, 1L)).willReturn(new LikeResult(true, 4L));
 
-        mockMvc.perform(post("/posts/1/comments/2/like").with(user(1L)))
+        mockMvc.perform(post("/api/posts/1/comments/2/like").with(user(1L)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.isLiked").value(true))
                 .andExpect(jsonPath("$.likeCount").value(4L));
-    }
-
-    @Test
-    @DisplayName("댓글 좋아요 요청이 rate limit 에 걸리면 429를 반환한다")
-    void likeComment_whenTooManyRequests_returns429() throws Exception {
-        given(commentInteractionService.likeComment(2L, 1L))
-            .willThrow(new CustomException(CommonErrorCode.TOO_MANY_REQUESTS));
-
-        mockMvc.perform(post("/posts/1/comments/2/like").with(user(1L)))
-                .andExpect(status().isTooManyRequests())
-                .andExpect(jsonPath("$.error").value("TOO_MANY_REQUESTS"));
     }
 
     private RequestPostProcessor user(Long accountId) {

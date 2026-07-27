@@ -32,7 +32,7 @@ class S3FileStorageAdapterTest {
     private S3FileStorageAdapter storageAdapter;
 
     @Test
-    @DisplayName("S3 업로드 Presigned URL을 생성한다")
+    @DisplayName("S3 업로드 사전 서명 URL을 생성한다")
     void createUploadUrl_returnsPresignedPutUrl() throws MalformedURLException {
         given(s3Properties.bucket()).willReturn("postforge-uploads");
         PresignedPutObjectRequest presignedRequest = mock(PresignedPutObjectRequest.class);
@@ -45,7 +45,7 @@ class S3FileStorageAdapterTest {
     }
 
     @Test
-    @DisplayName("S3 다운로드 Presigned URL을 생성한다")
+    @DisplayName("S3 다운로드 사전 서명 URL을 생성한다")
     void createDownloadUrl_returnsPresignedGetUrl() throws MalformedURLException {
         given(s3Properties.bucket()).willReturn("postforge-uploads");
         PresignedGetObjectRequest presignedRequest = mock(PresignedGetObjectRequest.class);

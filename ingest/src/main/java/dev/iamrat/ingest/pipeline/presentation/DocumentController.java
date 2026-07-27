@@ -2,9 +2,8 @@ package dev.iamrat.ingest.pipeline.presentation;
 
 import dev.iamrat.core.openapi.OpenApiSecurityPolicy;
 import dev.iamrat.ingest.pipeline.application.DocumentIngestCommand;
+import dev.iamrat.ingest.pipeline.application.DocumentIngestResult;
 import dev.iamrat.ingest.pipeline.application.IngestPipelineService;
-import dev.iamrat.ingest.pipeline.presentation.dto.DocumentRequest;
-import dev.iamrat.ingest.pipeline.presentation.dto.DocumentResponse;
 import jakarta.validation.Valid;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -20,10 +19,16 @@ public class DocumentController {
 
     private final IngestPipelineService ingestPipelineService;
 
-    @PostMapping("/ingest/documents")
+    @PostMapping("/api/ingest/documents")
     public ResponseEntity<DocumentResponse> store(@Valid @RequestBody List<DocumentRequest> requests) {
-        ingestPipelineService.store(toCommands(requests));
-        return ResponseEntity.ok(new DocumentResponse(requests.size(), "문서가 저장되었습니다."));
+        DocumentIngestResult result = ingestPipelineService.store(toCommands(requests));
+        return ResponseEntity.ok(new DocumentResponse(
+            result.count(),
+            result.chunkCount(),
+            result.embeddingsStored(),
+            result.degradationReason(),
+            result.embeddingsStored() ? "문서가 저장되었습니다." : "문서가 임베딩 없이 접수되었습니다."
+        ));
     }
 
     private List<DocumentIngestCommand> toCommands(List<DocumentRequest> requests) {

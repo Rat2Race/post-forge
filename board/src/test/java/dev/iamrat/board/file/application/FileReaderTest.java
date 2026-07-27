@@ -29,7 +29,7 @@ class FileReaderTest {
     private FileStorage fileStorage;
 
     @Test
-    @DisplayName("Presigned Download URL 생성 시 파일 조회 후 URL 반환")
+    @DisplayName("사전 서명 다운로드 URL 생성 시 파일 조회 후 URL을 반환한다")
     void createDownloadUrl_existingFile_returnsDownloadUrl() {
         PostFile file = PostFile.builder()
             .originalFileName("photo.png")

@@ -1,10 +1,12 @@
 package dev.iamrat.app.config.security;
 
 import dev.iamrat.app.config.monitoring.MetricsConfig;
-import dev.iamrat.auth.security.handler.JwtAccessDeniedHandler;
-import dev.iamrat.auth.security.handler.JwtAuthenticationEntryPoint;
-import dev.iamrat.auth.token.application.TokenService;
 import dev.iamrat.auth.login.application.CustomUserDetailsService;
+import dev.iamrat.auth.security.infrastructure.handler.JwtAccessDeniedHandler;
+import dev.iamrat.auth.security.infrastructure.handler.JwtAuthenticationEntryPoint;
+import dev.iamrat.auth.support.error.AuthErrorCode;
+import dev.iamrat.auth.token.application.TokenService;
+import dev.iamrat.core.global.exception.CustomException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -14,7 +16,6 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
-import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -57,7 +58,9 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.BDDMockito.willAnswer;
+import static org.mockito.BDDMockito.willThrow;
 
 @SpringBootTest(classes = SecurityConfigRegressionTest.TestApp.class)
 @AutoConfigureMockMvc
@@ -113,17 +116,78 @@ class SecurityConfigRegressionTest {
     @Test
     @DisplayName("게시글 상세 조회는 인증 없이 허용한다")
     void getPostDetail_allowsAnonymousAccess() throws Exception {
-        mockMvc.perform(get("/posts/1"))
+        mockMvc.perform(get("/api/posts/1"))
             .andExpect(status().isOk())
             .andExpect(content().string("post-detail"));
     }
 
     @Test
+    @DisplayName("이메일 인증 링크는 잘못된 Bearer 헤더가 있어도 공개 엔드포인트로 처리한다")
+    void emailVerification_allowsAnonymousAccessWithInvalidBearerHeader() throws Exception {
+        willThrow(new CustomException(AuthErrorCode.INVALID_TOKEN))
+            .given(tokenService)
+            .resolveAuthentication(anyString());
+
+        mockMvc.perform(get("/api/auth/email/verify")
+                .param("token", "email-verification-token")
+                .header("Authorization", "Bearer stale-access-token"))
+            .andExpect(status().isOk())
+            .andExpect(content().string("email-verified"));
+    }
+
+    @Test
     @DisplayName("댓글 조회는 인증 없이 허용한다")
     void getComments_allowsAnonymousAccess() throws Exception {
-        mockMvc.perform(get("/posts/1/comments"))
+        mockMvc.perform(get("/api/posts/1/comments"))
             .andExpect(status().isOk())
             .andExpect(content().string("comments"));
+    }
+
+    @Test
+    @DisplayName("상품 상세와 가격 이력 조회는 인증 없이 허용한다")
+    void productDetailAndPriceHistory_allowAnonymousAccess() throws Exception {
+        mockMvc.perform(get("/api/products/1"))
+            .andExpect(status().isOk())
+            .andExpect(content().string("product-detail"));
+
+        mockMvc.perform(get("/api/products/1/prices"))
+            .andExpect(status().isOk())
+            .andExpect(content().string("price-history"));
+    }
+
+    @Test
+    @DisplayName("가격 판정 API는 익명 사용자를 차단한다")
+    void priceCheck_rejectsAnonymousAccess() throws Exception {
+        mockMvc.perform(post("/api/price-checks")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{}"))
+            .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    @WithMockUser(roles = "USER")
+    @DisplayName("가격 판정 API는 USER 권한이면 허용한다")
+    void priceCheck_allowsUserRole() throws Exception {
+        mockMvc.perform(post("/api/price-checks")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{}"))
+            .andExpect(status().isOk())
+            .andExpect(content().string("price-check"));
+    }
+
+    @Test
+    @WithMockUser(roles = "USER")
+    @DisplayName("제거된 가격 변동 게시 경로는 wildcard 허용에 걸리지 않는다")
+    void removedPriceRoutes_areDenied() throws Exception {
+        mockMvc.perform(get(removedRoute("/api/products")))
+            .andExpect(status().isForbidden());
+
+        mockMvc.perform(get(removedRoute("/api/posts/auto")))
+            .andExpect(status().isForbidden());
+    }
+
+    private static String removedRoute(String prefix) {
+        return prefix + "/price-" + "drops";
     }
 
     @Test
@@ -141,7 +205,7 @@ class SecurityConfigRegressionTest {
     @Test
     @DisplayName("계정 조회는 익명 사용자를 차단한다")
     void getAccount_rejectsAnonymousAccess() throws Exception {
-        mockMvc.perform(get("/user/account"))
+        mockMvc.perform(get("/api/user/account"))
             .andExpect(status().isUnauthorized());
     }
 
@@ -149,7 +213,7 @@ class SecurityConfigRegressionTest {
     @WithMockUser(roles = "USER")
     @DisplayName("계정 조회는 USER 권한이면 허용한다")
     void getAccount_allowsUserRole() throws Exception {
-        mockMvc.perform(get("/user/account"))
+        mockMvc.perform(get("/api/user/account"))
             .andExpect(status().isOk())
             .andExpect(content().string("account"));
     }
@@ -157,7 +221,7 @@ class SecurityConfigRegressionTest {
     @Test
     @DisplayName("파일 API는 익명 사용자를 차단한다")
     void fileApi_rejectsAnonymousAccess() throws Exception {
-        mockMvc.perform(get("/files/presigned-url"))
+        mockMvc.perform(get("/api/files/presigned-url"))
             .andExpect(status().isUnauthorized());
     }
 
@@ -165,16 +229,16 @@ class SecurityConfigRegressionTest {
     @WithMockUser(roles = "USER")
     @DisplayName("파일 API는 USER 권한이면 허용한다")
     void fileApi_allowsUserRole() throws Exception {
-        mockMvc.perform(get("/files/presigned-url"))
+        mockMvc.perform(get("/api/files/presigned-url"))
             .andExpect(status().isOk())
             .andExpect(content().string("file"));
     }
 
     @Test
     @WithMockUser(roles = "USER")
-    @DisplayName("파일 API legacy S3 경로도 USER 권한이면 허용한다")
-    void fileApi_legacyS3Path_allowsUserRole() throws Exception {
-        mockMvc.perform(get("/files/s3/presigned-url"))
+    @DisplayName("파일 API S3 경로도 USER 권한이면 허용한다")
+    void fileApi_s3Path_allowsUserRole() throws Exception {
+        mockMvc.perform(get("/api/files/s3/presigned-url"))
             .andExpect(status().isOk())
             .andExpect(content().string("file"));
     }
@@ -182,7 +246,7 @@ class SecurityConfigRegressionTest {
     @Test
     @DisplayName("게시글 생성은 익명 사용자를 차단한다")
     void createPost_rejectsAnonymousAccess() throws Exception {
-        mockMvc.perform(post("/posts")
+        mockMvc.perform(post("/api/posts")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{}"))
             .andExpect(status().isUnauthorized());
@@ -192,7 +256,7 @@ class SecurityConfigRegressionTest {
     @WithMockUser(roles = "USER")
     @DisplayName("게시글 생성은 USER 권한이면 허용한다")
     void createPost_allowsUserRole() throws Exception {
-        mockMvc.perform(post("/posts")
+        mockMvc.perform(post("/api/posts")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{}"))
             .andExpect(status().isOk())
@@ -203,15 +267,35 @@ class SecurityConfigRegressionTest {
     @WithMockUser(roles = "ADMIN")
     @DisplayName("좋아요는 ADMIN만으로는 허용하지 않는다")
     void likePost_rejectsAdminRole() throws Exception {
-        mockMvc.perform(post("/posts/1/like"))
+        mockMvc.perform(post("/api/posts/1/like"))
             .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @DisplayName("구매 판단 투표는 익명 사용자를 차단한다")
+    void purchaseVote_rejectsAnonymousAccess() throws Exception {
+        mockMvc.perform(put("/api/posts/1/purchase-vote")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{}"))
+            .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    @WithMockUser(roles = "USER")
+    @DisplayName("구매 판단 투표는 USER 권한이면 허용한다")
+    void purchaseVote_allowsUserRole() throws Exception {
+        mockMvc.perform(put("/api/posts/1/purchase-vote")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{}"))
+            .andExpect(status().isOk())
+            .andExpect(content().string("purchase-voted"));
     }
 
     @Test
     @WithMockUser(roles = "ADMIN")
     @DisplayName("게시글 삭제는 ADMIN 권한이면 허용한다")
     void deletePost_allowsAdminRole() throws Exception {
-        mockMvc.perform(delete("/posts/1"))
+        mockMvc.perform(delete("/api/posts/1"))
             .andExpect(status().isOk())
             .andExpect(content().string("deleted"));
     }
@@ -220,7 +304,7 @@ class SecurityConfigRegressionTest {
     @WithMockUser(roles = "USER")
     @DisplayName("댓글 수정은 USER 권한이면 허용한다")
     void updateComment_allowsUserRole() throws Exception {
-        mockMvc.perform(put("/posts/1/comments/2")
+        mockMvc.perform(put("/api/posts/1/comments/2")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{}"))
             .andExpect(status().isOk())
@@ -230,90 +314,61 @@ class SecurityConfigRegressionTest {
     @Test
     @DisplayName("AI API는 익명 사용자를 차단한다")
     void aiApi_rejectsAnonymousAccess() throws Exception {
-        mockMvc.perform(get("/ai/ping"))
+        mockMvc.perform(get("/api/ai/ping"))
             .andExpect(status().isUnauthorized());
     }
 
     @Test
     @DisplayName("Ingest API는 익명 사용자를 차단한다")
     void ingestApi_rejectsAnonymousAccess() throws Exception {
-        mockMvc.perform(get("/ingest/ping"))
+        mockMvc.perform(get("/api/ingest/ping"))
             .andExpect(status().isUnauthorized());
     }
 
     @Test
-    @DisplayName("collector trigger는 익명 사용자를 차단한다")
-    void collectorTrigger_rejectsAnonymousAccess() throws Exception {
-        mockMvc.perform(post("/collector/naver-news"))
+    @DisplayName("상품 수집 관리자 경로는 익명 사용자를 차단한다")
+    void adminProductCollection_rejectsAnonymousAccess() throws Exception {
+        mockMvc.perform(post("/api/admin/collection-jobs/manual"))
             .andExpect(status().isUnauthorized());
     }
 
     @Test
     @WithMockUser(roles = "USER")
-    @DisplayName("collector trigger는 USER 권한을 차단한다")
-    void collectorTrigger_rejectsUserRole() throws Exception {
-        mockMvc.perform(post("/collector/naver-news"))
+    @DisplayName("상품 수집 관리자 경로는 USER 권한을 차단한다")
+    void adminProductCollection_rejectsUserRole() throws Exception {
+        mockMvc.perform(post("/api/admin/collection-jobs/manual"))
             .andExpect(status().isForbidden());
     }
 
     @Test
     @WithMockUser(roles = "ADMIN")
-    @DisplayName("collector trigger는 ADMIN 권한이면 허용한다")
-    void collectorTrigger_allowsAdminRole() throws Exception {
-        mockMvc.perform(post("/collector/naver-news"))
+    @DisplayName("상품 수집 관리자 경로는 ADMIN 권한이면 허용한다")
+    void adminProductCollection_allowsAdminRole() throws Exception {
+        mockMvc.perform(post("/api/admin/collection-jobs/manual"))
             .andExpect(status().isOk())
-            .andExpect(content().string("collected"));
+            .andExpect(content().string("manual-collected"));
     }
 
     @Test
     @WithMockUser(roles = "USER")
-    @DisplayName("internal collector ingest는 USER 권한을 차단한다")
-    void internalCollectorDocuments_rejectsUserRole() throws Exception {
-        mockMvc.perform(post("/internal/collector/documents")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("[]"))
+    @DisplayName("출시 뉴스 관리자 경로는 USER 권한을 차단한다")
+    void adminLaunchNews_rejectsUserRole() throws Exception {
+        mockMvc.perform(post("/api/admin/launch-news/manual"))
             .andExpect(status().isForbidden());
     }
 
     @Test
     @WithMockUser(roles = "ADMIN")
-    @DisplayName("internal collector ingest는 ADMIN 권한이면 허용한다")
-    void internalCollectorDocuments_allowsAdminRole() throws Exception {
-        mockMvc.perform(post("/internal/collector/documents")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("[]"))
+    @DisplayName("출시 뉴스 관리자 경로는 ADMIN 권한이면 허용한다")
+    void adminLaunchNews_allowsAdminRole() throws Exception {
+        mockMvc.perform(post("/api/admin/launch-news/manual"))
             .andExpect(status().isOk())
-            .andExpect(content().string("internal-collected"));
-    }
-
-    @Test
-    @DisplayName("internal collector ingest는 익명 사용자를 차단한다")
-    void internalCollectorDocuments_rejectsAnonymousAccess() throws Exception {
-        mockMvc.perform(post("/internal/collector/documents")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("[]"))
-            .andExpect(status().isUnauthorized());
-    }
-
-    @Test
-    @DisplayName("로컬 Test Console route는 인증 필터에서 막지 않는다")
-    void testConsoleRoute_allowsAnonymousAccessToReachLocalOnlyController() throws Exception {
-        mockMvc.perform(get("/test-console"))
-            .andExpect(status().isOk())
-            .andExpect(content().string("test-console"));
-    }
-
-    @Test
-    @DisplayName("로컬 Test Console API route는 인증 필터에서 막지 않는다")
-    void testConsoleApi_allowsAnonymousAccessToReachLocalOnlyController() throws Exception {
-        mockMvc.perform(get("/api/test-console/state"))
-            .andExpect(status().isOk())
-            .andExpect(content().string("test-console-state"));
+            .andExpect(content().string("launch-news-posted"));
     }
 
     @Test
     @WithMockUser(roles = "USER")
-    @DisplayName("명시되지 않은 route는 인증된 사용자도 차단한다")
+    @DisplayName("명시되지 않은 경로는 인증된 사용자도 차단한다")
     void undeclaredRoute_deniesAuthenticatedUser() throws Exception {
         mockMvc.perform(get("/undeclared-route"))
             .andExpect(status().isForbidden());
@@ -333,62 +388,17 @@ class SecurityConfigRegressionTest {
         DummyFileController.class,
         DummyAiController.class,
         DummyIngestController.class,
-        DummyCollectorController.class,
-        DummyInternalCollectorController.class,
-        DummyTestConsoleController.class
+        DummyProductController.class,
+        DummyPriceCheckController.class,
+        DummyEmailVerificationController.class,
+        DummyAdminProductCollectionController.class,
+        DummyAdminLaunchNewsController.class
     })
     static class TestApp {
 
         @Bean
-        HttpAuthorizationRules httpAuthorizationRules() {
-            return requests -> requests
-                .requestMatchers(
-                    "/",
-                    "/index.html",
-                    "/favicon.ico",
-                    "/images/**",
-                    "/v3/api-docs/**",
-                    "/swagger-ui.html",
-                    "/swagger-ui/**",
-                    "/webjars/**",
-                    "/test-console",
-                    "/test-console/**",
-                    "/api/test-console",
-                    "/api/test-console/**",
-                    "/oauth2/**",
-                    "/login/oauth2/**"
-                ).permitAll()
-                .requestMatchers(HttpMethod.POST,
-                    "/auth/register",
-                    "/auth/login",
-                    "/auth/token/reissue",
-                    "/auth/oauth2/exchange",
-                    "/auth/email/send"
-                ).permitAll()
-                .requestMatchers(HttpMethod.GET,
-                    "/auth/email/verify",
-                    "/posts",
-                    "/posts/*",
-                    "/posts/*/comments"
-                ).permitAll()
-                .requestMatchers(
-                    "/auth/logout",
-                    "/user/account",
-                    "/user/account/**",
-                    "/posts",
-                    "/posts/*",
-                    "/posts/*/like",
-                    "/posts/*/comments",
-                    "/posts/*/comments/*",
-                    "/posts/*/comments/*/like",
-                    "/files/**",
-                    "/ai/**",
-                    "/ingest/**"
-                ).hasAnyRole("USER", "ADMIN")
-                .requestMatchers("/collector/**").hasRole("ADMIN")
-                .requestMatchers("/internal/collector/**").hasRole("ADMIN")
-                .requestMatchers("/admin/**").hasRole("ADMIN")
-                .anyRequest().denyAll();
+        PostForgeAuthorizationRules postForgeAuthorizationRules() {
+            return new PostForgeAuthorizationRules();
         }
 
         @Bean
@@ -436,7 +446,30 @@ class SecurityConfigRegressionTest {
     }
 
     @RestController
-    @RequestMapping("/posts")
+    static class DummyProductController {
+
+        @GetMapping("/api/products/{productId:\\d+}")
+        String getProduct(@PathVariable Long productId) {
+            return "product-detail";
+        }
+
+        @GetMapping("/api/products/{productId:\\d+}/prices")
+        String getPriceHistory(@PathVariable Long productId) {
+            return "price-history";
+        }
+    }
+
+    @RestController
+    static class DummyEmailVerificationController {
+
+        @GetMapping("/api/auth/email/verify")
+        String verifyEmail() {
+            return "email-verified";
+        }
+    }
+
+    @RestController
+    @RequestMapping("/api/posts")
     static class DummyPostController {
 
         @GetMapping("/{postId}")
@@ -461,10 +494,16 @@ class SecurityConfigRegressionTest {
         String likePost(@PathVariable Long postId) {
             return "liked";
         }
+
+        @PutMapping("/{postId}/purchase-vote")
+        @PreAuthorize("hasRole('USER')")
+        String votePurchase(@PathVariable Long postId) {
+            return "purchase-voted";
+        }
     }
 
     @RestController
-    @RequestMapping("/posts/{postId}/comments")
+    @RequestMapping("/api/posts/{postId}/comments")
     static class DummyCommentController {
 
         @GetMapping
@@ -481,7 +520,7 @@ class SecurityConfigRegressionTest {
     }
 
     @RestController
-    @RequestMapping("/user/account")
+    @RequestMapping("/api/user/account")
     @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     static class DummyAccountController {
 
@@ -492,7 +531,7 @@ class SecurityConfigRegressionTest {
     }
 
     @RestController
-    @RequestMapping({"/files", "/files/s3"})
+    @RequestMapping({"/api/files", "/api/files/s3"})
     static class DummyFileController {
 
         @GetMapping("/presigned-url")
@@ -502,7 +541,7 @@ class SecurityConfigRegressionTest {
     }
 
     @RestController
-    @RequestMapping("/ai")
+    @RequestMapping("/api/ai")
     static class DummyAiController {
 
         @GetMapping("/ping")
@@ -512,7 +551,7 @@ class SecurityConfigRegressionTest {
     }
 
     @RestController
-    @RequestMapping("/ingest")
+    @RequestMapping("/api/ingest")
     static class DummyIngestController {
 
         @GetMapping("/ping")
@@ -522,36 +561,32 @@ class SecurityConfigRegressionTest {
     }
 
     @RestController
-    @RequestMapping("/collector")
-    static class DummyCollectorController {
+    static class DummyPriceCheckController {
 
-        @PostMapping("/naver-news")
+        @PostMapping("/api/price-checks")
+        String checkPrice(@RequestBody String ignored) {
+            return "price-check";
+        }
+    }
+
+    @RestController
+    @RequestMapping("/api/admin/collection-jobs")
+    static class DummyAdminProductCollectionController {
+
+        @PostMapping("/manual")
         String collect() {
-            return "collected";
+            return "manual-collected";
         }
     }
 
     @RestController
-    @RequestMapping("/internal/collector")
-    static class DummyInternalCollectorController {
+    @RequestMapping("/api/admin/launch-news")
+    static class DummyAdminLaunchNewsController {
 
-        @PostMapping("/documents")
-        String collectDocuments(@RequestBody String ignored) {
-            return "internal-collected";
+        @PostMapping("/manual")
+        String postLaunchNews() {
+            return "launch-news-posted";
         }
     }
 
-    @RestController
-    static class DummyTestConsoleController {
-
-        @GetMapping("/test-console")
-        String page() {
-            return "test-console";
-        }
-
-        @GetMapping("/api/test-console/state")
-        String state() {
-            return "test-console-state";
-        }
-    }
 }

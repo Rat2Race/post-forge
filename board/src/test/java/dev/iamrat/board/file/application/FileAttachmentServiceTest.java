@@ -25,7 +25,7 @@ class FileAttachmentServiceTest {
     private FileAttachmentService fileAttachmentService;
 
     @Test
-    @DisplayName("appendFiles assigns requested files to the post")
+    @DisplayName("appendFiles는 요청한 파일을 게시글에 연결한다")
     void appendFiles_assignsRequestedFilesToPost() {
         Post post = post(1L);
         PostFile file = file(10L, null);
@@ -37,7 +37,7 @@ class FileAttachmentServiceTest {
     }
 
     @Test
-    @DisplayName("appendFiles ignores empty file IDs")
+    @DisplayName("appendFiles는 빈 파일 ID 목록을 무시한다")
     void appendFiles_whenFileIdsEmpty_doesNothing() {
         fileAttachmentService.appendFiles(post(1L), List.of());
 
@@ -45,7 +45,7 @@ class FileAttachmentServiceTest {
     }
 
     @Test
-    @DisplayName("replaceFiles detaches existing files before assigning new files")
+    @DisplayName("replaceFiles는 기존 파일을 분리한 뒤 새 파일을 연결한다")
     void replaceFiles_detachesExistingFilesBeforeAssigningNewFiles() {
         Post post = post(1L);
         PostFile oldFile = file(10L, post);
@@ -60,7 +60,7 @@ class FileAttachmentServiceTest {
     }
 
     @Test
-    @DisplayName("detachFiles unassigns every file attached to the post")
+    @DisplayName("detachFiles는 게시글에 연결된 모든 파일을 분리한다")
     void detachFiles_unassignsAttachedFiles() {
         Post post = post(1L);
         PostFile file = file(10L, post);

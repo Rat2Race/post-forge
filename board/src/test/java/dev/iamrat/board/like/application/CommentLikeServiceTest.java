@@ -43,7 +43,7 @@ class CommentLikeServiceTest {
         given(commentLikeStore.existsByCommentIdAndAccountId(commentId, 1L)).willReturn(true);
         given(commentLikeStore.countByCommentId(commentId)).willReturn(2L);
 
-        LikeResponse response = commentLikeService.like(commentId, 1L);
+        LikeResult response = commentLikeService.like(commentId, 1L);
 
         assertThat(response.isLiked()).isTrue();
         assertThat(response.likeCount()).isEqualTo(2L);
@@ -66,7 +66,7 @@ class CommentLikeServiceTest {
         given(commentLikeTargetService.getReference(commentId)).willReturn(commentRef);
         given(commentLikeStore.countByCommentId(commentId)).willReturn(3L);
 
-        LikeResponse response = commentLikeService.like(commentId, 2L);
+        LikeResult response = commentLikeService.like(commentId, 2L);
 
         assertThat(response.isLiked()).isTrue();
         assertThat(response.likeCount()).isEqualTo(3L);
@@ -86,7 +86,7 @@ class CommentLikeServiceTest {
         given(commentLikeStore.deleteByCommentIdAndAccountId(commentId, 4L)).willReturn(1L);
         given(commentLikeStore.countByCommentId(commentId)).willReturn(1L);
 
-        LikeResponse response = commentLikeService.unlike(commentId, 4L);
+        LikeResult response = commentLikeService.unlike(commentId, 4L);
 
         assertThat(response.isLiked()).isFalse();
         assertThat(response.likeCount()).isEqualTo(1L);

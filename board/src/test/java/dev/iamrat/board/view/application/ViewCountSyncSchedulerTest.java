@@ -26,7 +26,7 @@ class ViewCountSyncSchedulerTest {
     private ViewCountSyncScheduler scheduler;
 
     @Test
-    @DisplayName("동기화 중 DB 업데이트가 실패하면 processing set에서 제거하지 않는다")
+    @DisplayName("동기화 중 DB 업데이트가 실패하면 처리 중 집합에서 제거하지 않는다")
     void syncViewCountsToDb_keepsDirtyIdsWhenUpdateFails() {
         given(viewCountStore.claimDirtyIdsForProcessing())
             .willReturn(Optional.of("post:views:dirty:processing"));
@@ -41,7 +41,7 @@ class ViewCountSyncSchedulerTest {
     }
 
     @Test
-    @DisplayName("성공적으로 동기화한 ID는 processing set에서 제거한다")
+    @DisplayName("성공적으로 동기화한 ID는 처리 중 집합에서 제거한다")
     void syncViewCountsToDb_removesProcessedIdsAfterSuccess() {
         given(viewCountStore.claimDirtyIdsForProcessing())
             .willReturn(Optional.of("post:views:dirty:processing"));

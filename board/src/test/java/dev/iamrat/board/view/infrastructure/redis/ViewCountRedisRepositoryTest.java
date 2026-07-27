@@ -58,7 +58,7 @@ class ViewCountRedisRepositoryTest {
     }
 
     @Test
-    @DisplayName("처리 완료한 dirty ID를 제거하고 남은 ID가 없으면 processing key를 삭제한다")
+    @DisplayName("처리 완료한 dirty ID를 제거하고 남은 ID가 없으면 처리 중 키를 삭제한다")
     void removeProcessedDirtyIds_deletesEmptyProcessingSet() {
         given(redisTemplate.opsForSet()).willReturn(setOperations);
         given(setOperations.size("post:views:dirty:processing")).willReturn(0L);
@@ -70,7 +70,7 @@ class ViewCountRedisRepositoryTest {
     }
 
     @Test
-    @DisplayName("dirty set을 processing set으로 claim한다")
+    @DisplayName("dirty 집합을 처리 중 집합으로 선점한다")
     void claimDirtyIdsForProcessing_renamesDirtySet() {
         given(redisTemplate.opsForSet()).willReturn(setOperations);
         given(setOperations.members("post:views:dirty:processing")).willReturn(Set.of());

@@ -22,7 +22,7 @@ class PostFileAppenderTest {
     private PostFileAppender postFileAppender;
 
     @Test
-    @DisplayName("appendFiles delegates file attachment to file application")
+    @DisplayName("appendFiles는 파일 첨부를 파일 애플리케이션에 위임한다")
     void appendFiles_delegatesToFileAttachmentService() {
         Post post = post(1L);
 
@@ -32,7 +32,7 @@ class PostFileAppenderTest {
     }
 
     @Test
-    @DisplayName("replaceFiles delegates file replacement to file application")
+    @DisplayName("replaceFiles는 파일 교체를 파일 애플리케이션에 위임한다")
     void replaceFiles_delegatesToFileAttachmentService() {
         Post post = post(1L);
 
@@ -42,7 +42,7 @@ class PostFileAppenderTest {
     }
 
     @Test
-    @DisplayName("detachFiles delegates file detachment to file application")
+    @DisplayName("detachFiles는 파일 분리를 파일 애플리케이션에 위임한다")
     void detachFiles_delegatesToFileAttachmentService() {
         Post post = post(1L);
 

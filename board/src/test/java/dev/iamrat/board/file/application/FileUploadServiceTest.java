@@ -35,7 +35,7 @@ class FileUploadServiceTest {
     }
 
     @Test
-    @DisplayName("Presigned Upload URL 생성 시 파일 저장 후 URL 반환")
+    @DisplayName("사전 서명 업로드 URL 생성 시 파일 저장 후 URL을 반환한다")
     void testCreatePresignedUrl() {
         PostFile savedFile = PostFile.builder()
                 .id(1L)
@@ -48,7 +48,7 @@ class FileUploadServiceTest {
         given(fileStore.save(any(PostFile.class))).willReturn(savedFile);
         given(fileStorage.createUploadUrl(any(), eq("image/png"))).willReturn("https://storage.example.com/presigned");
 
-        FileUploadResponse response = fileUploadService.createPresignedUrl("photo.png", "image/png");
+        FileUploadResult response = fileUploadService.createPresignedUrl("photo.png", "image/png");
 
         ArgumentCaptor<PostFile> fileCaptor = ArgumentCaptor.forClass(PostFile.class);
         verify(fileStore).save(fileCaptor.capture());
@@ -60,7 +60,7 @@ class FileUploadServiceTest {
     }
 
     @Test
-    @DisplayName("허용되지 않은 확장자는 Presigned URL을 발급하지 않는다")
+    @DisplayName("허용되지 않은 확장자는 사전 서명 URL을 발급하지 않는다")
     void testCreatePresignedUrl_rejectsUnsupportedExtension() {
         assertThatThrownBy(() -> fileUploadService.createPresignedUrl("script.exe", "application/octet-stream"))
                 .isInstanceOf(CustomException.class)
@@ -69,7 +69,7 @@ class FileUploadServiceTest {
     }
 
     @Test
-    @DisplayName("확장자와 contentType이 다르면 Presigned URL을 발급하지 않는다")
+    @DisplayName("확장자와 콘텐츠 타입이 다르면 사전 서명 URL을 발급하지 않는다")
     void testCreatePresignedUrl_rejectsMismatchedContentType() {
         assertThatThrownBy(() -> fileUploadService.createPresignedUrl("photo.png", "image/jpeg"))
                 .isInstanceOf(CustomException.class)
