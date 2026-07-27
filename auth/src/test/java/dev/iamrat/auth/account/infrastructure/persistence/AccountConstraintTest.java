@@ -30,7 +30,7 @@ class AccountConstraintTest {
     }
 
     @Test
-    @DisplayName("username은 중복 저장할 수 없다")
+    @DisplayName("사용자명은 중복 저장할 수 없다")
     void usernameMustBeUnique() {
         accountRepository.saveAndFlush(account("user01", "user01@test.com", "nick01"));
 
@@ -57,7 +57,7 @@ class AccountConstraintTest {
     }
 
     @Test
-    @DisplayName("provider와 providerId 조합은 중복 저장할 수 없다")
+    @DisplayName("제공자와 제공자 ID 조합은 중복 저장할 수 없다")
     void providerAndProviderIdMustBeUniqueTogether() {
         accountRepository.saveAndFlush(oauthAccount("GOOGLE", "google-123", "user01", "user01@test.com", "nick01"));
 
@@ -67,7 +67,7 @@ class AccountConstraintTest {
     }
 
     @Test
-    @DisplayName("username은 필수이다")
+    @DisplayName("사용자명은 필수이다")
     void usernameMustNotBeNull() {
         assertThatThrownBy(() -> accountRepository.saveAndFlush(account(null, "user01@test.com", "nick01")))
             .isInstanceOf(DataIntegrityViolationException.class);
@@ -88,7 +88,7 @@ class AccountConstraintTest {
     }
 
     @Test
-    @DisplayName("provider는 필수이다")
+    @DisplayName("제공자는 필수이다")
     void providerMustNotBeNull() {
         Account account = Account.builder()
             .username("user01")
@@ -119,7 +119,7 @@ class AccountConstraintTest {
     }
 
     @Test
-    @DisplayName("username은 100자를 초과할 수 없다")
+    @DisplayName("사용자명은 100자를 초과할 수 없다")
     void usernameMustNotExceed100Characters() {
         assertThatThrownBy(() -> accountRepository.saveAndFlush(account(repeat("u", 101), "user01@test.com", "nick01")))
             .isInstanceOfAny(DataIntegrityViolationException.class, PersistenceException.class);
@@ -155,7 +155,7 @@ class AccountConstraintTest {
     }
 
     @Test
-    @DisplayName("provider는 30자를 초과할 수 없다")
+    @DisplayName("제공자는 30자를 초과할 수 없다")
     void providerMustNotExceed30Characters() {
         Account account = oauthAccount(repeat("p", 31), "provider-123", "user01", "user01@test.com", "nick01");
 
@@ -164,7 +164,7 @@ class AccountConstraintTest {
     }
 
     @Test
-    @DisplayName("providerId는 150자를 초과할 수 없다")
+    @DisplayName("제공자 ID는 150자를 초과할 수 없다")
     void providerIdMustNotExceed150Characters() {
         Account account = oauthAccount("GOOGLE", repeat("p", 151), "user01", "user01@test.com", "nick01");
 

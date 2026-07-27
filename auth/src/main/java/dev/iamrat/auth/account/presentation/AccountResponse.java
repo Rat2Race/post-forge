@@ -1,4 +1,4 @@
-package dev.iamrat.auth.account.presentation.dto;
+package dev.iamrat.auth.account.presentation;
 
 import dev.iamrat.auth.account.domain.Account;
 import dev.iamrat.auth.account.domain.AccountRole;

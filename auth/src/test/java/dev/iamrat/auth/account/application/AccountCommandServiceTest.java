@@ -11,6 +11,7 @@ import dev.iamrat.auth.account.domain.Account;
 import dev.iamrat.auth.account.domain.AccountStatus;
 import dev.iamrat.auth.account.domain.AccountRole;
 import dev.iamrat.auth.support.error.AuthErrorCode;
+import dev.iamrat.auth.token.application.RefreshTokenStore;
 import dev.iamrat.core.global.exception.CustomException;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
@@ -31,17 +32,28 @@ class AccountCommandServiceTest {
     private AccountStore accountStore;
 
     @Mock
+    private AccountQueryService accountQueryService;
+
+    @Mock
     private PasswordEncoder passwordEncoder;
+
+    @Mock
+    private RefreshTokenStore refreshTokenStore;
 
     private AccountCommandService accountCommandService;
 
     @BeforeEach
     void setUp() {
-        accountCommandService = new AccountCommandService(accountStore, passwordEncoder);
+        accountCommandService = new AccountCommandService(
+            accountStore,
+            accountQueryService,
+            passwordEncoder,
+            refreshTokenStore
+        );
     }
 
     @Test
-    @DisplayName("General 계정은 LOCAL provider와 인코딩된 비밀번호로 생성한다")
+    @DisplayName("일반 계정은 LOCAL 제공자와 인코딩된 비밀번호로 생성한다")
     void createGeneralAccount_setsLocalAccountFields() {
         given(passwordEncoder.encode("Test1234!")).willReturn("encoded-password");
         given(accountStore.saveAndFlush(any(Account.class))).willAnswer(invocation -> invocation.getArgument(0));
@@ -64,7 +76,7 @@ class AccountCommandServiceTest {
     }
 
     @Test
-    @DisplayName("OAuth 계정은 provider identity와 비밀번호 없음으로 생성한다")
+    @DisplayName("OAuth 계정은 제공자 식별자와 비밀번호 없음으로 생성한다")
     void createOAuthAccount_setsOAuthAccountFields() {
         given(accountStore.saveAndFlush(any(Account.class))).willAnswer(invocation -> invocation.getArgument(0));
 
@@ -91,7 +103,7 @@ class AccountCommandServiceTest {
     void updateNickname_inactiveAccount_throwsAccountNotActive() {
         Account account = account(AccountStatus.SUSPENDED, "LOCAL", "encoded-password");
 
-        given(accountStore.findWithRolesById(1L)).willReturn(Optional.of(account));
+        given(accountQueryService.findWithRolesById(1L)).willReturn(Optional.of(account));
 
         assertThatThrownBy(() -> accountCommandService.updateNickname(1L, "newNick"))
             .isInstanceOf(CustomException.class)
@@ -106,7 +118,7 @@ class AccountCommandServiceTest {
     void updateNickname_duplicateNickname_throwsDuplicateNickname() {
         Account account = account(AccountStatus.ACTIVE, "LOCAL", "encoded-password");
 
-        given(accountStore.findWithRolesById(1L)).willReturn(Optional.of(account));
+        given(accountQueryService.findWithRolesById(1L)).willReturn(Optional.of(account));
         given(accountStore.existsByNickname("newNick")).willReturn(true);
 
         assertThatThrownBy(() -> accountCommandService.updateNickname(1L, "newNick"))
@@ -119,11 +131,11 @@ class AccountCommandServiceTest {
     }
 
     @Test
-    @DisplayName("OAuth 계정은 provider 기준으로 비밀번호 변경을 차단한다")
+    @DisplayName("OAuth 계정은 제공자 기준으로 비밀번호 변경을 차단한다")
     void updatePassword_oauthAccount_throwsOAuthPasswordChangeNotAllowed() {
         Account account = account(AccountStatus.ACTIVE, "GOOGLE", "encoded-password");
 
-        given(accountStore.findWithRolesById(1L)).willReturn(Optional.of(account));
+        given(accountQueryService.findWithRolesById(1L)).willReturn(Optional.of(account));
 
         assertThatThrownBy(() -> accountCommandService.updatePassword(1L, "old-password", "new-password"))
             .isInstanceOf(CustomException.class)
@@ -134,11 +146,11 @@ class AccountCommandServiceTest {
     }
 
     @Test
-    @DisplayName("Local 계정은 현재 비밀번호 검증 후 새 비밀번호 해시로 변경한다")
+    @DisplayName("로컬 계정은 현재 비밀번호 검증 후 새 비밀번호 해시로 변경한다")
     void updatePassword_localAccount_updatesEncodedPassword() {
         Account account = account(AccountStatus.ACTIVE, "LOCAL", "old-encoded-password");
 
-        given(accountStore.findWithRolesById(1L)).willReturn(Optional.of(account));
+        given(accountQueryService.findWithRolesById(1L)).willReturn(Optional.of(account));
         given(passwordEncoder.matches("old-password", "old-encoded-password")).willReturn(true);
         given(passwordEncoder.encode("new-password")).willReturn("new-encoded-password");
 
@@ -146,6 +158,7 @@ class AccountCommandServiceTest {
 
         assertThat(account.getPassword()).isEqualTo("new-encoded-password");
         verify(passwordEncoder).encode("new-password");
+        verify(refreshTokenStore).delete(1L);
     }
 
     @Test
@@ -153,7 +166,7 @@ class AccountCommandServiceTest {
     void updateStatus_changesAccountStatus() {
         Account account = account(AccountStatus.ACTIVE, "LOCAL", "encoded-password");
 
-        given(accountStore.findWithRolesById(1L)).willReturn(Optional.of(account));
+        given(accountQueryService.findWithRolesById(1L)).willReturn(Optional.of(account));
 
         accountCommandService.updateStatus(1L, AccountStatus.SUSPENDED);
 
@@ -168,13 +181,13 @@ class AccountCommandServiceTest {
             .satisfies(exception -> assertThat(((CustomException) exception).getErrorCode())
                 .isEqualTo(AuthErrorCode.INVALID_ACCOUNT_STATUS));
 
-        verify(accountStore, never()).findWithRolesById(any());
+        verify(accountQueryService, never()).findWithRolesById(any());
     }
 
     @Test
     @DisplayName("계정 상태 변경 실패 - 계정이 없으면 USER_NOT_FOUND 예외를 던진다")
     void updateStatus_accountNotFound_throwsUserNotFound() {
-        given(accountStore.findWithRolesById(1L)).willReturn(Optional.empty());
+        given(accountQueryService.findWithRolesById(1L)).willReturn(Optional.empty());
 
         assertThatThrownBy(() -> accountCommandService.updateStatus(1L, AccountStatus.SUSPENDED))
             .isInstanceOf(CustomException.class)

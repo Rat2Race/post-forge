@@ -13,12 +13,12 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class AccountProfileReaderAdapter implements AccountProfileReader {
 
-    private final AccountStore accountStore;
+    private final AccountQueryService accountQueryService;
 
     @Override
     @Transactional(readOnly = true)
     public AccountProfile getProfile(Long accountId) {
-        Account account = accountStore.findById(accountId)
+        Account account = accountQueryService.findById(accountId)
             .orElseThrow(() -> new CustomException(AuthErrorCode.USER_NOT_FOUND));
 
         if (!account.isActive()) {

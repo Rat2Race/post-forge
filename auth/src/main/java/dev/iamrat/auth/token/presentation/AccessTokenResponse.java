@@ -1,4 +1,4 @@
-package dev.iamrat.auth.token.presentation.dto;
+package dev.iamrat.auth.token.presentation;
 
 import lombok.Builder;
 

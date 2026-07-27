@@ -1,4 +1,4 @@
-package dev.iamrat.auth.security.filter;
+package dev.iamrat.auth.security.infrastructure.filter;
 
 import dev.iamrat.core.global.exception.CustomException;
 import dev.iamrat.auth.token.application.TokenService;
@@ -37,11 +37,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 log.debug("Security Context에 '{}' 인증 정보를 저장했습니다, uri: {}",
                     authentication.getName(), request.getRequestURI());
             } catch (CustomException e) {
+                SecurityContextHolder.clearContext();
                 log.debug("JWT 인증 실패: {}, uri: {}",
                     e.getMessage(), request.getRequestURI());
             } catch (Exception e) {
-                log.error("예상치 못한 JWT 처리 오류: {}, uri: {}",
-                    e.getMessage(), request.getRequestURI(), e);
+                SecurityContextHolder.clearContext();
+                log.warn("예상치 못한 JWT 처리 오류: {}, uri: {}, exception: {}",
+                    e.getMessage(), request.getRequestURI(), e.getClass().getSimpleName());
             }
         }
 

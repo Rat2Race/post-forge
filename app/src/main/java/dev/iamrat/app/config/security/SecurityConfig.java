@@ -1,6 +1,6 @@
 package dev.iamrat.app.config.security;
 
-import dev.iamrat.auth.security.filter.JwtAuthenticationFilter;
+import dev.iamrat.auth.security.infrastructure.filter.JwtAuthenticationFilter;
 import dev.iamrat.auth.token.application.TokenService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
@@ -40,7 +40,7 @@ public class SecurityConfig {
     private final AuthenticationSuccessHandler oauth2SuccessHandler;
     private final AuthenticationFailureHandler oauth2FailureHandler;
     private final OAuth2UserService<OAuth2UserRequest, OAuth2User> oauth2UserService;
-    private final HttpAuthorizationRules authorizationRules;
+    private final PostForgeAuthorizationRules authorizationRules;
 
     @Bean
     @Order(1)

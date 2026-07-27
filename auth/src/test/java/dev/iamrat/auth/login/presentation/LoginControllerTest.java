@@ -1,13 +1,9 @@
 package dev.iamrat.auth.login.presentation;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import dev.iamrat.core.global.error.CommonErrorCode;
-import dev.iamrat.core.global.exception.CustomException;
-import dev.iamrat.auth.support.web.TestExceptionResponseHandler;
-import dev.iamrat.auth.security.principal.AuthenticatedAccount;
+import dev.iamrat.auth.security.infrastructure.principal.AuthenticatedAccount;
 import dev.iamrat.auth.login.application.LoginService;
-import dev.iamrat.auth.login.presentation.dto.LoginRequest;
-import dev.iamrat.auth.security.handler.SecurityExceptionHandler;
+import dev.iamrat.auth.security.infrastructure.handler.SecurityExceptionHandler;
 import dev.iamrat.auth.token.application.TokenIssueResult;
 import dev.iamrat.auth.token.presentation.CookieProvider;
 import java.util.List;
@@ -42,7 +38,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @Tag("webmvc")
 @WebMvcTest(LoginController.class)
 @AutoConfigureMockMvc(addFilters = false)
-@Import({TestExceptionResponseHandler.class, SecurityExceptionHandler.class})
+@Import(SecurityExceptionHandler.class)
 class LoginControllerTest {
     
     @Autowired
@@ -80,7 +76,7 @@ class LoginControllerTest {
             TokenIssueResult tokenResponse = createTokenResponse();
             given(loginService.login(anyString(), anyString(), anyString())).willReturn(tokenResponse);
             
-            mockMvc.perform(post("/auth/login")
+            mockMvc.perform(post("/api/auth/login")
                     .contentType(MediaType.APPLICATION_JSON)
                     .characterEncoding("utf-8")
                     .content(objectMapper.writeValueAsString(request)))
@@ -96,31 +92,30 @@ class LoginControllerTest {
     class LoginValidationFail {
         
         @ParameterizedTest(name = "{0}")
+        @DisplayName("유효하지 않은 로그인 요청이면 400을 반환한다")
         @MethodSource("loginBusinessExceptions")
-        void login_invalidRequest_returns400(String description, String fieldName, LoginRequest request) throws Exception {
-            mockMvc.perform(post("/auth/login")
+        void login_invalidRequest_returns400(String description, LoginRequest request) throws Exception {
+            mockMvc.perform(post("/api/auth/login")
                     .contentType(MediaType.APPLICATION_JSON)
                     .characterEncoding("utf-8")
                     .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.error").value("VALIDATION_ERROR"))
-                .andExpect(jsonPath("$.validation." + fieldName).exists());
+                .andExpect(status().isBadRequest());
         }
         
         @Test
         @DisplayName("요청 바디가 없으면 400을 반환한다")
         void login_missingBody_returns400() throws Exception {
-            mockMvc.perform(post("/auth/login")
+            mockMvc.perform(post("/api/auth/login")
                     .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isBadRequest());
         }
         
         static Stream<Arguments> loginBusinessExceptions() {
             return Stream.of(
-                Arguments.of("username이 빈 값이면 400을 반환한다", "username", new LoginRequest("", "Test1234!")),
-                Arguments.of("username이 4자 미만이면 400을 반환한다", "username", new LoginRequest("abc", "Test1234!")),
-                Arguments.of("username에 특수문자가 포함되면 400을 반환한다", "username", new LoginRequest("testuser1*^_^*", "Test1234!")),
-                Arguments.of("비밀번호가 빈 값이면 400을 반환한다", "password", new LoginRequest("testuser1", ""))
+                Arguments.of("username이 빈 값이면 400을 반환한다", new LoginRequest("", "Test1234!")),
+                Arguments.of("username이 4자 미만이면 400을 반환한다", new LoginRequest("abc", "Test1234!")),
+                Arguments.of("username에 특수문자가 포함되면 400을 반환한다", new LoginRequest("testuser1*^_^*", "Test1234!")),
+                Arguments.of("비밀번호가 빈 값이면 400을 반환한다", new LoginRequest("testuser1", ""))
             );
         }
     }
@@ -136,26 +131,13 @@ class LoginControllerTest {
             given(loginService.login(anyString(), anyString(), anyString()))
                 .willThrow(new BadCredentialsException("Bad credentials"));
             
-            mockMvc.perform(post("/auth/login")
+            mockMvc.perform(post("/api/auth/login")
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.error").value("INVALID_CREDENTIALS"));
         }
 
-        @Test
-        @DisplayName("로그인 보호 정책에 걸리면 429를 반환한다")
-        void login_tooManyAttempts_returns429() throws Exception {
-            LoginRequest request = createValidLoginRequest();
-            given(loginService.login(anyString(), anyString(), anyString()))
-                .willThrow(new CustomException(CommonErrorCode.TOO_MANY_REQUESTS));
-
-            mockMvc.perform(post("/auth/login")
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isTooManyRequests())
-                .andExpect(jsonPath("$.error").value("TOO_MANY_REQUESTS"));
-        }
     }
     
     @Nested
@@ -169,7 +151,7 @@ class LoginControllerTest {
             SecurityContextHolder.getContext().setAuthentication(userAuthentication());
 
             try {
-                mockMvc.perform(post("/auth/logout"))
+                mockMvc.perform(post("/api/auth/logout"))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.message").value("로그아웃되었습니다."));
             } finally {

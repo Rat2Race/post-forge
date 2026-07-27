@@ -1,4 +1,4 @@
-package dev.iamrat.auth.login.presentation.dto;
+package dev.iamrat.auth.login.presentation;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;

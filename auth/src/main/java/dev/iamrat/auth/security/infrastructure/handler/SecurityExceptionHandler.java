@@ -1,4 +1,4 @@
-package dev.iamrat.auth.security.handler;
+package dev.iamrat.auth.security.infrastructure.handler;
 
 import dev.iamrat.auth.support.error.AuthErrorCode;
 import dev.iamrat.core.global.error.CommonErrorCode;

@@ -30,7 +30,7 @@ class RedisOAuth2CodeStoreTest {
     RedisOAuth2CodeStore redisOAuth2CodeStore;
 
     @Test
-    @DisplayName("OAuth2 교환 코드는 oauth2_code prefix와 60초 TTL로 저장한다")
+    @DisplayName("OAuth2 교환 코드는 oauth2_code 접두사와 60초 TTL로 저장한다")
     void save_storesExchangeCodeWithTtl() {
         given(redisTemplate.opsForValue()).willReturn(valueOperations);
 

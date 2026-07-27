@@ -1,4 +1,4 @@
-package dev.iamrat.auth.security.principal;
+package dev.iamrat.auth.security.infrastructure.principal;
 
 import java.util.Collection;
 

@@ -1,4 +1,4 @@
-package dev.iamrat.auth.register.presentation.dto;
+package dev.iamrat.auth.register.presentation;
 
 import dev.iamrat.auth.register.application.RegisterCommand;
 import jakarta.validation.constraints.Email;

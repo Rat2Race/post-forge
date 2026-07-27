@@ -1,4 +1,4 @@
-package dev.iamrat.auth.email.presentation.dto;
+package dev.iamrat.auth.email.presentation;
 
 import dev.iamrat.auth.support.normalizer.EmailNormalizer;
 import jakarta.validation.constraints.Email;

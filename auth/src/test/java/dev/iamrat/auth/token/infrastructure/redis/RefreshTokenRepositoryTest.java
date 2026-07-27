@@ -39,7 +39,7 @@ class RefreshTokenRepositoryTest {
     }
 
     @Test
-    @DisplayName("Redis에 토큰이 없으면 validate가 INVALID_TOKEN 예외를 던진다")
+    @DisplayName("Redis에 토큰이 없으면 검증이 INVALID_TOKEN 예외를 던진다")
     void validate_notFound_throwsInvalidToken() {
         given(redisTemplate.opsForValue()).willReturn(valueOperations);
         given(valueOperations.get("refresh_token:1")).willReturn(null);
@@ -52,7 +52,7 @@ class RefreshTokenRepositoryTest {
     }
 
     @Test
-    @DisplayName("저장된 토큰과 다르면 validate가 INVALID_TOKEN 예외를 던진다")
+    @DisplayName("저장된 토큰과 다르면 검증이 INVALID_TOKEN 예외를 던진다")
     void validate_mismatch_throwsInvalidToken() {
         given(redisTemplate.opsForValue()).willReturn(valueOperations);
         given(valueOperations.get("refresh_token:1")).willReturn("correct-token");
@@ -65,7 +65,7 @@ class RefreshTokenRepositoryTest {
     }
 
     @Test
-    @DisplayName("리프레시 토큰은 accountId 키와 일 단위 TTL로 저장한다")
+    @DisplayName("리프레시 토큰은 계정 ID 키와 일 단위 TTL로 저장한다")
     void save_setsRefreshTokenWithTtl() {
         given(redisTemplate.opsForValue()).willReturn(valueOperations);
 
@@ -75,7 +75,7 @@ class RefreshTokenRepositoryTest {
     }
 
     @Test
-    @DisplayName("accountId로 리프레시 토큰을 삭제한다")
+    @DisplayName("계정 ID로 리프레시 토큰을 삭제한다")
     void delete_removesRefreshToken() {
         refreshTokenRepository.delete(1L);
 
