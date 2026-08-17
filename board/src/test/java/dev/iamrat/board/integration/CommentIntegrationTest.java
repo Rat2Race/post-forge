@@ -62,6 +62,7 @@ class CommentIntegrationTest {
         PostSummaryResponse savedPost = postCommandService.savePost(
             "댓글 통합 테스트",
             "댓글 통합 테스트용 게시글 본문입니다.",
+            null,
             1L,
             List.of()
         );

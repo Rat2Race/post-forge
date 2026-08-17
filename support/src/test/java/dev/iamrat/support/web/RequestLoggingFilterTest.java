@@ -3,10 +3,12 @@ package dev.iamrat.support.web;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import jakarta.servlet.FilterChain;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.slf4j.MDC;
 import org.springframework.boot.test.system.CapturedOutput;
 import org.springframework.boot.test.system.OutputCaptureExtension;
 import org.springframework.http.HttpStatus;
@@ -33,7 +35,6 @@ class RequestLoggingFilterTest {
         assertThat(response.getHeader(RequestLoggingFilter.REQUEST_ID_HEADER)).isEqualTo("request-123");
         assertThat(output)
             .contains("http_request")
-            .contains("requestId=request-123")
             .contains("method=POST")
             .contains("uri=/auth/login")
             .contains("status=201")
@@ -41,6 +42,22 @@ class RequestLoggingFilterTest {
             .doesNotContain("password=secret");
         assertThat(output.getOut())
             .containsPattern(Pattern.compile("elapsedMs=\\d+\\.\\d{3}"));
+    }
+
+    @Test
+    @DisplayName("요청 처리 동안 MDC에 requestId를 넣고 처리 후 정리한다")
+    void requestLog_putsRequestIdIntoMdcAndClearsAfterward() throws Exception {
+        MockHttpServletRequest request = new MockHttpServletRequest("GET", "/api/posts");
+        request.addHeader(RequestLoggingFilter.REQUEST_ID_HEADER, "request-777");
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        AtomicReference<String> mdcDuringRequest = new AtomicReference<>();
+        FilterChain chain = (servletRequest, servletResponse) ->
+            mdcDuringRequest.set(MDC.get(RequestLoggingFilter.MDC_REQUEST_ID_KEY));
+
+        filter.doFilter(request, response, chain);
+
+        assertThat(mdcDuringRequest.get()).isEqualTo("request-777");
+        assertThat(MDC.get(RequestLoggingFilter.MDC_REQUEST_ID_KEY)).isNull();
     }
 
     @Test

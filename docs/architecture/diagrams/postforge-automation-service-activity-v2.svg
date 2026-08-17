@@ -1,0 +1,220 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080" viewBox="0 0 1920 1080" role="img" aria-labelledby="title desc">
+  <title id="title">PostForge 자동화 서비스 활동 다이어그램</title>
+  <desc id="desc">상품 자동 수집, 출시 뉴스 자동 게시, Outbox Relay, 조회수 동기화의 책임 레인 기반 UML 활동 다이어그램</desc>
+  <defs>
+    <filter id="shadow" x="-10%" y="-15%" width="120%" height="130%">
+      <feDropShadow dx="0" dy="2" stdDeviation="2" flood-color="#172033" flood-opacity="0.10"/>
+    </filter>
+    <marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L8,4 L0,8 Z" fill="#40506A"/>
+    </marker>
+    <style>
+      .title { font: 700 30px -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Noto Sans KR", sans-serif; fill: #172033; text-anchor: middle; dominant-baseline: middle; }
+      .subtitle { font: 500 13px -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Noto Sans KR", sans-serif; fill: #667085; text-anchor: middle; dominant-baseline: middle; }
+      .lane-title { font: 700 14px -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Noto Sans KR", sans-serif; fill: #233044; text-anchor: middle; dominant-baseline: middle; }
+      .band-title { font: 700 17px -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Noto Sans KR", sans-serif; fill: #233044; text-anchor: middle; dominant-baseline: middle; }
+      .band-index { font: 700 12px -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Noto Sans KR", sans-serif; fill: #FFFFFF; text-anchor: middle; dominant-baseline: middle; }
+      .node-text { font: 600 13px -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Noto Sans KR", sans-serif; fill: #233044; text-anchor: middle; dominant-baseline: middle; }
+      .small { font-size: 11.5px; }
+      .edge-label { font: 600 10.5px -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Noto Sans KR", sans-serif; fill: #58677D; text-anchor: middle; dominant-baseline: middle; paint-order: stroke; stroke: #FFFFFF; stroke-width: 4px; stroke-linejoin: round; }
+      .lane-line { stroke: #AEB8C7; stroke-width: 1.5; shape-rendering: crispEdges; }
+      .band-line { stroke: #8E9AAF; stroke-width: 1.5; shape-rendering: crispEdges; }
+      .edge { fill: none; stroke: #40506A; stroke-width: 1.8; marker-end: url(#arrow); stroke-linejoin: round; stroke-linecap: square; }
+      .edge-muted { fill: none; stroke: #77859A; stroke-width: 1.6; marker-end: url(#arrow); stroke-linejoin: round; stroke-linecap: square; }
+      .loop { fill: none; stroke: #0F9D8A; stroke-width: 1.8; marker-end: url(#arrow); stroke-dasharray: 5 4; stroke-linejoin: round; }
+      .node { stroke-width: 1.5; filter: url(#shadow); }
+      .trigger { fill: #E8F2FF; stroke: #3B82F6; }
+      .workflow { fill: #E6FFFB; stroke: #0F9D8A; }
+      .external, .repo { fill: #F3E8FF; stroke: #8B5CF6; }
+      .domain, .decision { fill: #FFF4D6; stroke: #D98A10; }
+      .success { fill: #E8F8EE; stroke: #22A65A; }
+      .failure { fill: #FDECEC; stroke: #D64545; }
+      .neutral { fill: #F4F5F7; stroke: #7B8794; }
+      .skip { fill: #FFF7E8; stroke: #C48A21; }
+    </style>
+  </defs>
+
+  <rect width="1920" height="1080" fill="#F5F7FA"/>
+  <rect x="20" y="18" width="1880" height="1042" rx="14" fill="#FFFFFF" stroke="#CBD3DF" stroke-width="1.5"/>
+  <text x="960" y="44" class="title">PostForge 자동화 서비스 활동 다이어그램</text>
+  <text x="960" y="70" class="subtitle">책임 레인 기반 · 직각 흐름 · 정상 종료와 실패 상태 분리</text>
+
+  <!-- Lane headers -->
+  <rect x="20" y="90" width="200" height="60" fill="#EEF1F5"/>
+  <rect x="220" y="90" width="280" height="60" fill="#DCEBFF"/>
+  <rect x="500" y="90" width="280" height="60" fill="#D9F7F2"/>
+  <rect x="780" y="90" width="280" height="60" fill="#EDE1FF"/>
+  <rect x="1060" y="90" width="280" height="60" fill="#FFECC2"/>
+  <rect x="1340" y="90" width="280" height="60" fill="#EDE1FF"/>
+  <rect x="1620" y="90" width="280" height="60" fill="#E2F4E8"/>
+  <text x="120" y="120" class="lane-title">유스케이스</text>
+  <text x="360" y="120" class="lane-title">Trigger / Scheduler</text>
+  <text x="640" y="120" class="lane-title">Workflow Orchestrator</text>
+  <text x="920" y="112" class="lane-title">External Source</text>
+  <text x="920" y="130" class="lane-title">Adapter</text>
+  <text x="1200" y="112" class="lane-title">Domain Service</text>
+  <text x="1200" y="130" class="lane-title">· Policy</text>
+  <text x="1480" y="112" class="lane-title">Repository</text>
+  <text x="1480" y="130" class="lane-title">· State Store</text>
+  <text x="1760" y="112" class="lane-title">Publisher · Output</text>
+
+  <!-- Four use-case band backgrounds -->
+  <rect x="20" y="150" width="1880" height="225" fill="#FFFFFF"/>
+  <rect x="20" y="375" width="1880" height="270" fill="#FAFBFD"/>
+  <rect x="20" y="645" width="1880" height="200" fill="#FFFFFF"/>
+  <rect x="20" y="845" width="1880" height="215" fill="#FAFBFD"/>
+
+  <!-- Continuous responsibility boundaries -->
+  <path d="M20 90H1900 M20 150H1900 M20 375H1900 M20 645H1900 M20 845H1900 M20 1060H1900" class="band-line"/>
+  <path d="M220 90V1060 M500 90V1060 M780 90V1060 M1060 90V1060 M1340 90V1060 M1620 90V1060" class="lane-line"/>
+
+  <!-- Band labels -->
+  <circle cx="62" cy="246" r="16" fill="#3B82F6"/><text x="62" y="246" class="band-index">01</text>
+  <text x="120" y="239" class="band-title"><tspan x="120" dy="0">상품 자동</tspan><tspan x="120" dy="23">수집</tspan></text>
+  <circle cx="62" cy="496" r="16" fill="#8B5CF6"/><text x="62" y="496" class="band-index">02</text>
+  <text x="120" y="489" class="band-title"><tspan x="120" dy="0">출시 뉴스</tspan><tspan x="120" dy="23">자동 게시</tspan></text>
+  <circle cx="62" cy="736" r="16" fill="#0F9D8A"/><text x="62" y="736" class="band-index">03</text>
+  <text x="129" y="736" class="band-title">Outbox Relay</text>
+  <circle cx="62" cy="938" r="16" fill="#D98A10"/><text x="62" y="938" class="band-index">04</text>
+  <text x="120" y="931" class="band-title"><tspan x="120" dy="0">조회수</tspan><tspan x="120" dy="23">동기화</tspan></text>
+
+  <!-- 01 Product collection -->
+  <rect x="250" y="178" width="220" height="56" rx="12" class="node trigger"/>
+  <text x="360" y="206" class="node-text"><tspan x="360" dy="-8">ProductCollectionScheduler</tspan><tspan x="360" dy="18" class="small">Cron · 활성 키워드 순회</tspan></text>
+  <rect x="525" y="170" width="230" height="72" rx="12" class="node workflow"/>
+  <text x="640" y="206" class="node-text"><tspan x="640" dy="-17">CollectProductsUseCase</tspan><tspan x="640" dy="18" class="small">Job: PENDING → RUNNING</tspan><tspan x="640" dy="17" class="small">상품별 처리 오케스트레이션</tspan></text>
+  <rect x="805" y="178" width="230" height="56" rx="12" class="node external"/>
+  <text x="920" y="206" class="node-text"><tspan x="920" dy="-8">RoutingSourceRequestExecutor</tspan><tspan x="920" dy="18" class="small">NaverShoppingSourceClient</tspan></text>
+  <rect x="1365" y="168" width="230" height="54" rx="12" class="node repo"/>
+  <text x="1480" y="195" class="node-text"><tspan x="1480" dy="-7">RawProductRepository</tspan><tspan x="1480" dy="17" class="small">수집 원본 저장</tspan></text>
+  <rect x="1085" y="250" width="230" height="62" rx="12" class="node domain"/>
+  <text x="1200" y="281" class="node-text"><tspan x="1200" dy="-8">ProductService</tspan><tspan x="1200" dy="18" class="small">ProductMatchingService</tspan></text>
+  <rect x="1365" y="250" width="230" height="62" rx="12" class="node repo"/>
+  <text x="1480" y="281" class="node-text"><tspan x="1480" dy="-8">Product · Offer 저장</tspan><tspan x="1480" dy="18" class="small">갱신 · 연결 · 신규 생성</tspan></text>
+  <rect x="1085" y="326" width="230" height="38" rx="10" class="node domain"/>
+  <text x="1200" y="345" class="node-text">PriceSnapshotService</text>
+  <rect x="1365" y="326" width="230" height="38" rx="10" class="node repo"/>
+  <text x="1480" y="345" class="node-text">가격 스냅샷 저장</text>
+  <rect x="1650" y="254" width="220" height="54" rx="27" class="node success"/>
+  <text x="1760" y="281" class="node-text"><tspan x="1760" dy="-7">Job SUCCESS</tspan><tspan x="1760" dy="17" class="small">수집 완료</tspan></text>
+  <rect x="525" y="302" width="230" height="50" rx="12" class="node failure"/>
+  <text x="640" y="327" class="node-text"><tspan x="640" dy="-7">Job FAILED</tspan><tspan x="640" dy="17" class="small">예외 · 오류 사유 저장</tspan></text>
+  <path d="M470 206H525" class="edge"/><path d="M755 206H805" class="edge"/>
+  <path d="M1035 206H1338V195H1365" class="edge"/>
+  <path d="M1480 222V236H1058V281H1085" class="edge"/>
+  <path d="M1315 281H1365" class="edge"/><path d="M1480 312V320H1200V326" class="edge"/>
+  <path d="M1315 345H1365" class="edge"/><path d="M1595 345H1610V281H1650" class="edge"/>
+  <path d="M920 234V327H755" class="edge"/><text x="837" y="327" class="edge-label">외부 호출 실패</text>
+
+  <!-- 02 Launch news publishing -->
+  <rect x="250" y="398" width="220" height="56" rx="12" class="node trigger"/>
+  <text x="360" y="426" class="node-text"><tspan x="360" dy="-8">LaunchNewsPublishScheduler</tspan><tspan x="360" dy="18" class="small">Cron · SYSTEM_BATCH</tspan></text>
+  <rect x="525" y="392" width="230" height="68" rx="12" class="node workflow"/>
+  <text x="640" y="426" class="node-text"><tspan x="640" dy="-9">PublishLaunchNewsUseCase</tspan><tspan x="640" dy="18" class="small">뉴스 후보 순차 처리</tspan></text>
+  <rect x="805" y="398" width="230" height="56" rx="12" class="node external"/>
+  <text x="920" y="426" class="node-text"><tspan x="920" dy="-8">NaverNewsSourceClient</tspan><tspan x="920" dy="18" class="small">출시 뉴스 후보 검색</tspan></text>
+  <polygon points="529,480 570,468 611,480 570,492" class="node decision"/>
+  <text x="570" y="480" class="node-text small">URL 중복?</text>
+  <polygon points="529,518 570,506 611,518 570,530" class="node decision"/>
+  <text x="570" y="518" class="node-text small">정책 적격?</text>
+  <polygon points="529,556 570,544 611,556 570,568" class="node decision"/>
+  <text x="570" y="556" class="node-text small">일일 제한?</text>
+  <rect x="660" y="466" width="100" height="34" rx="10" class="node skip"/>
+  <text x="710" y="483" class="node-text small">SKIP 기록</text>
+  <rect x="660" y="518" width="100" height="34" rx="10" class="node workflow"/>
+  <text x="710" y="535" class="node-text small">다음 후보 합류</text>
+  <polygon points="660,608 710,596 760,608 710,620" class="node decision"/>
+  <text x="710" y="608" class="node-text small">후보 존재?</text>
+  <rect x="1085" y="406" width="230" height="54" rx="12" class="node domain"/>
+  <text x="1200" y="433" class="node-text"><tspan x="1200" dy="-7">AI 초안 생성</tspan><tspan x="1200" dy="17" class="small">안전 정책 검사 포함</tspan></text>
+  <polygon points="1140,503 1200,475 1260,503 1200,531" class="node decision"/>
+  <text x="1200" y="503" class="node-text small">Draft 존재?</text>
+  <rect x="1365" y="398" width="230" height="62" rx="12" class="node repo"/>
+  <text x="1480" y="429" class="node-text"><tspan x="1480" dy="-8">BoardPostWriter</tspan><tspan x="1480" dy="18" class="small">ReferenceLinkWriter</tspan></text>
+  <rect x="1650" y="402" width="220" height="54" rx="27" class="node success"/>
+  <text x="1760" y="429" class="node-text"><tspan x="1760" dy="-7">후보 게시 완료</tspan><tspan x="1760" dy="17" class="small">postId · 참조 링크</tspan></text>
+  <rect x="1650" y="575" width="220" height="46" rx="23" class="node neutral"/>
+  <text x="1760" y="598" class="node-text small">후보 없음 · 배치 정상 종료</text>
+  <path d="M470 426H525" class="edge"/><path d="M755 426H805" class="edge"/>
+  <path d="M920 454V460H570V468" class="edge"/>
+  <path d="M570 492V506" class="edge"/><text x="618" y="499" class="edge-label">[미중복]</text>
+  <path d="M570 530V544" class="edge"/><text x="610" y="537" class="edge-label">[적격]</text>
+  <path d="M611 480H642V483H660" class="edge-muted"/><text x="635" y="472" class="edge-label">[중복]</text>
+  <path d="M611 518H642V483H660" class="edge-muted"/><text x="637" y="526" class="edge-label">[부적격]</text>
+  <path d="M611 556H650V483H660" class="edge-muted"/><text x="636" y="565" class="edge-label">[제한]</text>
+  <path d="M570 568V580H1045V433H1085" class="edge"/><text x="700" y="580" class="edge-label">[미초과]</text>
+  <path d="M1200 460V475" class="edge"/>
+  <path d="M1260 503H1328V429H1365" class="edge"/><text x="1295" y="493" class="edge-label">예</text>
+  <path d="M1140 503H1045V512H780V483H760" class="edge-muted"/><text x="958" y="503" class="edge-label">[아니오 · AI 생성 실패]</text>
+  <path d="M1595 429H1650" class="edge"/>
+  <path d="M710 500V518" class="edge-muted"/>
+  <path d="M1760 456V535H760" class="edge"/>
+  <path d="M710 552V596" class="edge"/>
+  <path d="M660 608H515V480H529" class="loop"/><text x="555" y="631" class="edge-label">[예 · 다음 후보]</text>
+  <path d="M760 608H1650" class="edge-muted"/><text x="1160" y="600" class="edge-label">[아니오]</text>
+
+  <!-- 03 Outbox Relay -->
+  <rect x="250" y="674" width="220" height="52" rx="12" class="node trigger"/>
+  <text x="360" y="700" class="node-text"><tspan x="360" dy="-7">OutboxRelayScheduler</tspan><tspan x="360" dy="17" class="small">고정 주기 실행</tspan></text>
+  <rect x="525" y="670" width="230" height="60" rx="12" class="node workflow"/>
+  <text x="640" y="700" class="node-text"><tspan x="640" dy="-8">OutboxRelayService</tspan><tspan x="640" dy="18" class="small">relayPending</tspan></text>
+  <polygon points="585,768 640,742 695,768 640,794" class="node decision"/>
+  <text x="640" y="768" class="node-text small">Relay 활성?</text>
+  <rect x="1365" y="664" width="230" height="54" rx="12" class="node repo"/>
+  <text x="1480" y="691" class="node-text"><tspan x="1480" dy="-7">OutboxMessageRepository</tspan><tspan x="1480" dy="17" class="small">claim → PROCESSING</tspan></text>
+  <polygon points="1425,758 1480,732 1535,758 1480,784" class="node decision"/>
+  <text x="1480" y="758" class="node-text small">메시지 존재?</text>
+  <rect x="1650" y="664" width="220" height="54" rx="12" class="node external"/>
+  <text x="1760" y="691" class="node-text"><tspan x="1760" dy="-7">LoggingEventPublisher</tspan><tspan x="1760" dy="17" class="small">이벤트 전송</tspan></text>
+  <rect x="1360" y="800" width="110" height="34" rx="10" class="node success"/>
+  <text x="1415" y="817" class="node-text small">PUBLISHED 저장</text>
+  <rect x="1085" y="782" width="230" height="44" rx="12" class="node domain"/>
+  <text x="1200" y="804" class="node-text">OutboxRetryService</text>
+  <rect x="1490" y="800" width="110" height="34" rx="10" class="node repo"/>
+  <text x="1545" y="817" class="node-text small">retry 상태 저장</text>
+  <rect x="1650" y="736" width="220" height="30" rx="15" class="node neutral"/>
+  <text x="1760" y="751" class="node-text small">비활성 · 정상 종료</text>
+  <rect x="1650" y="776" width="220" height="30" rx="15" class="node neutral"/>
+  <text x="1760" y="791" class="node-text small">0건 · 정상 종료</text>
+  <rect x="1650" y="816" width="220" height="24" rx="12" class="node neutral"/>
+  <text x="1760" y="828" class="node-text small">다음 주기 재시도 예정</text>
+  <path d="M470 700H525" class="edge"/><path d="M640 730V744" class="edge"/>
+  <path d="M695 768H1328V691H1365" class="edge"/><text x="900" y="759" class="edge-label">[예]</text>
+  <path d="M640 794V828H1632V751H1650" class="edge-muted"/><text x="810" y="820" class="edge-label">[아니오]</text>
+  <path d="M1480 718V732" class="edge"/>
+  <path d="M1535 758H1610V691H1650" class="edge"/><text x="1572" y="749" class="edge-label">[예]</text>
+  <path d="M1480 784V791H1650" class="edge-muted"/><text x="1570" y="783" class="edge-label">[아니오]</text>
+  <path d="M1760 718V726H1415V800" class="edge"/><text x="1600" y="726" class="edge-label">[성공]</text>
+  <path d="M1650 704H1615V792H1315V804" class="edge-muted"/><text x="1460" y="792" class="edge-label">[전송 실패]</text>
+  <path d="M1315 804H1490" class="edge"/><path d="M1600 817H1650" class="edge-muted"/>
+
+  <!-- 04 View-count synchronization -->
+  <rect x="250" y="872" width="220" height="54" rx="12" class="node trigger"/>
+  <text x="360" y="899" class="node-text"><tspan x="360" dy="-7">ViewCountSyncScheduler</tspan><tspan x="360" dy="17" class="small">5분 주기 실행</tspan></text>
+  <rect x="525" y="868" width="230" height="62" rx="12" class="node workflow"/>
+  <text x="640" y="899" class="node-text"><tspan x="640" dy="-8">dirty processing key claim</tspan><tspan x="640" dy="18" class="small">dirty ID 반복 처리</tspan></text>
+  <polygon points="580,975 640,947 700,975 640,1003" class="node decision"/>
+  <text x="640" y="975" class="node-text small">Key 존재?</text>
+  <rect x="1365" y="866" width="230" height="56" rx="12" class="node repo"/>
+  <text x="1480" y="894" class="node-text"><tspan x="1480" dy="-8">ViewCountRedisRepository</tspan><tspan x="1480" dy="18" class="small">dirty ID · 조회수 읽기</tspan></text>
+  <polygon points="1425,963 1480,937 1535,963 1480,989" class="node decision"/>
+  <text x="1480" y="963" class="node-text small">Count 존재?</text>
+  <rect x="1085" y="868" width="230" height="54" rx="12" class="node domain"/>
+  <text x="1200" y="895" class="node-text">PostViewCountService</text>
+  <rect x="1360" y="1008" width="110" height="40" rx="10" class="node repo"/>
+  <text x="1415" y="1028" class="node-text small"><tspan x="1415" dy="-6">DB 조회수 갱신</tspan><tspan x="1415" dy="16">PostPersistence</tspan></text>
+  <rect x="1490" y="1008" width="110" height="40" rx="10" class="node repo"/>
+  <text x="1545" y="1028" class="node-text small"><tspan x="1545" dy="-6">processed 표시</tspan><tspan x="1545" dy="16">Redis ID 제거</tspan></text>
+  <rect x="1650" y="948" width="220" height="48" rx="24" class="node neutral"/>
+  <text x="1760" y="972" class="node-text small">Key 없음 · 동기화 정상 종료</text>
+  <path d="M470 899H525" class="edge"/><path d="M640 930V947" class="edge"/>
+  <path d="M700 975H790V936H1328V894H1365" class="edge"/><text x="755" y="966" class="edge-label">[예]</text>
+  <path d="M640 1003V1054H1632V972H1650" class="edge-muted"/><text x="720" y="1046" class="edge-label">[아니오]</text>
+  <path d="M1480 922V937" class="edge"/>
+  <path d="M1425 963H1328V895H1315" class="edge"/><text x="1368" y="954" class="edge-label">[예]</text>
+  <path d="M1535 963H1610V1028H1600" class="edge-muted"/><text x="1572" y="954" class="edge-label">[아니오 · 처리 표시]</text>
+  <path d="M1200 922V1028H1360" class="edge"/>
+  <path d="M1470 1028H1490" class="edge"/>
+  <path d="M1545 1048V1056H515V899H525" class="loop"/><text x="1010" y="1048" class="edge-label">다음 dirty ID</text>
+</svg>

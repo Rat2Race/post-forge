@@ -1,0 +1,62 @@
+# AI chat smoke requests.
+# Works with JetBrains HTTP Client and VS Code REST Client style variables.
+# Keep real credentials in local IDE environment variables or replace the placeholders locally.
+
+@appBaseUrl = http://localhost:8080
+@gatewayBaseUrl = http://localhost:8088
+@gatewayToken = change-me
+@chatModel = qwen3:8b
+@accessToken = paste-access-token-here
+@monitoringUsername = monitor
+@monitoringPassword = monitor-secret
+
+### Gateway chat completion: verify raw OpenAI-compatible usage
+POST {{gatewayBaseUrl}}/v1/chat/completions
+Content-Type: application/json
+Authorization: Bearer {{gatewayToken}}
+
+{
+  "model": "{{chatModel}}",
+  "messages": [
+    {
+      "role": "user",
+      "content": "토큰 사용량 테스트"
+    }
+  ],
+  "stream": false
+}
+
+### App login: get accessToken for protected app APIs
+# Replace username/password with an existing verified user.
+POST {{appBaseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "testuser1",
+  "password": "Test1234!"
+}
+
+### App AI chat: verify ChatController -> ChatService -> LLM path
+POST {{appBaseUrl}}/api/ai/chat
+Content-Type: application/json
+Authorization: Bearer {{accessToken}}
+
+{
+  "message": "토큰 사용량 테스트"
+}
+
+### App AI chat validation: blank message should return 400
+POST {{appBaseUrl}}/api/ai/chat
+Content-Type: application/json
+Authorization: Bearer {{accessToken}}
+
+{
+  "message": ""
+}
+
+### Actuator health: public
+GET {{appBaseUrl}}/actuator/health
+
+### Actuator prometheus: verify ai_text_generation_* metrics
+GET {{appBaseUrl}}/actuator/prometheus
+Authorization: Basic {{monitoringUsername}} {{monitoringPassword}}

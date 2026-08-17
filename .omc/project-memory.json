@@ -1,0 +1,654 @@
+{
+  "version": "1.0.0",
+  "lastScanned": 1786951220898,
+  "projectRoot": "/home/rat/spring-workspace/post-forge",
+  "techStack": {
+    "languages": [
+      {
+        "name": "Java/Kotlin",
+        "version": null,
+        "confidence": "high",
+        "markers": [
+          "build.gradle"
+        ]
+      }
+    ],
+    "frameworks": [],
+    "packageManager": "gradle",
+    "runtime": null
+  },
+  "build": {
+    "buildCommand": null,
+    "testCommand": null,
+    "lintCommand": null,
+    "devCommand": null,
+    "scripts": {}
+  },
+  "conventions": {
+    "namingStyle": null,
+    "importStyle": null,
+    "testPattern": null,
+    "fileOrganization": null
+  },
+  "structure": {
+    "isMonorepo": false,
+    "workspaces": [],
+    "mainDirectories": [
+      "app",
+      "docs"
+    ],
+    "gitBranches": null
+  },
+  "customNotes": [],
+  "directoryMap": {
+    "ai": {
+      "path": "ai",
+      "purpose": null,
+      "fileCount": 1,
+      "lastAccessed": 1786951220885,
+      "keyFiles": [
+        "build.gradle"
+      ]
+    },
+    "app": {
+      "path": "app",
+      "purpose": "Application code",
+      "fileCount": 1,
+      "lastAccessed": 1786951220885,
+      "keyFiles": [
+        "build.gradle"
+      ]
+    },
+    "auth": {
+      "path": "auth",
+      "purpose": null,
+      "fileCount": 2,
+      "lastAccessed": 1786951220886,
+      "keyFiles": [
+        "build.gradle"
+      ]
+    },
+    "board": {
+      "path": "board",
+      "purpose": null,
+      "fileCount": 2,
+      "lastAccessed": 1786951220887,
+      "keyFiles": [
+        "build.gradle"
+      ]
+    },
+    "build": {
+      "path": "build",
+      "purpose": "Build output",
+      "fileCount": 0,
+      "lastAccessed": 1786951220887,
+      "keyFiles": []
+    },
+    "catalog": {
+      "path": "catalog",
+      "purpose": null,
+      "fileCount": 1,
+      "lastAccessed": 1786951220888,
+      "keyFiles": [
+        "build.gradle"
+      ]
+    },
+    "core": {
+      "path": "core",
+      "purpose": null,
+      "fileCount": 1,
+      "lastAccessed": 1786951220888,
+      "keyFiles": [
+        "build.gradle"
+      ]
+    },
+    "docker": {
+      "path": "docker",
+      "purpose": null,
+      "fileCount": 0,
+      "lastAccessed": 1786951220888,
+      "keyFiles": []
+    },
+    "docker-build": {
+      "path": "docker-build",
+      "purpose": null,
+      "fileCount": 1,
+      "lastAccessed": 1786951220888,
+      "keyFiles": [
+        "app.jar"
+      ]
+    },
+    "docs": {
+      "path": "docs",
+      "purpose": "Documentation",
+      "fileCount": 4,
+      "lastAccessed": 1786951220889,
+      "keyFiles": [
+        "README.md",
+        "java-classloader-guide-ko.pdf",
+        "java-jvm-concept-guide-ko.pdf",
+        "postforge-project-guide.pdf"
+      ]
+    },
+    "gradle": {
+      "path": "gradle",
+      "purpose": null,
+      "fileCount": 0,
+      "lastAccessed": 1786951220889,
+      "keyFiles": []
+    },
+    "ingest": {
+      "path": "ingest",
+      "purpose": null,
+      "fileCount": 1,
+      "lastAccessed": 1786951220889,
+      "keyFiles": [
+        "build.gradle"
+      ]
+    },
+    "messaging": {
+      "path": "messaging",
+      "purpose": null,
+      "fileCount": 1,
+      "lastAccessed": 1786951220889,
+      "keyFiles": [
+        "build.gradle"
+      ]
+    },
+    "price": {
+      "path": "price",
+      "purpose": null,
+      "fileCount": 1,
+      "lastAccessed": 1786951220890,
+      "keyFiles": [
+        "build.gradle"
+      ]
+    },
+    "source": {
+      "path": "source",
+      "purpose": null,
+      "fileCount": 1,
+      "lastAccessed": 1786951220890,
+      "keyFiles": [
+        "build.gradle"
+      ]
+    },
+    "support": {
+      "path": "support",
+      "purpose": null,
+      "fileCount": 1,
+      "lastAccessed": 1786951220890,
+      "keyFiles": [
+        "build.gradle"
+      ]
+    },
+    "ai/build": {
+      "path": "ai/build",
+      "purpose": "Build output",
+      "fileCount": 0,
+      "lastAccessed": 1786951220891,
+      "keyFiles": []
+    },
+    "ai/src": {
+      "path": "ai/src",
+      "purpose": "Source code",
+      "fileCount": 0,
+      "lastAccessed": 1786951220891,
+      "keyFiles": []
+    },
+    "app/build": {
+      "path": "app/build",
+      "purpose": "Build output",
+      "fileCount": 0,
+      "lastAccessed": 1786951220891,
+      "keyFiles": []
+    },
+    "app/src": {
+      "path": "app/src",
+      "purpose": "Source code",
+      "fileCount": 0,
+      "lastAccessed": 1786951220892,
+      "keyFiles": []
+    },
+    "auth/build": {
+      "path": "auth/build",
+      "purpose": "Build output",
+      "fileCount": 0,
+      "lastAccessed": 1786951220892,
+      "keyFiles": []
+    },
+    "auth/src": {
+      "path": "auth/src",
+      "purpose": "Source code",
+      "fileCount": 0,
+      "lastAccessed": 1786951220892,
+      "keyFiles": []
+    },
+    "board/build": {
+      "path": "board/build",
+      "purpose": "Build output",
+      "fileCount": 0,
+      "lastAccessed": 1786951220893,
+      "keyFiles": []
+    },
+    "board/src": {
+      "path": "board/src",
+      "purpose": "Source code",
+      "fileCount": 0,
+      "lastAccessed": 1786951220893,
+      "keyFiles": []
+    },
+    "catalog/build": {
+      "path": "catalog/build",
+      "purpose": "Build output",
+      "fileCount": 0,
+      "lastAccessed": 1786951220893,
+      "keyFiles": []
+    },
+    "catalog/src": {
+      "path": "catalog/src",
+      "purpose": "Source code",
+      "fileCount": 0,
+      "lastAccessed": 1786951220894,
+      "keyFiles": []
+    },
+    "core/build": {
+      "path": "core/build",
+      "purpose": "Build output",
+      "fileCount": 0,
+      "lastAccessed": 1786951220894,
+      "keyFiles": []
+    },
+    "core/src": {
+      "path": "core/src",
+      "purpose": "Source code",
+      "fileCount": 0,
+      "lastAccessed": 1786951220894,
+      "keyFiles": []
+    },
+    "docs/api": {
+      "path": "docs/api",
+      "purpose": "API routes",
+      "fileCount": 3,
+      "lastAccessed": 1786951220895,
+      "keyFiles": [
+        "README.md",
+        "ai-chat-smoke.http",
+        "naver-source-smoke.http"
+      ]
+    },
+    "ingest/build": {
+      "path": "ingest/build",
+      "purpose": "Build output",
+      "fileCount": 0,
+      "lastAccessed": 1786951220896,
+      "keyFiles": []
+    },
+    "ingest/src": {
+      "path": "ingest/src",
+      "purpose": "Source code",
+      "fileCount": 0,
+      "lastAccessed": 1786951220896,
+      "keyFiles": []
+    },
+    "messaging/build": {
+      "path": "messaging/build",
+      "purpose": "Build output",
+      "fileCount": 0,
+      "lastAccessed": 1786951220896,
+      "keyFiles": []
+    },
+    "messaging/src": {
+      "path": "messaging/src",
+      "purpose": "Source code",
+      "fileCount": 0,
+      "lastAccessed": 1786951220897,
+      "keyFiles": []
+    },
+    "price/build": {
+      "path": "price/build",
+      "purpose": "Build output",
+      "fileCount": 0,
+      "lastAccessed": 1786951220897,
+      "keyFiles": []
+    },
+    "price/src": {
+      "path": "price/src",
+      "purpose": "Source code",
+      "fileCount": 0,
+      "lastAccessed": 1786951220897,
+      "keyFiles": []
+    },
+    "source/build": {
+      "path": "source/build",
+      "purpose": "Build output",
+      "fileCount": 0,
+      "lastAccessed": 1786951220897,
+      "keyFiles": []
+    },
+    "source/src": {
+      "path": "source/src",
+      "purpose": "Source code",
+      "fileCount": 0,
+      "lastAccessed": 1786951220898,
+      "keyFiles": []
+    },
+    "support/build": {
+      "path": "support/build",
+      "purpose": "Build output",
+      "fileCount": 0,
+      "lastAccessed": 1786951220898,
+      "keyFiles": []
+    },
+    "support/src": {
+      "path": "support/src",
+      "purpose": "Source code",
+      "fileCount": 0,
+      "lastAccessed": 1786951220898,
+      "keyFiles": []
+    }
+  },
+  "hotPaths": [
+    {
+      "path": "board/src/main/java/dev/iamrat/board/post/application/PostCommandService.java",
+      "accessCount": 5,
+      "lastAccessed": 1786976509851,
+      "type": "file"
+    },
+    {
+      "path": "ingest/src/main/java/dev/iamrat/ingest/product/application/CollectProductsUseCase.java",
+      "accessCount": 4,
+      "lastAccessed": 1786953480799,
+      "type": "file"
+    },
+    {
+      "path": "ai/src/main/java/dev/iamrat/ai/draft/application/LaunchNewsPostDraftGenerationService.java",
+      "accessCount": 4,
+      "lastAccessed": 1786976456741,
+      "type": "file"
+    },
+    {
+      "path": "ingest/src/main/java/dev/iamrat/ingest/product/application/ProductCollectionScheduler.java",
+      "accessCount": 3,
+      "lastAccessed": 1786953491272,
+      "type": "file"
+    },
+    {
+      "path": "board/src/main/java/dev/iamrat/board/post/presentation/PostController.java",
+      "accessCount": 2,
+      "lastAccessed": 1786953411347,
+      "type": "file"
+    },
+    {
+      "path": "ai/src/main/java/dev/iamrat/ai/support/infrastructure/llm/LlmTextGenerationAdapter.java",
+      "accessCount": 2,
+      "lastAccessed": 1786953427958,
+      "type": "file"
+    },
+    {
+      "path": "ai/src/main/java/dev/iamrat/ai/search/infrastructure/vector/PgVectorConfig.java",
+      "accessCount": 2,
+      "lastAccessed": 1786976448410,
+      "type": "file"
+    },
+    {
+      "path": "ai/src/main/java/dev/iamrat/ai/search/infrastructure/vector/PgVectorProperties.java",
+      "accessCount": 2,
+      "lastAccessed": 1786976449122,
+      "type": "file"
+    },
+    {
+      "path": "ai/src/main/java/dev/iamrat/ai/search/infrastructure/vector/PgVectorSearchAdapter.java",
+      "accessCount": 2,
+      "lastAccessed": 1786976449635,
+      "type": "file"
+    },
+    {
+      "path": "ai/src/main/java/dev/iamrat/ai/chat/application/ChatService.java",
+      "accessCount": 1,
+      "lastAccessed": 1786952931721,
+      "type": "file"
+    },
+    {
+      "path": "ai/src/main/java/dev/iamrat/ai/chat/presentation/ChatController.java",
+      "accessCount": 1,
+      "lastAccessed": 1786952931776,
+      "type": "file"
+    },
+    {
+      "path": "ai/src/main/java/dev/iamrat/ai/chat/presentation/ChatRequest.java",
+      "accessCount": 1,
+      "lastAccessed": 1786952931828,
+      "type": "file"
+    },
+    {
+      "path": "ai/src/main/java/dev/iamrat/ai/chat/presentation/ChatResponse.java",
+      "accessCount": 1,
+      "lastAccessed": 1786952931878,
+      "type": "file"
+    },
+    {
+      "path": "app/src/main/resources/db/migration/V0000__baseline_schema.sql",
+      "accessCount": 1,
+      "lastAccessed": 1786952932295,
+      "type": "file"
+    },
+    {
+      "path": "app/src/main/resources/db/migration/V0001__add_post_board_category.sql",
+      "accessCount": 1,
+      "lastAccessed": 1786952932602,
+      "type": "file"
+    },
+    {
+      "path": "ai/src/main/java/dev/iamrat/ai/search/application/SearchPort.java",
+      "accessCount": 1,
+      "lastAccessed": 1786952932679,
+      "type": "file"
+    },
+    {
+      "path": "board/src/main/java/dev/iamrat/board/post/application/PostQueryService.java",
+      "accessCount": 1,
+      "lastAccessed": 1786952932993,
+      "type": "file"
+    },
+    {
+      "path": "ingest/src/main/java/dev/iamrat/ingest/product/application/TrackedKeywordService.java",
+      "accessCount": 1,
+      "lastAccessed": 1786952933153,
+      "type": "file"
+    },
+    {
+      "path": "app/src/main/resources/db/migration/V0002__drop_tracked_keyword_interval.sql",
+      "accessCount": 1,
+      "lastAccessed": 1786952933274,
+      "type": "file"
+    },
+    {
+      "path": "app/src/main/resources/db/migration/V0003__simplify_collection_jobs.sql",
+      "accessCount": 1,
+      "lastAccessed": 1786952933932,
+      "type": "file"
+    },
+    {
+      "path": "app/src/main/resources/db/migration/V0004__drop_post_board_category.sql",
+      "accessCount": 1,
+      "lastAccessed": 1786952934464,
+      "type": "file"
+    },
+    {
+      "path": "auth/src/main/java/dev/iamrat/auth/token/application/TokenService.java",
+      "accessCount": 1,
+      "lastAccessed": 1786952936252,
+      "type": "file"
+    },
+    {
+      "path": "auth/src/main/java/dev/iamrat/auth/token/infrastructure/redis/RefreshTokenRepository.java",
+      "accessCount": 1,
+      "lastAccessed": 1786952936265,
+      "type": "file"
+    },
+    {
+      "path": "auth/src/main/java/dev/iamrat/auth/token/infrastructure/jwt/JwtProvider.java",
+      "accessCount": 1,
+      "lastAccessed": 1786952936304,
+      "type": "file"
+    },
+    {
+      "path": "ai/src/main/java/dev/iamrat/ai/support/application/AiSafetyGuard.java",
+      "accessCount": 1,
+      "lastAccessed": 1786952938663,
+      "type": "file"
+    },
+    {
+      "path": "ai/src/main/java/dev/iamrat/ai/support/application/AiSafetyKeywords.java",
+      "accessCount": 1,
+      "lastAccessed": 1786952939372,
+      "type": "file"
+    },
+    {
+      "path": "ai/src/main/java/dev/iamrat/ai/support/application/TextGenerationClient.java",
+      "accessCount": 1,
+      "lastAccessed": 1786952939677,
+      "type": "file"
+    },
+    {
+      "path": "ai/src/main/java/dev/iamrat/ai/support/error/AiErrorCode.java",
+      "accessCount": 1,
+      "lastAccessed": 1786952943002,
+      "type": "file"
+    },
+    {
+      "path": "board/src/main/java/dev/iamrat/board/post/application/PostReader.java",
+      "accessCount": 1,
+      "lastAccessed": 1786952943212,
+      "type": "file"
+    },
+    {
+      "path": "board/src/main/java/dev/iamrat/board/post/application/PostStore.java",
+      "accessCount": 1,
+      "lastAccessed": 1786952943239,
+      "type": "file"
+    },
+    {
+      "path": "board/src/main/java/dev/iamrat/board/post/infrastructure/persistence/PostRepository.java",
+      "accessCount": 1,
+      "lastAccessed": 1786952943253,
+      "type": "file"
+    },
+    {
+      "path": "board/src/main/java/dev/iamrat/board/post/infrastructure/persistence/PostPersistenceAdapter.java",
+      "accessCount": 1,
+      "lastAccessed": 1786952943296,
+      "type": "file"
+    },
+    {
+      "path": "ai/src/main/java/dev/iamrat/ai/support/infrastructure/llm/LlmConfig.java",
+      "accessCount": 1,
+      "lastAccessed": 1786952943601,
+      "type": "file"
+    },
+    {
+      "path": "ai/src/main/java/dev/iamrat/ai/support/infrastructure/llm/LlmProductEmbeddingClient.java",
+      "accessCount": 1,
+      "lastAccessed": 1786952944291,
+      "type": "file"
+    },
+    {
+      "path": "ai/src/main/java/dev/iamrat/ai/support/infrastructure/llm/LlmProperties.java",
+      "accessCount": 1,
+      "lastAccessed": 1786952944946,
+      "type": "file"
+    },
+    {
+      "path": "ai/src/main/java/dev/iamrat/ai/support/infrastructure/llm/LlmTextGenerationMetrics.java",
+      "accessCount": 1,
+      "lastAccessed": 1786952946341,
+      "type": "file"
+    },
+    {
+      "path": "ai/src/main/java/dev/iamrat/ai/support/prompt/PromptResourceLoader.java",
+      "accessCount": 1,
+      "lastAccessed": 1786952946914,
+      "type": "file"
+    },
+    {
+      "path": "board/src/main/java/dev/iamrat/board/view/infrastructure/redis/ViewCountRedisRepository.java",
+      "accessCount": 1,
+      "lastAccessed": 1786952950332,
+      "type": "file"
+    },
+    {
+      "path": "board/src/main/java/dev/iamrat/board/view/application/ViewCountSyncScheduler.java",
+      "accessCount": 1,
+      "lastAccessed": 1786952950358,
+      "type": "file"
+    },
+    {
+      "path": "board/src/main/java/dev/iamrat/board/view/application/ViewCountService.java",
+      "accessCount": 1,
+      "lastAccessed": 1786952950395,
+      "type": "file"
+    },
+    {
+      "path": "board/src/main/java/dev/iamrat/board/view/application/ViewCountStore.java",
+      "accessCount": 1,
+      "lastAccessed": 1786952950414,
+      "type": "file"
+    },
+    {
+      "path": "ingest/src/main/java/dev/iamrat/ingest/product/domain/CollectionJob.java",
+      "accessCount": 1,
+      "lastAccessed": 1786952950509,
+      "type": "file"
+    },
+    {
+      "path": "ingest/src/main/java/dev/iamrat/ingest/product/domain/TrackedKeyword.java",
+      "accessCount": 1,
+      "lastAccessed": 1786952950565,
+      "type": "file"
+    },
+    {
+      "path": "ingest/src/main/java/dev/iamrat/ingest/product/domain/RawProduct.java",
+      "accessCount": 1,
+      "lastAccessed": 1786952950618,
+      "type": "file"
+    },
+    {
+      "path": "source/src/main/java/dev/iamrat/source/product/application/RoutingSourceRequestExecutor.java",
+      "accessCount": 1,
+      "lastAccessed": 1786952955442,
+      "type": "file"
+    },
+    {
+      "path": "source/src/main/java/dev/iamrat/source/product/application/SourceRequestExecutor.java",
+      "accessCount": 1,
+      "lastAccessed": 1786952955508,
+      "type": "file"
+    },
+    {
+      "path": "source/src/main/java/dev/iamrat/source/product/infrastructure/naver/NaverShoppingSourceClient.java",
+      "accessCount": 1,
+      "lastAccessed": 1786952955559,
+      "type": "file"
+    },
+    {
+      "path": "source/src/main/java/dev/iamrat/source/product/infrastructure/mock/MockProductSourceClient.java",
+      "accessCount": 1,
+      "lastAccessed": 1786952955646,
+      "type": "file"
+    },
+    {
+      "path": "ai/src/main/resources/prompts/chat-system.md",
+      "accessCount": 1,
+      "lastAccessed": 1786952958767,
+      "type": "file"
+    },
+    {
+      "path": "ai/src/main/resources/prompts/news-analysis-user.md",
+      "accessCount": 1,
+      "lastAccessed": 1786952958783,
+      "type": "file"
+    }
+  ],
+  "userDirectives": []
+}

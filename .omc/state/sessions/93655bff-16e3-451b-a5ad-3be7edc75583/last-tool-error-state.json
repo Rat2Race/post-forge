@@ -1,0 +1,7 @@
+{
+  "tool_name": "Bash",
+  "tool_input_preview": "{\"command\":\"grep -rn \\\"shedlock\\\\|SchedulerLock\\\\|LockProvider\\\\|redis\\\" /home/rat/spring-workspace/post-forge/ingest/src/main --include=\\\"*.java\\\" | head; echo ---; sed -n '1,50p' /home/rat/spring-wo...",
+  "error": "Exit code 1\n---\npackage dev.iamrat.price.check.application;\n\nimport static org.assertj.core.api.Assertions.assertThat;\nimport static org.assertj.core.api.Assertions.assertThatThrownBy;\n\nimport dev.iamrat.core.global.error.CommonErrorCode;\nimport dev.iamrat.core.global.exception.CustomException;\nimport dev.iamrat.source.product.application.ProductSourceItem;\nimport dev.iamrat.source.product.application.ProductSourceQuery;\nimport dev.iamrat.source.product.application.ProductSourceResult;\nimport de...",
+  "timestamp": "2026-08-17T07:52:56.597Z",
+  "retry_count": 2
+}

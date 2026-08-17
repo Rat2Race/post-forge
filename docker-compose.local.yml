@@ -11,7 +11,6 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     volumes:
       - postgres_data_pg18_parent:/var/lib/postgresql
-      - ./docker/postgres/init:/docker-entrypoint-initdb.d
     networks:
       - postforge-network
     healthcheck:

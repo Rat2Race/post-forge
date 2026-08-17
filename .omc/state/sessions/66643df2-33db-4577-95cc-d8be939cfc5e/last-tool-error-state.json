@@ -1,0 +1,7 @@
+{
+  "tool_name": "Bash",
+  "tool_input_preview": "{\"command\":\"cd /tmp/claude-1000/-home-rat-spring-workspace-post-forge/66643df2-33db-4577-95cc-d8be939cfc5e/scratchpad && unzip -o -q /home/rat/.gradle/caches/modules-2/files-2.1/org.springframework.ai...",
+  "error": "Exit code 127\n(eval):1: command not found: unzip",
+  "timestamp": "2026-08-17T14:23:02.663Z",
+  "retry_count": 1
+}

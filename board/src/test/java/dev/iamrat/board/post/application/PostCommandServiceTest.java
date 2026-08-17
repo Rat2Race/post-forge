@@ -8,7 +8,6 @@ import dev.iamrat.board.post.presentation.PostSummaryResponse;
 import dev.iamrat.board.view.application.ViewCountService;
 import dev.iamrat.core.account.AccountProfile;
 import dev.iamrat.core.account.AccountProfileReader;
-import dev.iamrat.core.board.post.PostBoardCategory;
 import dev.iamrat.core.board.post.PostCategory;
 import dev.iamrat.core.event.DomainEventRecorder;
 import dev.iamrat.core.event.EventType;
@@ -71,6 +70,7 @@ class PostCommandServiceTest {
         PostSummaryResponse response = postCommandService.savePost(
             "title",
             "content",
+            null,
             1L,
             List.of()
         );
@@ -80,20 +80,18 @@ class PostCommandServiceTest {
         verify(postFileAppender).appendFiles(postCaptor.getValue(), List.of());
         assertThat(postCaptor.getValue().getNickname()).isEqualTo("포트닉네임");
         assertThat(postCaptor.getValue().getSummary()).isNull();
-        assertThat(postCaptor.getValue().getBoardCategory()).isEqualTo(PostBoardCategory.GENERAL);
         assertThat(response.nickname()).isEqualTo("포트닉네임");
     }
 
     @Test
-    @DisplayName("게시글 생성 시 게시판 카테고리를 저장하고 사용자 요약은 저장하지 않는다")
-    void savePost_storesBoardCategoryAndIgnoresUserSummary() {
+    @DisplayName("게시글 생성 시 사용자 요약은 저장하지 않는다")
+    void savePost_ignoresUserSummary() {
         given(accountProfileReader.getProfile(1L)).willReturn(new AccountProfile(1L, "포트닉네임"));
 
         postCommandService.savePost(
             "title",
             "content",
             List.of("tag"),
-            PostBoardCategory.HEALTH,
             1L,
             List.of()
         );
@@ -102,39 +100,17 @@ class PostCommandServiceTest {
         verify(postStore).save(postCaptor.capture());
         assertThat(postCaptor.getValue().getSummary()).isNull();
         assertThat(postCaptor.getValue().getCategory()).isEqualTo(PostCategory.GENERAL);
-        assertThat(postCaptor.getValue().getBoardCategory()).isEqualTo(PostBoardCategory.HEALTH);
     }
 
     @Test
-    @DisplayName("게시글 생성 시 boardCategory가 없으면 태그로 과도기 추론한다")
-    void savePost_infersBoardCategoryFromTagsWhenMissing() {
-        given(accountProfileReader.getProfile(1L)).willReturn(new AccountProfile(1L, "포트닉네임"));
-
-        postCommandService.savePost(
-            "title",
-            "content",
-            List.of("가전"),
-            null,
-            1L,
-            List.of()
-        );
-
-        ArgumentCaptor<Post> postCaptor = ArgumentCaptor.forClass(Post.class);
-        verify(postStore).save(postCaptor.capture());
-        assertThat(postCaptor.getValue().getCategory()).isEqualTo(PostCategory.GENERAL);
-        assertThat(postCaptor.getValue().getBoardCategory()).isEqualTo(PostBoardCategory.APPLIANCE);
-    }
-
-    @Test
-    @DisplayName("게시글 수정 시 내부 요약을 보존하고 게시판 카테고리를 갱신한다")
-    void updatePost_preservesExistingSummaryAndUpdatesBoardCategory() {
+    @DisplayName("게시글 수정 시 내부 요약을 보존한다")
+    void updatePost_preservesExistingSummary() {
         Post post = Post.create(
             "old title",
             "old content",
             "internal summary",
             List.of("old"),
             PostCategory.GENERAL,
-            PostBoardCategory.GENERAL,
             1L,
             "writer"
         );
@@ -145,13 +121,11 @@ class PostCommandServiceTest {
             "new title",
             "new content",
             List.of("new"),
-            PostBoardCategory.BEAUTY,
             List.of()
         );
 
         assertThat(post.getSummary()).isEqualTo("internal summary");
         assertThat(post.getCategory()).isEqualTo(PostCategory.GENERAL);
-        assertThat(post.getBoardCategory()).isEqualTo(PostBoardCategory.BEAUTY);
         verify(postFileAppender).replaceFiles(post, List.of());
     }
 
@@ -168,6 +142,7 @@ class PostCommandServiceTest {
         postCommandService.savePost(
             "title",
             "content",
+            null,
             1L,
             List.of()
         );

@@ -40,5 +40,4 @@ Redis 장애는 단순 캐시 미스가 아니라 인증과 요청 보호에 직
 ## 관련 문서
 
 - [Redis 캐시 전략](../architecture/redis-cache-strategy.md)
-- `auth/src/main/resources/docs/auth.md`
 - `support/src/main/java/dev/iamrat/support/redis/RedisGuardOperations.java`

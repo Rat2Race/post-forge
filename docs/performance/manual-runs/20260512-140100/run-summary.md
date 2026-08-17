@@ -23,16 +23,12 @@
 |---|---|
 | k6 public markdown | `docs/performance/manual-runs/20260512-140100/20260512-140100-k6-public-smoke.md` |
 | k6 public summary | `docs/performance/manual-runs/20260512-140100/20260512-140100-k6-public-smoke-summary.json` |
-| k6 public log | `docs/performance/manual-runs/20260512-140100/k6-public-smoke.log` |
 | k6 auth markdown | `docs/performance/manual-runs/20260512-140100/20260512-140100-k6-auth-smoke.md` |
 | k6 auth summary | `docs/performance/manual-runs/20260512-140100/20260512-140100-k6-auth-smoke-summary.json` |
-| k6 auth log | `docs/performance/manual-runs/20260512-140100/k6-auth-smoke.log` |
 | Bruno public JSON | `docs/performance/manual-runs/20260512-140100/bruno-public-smoke.json` |
 | Bruno public HTML | `docs/performance/manual-runs/20260512-140100/bruno-public-smoke.html` |
-| Bruno public log | `docs/performance/manual-runs/20260512-140100/bruno-public-smoke.log` |
 | Bruno auth JSON | `docs/performance/manual-runs/20260512-140100/bruno-auth-smoke.json` |
 | Bruno auth HTML | `docs/performance/manual-runs/20260512-140100/bruno-auth-smoke.html` |
-| Bruno auth log | `docs/performance/manual-runs/20260512-140100/bruno-auth-smoke.log` |
 
 ## Notes
 

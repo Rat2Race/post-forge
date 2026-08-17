@@ -326,6 +326,23 @@ class SecurityConfigRegressionTest {
     }
 
     @Test
+    @WithMockUser(roles = "USER")
+    @DisplayName("Ingest API는 USER 권한을 차단한다")
+    void ingestApi_rejectsUserRole() throws Exception {
+        mockMvc.perform(get("/api/ingest/ping"))
+            .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    @DisplayName("Ingest API는 ADMIN 권한이면 허용한다")
+    void ingestApi_allowsAdminRole() throws Exception {
+        mockMvc.perform(get("/api/ingest/ping"))
+            .andExpect(status().isOk())
+            .andExpect(content().string("ingest"));
+    }
+
+    @Test
     @DisplayName("상품 수집 관리자 경로는 익명 사용자를 차단한다")
     void adminProductCollection_rejectsAnonymousAccess() throws Exception {
         mockMvc.perform(post("/api/admin/collection-jobs/manual"))

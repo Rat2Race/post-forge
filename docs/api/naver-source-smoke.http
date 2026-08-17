@@ -1,0 +1,54 @@
+# Naver source smoke requests.
+# Direct Naver API HUB calls verify credentials/API availability.
+# App calls verify PostForge source adapters, mapping, persistence, and metrics.
+# Naver Shopping search ended on 2026-07-31 and has no API HUB replacement.
+# Keep real API keys and access tokens in local IDE environment variables.
+
+@appBaseUrl = http://localhost:8080
+@naverApiHubBaseUrl = https://naverapihub.apigw.ntruss.com
+@naverApiHubApiKeyId = paste-naver-api-hub-api-key-id-here
+@naverApiHubApiKey = paste-naver-api-hub-api-key-here
+@adminAccessToken = paste-admin-access-token-here
+@monitoringUsername = monitor
+@monitoringPassword = monitor-secret
+
+### Direct Naver API HUB News search: verify external API and credentials
+GET {{naverApiHubBaseUrl}}/search/v1/news?query=아이폰%20출시&display=5&start=1&sort=date
+X-NCP-APIGW-API-KEY-ID: {{naverApiHubApiKeyId}}
+X-NCP-APIGW-API-KEY: {{naverApiHubApiKey}}
+
+### App manual news document collection: ADMIN, fetches Naver News and stores document chunks/embeddings
+# Requires NAVER_NEWS_ENABLED=true and NAVER_API_HUB_API_KEY_ID/NAVER_API_HUB_API_KEY.
+POST {{appBaseUrl}}/api/admin/news-documents/manual
+Content-Type: application/json
+Authorization: Bearer {{adminAccessToken}}
+
+{
+  "keyword": "아이폰 출시",
+  "displayCount": 5,
+  "topics": [
+    "출시",
+    "가격",
+    "예약판매"
+  ]
+}
+
+### App manual launch-news posting: ADMIN, may create PRODUCT_LAUNCH_NEWS posts
+# Use carefully: this can create posts after Naver News gate + AI draft generation.
+POST {{appBaseUrl}}/api/admin/launch-news/manual
+Content-Type: application/json
+Authorization: Bearer {{adminAccessToken}}
+
+{
+  "keyword": "아이폰 출시",
+  "displayCount": 5,
+  "dailyCap": 1,
+  "topics": [
+    "출시",
+    "공식 발표"
+  ]
+}
+
+### App Naver source metrics: verify external_naver_fetch_* metrics
+GET {{appBaseUrl}}/actuator/prometheus
+Authorization: Basic {{monitoringUsername}} {{monitoringPassword}}

@@ -124,11 +124,13 @@ class BoardNPlusOneRegressionTest {
         seedPosts(20, false, PRODUCT_ID);
 
         long smallCount = countQueries(() -> {
-            Page<PostDetailResponse> responses = postQueryService.getPosts(pageable(1), null);
+            Page<PostDetailResponse> responses = postQueryService.getPosts(
+                null, null, null, pageable(1), null);
             assertThat(responses.getContent()).hasSize(1);
         });
         long largeCount = countQueries(() -> {
-            Page<PostDetailResponse> responses = postQueryService.getPosts(pageable(20), null);
+            Page<PostDetailResponse> responses = postQueryService.getPosts(
+                null, null, null, pageable(20), null);
             assertThat(responses.getContent()).hasSize(20);
         });
 

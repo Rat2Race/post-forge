@@ -1,0 +1,243 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080" viewBox="0 0 1920 1080" role="img" aria-labelledby="title desc">
+  <title id="title">PostForge 사용자 서비스 활동 다이어그램</title>
+  <desc id="desc">로그인·JWT, 게시글 상세 조회, 가격 판정, AI 채팅의 활동을 다섯 개 수직 스윔레인으로 표현한 UML 스타일 다이어그램</desc>
+  <defs>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="2" stdDeviation="2" flood-color="#0f172a" flood-opacity="0.12"/>
+    </filter>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#475569"/>
+    </marker>
+    <style><![CDATA[
+      .bg { fill: #f8fafc; }
+      .lane-user { fill: #f8fafc; }
+      .lane-presentation { fill: #eff6ff; }
+      .lane-application { fill: #f0fdfa; }
+      .lane-domain { fill: #fffbeb; }
+      .lane-adapter { fill: #faf5ff; }
+      .lane-line { stroke: #94a3b8; stroke-width: 2; }
+      .band-line { stroke: #cbd5e1; stroke-width: 2; }
+      .header { font: 700 17px "Noto Sans KR", "Apple SD Gothic Neo", sans-serif; fill: #0f172a; text-anchor: middle; dominant-baseline: middle; }
+      .band-title { font: 700 17px "Noto Sans KR", "Apple SD Gothic Neo", sans-serif; fill: #334155; text-anchor: middle; }
+      .title { font: 800 30px "Noto Sans KR", "Apple SD Gothic Neo", sans-serif; fill: #0f172a; text-anchor: middle; dominant-baseline: middle; }
+      .subtitle { font: 500 14px "Noto Sans KR", "Apple SD Gothic Neo", sans-serif; fill: #64748b; text-anchor: middle; dominant-baseline: middle; }
+      .node { stroke-width: 2; rx: 12; filter: url(#shadow); }
+      .user-node { fill: #ffffff; stroke: #64748b; }
+      .presentation-node { fill: #dbeafe; stroke: #3b82f6; }
+      .application-node { fill: #ccfbf1; stroke: #14b8a6; }
+      .policy-node { fill: #fef3c7; stroke: #f59e0b; }
+      .adapter-node { fill: #f3e8ff; stroke: #a855f7; }
+      .success-node { fill: #dcfce7; stroke: #22c55e; }
+      .failure-node { fill: #fee2e2; stroke: #ef4444; }
+      .neutral-node { fill: #fff7d6; stroke: #d97706; }
+      .node-text { font: 650 14px "Noto Sans KR", "Apple SD Gothic Neo", sans-serif; fill: #172033; text-anchor: middle; dominant-baseline: middle; }
+      .node-sub { font: 500 12px "Noto Sans KR", "Apple SD Gothic Neo", sans-serif; fill: #475569; text-anchor: middle; dominant-baseline: middle; }
+      .connector { fill: none; stroke: #475569; stroke-width: 2.2; stroke-linejoin: round; marker-end: url(#arrow); }
+      .branch-label { font: 700 12px "Noto Sans KR", "Apple SD Gothic Neo", sans-serif; fill: #475569; text-anchor: middle; paint-order: stroke; stroke: #f8fafc; stroke-width: 5px; stroke-linejoin: round; }
+      .legend { font: 600 12px "Noto Sans KR", "Apple SD Gothic Neo", sans-serif; fill: #475569; dominant-baseline: middle; }
+    ]]></style>
+  </defs>
+
+  <rect class="bg" width="1920" height="1080"/>
+  <text class="title" x="960" y="32">PostForge 사용자 서비스 활동 다이어그램</text>
+  <text class="subtitle" x="960" y="59">모듈 경계와 클래스 책임을 기준으로 정리한 핵심 사용자 흐름</text>
+
+  <!-- Continuous swimlanes -->
+  <rect class="lane-user" x="30" y="75" width="230" height="985"/>
+  <rect class="lane-presentation" x="260" y="75" width="310" height="985"/>
+  <rect class="lane-application" x="570" y="75" width="450" height="985"/>
+  <rect class="lane-domain" x="1020" y="75" width="370" height="985"/>
+  <rect class="lane-adapter" x="1390" y="75" width="500" height="985"/>
+
+  <!-- Lane headers -->
+  <rect x="30" y="75" width="230" height="50" fill="#e2e8f0"/>
+  <rect x="260" y="75" width="310" height="50" fill="#bfdbfe"/>
+  <rect x="570" y="75" width="450" height="50" fill="#99f6e4"/>
+  <rect x="1020" y="75" width="370" height="50" fill="#fde68a"/>
+  <rect x="1390" y="75" width="500" height="50" fill="#e9d5ff"/>
+  <text class="header" x="145" y="100">사용자</text>
+  <text class="header" x="415" y="100">Presentation</text>
+  <text class="header" x="795" y="100">Application Orchestration</text>
+  <text class="header" x="1205" y="100">Domain · Policy</text>
+  <text class="header" x="1640" y="100">Repository · Outbound Adapter</text>
+
+  <!-- Exact lane and band boundaries -->
+  <rect x="30" y="75" width="1860" height="985" fill="none" stroke="#64748b" stroke-width="2.5"/>
+  <path class="lane-line" d="M260 75V1060 M570 75V1060 M1020 75V1060 M1390 75V1060"/>
+  <path class="band-line" d="M30 125H1890 M30 355H1890 M30 595H1890 M30 825H1890"/>
+
+  <!-- Band titles -->
+  <text class="band-title" x="145" y="148">로그인 · JWT</text>
+  <text class="band-title" x="145" y="378">게시글 상세 조회</text>
+  <text class="band-title" x="145" y="618">가격 판정</text>
+  <text class="band-title" x="145" y="848">AI 채팅</text>
+
+  <!-- Connectors: login -->
+  <g aria-label="로그인 연결선">
+    <path class="connector" d="M235 185H290"/>
+    <path class="connector" d="M540 185H600"/>
+    <path class="connector" d="M780 185H800"/>
+    <path class="connector" d="M990 185H1065"/>
+    <path class="connector" d="M1345 185H1420"/>
+    <path class="connector" d="M1640 207V250H1345"/>
+    <path class="connector" d="M1065 250H1005V298H780"/>
+    <path class="connector" d="M780 298V340H1640V320"/>
+    <path class="connector" d="M1640 320V328H415V320"/>
+    <path class="connector" d="M290 298H235"/>
+    <path class="connector" d="M1065 185H1035V298H1065"/>
+    <path class="connector" d="M1345 250H1450"/>
+    <path class="connector" d="M1450 237H1400V133H550V237H540"/>
+    <path class="connector" d="M1065 298H1040V215H540"/>
+    <path class="connector" d="M290 237H235"/>
+    <text class="branch-label" x="1374" y="176">허용</text>
+    <text class="branch-label" x="1218" y="268">차단</text>
+    <text class="branch-label" x="1018" y="267">성공</text>
+    <text class="branch-label" x="1397" y="229">실패</text>
+  </g>
+
+  <!-- Connectors: post -->
+  <g aria-label="게시글 조회 연결선">
+    <path class="connector" d="M235 413H290"/>
+    <path class="connector" d="M540 413H600"/>
+    <path class="connector" d="M990 413H1065"/>
+    <path class="connector" d="M1205 435V454H990"/>
+    <path class="connector" d="M1345 413H1400V542H1450"/>
+    <path class="connector" d="M990 476H1065"/>
+    <path class="connector" d="M1345 476H1420"/>
+    <path class="connector" d="M1640 498V510H1470V522"/>
+    <path class="connector" d="M1490 542H1540"/>
+    <path class="connector" d="M1700 564V578H795V564"/>
+    <path class="connector" d="M600 542H540"/>
+    <path class="connector" d="M290 542H235"/>
+    <path class="connector" d="M1205 504V570H1470V562"/>
+    <text class="branch-label" x="1080" y="447">인증됨</text>
+    <text class="branch-label" x="1318" y="512">Guest</text>
+    <text class="branch-label" x="1375" y="467">최초</text>
+    <text class="branch-label" x="1320" y="501">재조회</text>
+  </g>
+
+  <!-- Connectors: price -->
+  <g aria-label="가격 판정 연결선">
+    <path class="connector" d="M235 653H290"/>
+    <path class="connector" d="M540 653H600"/>
+    <path class="connector" d="M990 653H1420"/>
+    <path class="connector" d="M1640 675V695H1345"/>
+    <path class="connector" d="M1065 695H990"/>
+    <path class="connector" d="M1205 723H1360V800H1345"/>
+    <path class="connector" d="M795 717V735H1065V755"/>
+    <path class="connector" d="M1345 755H1370V800H1345"/>
+    <path class="connector" d="M1065 755H1035V777H990"/>
+    <path class="connector" d="M600 777H550"/>
+    <path class="connector" d="M1195 816V818H530V797"/>
+    <path class="connector" d="M510 777H500"/>
+    <path class="connector" d="M290 777H235"/>
+    <text class="branch-label" x="1027" y="687">충분</text>
+    <text class="branch-label" x="1315" y="716">없음</text>
+    <text class="branch-label" x="1360" y="783">불확실</text>
+    <text class="branch-label" x="1020" y="747">판정 가능</text>
+  </g>
+
+  <!-- Connectors: AI -->
+  <g aria-label="AI 채팅 연결선">
+    <path class="connector" d="M235 883H290"/>
+    <path class="connector" d="M540 883H600"/>
+    <path class="connector" d="M780 883H800"/>
+    <path class="connector" d="M990 883H1065"/>
+    <path class="connector" d="M1205 911V915H795V917"/>
+    <path class="connector" d="M1345 883H1370V951H1345"/>
+    <path class="connector" d="M990 939H1380V883H1420"/>
+    <path class="connector" d="M1640 905V955"/>
+    <path class="connector" d="M1420 977H950"/>
+    <path class="connector" d="M795 999V1028H960"/>
+    <path class="connector" d="M1205 973V1048H980V1048"/>
+    <path class="connector" d="M960 1028H415V1021"/>
+    <path class="connector" d="M290 999H235"/>
+    <text class="branch-label" x="1028" y="907">허용</text>
+    <text class="branch-label" x="1360" y="931">거절</text>
+  </g>
+
+  <!-- Login nodes -->
+  <rect class="node user-node" x="55" y="163" width="180" height="44"/>
+  <text class="node-text" x="145" y="185">로그인 정보 제출</text>
+  <rect class="node presentation-node" x="290" y="163" width="250" height="44"/>
+  <text class="node-text" x="415" y="179">LoginController</text><text class="node-sub" x="415" y="196">요청 검증</text>
+  <rect class="node application-node" x="600" y="163" width="180" height="44"/>
+  <text class="node-text" x="690" y="185">LoginService</text>
+  <rect class="node application-node" x="800" y="163" width="190" height="44"/>
+  <text class="node-text" x="895" y="179">LoginAttemptGuard</text><text class="node-sub" x="895" y="196">시도 제한 확인</text>
+  <polygon class="node policy-node" points="1205,157 1345,185 1205,213 1065,185"/>
+  <text class="node-text" x="1205" y="185">차단 상태?</text>
+  <rect class="node adapter-node" x="1420" y="163" width="440" height="44"/>
+  <text class="node-text" x="1640" y="179">AuthenticationManager</text><text class="node-sub" x="1640" y="196">자격 증명 인증</text>
+  <polygon class="node policy-node" points="1205,222 1345,250 1205,278 1065,250"/>
+  <text class="node-text" x="1205" y="250">인증 성공?</text>
+  <rect class="node failure-node" x="1065" y="276" width="280" height="44"/>
+  <text class="node-text" x="1205" y="298">로그인 차단 응답</text>
+  <rect class="node failure-node" x="1450" y="215" width="380" height="44"/>
+  <text class="node-text" x="1640" y="231">LoginFailureRecorder</text><text class="node-sub" x="1640" y="247">실패 횟수 기록</text>
+  <rect class="node failure-node" x="290" y="215" width="250" height="44"/>
+  <text class="node-text" x="415" y="237">로그인 오류 반환</text>
+  <rect class="node failure-node" x="55" y="215" width="180" height="44"/>
+  <text class="node-text" x="145" y="237">오류 확인</text>
+  <rect class="node application-node" x="600" y="276" width="180" height="44"/>
+  <text class="node-text" x="690" y="298">TokenService</text>
+  <rect class="node adapter-node" x="1420" y="276" width="440" height="44"/>
+  <text class="node-text" x="1640" y="292">RefreshTokenStore</text><text class="node-sub" x="1640" y="309">Refresh Token 저장</text>
+  <rect class="node presentation-node" x="290" y="276" width="250" height="44"/>
+  <text class="node-text" x="415" y="298">JWT 응답 반환</text>
+  <rect class="node success-node" x="55" y="276" width="180" height="44"/>
+  <text class="node-text" x="145" y="298">토큰 수신</text>
+
+  <!-- Post detail nodes -->
+  <rect class="node user-node" x="55" y="391" width="180" height="44"/><text class="node-text" x="145" y="413">상세 조회 요청</text>
+  <rect class="node presentation-node" x="290" y="391" width="250" height="44"/><text class="node-text" x="415" y="413">PostController</text>
+  <rect class="node application-node" x="600" y="391" width="390" height="44"/><text class="node-text" x="795" y="407">PostQueryService</text><text class="node-sub" x="795" y="424">조회 흐름 조정</text>
+  <polygon class="node policy-node" points="1205,385 1345,413 1205,441 1065,413"/><text class="node-text" x="1205" y="413">인증 사용자?</text>
+  <rect class="node application-node" x="600" y="454" width="390" height="44"/><text class="node-text" x="795" y="470">ViewCountService</text><text class="node-sub" x="795" y="487">사용자별 조회 표시</text>
+  <polygon class="node policy-node" points="1205,448 1345,476 1205,504 1065,476"/><text class="node-text" x="1205" y="476">최초 조회?</text>
+  <rect class="node adapter-node" x="1420" y="454" width="440" height="44"/><text class="node-text" x="1640" y="470">ViewCountRedisRepository</text><text class="node-sub" x="1640" y="487">조회수 증가 · dirty 등록</text>
+  <polygon class="node policy-node" points="1470,522 1490,542 1470,562 1450,542"/><text class="node-sub" x="1470" y="542">merge</text>
+  <rect class="node adapter-node" x="1540" y="520" width="320" height="44"/><text class="node-text" x="1700" y="536">PostReader</text><text class="node-sub" x="1700" y="553">게시글·연관 데이터 조회</text>
+  <rect class="node application-node" x="600" y="520" width="390" height="44"/><text class="node-text" x="795" y="536">PostQueryService</text><text class="node-sub" x="795" y="553">상세 응답 집계</text>
+  <rect class="node presentation-node" x="290" y="520" width="250" height="44"/><text class="node-text" x="415" y="542">상세 응답 반환</text>
+  <rect class="node success-node" x="55" y="520" width="180" height="44"/><text class="node-text" x="145" y="542">상세 정보 확인</text>
+
+  <!-- Price nodes -->
+  <rect class="node user-node" x="55" y="631" width="180" height="44"/><text class="node-text" x="145" y="653">가격 판정 요청</text>
+  <rect class="node presentation-node" x="290" y="631" width="250" height="44"/><text class="node-text" x="415" y="653">PriceCheckController</text>
+  <rect class="node application-node" x="600" y="631" width="390" height="44"/><text class="node-text" x="795" y="647">PriceCheckService</text><text class="node-sub" x="795" y="664">판정 흐름 시작</text>
+  <rect class="node adapter-node" x="1420" y="631" width="440" height="44"/><text class="node-text" x="1640" y="647">RoutingSourceRequestExecutor · Naver</text><text class="node-sub" x="1640" y="664">외부 가격 검색</text>
+  <polygon class="node policy-node" points="1205,667 1345,695 1205,723 1065,695"/><text class="node-text" x="1205" y="695">유효 샘플 있음?</text>
+  <rect class="node application-node" x="600" y="673" width="390" height="44"/><text class="node-text" x="795" y="689">중앙값 · 95% / 105%</text><text class="node-sub" x="795" y="706">판정 임계값 계산</text>
+  <polygon class="node policy-node" points="1205,727 1345,755 1205,783 1065,755"/><text class="node-text" x="1205" y="749">배송비 불확실성이</text><text class="node-sub" x="1205" y="766">판정을 뒤집는가?</text>
+  <rect class="node neutral-node" x="1065" y="784" width="260" height="32"/><text class="node-text" x="1195" y="800">INSUFFICIENT</text>
+  <rect class="node application-node" x="600" y="755" width="390" height="44"/><text class="node-text" x="795" y="777">저렴 · 적정 · 비쌈 결과</text>
+  <polygon class="node policy-node" points="530,757 550,777 530,797 510,777"/><text class="node-sub" x="530" y="777">merge</text>
+  <rect class="node presentation-node" x="290" y="755" width="210" height="44"/><text class="node-text" x="395" y="777">판정 응답 반환</text>
+  <rect class="node success-node" x="55" y="755" width="180" height="44"/><text class="node-text" x="145" y="777">가격 결과 확인</text>
+
+  <!-- AI chat nodes -->
+  <rect class="node user-node" x="55" y="861" width="180" height="44"/><text class="node-text" x="145" y="883">메시지 제출</text>
+  <rect class="node presentation-node" x="290" y="861" width="250" height="44"/><text class="node-text" x="415" y="883">ChatController</text>
+  <rect class="node application-node" x="600" y="861" width="180" height="44"/><text class="node-text" x="690" y="883">ChatService</text>
+  <rect class="node application-node" x="800" y="861" width="190" height="44"/><text class="node-text" x="895" y="877">AiSafetyGuard</text><text class="node-sub" x="895" y="894">안전 정책 검사</text>
+  <polygon class="node policy-node" points="1205,855 1345,883 1205,911 1065,883"/><text class="node-text" x="1205" y="883">안전한 입력?</text>
+  <rect class="node neutral-node" x="1065" y="929" width="280" height="44"/><text class="node-text" x="1205" y="945">안전 거절 응답</text><text class="node-sub" x="1205" y="962">정상 정책 결과</text>
+  <rect class="node application-node" x="600" y="917" width="390" height="44"/><text class="node-text" x="795" y="933">SearchPort</text><text class="node-sub" x="795" y="950">관련 문맥 검색</text>
+  <rect class="node adapter-node" x="1420" y="861" width="440" height="44"/><text class="node-text" x="1640" y="877">PgVectorSearchAdapter</text><text class="node-sub" x="1640" y="894">벡터 검색 실행</text>
+  <rect class="node adapter-node" x="1420" y="955" width="440" height="44"/><text class="node-text" x="1640" y="971">LlmTextGenerationAdapter</text><text class="node-sub" x="1640" y="988">답변 생성</text>
+  <rect class="node application-node" x="600" y="955" width="350" height="44"/><text class="node-text" x="775" y="971">ChatService</text><text class="node-sub" x="775" y="988">생성 결과 정제</text>
+  <polygon class="node success-node" points="980,1008 1000,1028 980,1048 960,1028"/><text class="node-sub" x="980" y="1028">merge</text>
+  <rect class="node presentation-node" x="290" y="977" width="250" height="44"/><text class="node-text" x="415" y="999">ChatResponse 반환</text>
+  <rect class="node success-node" x="55" y="977" width="180" height="44"/><text class="node-text" x="145" y="999">답변 확인</text>
+
+  <!-- Compact legend -->
+  <g transform="translate(1410 1038)">
+    <rect x="0" y="-8" width="14" height="14" rx="3" fill="#dbeafe" stroke="#3b82f6"/><text class="legend" x="21" y="0">Presentation</text>
+    <rect x="112" y="-8" width="14" height="14" rx="3" fill="#ccfbf1" stroke="#14b8a6"/><text class="legend" x="133" y="0">Application</text>
+    <rect x="222" y="-8" width="14" height="14" rx="3" fill="#fef3c7" stroke="#f59e0b"/><text class="legend" x="243" y="0">Policy</text>
+    <rect x="303" y="-8" width="14" height="14" rx="3" fill="#f3e8ff" stroke="#a855f7"/><text class="legend" x="324" y="0">Adapter</text>
+    <rect x="391" y="-8" width="14" height="14" rx="3" fill="#dcfce7" stroke="#22c55e"/><text class="legend" x="412" y="0">Success</text>
+  </g>
+</svg>

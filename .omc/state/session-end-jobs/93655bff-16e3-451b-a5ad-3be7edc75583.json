@@ -1,0 +1,328 @@
+{
+  "version": 1,
+  "jobId": "d7f74b36-1617-46a1-a0e2-91a54bc967d6",
+  "sessionId": "93655bff-16e3-451b-a5ad-3be7edc75583",
+  "scopeKey": "bcce707c7035420fe123bee43042daca64420ed2beac2b3d808697df61c0438e",
+  "revision": 44,
+  "createdAt": "2026-08-17T08:27:44.055Z",
+  "updatedAt": "2026-08-17T14:18:56.497Z",
+  "producerGraceExpiresAt": "2026-08-17T08:28:14.056Z",
+  "bestEffortDeadlineAt": "2026-08-17T08:29:05.056Z",
+  "producers": {
+    "core": {
+      "state": "sealed",
+      "intentKey": "1f5c0e2af706afe7a9cd3fad95552ce8173a0690d253871b4438364f245d6860",
+      "payloadDigest": "1f5c0e2af706afe7a9cd3fad95552ce8173a0690d253871b4438364f245d6860",
+      "sealedAt": "2026-08-17T08:27:44.079Z",
+      "sealedBy": "foreground"
+    },
+    "wiki": {
+      "state": "no-op",
+      "sealedAt": "2026-08-17T08:27:44.055Z",
+      "sealedBy": "wiki-producer"
+    }
+  },
+  "actions": {
+    "foreground-cleanup": {
+      "class": "required",
+      "phase": "deferred-required",
+      "status": "completed",
+      "attempts": 0,
+      "idempotencyKey": "febf6dba2f2536433960a07f7cedce72e946b43ced0896570df80f017b8914d2",
+      "payload": {
+        "transcriptPath": "/home/rat/.claude/projects/-home-rat-spring-workspace-post-forge/93655bff-16e3-451b-a5ad-3be7edc75583.jsonl",
+        "cwd": "/home/rat/spring-workspace/post-forge",
+        "reason": "other",
+        "input": {
+          "session_id": "93655bff-16e3-451b-a5ad-3be7edc75583",
+          "transcript_path": "/home/rat/.claude/projects/-home-rat-spring-workspace-post-forge/93655bff-16e3-451b-a5ad-3be7edc75583.jsonl",
+          "cwd": "/home/rat/spring-workspace/post-forge",
+          "prompt_id": "98ad8d5d-8304-4132-9f08-57cc653bc7fb",
+          "hook_event_name": "SessionEnd",
+          "reason": "other"
+        },
+        "metrics": {
+          "session_id": "93655bff-16e3-451b-a5ad-3be7edc75583",
+          "ended_at": "2026-08-17T08:27:44.054Z",
+          "reason": "other",
+          "agents_spawned": 0,
+          "agents_completed": 0,
+          "modes_used": []
+        },
+        "initialTeamNames": [],
+        "openClawEnabled": false,
+        "openClawRouting": {},
+        "foregroundResult": {
+          "removedTransientFiles": 3,
+          "completedAt": "2026-08-17T08:27:44.079Z"
+        }
+      },
+      "budgetMs": 9000,
+      "completedAt": "2026-08-17T08:27:44.079Z",
+      "lastOutcomeCode": "completed"
+    },
+    "wiki-capture": {
+      "class": "required",
+      "phase": "deferred-required",
+      "status": "completed",
+      "attempts": 0,
+      "idempotencyKey": "1719cd1ef5b51e0269b78c4cb8c9308c9c1f7b82fd1c067fc034c060f23863f5",
+      "payload": {},
+      "budgetMs": 9000,
+      "completedAt": "2026-08-17T08:27:44.055Z"
+    },
+    "team-cleanup": {
+      "class": "required",
+      "phase": "deferred-required",
+      "status": "completed",
+      "attempts": 1,
+      "idempotencyKey": "cee6ac31df545408e1e822247ac249b3f8182a98a5fe8e448ae3b251e55bdee1",
+      "payload": {
+        "transcriptPath": "/home/rat/.claude/projects/-home-rat-spring-workspace-post-forge/93655bff-16e3-451b-a5ad-3be7edc75583.jsonl",
+        "cwd": "/home/rat/spring-workspace/post-forge",
+        "reason": "other",
+        "input": {
+          "session_id": "93655bff-16e3-451b-a5ad-3be7edc75583",
+          "transcript_path": "/home/rat/.claude/projects/-home-rat-spring-workspace-post-forge/93655bff-16e3-451b-a5ad-3be7edc75583.jsonl",
+          "cwd": "/home/rat/spring-workspace/post-forge",
+          "prompt_id": "98ad8d5d-8304-4132-9f08-57cc653bc7fb",
+          "hook_event_name": "SessionEnd",
+          "reason": "other"
+        },
+        "metrics": {
+          "session_id": "93655bff-16e3-451b-a5ad-3be7edc75583",
+          "ended_at": "2026-08-17T08:27:44.054Z",
+          "reason": "other",
+          "agents_spawned": 0,
+          "agents_completed": 0,
+          "modes_used": []
+        },
+        "initialTeamNames": [],
+        "openClawEnabled": false,
+        "openClawRouting": {}
+      },
+      "budgetMs": 9000,
+      "claimedAt": "2026-08-17T08:27:44.127Z",
+      "runner": {
+        "attempt": 1,
+        "runnerNonce": "e9e9cfdd-6813-4a8c-823a-a11548f43c08",
+        "phase": "terminal",
+        "deadlineAt": "2026-08-17T08:27:54.108Z"
+      },
+      "lastOutcomeCode": "completed",
+      "completedAt": "2026-08-17T08:27:44.239Z"
+    },
+    "python-cleanup": {
+      "class": "required",
+      "phase": "deferred-required",
+      "status": "completed",
+      "attempts": 1,
+      "idempotencyKey": "1f1370c4ac056606059d517e2f106b602d8cbcb04587b3fcc5f3b9f89e649cd0",
+      "payload": {
+        "transcriptPath": "/home/rat/.claude/projects/-home-rat-spring-workspace-post-forge/93655bff-16e3-451b-a5ad-3be7edc75583.jsonl",
+        "cwd": "/home/rat/spring-workspace/post-forge",
+        "reason": "other",
+        "input": {
+          "session_id": "93655bff-16e3-451b-a5ad-3be7edc75583",
+          "transcript_path": "/home/rat/.claude/projects/-home-rat-spring-workspace-post-forge/93655bff-16e3-451b-a5ad-3be7edc75583.jsonl",
+          "cwd": "/home/rat/spring-workspace/post-forge",
+          "prompt_id": "98ad8d5d-8304-4132-9f08-57cc653bc7fb",
+          "hook_event_name": "SessionEnd",
+          "reason": "other"
+        },
+        "metrics": {
+          "session_id": "93655bff-16e3-451b-a5ad-3be7edc75583",
+          "ended_at": "2026-08-17T08:27:44.054Z",
+          "reason": "other",
+          "agents_spawned": 0,
+          "agents_completed": 0,
+          "modes_used": []
+        },
+        "initialTeamNames": [],
+        "openClawEnabled": false,
+        "openClawRouting": {}
+      },
+      "budgetMs": 9000,
+      "claimedAt": "2026-08-17T08:27:44.248Z",
+      "runner": {
+        "attempt": 1,
+        "runnerNonce": "4e8fb89d-5649-4d2d-96bd-8f78ace3fa81",
+        "phase": "terminal",
+        "deadlineAt": "2026-08-17T08:27:54.108Z"
+      },
+      "lastOutcomeCode": "completed",
+      "completedAt": "2026-08-17T08:27:44.363Z"
+    },
+    "reply-cleanup": {
+      "class": "required",
+      "phase": "deferred-required",
+      "status": "completed",
+      "attempts": 1,
+      "idempotencyKey": "0b3a8b47c28b26d56aca004d4f572b96c118f16819c0d35162418816f9a5420a",
+      "payload": {
+        "transcriptPath": "/home/rat/.claude/projects/-home-rat-spring-workspace-post-forge/93655bff-16e3-451b-a5ad-3be7edc75583.jsonl",
+        "cwd": "/home/rat/spring-workspace/post-forge",
+        "reason": "other",
+        "input": {
+          "session_id": "93655bff-16e3-451b-a5ad-3be7edc75583",
+          "transcript_path": "/home/rat/.claude/projects/-home-rat-spring-workspace-post-forge/93655bff-16e3-451b-a5ad-3be7edc75583.jsonl",
+          "cwd": "/home/rat/spring-workspace/post-forge",
+          "prompt_id": "98ad8d5d-8304-4132-9f08-57cc653bc7fb",
+          "hook_event_name": "SessionEnd",
+          "reason": "other"
+        },
+        "metrics": {
+          "session_id": "93655bff-16e3-451b-a5ad-3be7edc75583",
+          "ended_at": "2026-08-17T08:27:44.054Z",
+          "reason": "other",
+          "agents_spawned": 0,
+          "agents_completed": 0,
+          "modes_used": []
+        },
+        "initialTeamNames": [],
+        "openClawEnabled": false,
+        "openClawRouting": {}
+      },
+      "budgetMs": 9000,
+      "claimedAt": "2026-08-17T08:27:44.371Z",
+      "runner": {
+        "attempt": 1,
+        "runnerNonce": "877242ff-5e26-4f2a-a335-0e14b4666b68",
+        "phase": "terminal",
+        "deadlineAt": "2026-08-17T08:27:54.108Z"
+      },
+      "lastOutcomeCode": "completed",
+      "completedAt": "2026-08-17T08:27:44.471Z"
+    },
+    "callback": {
+      "class": "best-effort",
+      "phase": "deferred-best-effort",
+      "status": "completed",
+      "attempts": 1,
+      "idempotencyKey": "d068ede2655bf89e0c0950e087d0603d7dcf45538e94f20a654d08c6f4841895",
+      "payload": {
+        "transcriptPath": "/home/rat/.claude/projects/-home-rat-spring-workspace-post-forge/93655bff-16e3-451b-a5ad-3be7edc75583.jsonl",
+        "cwd": "/home/rat/spring-workspace/post-forge",
+        "reason": "other",
+        "input": {
+          "session_id": "93655bff-16e3-451b-a5ad-3be7edc75583",
+          "transcript_path": "/home/rat/.claude/projects/-home-rat-spring-workspace-post-forge/93655bff-16e3-451b-a5ad-3be7edc75583.jsonl",
+          "cwd": "/home/rat/spring-workspace/post-forge",
+          "prompt_id": "98ad8d5d-8304-4132-9f08-57cc653bc7fb",
+          "hook_event_name": "SessionEnd",
+          "reason": "other"
+        },
+        "metrics": {
+          "session_id": "93655bff-16e3-451b-a5ad-3be7edc75583",
+          "ended_at": "2026-08-17T08:27:44.054Z",
+          "reason": "other",
+          "agents_spawned": 0,
+          "agents_completed": 0,
+          "modes_used": []
+        },
+        "initialTeamNames": [],
+        "openClawEnabled": false,
+        "openClawRouting": {}
+      },
+      "budgetMs": 2000,
+      "claimedAt": "2026-08-17T08:27:44.479Z",
+      "runner": {
+        "attempt": 1,
+        "runnerNonce": "32dac67a-d642-4d36-9c74-c247e40e8325",
+        "phase": "terminal",
+        "deadlineAt": "2026-08-17T08:27:54.108Z"
+      },
+      "lastOutcomeCode": "completed",
+      "completedAt": "2026-08-17T08:27:44.574Z"
+    },
+    "notification": {
+      "class": "best-effort",
+      "phase": "deferred-best-effort",
+      "status": "completed",
+      "attempts": 1,
+      "idempotencyKey": "89c0438ff63097ce04beb60efb87292ff68a7af350a0ee331f3de9dbf42d62fc",
+      "payload": {
+        "transcriptPath": "/home/rat/.claude/projects/-home-rat-spring-workspace-post-forge/93655bff-16e3-451b-a5ad-3be7edc75583.jsonl",
+        "cwd": "/home/rat/spring-workspace/post-forge",
+        "reason": "other",
+        "input": {
+          "session_id": "93655bff-16e3-451b-a5ad-3be7edc75583",
+          "transcript_path": "/home/rat/.claude/projects/-home-rat-spring-workspace-post-forge/93655bff-16e3-451b-a5ad-3be7edc75583.jsonl",
+          "cwd": "/home/rat/spring-workspace/post-forge",
+          "prompt_id": "98ad8d5d-8304-4132-9f08-57cc653bc7fb",
+          "hook_event_name": "SessionEnd",
+          "reason": "other"
+        },
+        "metrics": {
+          "session_id": "93655bff-16e3-451b-a5ad-3be7edc75583",
+          "ended_at": "2026-08-17T08:27:44.054Z",
+          "reason": "other",
+          "agents_spawned": 0,
+          "agents_completed": 0,
+          "modes_used": []
+        },
+        "initialTeamNames": [],
+        "openClawEnabled": false,
+        "openClawRouting": {}
+      },
+      "budgetMs": 2000,
+      "claimedAt": "2026-08-17T08:27:44.582Z",
+      "runner": {
+        "attempt": 1,
+        "runnerNonce": "ade5c32f-0311-43d4-addb-95f4eff5d7af",
+        "phase": "terminal",
+        "deadlineAt": "2026-08-17T08:27:54.108Z"
+      },
+      "lastOutcomeCode": "completed",
+      "completedAt": "2026-08-17T08:27:44.680Z"
+    },
+    "openclaw": {
+      "class": "best-effort",
+      "phase": "deferred-best-effort",
+      "status": "completed",
+      "attempts": 1,
+      "idempotencyKey": "31fe8f6e1cf204e27006de511df257326fdd98655122ca437013e8779ffc735b",
+      "payload": {
+        "transcriptPath": "/home/rat/.claude/projects/-home-rat-spring-workspace-post-forge/93655bff-16e3-451b-a5ad-3be7edc75583.jsonl",
+        "cwd": "/home/rat/spring-workspace/post-forge",
+        "reason": "other",
+        "input": {
+          "session_id": "93655bff-16e3-451b-a5ad-3be7edc75583",
+          "transcript_path": "/home/rat/.claude/projects/-home-rat-spring-workspace-post-forge/93655bff-16e3-451b-a5ad-3be7edc75583.jsonl",
+          "cwd": "/home/rat/spring-workspace/post-forge",
+          "prompt_id": "98ad8d5d-8304-4132-9f08-57cc653bc7fb",
+          "hook_event_name": "SessionEnd",
+          "reason": "other"
+        },
+        "metrics": {
+          "session_id": "93655bff-16e3-451b-a5ad-3be7edc75583",
+          "ended_at": "2026-08-17T08:27:44.054Z",
+          "reason": "other",
+          "agents_spawned": 0,
+          "agents_completed": 0,
+          "modes_used": []
+        },
+        "initialTeamNames": [],
+        "openClawEnabled": false,
+        "openClawRouting": {}
+      },
+      "budgetMs": 2000,
+      "claimedAt": "2026-08-17T08:27:44.688Z",
+      "runner": {
+        "attempt": 1,
+        "runnerNonce": "87efb3dd-8fd1-4dbb-a775-6bdb0baee535",
+        "phase": "terminal",
+        "deadlineAt": "2026-08-17T08:27:54.108Z"
+      },
+      "lastOutcomeCode": "completed",
+      "completedAt": "2026-08-17T08:27:44.791Z"
+    }
+  },
+  "owner": null,
+  "phase": "complete",
+  "completion": {
+    "completedAt": "2026-08-17T08:27:44.799Z",
+    "terminalDigest": "4dfaaaaa66fdefbd3588ef5cc754bd9263009ba36a30f399bfd86073b05ff6ba",
+    "terminalRevision": 40
+  }
+}

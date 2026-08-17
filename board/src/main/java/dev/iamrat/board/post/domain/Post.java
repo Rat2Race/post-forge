@@ -1,9 +1,10 @@
 package dev.iamrat.board.post.domain;
 
-import dev.iamrat.core.board.post.PostCategory;
 import dev.iamrat.board.support.persistence.AuditingFields;
 import dev.iamrat.board.comment.domain.Comment;
 import dev.iamrat.board.file.domain.PostFile;
+import dev.iamrat.core.board.post.PostCategory;
+import dev.iamrat.core.board.post.PostPublishOrigin;
 import jakarta.persistence.*;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
@@ -20,7 +21,9 @@ import lombok.ToString;
 	name = "posts",
 	indexes = {
 		@Index(name = "idx_posts_created_at", columnList = "created_at"),
-		@Index(name = "idx_posts_account_id", columnList = "account_id")
+		@Index(name = "idx_posts_account_id", columnList = "account_id"),
+		@Index(name = "idx_posts_category", columnList = "category"),
+		@Index(name = "idx_posts_publish_origin", columnList = "publish_origin")
 	}
 )
 @Getter
@@ -56,6 +59,11 @@ public class Post extends AuditingFields {
 	@Column(name = "category", nullable = false, length = 30)
 	@Builder.Default
 	private PostCategory category = PostCategory.GENERAL;
+
+	@Enumerated(EnumType.STRING)
+	@Column(name = "publish_origin", nullable = false, length = 30, updatable = false)
+	@Builder.Default
+	private PostPublishOrigin publishOrigin = PostPublishOrigin.USER;
 
 	@Column(name = "views", nullable = false)
 	@Builder.Default
@@ -95,12 +103,26 @@ public class Post extends AuditingFields {
 		Long accountId,
 		String nickname
 	) {
+		return create(title, content, summary, tags, category, PostPublishOrigin.USER, accountId, nickname);
+	}
+
+	public static Post create(
+		String title,
+		String content,
+		String summary,
+		List<String> tags,
+		PostCategory category,
+		PostPublishOrigin publishOrigin,
+		Long accountId,
+		String nickname
+	) {
 		return Post.builder()
 			.title(title)
 			.content(content)
 			.summary(summary)
 			.tags(tags == null ? new ArrayList<>() : new ArrayList<>(tags))
 			.category(category == null ? PostCategory.GENERAL : category)
+			.publishOrigin(publishOrigin == null ? PostPublishOrigin.USER : publishOrigin)
 			.accountId(accountId)
 			.nickname(nickname)
 			.build();
@@ -110,9 +132,27 @@ public class Post extends AuditingFields {
 		this.comments.add(comment);
 	}
 
-	public void update(String title, String content) {
+	public void update(
+		String title,
+		String content,
+		List<String> tags,
+		PostCategory category
+	) {
+		update(title, content, this.summary, tags, category);
+	}
+
+	public void update(
+		String title,
+		String content,
+		String summary,
+		List<String> tags,
+		PostCategory category
+	) {
 		this.title = title;
 		this.content = content;
+		this.summary = summary;
+		this.tags = tags == null ? new ArrayList<>() : new ArrayList<>(tags);
+		this.category = category == null ? PostCategory.GENERAL : category;
 	}
 
 	public void updateViews(Long count) {

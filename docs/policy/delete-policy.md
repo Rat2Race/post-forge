@@ -1,16 +1,18 @@
 # Delete Policy
 
-> Current status: 게시글/댓글/좋아요/계정 삭제 정책은 현재 구현과 연결된다.
+> Current status: 게시글/댓글/좋아요 삭제는 현재 구현과 연결된다. 다만 현재 구현은 게시글/댓글을 물리 삭제(hard delete)하며, soft delete 전환은 target policy다.
+> 계정 탈퇴는 `AccountStatus.DELETED` soft delete로 설계하지만 탈퇴 API는 아직 구현되지 않았다.
 > draft, private report, workspace, `ai_usage_logs`, evidence/trend link 삭제 정책은 target/future policy이며 2026-06-22 현재 code-backed schema가 아니다.
 
 PostForge 삭제 정책은 일반 사용자에게 리소스를 더 이상 노출하지 않는 것을 기준으로 한다.
-게시글, 댓글, 계정은 soft delete를 기본으로 하고, 좋아요 취소는 관계 제거로 처리한다.
+현재 구현은 게시글/댓글을 물리 삭제하고, 계정은 상태 기반 soft delete를 target으로 하며, 좋아요 취소는 관계 제거로 처리한다.
 
 > 문서 경계: 이 문서는 삭제 후 노출/보존 policy만 정의한다. Delete endpoint와 응답 status는 `../api/`, schema column ownership은 `../database/schema-ownership.md`를 따른다.
 
 ## Post
 
 - 게시글 삭제는 작성자 또는 관리자만 할 수 있다.
+- 현재 구현은 게시글 row를 물리 삭제하며, 댓글/태그는 cascade로 함께 삭제되고 파일 연결과 Redis 조회수 캐시는 삭제 시점에 정리한다.
 - 삭제된 게시글은 목록, 검색, 정렬, 상세 조회에서 제외한다.
 - 삭제된 게시글의 댓글과 좋아요도 일반 사용자에게 노출하지 않는다.
 - 삭제된 게시글의 `post_evidence_links`, `post_trend_links`는 일반 응답에서 사용하지 않는다.
@@ -40,21 +42,20 @@ PostForge 삭제 정책은 일반 사용자에게 리소스를 더 이상 노출
 - 좋아요 취소는 좋아요 관계를 제거하고 대상의 `like_count` 파생 데이터를 갱신한다.
 - 이미 취소된 좋아요 취소 요청은 멱등하게 처리한다.
 
-## Account
+## Target: Account Retention
 
-- 회원 탈퇴는 본인만 요청할 수 있다.
-- 탈퇴 계정은 로그인, 토큰 재발급, 프로필 조회, 게시글/댓글 작성, 좋아요 변경을 할 수 없다.
+회원 탈퇴 lifecycle과 접근 제한은 [Account Policy](./account-policy.md)를 따른다. 이 문서는 탈퇴 후 보존만 정의한다.
+
 - 탈퇴 후에도 기존 게시글과 댓글의 작성자 스냅샷은 보존한다.
 - 탈퇴 후 private draft/report/workspace 보존 또는 익명화는 별도 retention job의 대상이다.
 - `ai_usage_logs`는 비용/감사 이력으로 즉시 삭제하지 않고 account 식별자 익명화 정책을 별도로 둔다.
-- 계정 탈퇴의 상세 규칙은 [account-policy.md](./account-policy.md)를 따른다.
 
 ## Visibility
 
 - 삭제된 리소스는 식별자를 재사용하지 않는다.
 - 삭제된 리소스는 일반 사용자에게 존재하지 않는 리소스처럼 보인다.
 - 운영 감사나 복구를 위한 내부 조회는 일반 사용자 API와 분리한다.
-- 물리 삭제가 필요하면 soft delete 이후 별도 보존 기간과 정리 작업으로 처리한다.
+- soft delete로 전환하면 물리 삭제는 별도 보존 기간과 정리 작업으로 처리한다. 현재 게시글/댓글 구현은 즉시 물리 삭제다.
 
 ## Error Rules
 

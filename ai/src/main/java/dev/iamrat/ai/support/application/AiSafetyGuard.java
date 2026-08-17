@@ -51,8 +51,8 @@ public class AiSafetyGuard {
     /*
      * 사용자 입력 또는 외부 소스에서 온 텍스트가 LLM 호출 전에 거절되어야 하는지 판단합니다.
      *
-     * 여러 입력 값을 한 번에 받을 수 있도록 varargs를 사용합니다. 예를 들어 게시글 초안 생성에서는
-     * prompt, topic, title, summary, tags처럼 서로 다른 필드를 함께 검사할 수 있습니다.
+     * 여러 입력 값을 한 번에 받을 수 있도록 varargs를 사용합니다. 예를 들어 출시 뉴스 생성에서는
+     * 제목, 요약, 본문 후보처럼 서로 다른 외부 입력을 함께 검사할 수 있습니다.
      * 하나라도 민감 정보 노출, 내부 프롬프트 추출, 보안 우회 시도에 해당한다고 판단되면 true를 반환합니다.
      */
     public boolean shouldRefuse(String... inputs) {

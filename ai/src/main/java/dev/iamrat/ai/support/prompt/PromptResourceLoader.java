@@ -3,22 +3,41 @@ package dev.iamrat.ai.support.prompt;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import org.springframework.stereotype.Component;
 
 @Component
 public class PromptResourceLoader {
 
     private static final String PROMPT_RESOURCE_NOT_FOUND = "프롬프트 리소스를 찾을 수 없습니다: ";
-    private static final String FAILED_TO_LOAD_PROMPT_RESOURCE =
-        "프롬프트 리소스를 불러오지 못했습니다: ";
+    private static final String FAILED_TO_LOAD_PROMPT_RESOURCE = "프롬프트 리소스를 불러오지 못했습니다: ";
+    private static final List<String> PROMPT_RESOURCE_PATHS = List.of(
+        "prompts/chat-system.md",
+        "prompts/launch-news-draft-system.md",
+        "prompts/news-analysis-system.md",
+        "prompts/news-analysis-user.md",
+        "prompts/refusal-security.md",
+        "prompts/safety-policy.md"
+    );
 
-    private final ConcurrentMap<String, String> cache = new ConcurrentHashMap<>();
+    private final Map<String, String> prompts;
+
+    public PromptResourceLoader() {
+        Map<String, String> loaded = new HashMap<>();
+        for (String resourcePath : PROMPT_RESOURCE_PATHS) {
+            loaded.put(resourcePath, readResource(resourcePath));
+        }
+        prompts = Map.copyOf(loaded);
+    }
 
     public String load(String resourcePath) {
-        return cache.computeIfAbsent(resourcePath, this::readResource);
+        String prompt = prompts.get(resourcePath);
+        if (prompt == null) {
+            throw new IllegalStateException(promptResourceNotFound(resourcePath));
+        }
+        return prompt;
     }
 
     public String render(String resourcePath, Map<String, String> values) {
@@ -29,8 +48,8 @@ public class PromptResourceLoader {
         return rendered.trim();
     }
 
-    private String readResource(String resourcePath) {
-        ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+    private static String readResource(String resourcePath) {
+        ClassLoader classLoader = PromptResourceLoader.class.getClassLoader();
         try (InputStream inputStream = classLoader.getResourceAsStream(resourcePath)) {
             if (inputStream == null) {
                 throw new IllegalStateException(promptResourceNotFound(resourcePath));

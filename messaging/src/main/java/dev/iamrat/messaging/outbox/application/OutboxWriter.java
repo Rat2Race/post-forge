@@ -6,6 +6,7 @@ import dev.iamrat.core.event.DomainEventRecorder;
 import dev.iamrat.core.event.EventType;
 import dev.iamrat.messaging.outbox.domain.EventEnvelope;
 import dev.iamrat.messaging.outbox.domain.OutboxMessage;
+import dev.iamrat.messaging.support.error.MessagingExceptionMessages;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
@@ -43,7 +44,10 @@ public class OutboxWriter implements DomainEventRecorder {
         try {
             return objectMapper.writeValueAsString(payload);
         } catch (JsonProcessingException e) {
-            throw new IllegalArgumentException("Outbox payload must be JSON serializable", e);
+            throw new IllegalArgumentException(
+                MessagingExceptionMessages.OUTBOX_PAYLOAD_MUST_BE_JSON_SERIALIZABLE,
+                e
+            );
         }
     }
 }

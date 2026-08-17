@@ -15,6 +15,11 @@ COPY --from=extractor /builder/extracted/spring-boot-loader/ ./
 COPY --from=extractor /builder/extracted/snapshot-dependencies/ ./
 COPY --from=extractor /builder/extracted/application/ ./
 
+RUN useradd --system --no-create-home --shell /usr/sbin/nologin postforge
+USER postforge
+
+ENV JDK_JAVA_OPTIONS="-XX:MaxRAMPercentage=75.0 -XX:+ExitOnOutOfMemoryError"
+
 EXPOSE 8080
 
 ENTRYPOINT ["java", "-jar", "application.jar"]

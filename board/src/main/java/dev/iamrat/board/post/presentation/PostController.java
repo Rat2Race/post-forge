@@ -12,7 +12,6 @@ import dev.iamrat.board.purchase.presentation.PurchaseVoteResponse;
 import dev.iamrat.core.global.dto.MessageResponse;
 import dev.iamrat.core.global.dto.PageResponse;
 import dev.iamrat.core.account.UserPrincipal;
-import dev.iamrat.core.board.post.PostBoardCategory;
 import dev.iamrat.core.board.post.PostCategory;
 import dev.iamrat.core.board.post.PostPublishOrigin;
 import jakarta.validation.Valid;
@@ -47,7 +46,6 @@ public class PostController {
             postRequest.title(),
             postRequest.content(),
             postRequest.tags(),
-            postRequest.boardCategory(),
             accountId(user),
             postRequest.fileIds()
         );
@@ -61,7 +59,6 @@ public class PostController {
     public ResponseEntity<PageResponse<PostDetailResponse>> getPosts(
         @RequestParam(required = false) String keyword,
         @RequestParam(required = false) PostCategory category,
-        @RequestParam(required = false) PostBoardCategory boardCategory,
         @RequestParam(required = false) PostPublishOrigin publishOrigin,
         @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable,
         @AuthenticationPrincipal UserPrincipal user
@@ -71,7 +68,6 @@ public class PostController {
         Page<PostDetailResponse> posts = postQueryService.getPosts(
             keyword,
             category,
-            boardCategory,
             publishOrigin,
             pageable,
             accountId
@@ -102,7 +98,6 @@ public class PostController {
             postRequest.title(),
             postRequest.content(),
             postRequest.tags(),
-            postRequest.boardCategory(),
             postRequest.fileIds()
         );
 

@@ -32,7 +32,7 @@ class OutboxWriterTest {
     }
 
     @Test
-    @DisplayName("write는 payload를 JSON으로 직렬화해 PENDING outbox 메시지로 저장한다")
+    @DisplayName("쓰기 작업은 페이로드를 JSON으로 직렬화해 발행 대기 outbox 메시지로 저장한다")
     void write_savesPendingOutboxMessage() {
         given(outboxMessageStore.save(any(OutboxMessage.class)))
             .willAnswer(invocation -> invocation.getArgument(0));
@@ -58,7 +58,7 @@ class OutboxWriterTest {
     }
 
     @Test
-    @DisplayName("record는 core event 기록 계약을 PENDING outbox 메시지로 변환한다")
+    @DisplayName("기록 작업은 core 이벤트 기록 계약을 발행 대기 outbox 메시지로 변환한다")
     void record_savesPendingOutboxMessage() {
         given(outboxMessageStore.save(any(OutboxMessage.class)))
             .willAnswer(invocation -> invocation.getArgument(0));

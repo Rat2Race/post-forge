@@ -22,6 +22,9 @@ Thumbs.db
 node_modules/
 dist/
 
+# Module generated docs
+*/src/main/resources/docs/
+
 # env
 .env
 .env.*
@@ -32,6 +35,7 @@ dist/
 .codex
 .codex-review/
 .codex_tmp/
+graphify-out/
 
 docker
 !docs/docker

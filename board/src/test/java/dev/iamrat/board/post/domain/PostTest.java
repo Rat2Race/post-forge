@@ -1,6 +1,5 @@
 package dev.iamrat.board.post.domain;
 
-import dev.iamrat.core.board.post.PostBoardCategory;
 import dev.iamrat.core.board.post.PostCategory;
 import dev.iamrat.core.board.post.PostPublishOrigin;
 import java.util.List;
@@ -19,7 +18,6 @@ class PostTest {
         assertThat(post.getTitle()).isEqualTo("title");
         assertThat(post.getContent()).isEqualTo("content");
         assertThat(post.getCategory()).isEqualTo(PostCategory.GENERAL);
-        assertThat(post.getBoardCategory()).isEqualTo(PostBoardCategory.GENERAL);
         assertThat(post.getPublishOrigin()).isEqualTo(PostPublishOrigin.USER);
         assertThat(post.getAccountId()).isEqualTo(1L);
         assertThat(post.getNickname()).isEqualTo("writer");
@@ -46,7 +44,6 @@ class PostTest {
         assertThat(post.getTags()).containsExactly("ai", "news");
         assertThat(post.getTags()).isNotSameAs(tags);
         assertThat(post.getCategory()).isEqualTo(PostCategory.AI_ANALYSIS);
-        assertThat(post.getBoardCategory()).isEqualTo(PostBoardCategory.GENERAL);
         assertThat(post.getPublishOrigin()).isEqualTo(PostPublishOrigin.USER);
         assertThat(post.getAccountId()).isNull();
         assertThat(post.getNickname()).isEqualTo("AI 분석가");
@@ -58,7 +55,6 @@ class PostTest {
         Post post = Post.create("title", "content", null, null, null, 1L, "writer");
 
         assertThat(post.getCategory()).isEqualTo(PostCategory.GENERAL);
-        assertThat(post.getBoardCategory()).isEqualTo(PostBoardCategory.GENERAL);
         assertThat(post.getPublishOrigin()).isEqualTo(PostPublishOrigin.USER);
         assertThat(post.getTags()).isEmpty();
     }
@@ -72,14 +68,12 @@ class PostTest {
             "launch summary",
             List.of("launch"),
             PostCategory.PRODUCT_LAUNCH_NEWS,
-            PostBoardCategory.DIGITAL,
             PostPublishOrigin.SYSTEM_BATCH,
             null,
             "system"
         );
 
         assertThat(post.getCategory()).isEqualTo(PostCategory.PRODUCT_LAUNCH_NEWS);
-        assertThat(post.getBoardCategory()).isEqualTo(PostBoardCategory.DIGITAL);
         assertThat(post.getPublishOrigin()).isEqualTo(PostPublishOrigin.SYSTEM_BATCH);
     }
 }

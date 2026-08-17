@@ -58,12 +58,12 @@ public class PostForgeAuthorizationRules {
             "/api/posts/*/comments/*/like",
             "/api/files/**",
             "/api/ai/**",
-            "/api/price-checks",
-            "/api/ingest/**"
+            "/api/price-checks"
     };
 
     private static final String[] ADMIN = {
-            "/api/admin/**"
+            "/api/admin/**",
+            "/api/ingest/**"
     };
 
     public void customize(

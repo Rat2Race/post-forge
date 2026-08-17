@@ -1,11 +1,10 @@
 package dev.iamrat.board.like.application;
 
 import dev.iamrat.board.like.domain.PostLike;
-import dev.iamrat.board.post.application.PostLikeTargetService;
+import dev.iamrat.board.post.application.PostStore;
 import dev.iamrat.board.post.domain.Post;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -29,7 +28,7 @@ class PostLikeServiceTest {
     private PostLikeStore postLikeStore;
 
     @Mock
-    private PostLikeTargetService postLikeTargetService;
+    private PostStore postStore;
 
     @InjectMocks
     private PostLikeService postLikeService;
@@ -47,7 +46,7 @@ class PostLikeServiceTest {
         assertThat(response.isLiked()).isTrue();
         assertThat(response.likeCount()).isEqualTo(4L);
         verify(postLikeStore, never()).save(any(PostLike.class));
-        verify(postLikeTargetService).updateLikeCount(postId, 4L);
+        verify(postStore).updateLikeCount(postId, 4L);
     }
 
     @Test
@@ -57,7 +56,7 @@ class PostLikeServiceTest {
         Post postRef = Post.builder().id(postId).title("title").content("content").accountId(9L).build();
 
         given(postLikeStore.existsByPostIdAndAccountId(postId, 2L)).willReturn(false);
-        given(postLikeTargetService.getReference(postId)).willReturn(postRef);
+        given(postStore.getReferenceById(postId)).willReturn(postRef);
         given(postLikeStore.countByPostId(postId)).willReturn(5L);
 
         LikeResult response = postLikeService.like(postId, 2L);
@@ -69,7 +68,7 @@ class PostLikeServiceTest {
         verify(postLikeStore).save(likeCaptor.capture());
         assertThat(likeCaptor.getValue().getPost()).isEqualTo(postRef);
         assertThat(likeCaptor.getValue().getAccountId()).isEqualTo(2L);
-        verify(postLikeTargetService).updateLikeCount(postId, 5L);
+        verify(postStore).updateLikeCount(postId, 5L);
     }
 
     @Test
@@ -84,7 +83,7 @@ class PostLikeServiceTest {
 
         assertThat(response.isLiked()).isFalse();
         assertThat(response.likeCount()).isEqualTo(2L);
-        verify(postLikeTargetService).updateLikeCount(postId, 2L);
+        verify(postStore).updateLikeCount(postId, 2L);
     }
 
     @Test
@@ -117,18 +116,6 @@ class PostLikeServiceTest {
         assertThat(result).containsEntry(10L, 2L)
                 .containsEntry(20L, 0L)
                 .containsEntry(30L, 4L);
-    }
-
-    @Test
-    @DisplayName("사용자 좋아요 목록 조회 시 DB 결과를 그대로 반환한다")
-    void getLikedPostIds_returnsLikedIds() {
-        List<Long> postIds = List.of(10L, 20L);
-
-        given(postLikeStore.findLikedPostIdsByAccountIdAndPostIds(1L, postIds)).willReturn(Set.of(20L));
-
-        Set<Long> result = postLikeService.getLikedPostIds(postIds, 1L);
-
-        assertThat(result).containsExactly(20L);
     }
 
 }

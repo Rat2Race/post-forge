@@ -2,7 +2,7 @@
 
 성능 테스트 결과를 Git에 남길 때는 원본 로그 전체보다 사람이 비교할 수 있는 요약 리포트를 우선한다.
 
-## Current Status (2026-06-22)
+## 현재 상태
 
 이 repo에는 현재 전용 부하 테스트 모듈이나 runner를 두지 않는다.
 Gradle `:app:smoke` task와 `app/src/smoke` source set은 2026-06-11 기준 제거되었다.
@@ -11,6 +11,15 @@ Gradle `:app:smoke` task와 `app/src/smoke` source set은 2026-06-11 기준 제�
 운영 host 체급은 [prod-environment-spec.md](./prod-environment-spec.md)에 기록되어 있지만, Intel N100 prod 환경에서 동일 k6 시나리오로 새 capacity baseline을 아직 잡지 않았다.
 따라서 과거 Oracle ARM 1vCPU / 1GB 환경의 20~25 RPS 수치는 병목 분석의 historical baseline이지 현재 prod 상한이 아니다.
 현재 capacity 주장을 하려면 별도 수동/CI 성능 실험으로 k6/Bruno와 Prometheus/컨테이너 지표를 같은 시간 구간에 수집해야 한다.
+
+## 문서 역할
+
+| 역할 | 문서 | 사용 원칙 |
+|---|---|---|
+| 비교 요약 | `k6-scenario-results.md` | 시나리오별 수치 비교의 정본 |
+| 집중 분석 | `n-plus-one-analysis.md`, `redis-cache-benchmark.md` | 원인과 실험별 결론의 정본 |
+| 실행 증거 | 날짜가 붙은 리포트, `k6/`, `grafana/`, `manual-runs/` | 당시 실행을 보존하는 historical evidence |
+| 학습·계산 참고 | `docs/learning/` | 해석법·계산법·작성 형식 참고. 포트폴리오 성능 주장의 근거로 사용하지 않음 |
 
 ## 저장 위치
 
@@ -21,11 +30,15 @@ Gradle `:app:smoke` task와 `app/src/smoke` source set은 2026-06-11 기준 제�
 | k6 원문 요약 | `docs/performance/k6/` | 과거 실행 결과의 정량 원문. 현재 capacity로 재해석할 때는 환경 차이를 표시 |
 | Grafana 캡처 | `docs/performance/grafana/` | JVM/CPU/메모리 관측 근거 캡처. 삭제하지 않고 historical evidence로 보관 |
 | 수동 실행 원본 | `docs/performance/manual-runs/` | k6/Bruno JSON, HTML, markdown 원본 산출물 |
-| 지표 해석 가이드 | `docs/performance/metrics-guide.md` | k6/Grafana 주요 지표 해석 기준 |
-| 작성 템플릿 | `docs/performance/report-template.md` | 새 리포트 작성 시 복사해서 사용 |
+| 지표 해석 가이드 | `docs/learning/metrics-guide.md` | 일반적인 k6/Grafana 해석을 위한 학습 참고 |
+| 작성 템플릿 | `docs/learning/report-template.md` | 새 리포트 작성 형식 참고 |
 | 운영 서버 스펙 | `docs/performance/prod-environment-spec.md` | 현재 prod host/container 체급 기준선. 부하 결과가 아님 |
-| 비용/수용량 계산 | `docs/performance/cost-capacity.md` | RPS/TPS, VM/Functions/전기세, API별 부하 추정 |
-| Historical 분석 | `docs/performance/load-analysis.md`, `guest-split.md` | 과거 1vCPU 병목 분석 원문. 최신 요약은 위 요약 리포트를 우선 |
+| 비용/수용량 계산 | `docs/learning/cost-capacity.md` | 공식과 historical input을 사용한 계산 참고. 현재 capacity 근거가 아님 |
+| Historical 해석 | `docs/performance/load-analysis.md`, `guest-split.md` | 과거 조사 맥락만 보존한 포인터. 수치는 비교 요약을 우선 |
+
+`k6/`, `grafana/`, `manual-runs/`는 당시 실행을 보존한 raw archive다. 문서 형식이나 현재 endpoint에
+맞추기 위해 원본을 다시 쓰지 않고, 현재 해석은 `n-plus-one-analysis.md`,
+`redis-cache-benchmark.md`, `k6-scenario-results.md`에 반영한다.
 
 ## 현재 검증 표면
 
@@ -83,7 +96,7 @@ YYYY-MM-DD-<target>-<scenario>-summary.json
 | `ai_text_generation_prompt_tokens` | LLM input token 처리량 계산 |
 | `ai_text_generation_completion_tokens` | LLM output TPS 계산 |
 
-사용자 RPS와 LLM TPS 계산식은 [cost-capacity.md](./cost-capacity.md)의 외부 API / LLM 계측 기준을 따른다.
+사용자 RPS와 LLM TPS 계산식은 [cost-capacity.md](../learning/cost-capacity.md)의 외부 API / LLM 계측 기준을 따른다.
 
 ## 제외할 값
 

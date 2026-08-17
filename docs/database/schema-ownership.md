@@ -1,9 +1,14 @@
 # DB Schema Ownership
 
 이 문서는 PostForge modular monolith에서 DB와 준영속 저장소를 어느 모듈이 소유하는지 선언한다.
-목표는 DB를 바로 쪼개기 전에 테이블 변경 책임, migration 리뷰 위치, MSA 분리 후보를 명확히 하는 것이다.
+모듈 그래프와 기능 책임은 [Module Dependency Policy](../architecture/module-dependencies.md)에 둔다.
 
-Last verified against code: 2026-06-21.
+## Source Of Truth Hierarchy
+
+1. production 물리 schema와 적용 순서: `app/src/main/resources/db/migration/`의 Flyway SQL
+2. table·key·resource owner: 이 문서
+3. application mapping: JPA entity, JDBC initializer, Spring AI initializer. 위 두 기준과 일치해야 하며 독립적인 정본이 아니다.
+4. 시각화: [PostForge MVP ERD](./postforge-mvp-erd.md)와 DBML. 위 기준에서 파생한다.
 
 ## Ownership Rules
 
@@ -12,11 +17,11 @@ Last verified against code: 2026-06-21.
 - 다른 module이 owning module의 table을 직접 읽거나 쓰면 안 된다. 필요한 경우 `core` port, API, message contract로 우회한다.
 - table/column/index/constraint를 바꾸면 같은 변경에서 이 문서를 갱신한다.
 - destructive change는 PR/release note 또는 별도 SQL artifact에 rollback/compatibility note를 남긴다.
-- 운영 적용 자동화는 아직 없다. 현재 code-backed schema source of truth는 JPA entity, JDBC schema initializer, Spring AI PgVector schema initializer, 그리고 이 문서다.
+- 운영 적용은 Flyway runtime migration을 기본 경로로 사용한다.
 
 ## Relational Tables
 
-현재 구현 기준 source of truth는 아래 표다. "Target Schema Candidates" 섹션은 다음 DB redesign에서 추가/확장할 후보이며, 실제 JPA entity/migration이 생기기 전까지 운영 schema로 간주하지 않는다.
+아래 표는 현재 구현의 owner 기준이다. "Target Schema Candidates"는 실제 migration이나 mapping이 생기기 전까지 운영 schema가 아니다.
 
 | Owner | Table | Source | Notes |
 | --- | --- | --- | --- |
@@ -35,13 +40,13 @@ Last verified against code: 2026-06-21.
 | `ingest` | `collection_jobs` | `ingest/product/domain/CollectionJob.java` | 상품 수집 실행 단위 상태 |
 | `ingest` | `raw_products` | `ingest/product/domain/RawProduct.java` | collection job별 외부 API 응답 원본 payload |
 | `catalog` | `product_categories` | `catalog/product/domain/ProductCategory.java` | 상품 카테고리 tree metadata |
-| `catalog` | `products` | `catalog/product/domain/Product.java` | 외부 상품 데이터를 내부 표준 모델로 정규화한 상품 truth |
-| `catalog` | `offers` | `catalog/product/domain/Offer.java` | product에 연결된 source/mall별 외부 판매 상품 식별자 |
+| `catalog` | `products` | `catalog/product/domain/Product.java` | 공개 조회에 사용하는 상품 대표 레코드; 현재 cross-source canonical truth는 보장하지 않음 |
+| `catalog` | `offers` | `catalog/product/domain/Offer.java` | product에 연결된 source/mall별 외부 판매 상품 식별자; 현재 가격 필드는 없음 |
 | `catalog` | `product_embeddings` | `catalog/matching/infrastructure/persistence/ProductEmbeddingSchemaInitializer.java`, `ProductEmbeddingJdbcStore.java` | product matching용 pgvector table; HNSW cosine index |
 | `catalog` | `product_match_candidates` | `catalog/matching/domain/ProductMatchCandidate.java` | 자동 매칭 확신이 낮은 상품 병합 후보 |
 | `price` | `price_snapshots` | `price/tracking/domain/PriceSnapshot.java` | offer 수집 시점별 가격 스냅샷 |
 | `messaging` | `outbox_events` | `messaging/outbox/domain/OutboxMessage.java` | standalone reliable event handoff table; no domain-table FK |
-| `ai` | `vector_store` | `ai/search/infrastructure/vector/PgVectorConfig.java`, Spring AI PgVector default | RAG document embeddings; default table name from local Spring AI PgVector 1.0.7 constant |
+| `ai` | `vector_store` | `ai/search/infrastructure/vector/PgVectorConfig.java`, Spring AI PgVector default | RAG document embeddings |
 
 ## Target Schema Candidates
 
@@ -65,19 +70,7 @@ Last verified against code: 2026-06-21.
 | `ai` | `ai_budget_windows` | AI cost control | account/system별 월간/일간 AI budget window |
 | `ai` | `ai_usage_logs` | AI cost control | 모든 AI operation의 token/cost/status 원본 이력 |
 
-Ownership boundary:
-- `source` owns external product/news API adapter execution contracts and concrete clients.
-- `ingest` owns collection orchestration, tracked keywords, collection jobs, and raw product payloads.
-- `catalog` owns normalized product truth.
-- `price` owns price snapshot history and response-only price judgement logic. Price judgement reads source samples but writes no table.
-- `messaging` owns the shared outbox infrastructure: persisted event envelopes, retry state, relay claim policy, and broker publishing adapters. It does not own board, source, ingest, catalog, price, or notification event semantics.
-- `notification` owns keyword watch and delivery state: keyword subscriptions, notification events, and email delivery logs.
-- `workspace` owns private writing state: workspaces, drafts, draft source selections, saved trend bundles.
-- `board` owns user-facing published content: posts, comments, likes, purchase votes, files, post-product links, and post reference links. MVP board sorting stays count/index based.
-- `billing` owns plan/subscription state. Public board trust signals must not be plan-gated.
-- `ai` owns RAG document embeddings, usage accounting, and model operation logs. AI may generate suggestions or launch-news drafts, but it should not own board post rows, workspace draft rows, source rows, catalog rows, or price rows.
-- `support` may provide shared infrastructure helpers such as Redis operations, but the caller module owns each Redis key namespace.
-- Read paths such as post detail must not call AI or external APIs on every request.
+기능 책임을 이 표에서 다시 정의하지 않는다. 현재 모듈 책임은 [Module Dependency Policy](../architecture/module-dependencies.md#모듈-책임)를 따른다.
 
 ## Non-Relational Storage
 
@@ -87,7 +80,7 @@ Ownership boundary:
 | `auth` | `email_verify_token:*`, `email_verified:*` | `auth/email/infrastructure/redis/RedisEmailVerificationStore.java` | email verification token/state |
 | `auth` | `email_verify_send:cooldown:email:*`, `email_verify_send:rate:email:*`, `email_verify_send:lock:email:*` | `auth/email/infrastructure/redis/RedisEmailVerificationRequestStore.java` | email verification request cooldown/rate/lock guard |
 | `auth` | `oauth2_code:*` | `auth/oauth/infrastructure/redis/RedisOAuth2CodeStore.java` | short-lived OAuth exchange code |
-| `auth` | `auth:login:rate:user:*`, `auth:login:rate:ip:*`, `auth:login:fail:*`, `auth:login:lock:*` | `auth/login/infrastructure/redis/RedisLoginAttemptStore.java` | login abuse guard |
+| `auth` | `auth:login:rate:user:*`, `auth:login:rate:ip:*`, `auth:login:fail:*`, `auth:login:lock:*` | `auth/login/infrastructure/redis/RedisLoginAttemptLimiter.java` | login abuse guard |
 | `board` | `post:views:*`, `post:viewed:*`, view dirty/processing keys | `board/view/infrastructure/redis/ViewCountRedisKeys.java` | view count cache, dedupe, sync queue |
 | `board` | `like:cooldown:*`, `like:rate:*` | `board/like/infrastructure/redis/LikeRequestRedisRepository.java` | like abuse guard |
 | `board` | S3 bucket objects | `board/file/infrastructure/storage/S3FileStorageAdapter.java` | `post_file` stores metadata; object lifecycle belongs to board file domain |
@@ -108,13 +101,13 @@ Decision:
 - `ingest` may submit documents during the current monolith phase, but it does not own PgVector schema, index, dimensions, or embedding model decisions.
 - When splitting services later, move document-write orchestration behind an AI/RAG API or message contract instead of letting ingest write the vector table directly.
 
-## Migration Convention
+## 마이그레이션 규칙
 
-There is no active runtime migration directory in the current tree. Local development schema may be evolved by Hibernate `ddl-auto=update` and JDBC initializers; production-like environments use `ddl-auto=validate`.
+런타임 마이그레이션은 `app/src/main/resources/db/migration/`의 `VNNNN__description.sql`에 둔다.
+신규 빈 DB는 `V0000` baseline부터 실행하고, production-like 환경은 Flyway 적용 후 Hibernate `validate`로 mapping 불일치를 잡는다.
+로컬 개발은 기존 DB를 자동 편입하지 않기 위해 Flyway를 기본 비활성화하고 필요할 때만 켠다.
 
-When a reviewable SQL artifact is needed, use a `VNNNN__description.sql` file in the chosen migration artifact location and keep this document linked to the same change.
-
-Required header:
+각 migration은 primary owner 하나를 갖고 다음 header에 호환성, rollback, 검증 방법을 남긴다.
 
 ```sql
 -- Owner:
@@ -125,9 +118,20 @@ Required header:
 -- Verification:
 ```
 
-Rules:
-- One migration file should belong to one primary owner. Cross-owner changes require an explicit coordination note.
-- Use idempotent SQL where practical for local/manual replay.
-- `application.yml` defaults `SPRING_JPA_HIBERNATE_DDL_AUTO` to `update` for local development unless overridden.
-- `application-prod.yml` uses `ddl-auto=validate`.
-- Flyway/Liquibase can be introduced later by moving reviewed SQL into the tool's runtime migration location.
+### Flyway 사용 런북
+
+1. 다음 migration 번호의 파일을 만들고 header와 SQL을 작성한다.
+2. table/column/index/constraint 또는 owner가 바뀌면 같은 변경에서 이 문서를 갱신한다.
+3. 로컬에서 Flyway를 확인한다.
+
+```bash
+SPRING_FLYWAY_ENABLED=true ./gradlew :app:bootRun
+```
+
+4. 리뷰 mirror를 `docs/database/migrations/`에 둘 경우 runtime migration과 byte-for-byte로 같게 유지한다.
+
+### 기존 DB 최초 편입
+
+기존 non-empty DB를 편입하는 1회성 실행에서만 `SPRING_FLYWAY_BASELINE_ON_MIGRATE=true`와
+`SPRING_FLYWAY_BASELINE_VERSION=0`을 사용한다. 편입 전에는 기존 schema가 `V0000`과 호환되는지 rehearsal하고,
+완료 후 `baseline-on-migrate`를 다시 `false`로 돌린다.

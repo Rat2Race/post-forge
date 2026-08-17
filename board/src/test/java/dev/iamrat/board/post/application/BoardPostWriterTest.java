@@ -1,7 +1,6 @@
 package dev.iamrat.board.post.application;
 
 import dev.iamrat.board.post.domain.Post;
-import dev.iamrat.core.board.post.PostBoardCategory;
 import dev.iamrat.core.board.post.PostCategory;
 import dev.iamrat.core.board.post.PostPublishOrigin;
 import dev.iamrat.core.board.post.PostWriteCommand;
@@ -64,7 +63,6 @@ class BoardPostWriterTest {
         assertThat(post.getAccountId()).isNull();
         assertThat(post.getNickname()).isEqualTo("AI 분석가");
         assertThat(post.getCategory()).isEqualTo(PostCategory.AI_ANALYSIS);
-        assertThat(post.getBoardCategory()).isEqualTo(PostBoardCategory.GENERAL);
         assertThat(post.getPublishOrigin()).isEqualTo(PostPublishOrigin.USER);
     }
 
@@ -88,7 +86,6 @@ class BoardPostWriterTest {
             null,
             "system",
             PostCategory.PRODUCT_LAUNCH_NEWS,
-            PostBoardCategory.DIGITAL,
             PostPublishOrigin.SYSTEM_BATCH
         ));
 
@@ -96,7 +93,6 @@ class BoardPostWriterTest {
         verify(postStore).save(postCaptor.capture());
 
         assertThat(postCaptor.getValue().getCategory()).isEqualTo(PostCategory.PRODUCT_LAUNCH_NEWS);
-        assertThat(postCaptor.getValue().getBoardCategory()).isEqualTo(PostBoardCategory.DIGITAL);
         assertThat(postCaptor.getValue().getPublishOrigin()).isEqualTo(PostPublishOrigin.SYSTEM_BATCH);
     }
 }

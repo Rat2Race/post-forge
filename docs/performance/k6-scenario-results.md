@@ -21,7 +21,8 @@
 | CPU Usage max | 100% | 59% | 41%p 감소 |
 | Load max | 12.0 | 0.7 | 17배 감소 |
 | RPS | 14.66 | 23.75 | 1.6배 증가 |
-| Duration max | 3.51s | 182ms | 19배 감소 |
+
+과거 Grafana 메모의 `Duration MAX=182ms`는 panel metric 정의가 보존되지 않아 비교표에서 제외했다. raw k6의 `http_req_duration max`와 같은 지표로 해석하지 않는다.
 
 | 엔드포인트 | 이전 p95 | 이후 p95 | 변화 |
 | --- | ---: | ---: | ---: |

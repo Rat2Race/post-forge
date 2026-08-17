@@ -9,7 +9,6 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     volumes:
       - postgres_data:/var/lib/postgresql
-      - ./docker/postgres/init:/docker-entrypoint-initdb.d
     networks:
       - postforge-network
     healthcheck:
@@ -22,6 +21,10 @@ services:
     image: redis:7-alpine
     container_name: postforge-redis
     restart: unless-stopped
+    # refresh token 등 인증 상태가 Redis에 있으므로 재시작에도 유지되도록 AOF를 켠다.
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis_data:/data
     networks:
       - postforge-network
     healthcheck:
@@ -34,6 +37,7 @@ services:
     image: rat2hub/postforge:latest
     container_name: postforge-app
     restart: unless-stopped
+    stop_grace_period: 30s
     ports:
       - "8080:8080"
     env_file:
@@ -45,9 +49,16 @@ services:
         condition: service_healthy
     networks:
       - postforge-network
+    healthcheck:
+      test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/127.0.0.1/8080 && printf 'GET /actuator/health HTTP/1.0\\r\\nHost: localhost\\r\\n\\r\\n' >&3 && grep -q UP <&3"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 60s
 
 volumes:
   postgres_data:
+  redis_data:
 
 networks:
   postforge-network:

@@ -4,7 +4,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import dev.iamrat.board.file.domain.PostFile;
 import dev.iamrat.board.post.domain.Post;
-import dev.iamrat.core.board.post.PostBoardCategory;
 import dev.iamrat.core.board.post.PostPublishOrigin;
 import java.util.List;
 import org.junit.jupiter.api.DisplayName;
@@ -30,7 +29,6 @@ class PostDetailResponseTest {
         assertThat(response.files().get(0).fileType()).isEqualTo("image/png");
         assertThat(response.purchaseVote().eligible()).isFalse();
         assertThat(response.references()).isEmpty();
-        assertThat(response.boardCategory()).isEqualTo(PostBoardCategory.GENERAL);
         assertThat(response.publishOrigin()).isEqualTo(PostPublishOrigin.USER);
     }
 }

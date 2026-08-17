@@ -64,7 +64,12 @@ class PostIntegrationTest {
         // given
         given(accountProfileReader.getProfile(1L)).willReturn(new AccountProfile(1L, "테스터"));
         PostSummaryResponse saved = postCommandService.savePost(
-                "테스트 제목", "테스트 내용입니다. 10자 이상.", 1L, List.of());
+            "테스트 제목",
+            "테스트 내용입니다. 10자 이상.",
+            null,
+            1L,
+            List.of()
+        );
         given(viewCountService.getViewCount(saved.id())).willReturn(0L);
         given(viewCountService.getViewCounts(anyList())).willReturn(Map.of(saved.id(), 0L));
 
@@ -79,7 +84,13 @@ class PostIntegrationTest {
         assertThat(detail.nickname()).isEqualTo("테스터");
 
         Pageable pageable = PageRequest.of(0, 20, Sort.by(Sort.Direction.DESC, "createdAt"));
-        Page<PostDetailResponse> posts = postQueryService.getPosts(pageable, 1L);
+        Page<PostDetailResponse> posts = postQueryService.getPosts(
+            null,
+            null,
+            null,
+            pageable,
+            1L
+        );
 
         assertThat(posts.getNumber()).isZero();
         assertThat(posts.getSize()).isEqualTo(20);
@@ -97,6 +108,7 @@ class PostIntegrationTest {
         PostSummaryResponse saved = postCommandService.savePost(
             "수정 전 제목",
             "수정 전 게시글 내용입니다.",
+            null,
             1L,
             List.of()
         );
@@ -106,6 +118,7 @@ class PostIntegrationTest {
             saved.id(),
             "수정 후 제목",
             "수정 후 게시글 내용입니다.",
+            null,
             List.of()
         );
         PostDetailResponse detail = postQueryService.getPost(saved.id(), 1L);
@@ -125,6 +138,7 @@ class PostIntegrationTest {
         PostSummaryResponse saved = postCommandService.savePost(
             "삭제 대상 제목",
             "삭제 대상 게시글 내용입니다.",
+            null,
             1L,
             List.of()
         );

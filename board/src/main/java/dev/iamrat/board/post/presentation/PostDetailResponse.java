@@ -4,7 +4,6 @@ import dev.iamrat.board.post.domain.Post;
 import dev.iamrat.board.post.domain.PostReferenceLink;
 import dev.iamrat.board.purchase.application.PurchaseVoteSummary;
 import dev.iamrat.board.purchase.presentation.PurchaseVoteResponse;
-import dev.iamrat.core.board.post.PostBoardCategory;
 import dev.iamrat.core.board.post.PostCategory;
 import dev.iamrat.core.board.post.PostPublishOrigin;
 import java.time.LocalDateTime;
@@ -17,7 +16,6 @@ public record PostDetailResponse(
     String summary,
     List<String> tags,
     PostCategory category,
-    PostBoardCategory boardCategory,
     PostPublishOrigin publishOrigin,
     Long accountId,
     String nickname,
@@ -76,7 +74,6 @@ public record PostDetailResponse(
             post.getSummary(),
             post.getTags(),
             post.getCategory(),
-            post.getBoardCategory(),
             post.getPublishOrigin(),
             post.getAccountId(),
             post.getNickname(),

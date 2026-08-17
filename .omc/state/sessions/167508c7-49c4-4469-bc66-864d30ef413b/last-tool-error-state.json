@@ -1,0 +1,7 @@
+{
+  "tool_name": "Bash",
+  "tool_input_preview": "{\"command\":\"ls -la /home/rat/.claude/ 2>/dev/null; echo --- ; ls /home/rat/.claude/history* /home/rat/.claude/archive* 2>/dev/null\",\"description\":\"Inspect claude home dir\"}",
+  "error": "Exit code 1\ntotal 80\ndrwx------ 13 rat rat 4096 Aug 17 17:33 .\ndrwxr-x--- 21 rat rat 4096 Aug 17 17:33 ..\n-rw-------  1 rat rat  466 Aug 17 15:53 .credentials.json\n-rw-r--r--  1 rat rat   24 Aug 17 16:53 .last-cleanup\ndrwxr-xr-x  2 rat rat 4096 Aug 17 16:20 .omc\n-rw-r--r--  1 rat rat    4 Aug 17 17:33 .ponytail-active\n-rw-r--r--  1 rat rat    0 Aug 17 15:58 .ponytail-statusline-nudged\n-rw-r--r--  1 rat rat  892 Aug 17 17:33 .session-stats.json\ndrwxr-xr-x  2 rat rat 4096 Aug 17 17:33 backups\ndrwx...",
+  "timestamp": "2026-08-17T08:33:37.660Z",
+  "retry_count": 1
+}

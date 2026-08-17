@@ -10,7 +10,6 @@ import dev.iamrat.board.purchase.application.PurchaseVoteQueryService;
 import dev.iamrat.board.purchase.application.PurchaseVoteSummary;
 import dev.iamrat.board.purchase.domain.PurchaseVoteType;
 import dev.iamrat.board.view.application.ViewCountService;
-import dev.iamrat.core.board.post.PostBoardCategory;
 import dev.iamrat.core.board.post.PostCategory;
 import dev.iamrat.core.board.post.PostPublishOrigin;
 import dev.iamrat.core.board.post.PostReferenceProvider;
@@ -142,7 +141,6 @@ class PostQueryServiceTest {
             null,
             null,
             null,
-            null,
             org.springframework.data.domain.Pageable.unpaged()
         )).willReturn(page);
         given(postLikeService.getLikedPostIds(List.of(3L), null)).willReturn(java.util.Set.of());
@@ -156,6 +154,9 @@ class PostQueryServiceTest {
         given(postReferenceLinkStore.findByPostIds(List.of(3L))).willReturn(List.of(referenceLink(post)));
 
         PostDetailResponse response = postQueryService.getPosts(
+            null,
+            null,
+            null,
             org.springframework.data.domain.Pageable.unpaged(),
             null
         ).getContent().getFirst();
@@ -163,7 +164,6 @@ class PostQueryServiceTest {
         assertThat(response.references()).hasSize(1);
         assertThat(response.references().getFirst().canonicalUrl()).isEqualTo("https://news.example/article");
         assertThat(response.purchaseVote().eligible()).isTrue();
-        assertThat(response.boardCategory()).isEqualTo(PostBoardCategory.GENERAL);
         assertThat(response.publishOrigin()).isEqualTo(PostPublishOrigin.USER);
     }
 
@@ -174,7 +174,6 @@ class PostQueryServiceTest {
         given(postStore.findByFilters(
             "갤럭시북",
             PostCategory.PRODUCT_LAUNCH_NEWS,
-            PostBoardCategory.DIGITAL,
             PostPublishOrigin.SYSTEM_BATCH,
             pageable
         )).willReturn(new org.springframework.data.domain.PageImpl<>(List.of()));
@@ -182,7 +181,6 @@ class PostQueryServiceTest {
         postQueryService.getPosts(
             "  갤럭시북  ",
             PostCategory.PRODUCT_LAUNCH_NEWS,
-            PostBoardCategory.DIGITAL,
             PostPublishOrigin.SYSTEM_BATCH,
             pageable,
             null
@@ -191,7 +189,6 @@ class PostQueryServiceTest {
         org.mockito.Mockito.verify(postStore).findByFilters(
             "갤럭시북",
             PostCategory.PRODUCT_LAUNCH_NEWS,
-            PostBoardCategory.DIGITAL,
             PostPublishOrigin.SYSTEM_BATCH,
             pageable
         );

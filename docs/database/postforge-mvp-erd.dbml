@@ -2,7 +2,7 @@ Project postforge_mvp_erd {
   database_type: 'PostgreSQL'
   Note: '''
   Current code-backed PostForge MVP ERD.
-  Last verified against code: 2026-06-21.
+  Last verified against code: 2026-06-25.
   Source of truth: docs/database/schema-ownership.md.
 
   Product boundary:
@@ -56,9 +56,6 @@ Enum collection_job_status {
   RUNNING
   SUCCESS
   FAILED
-  RETRYING
-  SKIPPED_BY_RATE_LIMIT
-  SKIPPED_BY_CIRCUIT_OPEN
 }
 
 Enum product_status {
@@ -133,6 +130,8 @@ Table posts {
   indexes {
     created_at [name: 'idx_posts_created_at']
     account_id [name: 'idx_posts_account_id']
+    category [name: 'idx_posts_category']
+    publish_origin [name: 'idx_posts_publish_origin']
   }
 
   Note: 'Owner: board. account_id is a scalar auth reference, not a JPA relation.'
@@ -282,7 +281,6 @@ Table tracked_keywords {
   id bigint [pk, increment, not null]
   keyword varchar(100) [not null]
   source source_type [not null]
-  interval_minutes int [not null]
   display_count int [not null]
   enabled boolean [not null]
   created_at timestamp [not null]
@@ -306,7 +304,6 @@ Table collection_jobs {
   finished_at timestamp
   collected_count int [not null, default: 0]
   failure_reason varchar(1000)
-  retry_count int [not null, default: 0]
 
   Note: 'Owner: ingest. tracked_keyword_id is a logical reference.'
 }
