@@ -8,8 +8,6 @@ PostForge는 access token을 stateless JWT로 처리한다.
 ## 결정
 
 refresh token은 계정별 Redis key `refresh_token:{accountId}`에 저장하고, 재발급 때마다 새 refresh token으로 rotation한다.
-재발급 요청은 token subject에서 account id를 읽고 Redis 저장값과 요청 token을 상수 시간 비교로 검증한다.
-검증이 끝나면 계정 활성 상태와 role을 다시 조회해 새 access token과 refresh token을 발급한다.
 
 ## 영향
 
@@ -25,6 +23,5 @@ refresh token은 계정별 Redis key `refresh_token:{accountId}`에 저장하고
 
 ## 관련 문서
 
-- `auth/src/main/java/dev/iamrat/auth/token/application/TokenService.java`
-- `auth/src/main/java/dev/iamrat/auth/token/infrastructure/redis/RefreshTokenRepository.java`
-- `auth/src/main/resources/docs/auth.md`
+- [Authentication Architecture](../architecture/authentication.md)
+- [Auth API 흐름](../architecture/flows.md#auth)

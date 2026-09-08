@@ -1,8 +1,8 @@
-# 운영 서버 스펙
+# 운영 서버 환경 기록
 
 수집 시각: 2026-06-17 07:06:13 UTC
 
-이 문서는 현재 운영 host의 체급 기준선을 기록한다. 이 문서 자체는 부하 테스트 결과가 아니다. 실제 수용량 판단은 같은 시간 구간의 k6 리포트, Prometheus 지표, 컨테이너 상태와 함께 본다.
+이 문서는 수집 시점의 운영 host와 컨테이너 상태를 보존한다. 현재 환경을 다시 확인한 기록이나 부하 테스트 결과가 아니다. 실제 수용량 판단은 새 실행과 같은 시간 구간의 k6 리포트, Prometheus 지표, 컨테이너 상태와 함께 본다.
 
 ## 호스트
 
@@ -33,7 +33,7 @@
 | L3 cache | 6 MiB |
 | Virtualization | VT-x |
 
-해석: 현재 host는 과거 1 vCPU / 1 GB 벤치마크 환경보다 CPU 여유가 크다. 따라서 과거 환경의 RPS 수치를 현재 production 상한으로 그대로 보면 안 되고, 같은 부하 시나리오를 다시 실행해 새 기준선을 잡아야 한다.
+해석: 이 host는 과거 1 vCPU / 1 GB 벤치마크 환경보다 CPU 여유가 크다. 따라서 과거 환경의 RPS 수치를 production 상한으로 그대로 보면 안 되고, 같은 부하 시나리오를 다시 실행해 새 기준선을 잡아야 한다.
 
 ## 메모리와 Swap
 
@@ -79,7 +79,7 @@
 | runc | 1.3.4 |
 | Docker Compose | v5.1.0 |
 
-## 실행 중인 컨테이너
+## 수집 시점의 컨테이너
 
 `docker ps`와 `docker stats --no-stream` 기준.
 
@@ -93,7 +93,7 @@
 
 ## 성능 해석 메모
 
-- 현재 prod는 Intel N100 host, 4 logical CPUs, 15 GiB memory 환경이다.
+- 수집 시점 prod는 Intel N100 host, 4 logical CPUs, 15 GiB memory 환경이다.
 - 이 디렉터리의 이전 리포트 일부는 Oracle Cloud ARM 1 vCPU / 1 GB 환경을 기준으로 한다. 해당 리포트는 병목 분석의 historical baseline으로는 유효하지만, 현재 host의 RPS 상한으로 재사용하면 안 된다.
 - 수집된 Docker stats 기준 container에는 별도 memory limit이 걸려 있지 않다. 각 container가 host-level `15.4 GiB` limit을 보고 있다. 예측 가능한 메모리 격리가 필요해지면 container memory limit과 JVM heap sizing을 명시한다.
 - 수집 시점 app container memory 사용량은 약 586 MiB다. 실제 부하 테스트에서는 이 값을 Prometheus의 `jvm_memory_used_bytes`, GC, request load와 같은 시간 구간으로 비교해야 한다.
@@ -114,7 +114,7 @@ hikaricp_connections_active
 hikaricp_connections_pending
 http_server_requests_seconds_count
 http_server_requests_seconds_sum
-external_source_fetch_seconds_count
+external_naver_fetch_seconds_count
 external_source_db_persist_seconds_count
 ai_text_generation_seconds_count
 ai_text_generation_completion_tokens_sum
