@@ -11,3 +11,23 @@ dependencies {
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
+
+tasks.named('test') {
+    // 실서버 호출은 -PnaverSmoke=true로 명시한 경우에만 허용한다.
+    def runNaverSmoke = project.findProperty('naverSmoke') == 'true'
+    systemProperty 'naver.smoke', runNaverSmoke.toString()
+    def envFile = rootProject.file('.env')
+    if (runNaverSmoke && envFile.exists()) {
+        envFile.eachLine { line ->
+            def matcher = line =~ /^\s*(NAVER_API_HUB_API_KEY_ID|NAVER_API_HUB_API_KEY)\s*=(.*)$/
+            if (matcher.matches() && System.getenv(matcher.group(1)) == null) {
+                environment matcher.group(1), matcher.group(2).trim()
+            }
+        }
+    }
+
+    // skip은 조용해서 "통과"로 오해하기 쉽다. 콘솔에 남긴다.
+    testLogging {
+        events 'skipped'
+    }
+}
