@@ -15,5 +15,8 @@ public record NewsSourceQuery(
         keyword = keyword.trim();
         displayCount = displayCount <= 0 ? 10 : Math.min(displayCount, 100);
         sort = sort == null || sort.isBlank() ? "date" : sort.trim();
+        if (!sort.equals("date") && !sort.equals("sim")) {
+            throw new IllegalArgumentException(SourceExceptionMessages.NEWS_SORT_MUST_BE_SUPPORTED);
+        }
     }
 }

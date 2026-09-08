@@ -4,9 +4,9 @@ import dev.iamrat.source.news.application.NewsSourceClient;
 import dev.iamrat.source.news.application.NewsSourceItem;
 import dev.iamrat.source.news.application.NewsSourceQuery;
 import dev.iamrat.source.news.application.NewsSourceResult;
-import dev.iamrat.source.news.infrastructure.naver.NaverNewsMetrics;
 import dev.iamrat.source.news.infrastructure.naver.NaverNewsMetrics.Observation;
 import dev.iamrat.source.support.error.SourceExceptionMessages;
+import java.net.URI;
 import java.net.http.HttpClient;
 import java.util.List;
 import java.util.Objects;
@@ -14,6 +14,7 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.MediaType;
 import org.springframework.http.client.JdkClientHttpRequestFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
@@ -43,11 +44,12 @@ public class NaverNewsSourceClient implements NewsSourceClient {
             NaverNewsApiResponse response = restClient.get()
                 .uri(builder -> builder
                     .path(SEARCH_PATH)
-                    .queryParam("query", query.keyword())
+                    .queryParam("query", "{keyword}")
                     .queryParam("display", query.displayCount())
                     .queryParam("start", 1)
                     .queryParam("sort", query.sort())
-                    .build())
+                    .build(query.keyword()))
+                .accept(MediaType.APPLICATION_JSON)
                 .header("X-NCP-APIGW-API-KEY-ID", properties.getApiKeyId())
                 .header("X-NCP-APIGW-API-KEY", properties.getApiKey())
                 .retrieve()
@@ -113,21 +115,23 @@ public class NaverNewsSourceClient implements NewsSourceClient {
 
     private NewsSourceItem toSourceItem(NaverNewsApiResponse.Item item) {
         String link = cleanUrl(item.link());
-        if (link == null || link.isBlank()) {
-            link = cleanUrl(item.originallink());
+        String originalLink = cleanUrl(item.originallink());
+        if (link.isBlank()) {
+            link = originalLink;
         }
-        if (link == null || link.isBlank()) {
+        if (link.isBlank()) {
             return null;
         }
         String title = clean(item.title(), 200);
-        if (title == null || title.isBlank()) {
+        if (title.isBlank()) {
             return null;
         }
+        // raw title/description의 null·trim 정규화는 NewsSourceItem 생성자가 맡는다.
         return new NewsSourceItem(
             title,
             clean(item.description(), 1000),
             link,
-            cleanUrl(item.originallink()),
+            originalLink,
             clean(item.pubDate(), 100),
             item.title(),
             item.description()
@@ -138,8 +142,10 @@ public class NaverNewsSourceClient implements NewsSourceClient {
         if (value == null) {
             return "";
         }
-        String cleaned = HtmlUtils.htmlUnescape(value)
-            .replaceAll("<[^>]+>", "")
+        // 알려진 마크업은 복원 뒤 제거하고 <Pro> 같은 일반 텍스트는 보존한다.
+        // HtmlUtils는 HTML 4.0 엔티티만 알아서 &apos;를 복원하지 못하므로 직접 치환한다.
+        String cleaned = HtmlUtils.htmlUnescape(value.replace("&apos;", "'"))
+            .replaceAll("(?i)</?(?:b|strong|em|i|script|style)(?:\\s[^>]*)?>", "")
             .replaceAll("\\s+", " ")
             .trim();
         return truncate(cleaned, maxLength);
@@ -149,14 +155,24 @@ public class NaverNewsSourceClient implements NewsSourceClient {
         if (value == null || value.isBlank()) {
             return "";
         }
-        return truncate(value.trim(), 1000);
+        String url = value.trim();
+        if (url.length() > 1000) {
+            return "";
+        }
+        try {
+            URI uri = URI.create(url);
+            return ("http".equalsIgnoreCase(uri.getScheme()) || "https".equalsIgnoreCase(uri.getScheme()))
+                && uri.getHost() != null ? url : "";
+        } catch (IllegalArgumentException exception) {
+            return "";
+        }
     }
 
     private String truncate(String value, int maxLength) {
         if (value.length() <= maxLength) {
             return value;
         }
-        return value.substring(0, maxLength);
+        int end = Character.isHighSurrogate(value.charAt(maxLength - 1)) ? maxLength - 1 : maxLength;
+        return value.substring(0, end);
     }
-
 }
