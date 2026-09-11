@@ -9,7 +9,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 @ConfigurationProperties(prefix = "spring.ai.vectorstore.pgvector")
 public class PgVectorProperties {
 
-    private int dimensions = 1536;
+    private int dimensions = 1024;
 
     private boolean initializeSchema = true;
 }
