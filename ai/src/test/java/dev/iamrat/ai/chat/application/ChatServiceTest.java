@@ -114,14 +114,15 @@ class ChatServiceTest {
     }
 
     @Test
-    @DisplayName("생성 클라이언트가 응답하지 못하면 대체 응답을 반환한다")
-    void chat_whenGenerationUnavailable_returnsFallback() {
+    @DisplayName("생성 클라이언트가 응답하지 못하면 외부 서비스 장애로 전파한다")
+    void chat_whenGenerationUnavailable_propagatesException() {
         given(searchPort.searchSimilar("질문", 5)).willReturn(List.of());
         given(textGenerationClient.generate(anyString(), eq("질문"))).willReturn(null);
 
-        String response = service().chat("질문", ACCOUNT_ID, CLIENT_IP);
-
-        assertThat(response).isEqualTo("요청을 처리할 수 없습니다.");
+        assertThatThrownBy(() -> service().chat("질문", ACCOUNT_ID, CLIENT_IP))
+            .isInstanceOfSatisfying(CustomException.class, exception ->
+                assertThat(exception.getErrorCode()).isEqualTo(CommonErrorCode.EXTERNAL_SERVICE_UNAVAILABLE)
+            );
     }
 
     @Test

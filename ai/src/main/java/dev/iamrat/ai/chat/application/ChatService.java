@@ -4,6 +4,8 @@ import dev.iamrat.ai.search.application.SearchPort;
 import dev.iamrat.ai.support.application.AiSafetyGuard;
 import dev.iamrat.ai.support.application.TextGenerationClient;
 import dev.iamrat.ai.support.prompt.PromptResourceLoader;
+import dev.iamrat.core.global.error.CommonErrorCode;
+import dev.iamrat.core.global.exception.CustomException;
 import java.util.List;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
@@ -15,7 +17,6 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class ChatService {
 
-    private static final String UNAVAILABLE_RESPONSE = "요청을 처리할 수 없습니다.";
     private static final String SAFETY_POLICY_PROMPT_PATH = "prompts/safety-policy.md";
     private static final String CHAT_SYSTEM_PROMPT_PATH = "prompts/chat-system.md";
     private static final String NO_RELATED_CONTEXT_SUFFIX = """
@@ -49,7 +50,7 @@ public class ChatService {
         response = aiSafetyGuard.sanitizeOutput(response);
 
         if (response == null || response.isBlank()) {
-            response = UNAVAILABLE_RESPONSE;
+            throw new CustomException(CommonErrorCode.EXTERNAL_SERVICE_UNAVAILABLE);
         }
 
         log.info("AI 채팅 응답 완료 (참조 문서 {}건)", relevantDocs.size());
