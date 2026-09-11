@@ -1,4 +1,4 @@
-package dev.iamrat.ai.chat.presentation.dto;
+package dev.iamrat.ai.chat.presentation;
 
 import jakarta.validation.constraints.NotBlank;
 
