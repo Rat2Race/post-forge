@@ -56,7 +56,7 @@ public class LlmProperties {
         private static final Duration DEFAULT_READ_TIMEOUT = Duration.ofSeconds(60);
 
         @NotBlank
-        private String baseUrl = "http://localhost:8088";
+        private String baseUrl;
 
         private String apiKey = "";
 
@@ -81,7 +81,7 @@ public class LlmProperties {
     public static class ChatOptions {
 
         @NotBlank
-        private String model = "qwen2.5-coder:7b";
+        private String model;
     }
 
     @Getter
@@ -92,7 +92,7 @@ public class LlmProperties {
         private static final Duration DEFAULT_READ_TIMEOUT = Duration.ofSeconds(30);
 
         @NotBlank
-        private String baseUrl = "https://api.openai.com";
+        private String baseUrl;
 
         private String apiKey = "";
 
@@ -117,7 +117,7 @@ public class LlmProperties {
     public static class EmbeddingOptions {
 
         @NotBlank
-        private String model = "text-embedding-ada-002";
+        private String model;
 
         @Positive
         private Integer dimensions;

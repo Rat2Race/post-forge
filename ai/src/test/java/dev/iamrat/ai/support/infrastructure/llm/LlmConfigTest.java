@@ -14,7 +14,11 @@ class LlmConfigTest {
     @DisplayName("LLM 설정은 chat과 embedding용 compatible client를 분리해 만든다")
     void llmConfig_buildsSeparateChatAndEmbeddingModels() {
         LlmProperties properties = new LlmProperties();
+        properties.getChat().setBaseUrl("http://chat.local");
         properties.getChat().getOptions().setModel("chat-model");
+        properties.getEmbedding().setBaseUrl("http://embedding.local");
+        properties.getEmbedding().getOptions().setModel("embedding-model");
+        properties.getEmbedding().getOptions().setDimensions(1024);
         LlmConfig config = new LlmConfig(properties);
 
         OpenAiApi chatApi = config.llmChatApi();
