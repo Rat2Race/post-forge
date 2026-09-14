@@ -1,14 +1,19 @@
 package dev.iamrat.board.post.application;
 
 import dev.iamrat.board.comment.application.CommentQueryService;
-import dev.iamrat.board.like.application.LikeResponse;
+import dev.iamrat.board.like.application.LikeResult;
 import dev.iamrat.board.like.application.PostLikeService;
 import dev.iamrat.board.post.domain.Post;
-import dev.iamrat.board.post.dto.PostDetailResponse;
+import dev.iamrat.board.post.domain.PostReferenceLink;
+import dev.iamrat.board.post.presentation.PostDetailResponse;
 import dev.iamrat.board.view.application.ViewCountService;
+import dev.iamrat.core.board.post.BoardCategory;
+import dev.iamrat.core.board.post.PostCategory;
+import dev.iamrat.core.board.post.PostPublishOrigin;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -26,14 +31,23 @@ public class PostQueryService {
     private final PostLikeService postLikeService;
     private final CommentQueryService commentQueryService;
     private final ViewCountService viewCountService;
+    private final PostReferenceLinkStore postReferenceLinkStore;
 
-    public Page<PostDetailResponse> getPosts(Pageable pageable, Long accountId) {
-        Page<Post> posts = postStore.findAll(pageable);
-        return toDetailPage(posts, pageable, accountId);
-    }
-
-    public Page<PostDetailResponse> searchPosts(String keyword, Pageable pageable, Long accountId) {
-        Page<Post> posts = postStore.findByKeyword(keyword, pageable);
+    public Page<PostDetailResponse> getPosts(
+        String keyword,
+        PostCategory category,
+        BoardCategory boardCategory,
+        PostPublishOrigin publishOrigin,
+        Pageable pageable,
+        Long accountId
+    ) {
+        Page<Post> posts = postStore.findByFilters(
+            normalizeKeyword(keyword),
+            category,
+            boardCategory,
+            publishOrigin,
+            pageable
+        );
         return toDetailPage(posts, pageable, accountId);
     }
 
@@ -41,9 +55,17 @@ public class PostQueryService {
         Post post = postReader.getById(postId);
 
         long views = viewCountService.getViewCount(postId);
-        LikeResponse likeInfo = postLikeService.getLikeInfo(postId, accountId);
+        LikeResult likeInfo = postLikeService.getLikeInfo(postId, accountId);
         int commentCount = commentQueryService.getCommentCount(postId);
-        return PostDetailResponse.from(post, likeInfo.isLiked(), likeInfo.likeCount(), commentCount, views);
+        List<PostReferenceLink> references = postReferenceLinkStore.findByPostId(postId);
+        return PostDetailResponse.from(
+            post,
+            likeInfo.isLiked(),
+            likeInfo.likeCount(),
+            commentCount,
+            views,
+            references
+        );
     }
 
     public PostDetailResponse readPost(Long postId, Long accountId) {
@@ -67,6 +89,8 @@ public class PostQueryService {
         Map<Long, Long> viewCounts = viewCountService.getViewCounts(postIds);
         Map<Long, Long> likeCounts = postLikeService.getLikeCounts(postIds);
         Map<Long, Integer> commentCounts = commentQueryService.getCommentCounts(postIds);
+        Map<Long, List<PostReferenceLink>> references = postReferenceLinkStore.findByPostIds(postIds).stream()
+            .collect(Collectors.groupingBy(reference -> reference.getPost().getId()));
 
         List<PostDetailResponse> responses = content.stream()
             .map(post -> PostDetailResponse.from(
@@ -74,10 +98,15 @@ public class PostQueryService {
                 likedPostIds.contains(post.getId()),
                 likeCounts.getOrDefault(post.getId(), 0L),
                 commentCounts.getOrDefault(post.getId(), 0),
-                viewCounts.getOrDefault(post.getId(), 0L)
+                viewCounts.getOrDefault(post.getId(), 0L),
+                references.getOrDefault(post.getId(), List.of())
             ))
             .toList();
 
         return new PageImpl<>(responses, pageable, posts.getTotalElements());
+    }
+
+    private String normalizeKeyword(String keyword) {
+        return keyword == null || keyword.isBlank() ? null : keyword.trim();
     }
 }

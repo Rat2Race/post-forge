@@ -1,6 +1,5 @@
 package dev.iamrat.board.post.presentation;
 
-import dev.iamrat.core.board.post.PostBoardCategory;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
@@ -18,8 +17,6 @@ public record PostRequest(
 
    @Size(max = 20, message = "태그는 최대 20개까지 등록할 수 있습니다")
    List<@Size(max = 50, message = "태그는 50자 이하여야 합니다") String> tags,
-
-   PostBoardCategory boardCategory,
 
    List<Long> fileIds
 ) {

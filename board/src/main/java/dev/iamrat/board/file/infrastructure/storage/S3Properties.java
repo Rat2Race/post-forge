@@ -8,6 +8,8 @@ import org.springframework.validation.annotation.Validated;
 @ConfigurationProperties(prefix = "aws.s3")
 public record S3Properties(
     @NotBlank String region,
-    @NotBlank String bucket
+    @NotBlank String bucket,
+    @NotBlank String accessKeyId,
+    @NotBlank String secretAccessKey
 ) {
 }

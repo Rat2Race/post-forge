@@ -1,7 +1,7 @@
 package dev.iamrat.board.post.application;
 
 import dev.iamrat.board.post.domain.Post;
-import dev.iamrat.core.board.post.PostBoardCategory;
+import dev.iamrat.core.board.post.BoardCategory;
 import dev.iamrat.core.board.post.PostCategory;
 import dev.iamrat.core.board.post.PostPublishOrigin;
 import dev.iamrat.core.board.post.PostWriteCommand;
@@ -39,7 +39,7 @@ class BoardPostWriterTest {
             .tags(List.of("ai", "news"))
             .accountId(null)
             .nickname("AI 분석가")
-            .category(PostCategory.AI_ANALYSIS)
+            .category(PostCategory.DAILY_DIGEST)
             .build());
 
         Long savedId = boardPostWriter.write(new PostWriteCommand(
@@ -49,7 +49,9 @@ class BoardPostWriterTest {
             List.of("ai", "news"),
             null,
             "AI 분석가",
-            PostCategory.AI_ANALYSIS
+            PostCategory.DAILY_DIGEST,
+            null,
+            null
         ));
 
         ArgumentCaptor<Post> postCaptor = ArgumentCaptor.forClass(Post.class);
@@ -63,8 +65,7 @@ class BoardPostWriterTest {
         assertThat(post.getTags()).containsExactly("ai", "news");
         assertThat(post.getAccountId()).isNull();
         assertThat(post.getNickname()).isEqualTo("AI 분석가");
-        assertThat(post.getCategory()).isEqualTo(PostCategory.AI_ANALYSIS);
-        assertThat(post.getBoardCategory()).isEqualTo(PostBoardCategory.GENERAL);
+        assertThat(post.getCategory()).isEqualTo(PostCategory.DAILY_DIGEST);
         assertThat(post.getPublishOrigin()).isEqualTo(PostPublishOrigin.USER);
     }
 
@@ -88,7 +89,7 @@ class BoardPostWriterTest {
             null,
             "system",
             PostCategory.PRODUCT_LAUNCH_NEWS,
-            PostBoardCategory.DIGITAL,
+            null,
             PostPublishOrigin.SYSTEM_BATCH
         ));
 
@@ -96,7 +97,34 @@ class BoardPostWriterTest {
         verify(postStore).save(postCaptor.capture());
 
         assertThat(postCaptor.getValue().getCategory()).isEqualTo(PostCategory.PRODUCT_LAUNCH_NEWS);
-        assertThat(postCaptor.getValue().getBoardCategory()).isEqualTo(PostBoardCategory.DIGITAL);
         assertThat(postCaptor.getValue().getPublishOrigin()).isEqualTo(PostPublishOrigin.SYSTEM_BATCH);
+    }
+
+    @Test
+    @DisplayName("PostWriteCommand의 분야 카테고리를 저장되는 Post에 반영한다")
+    void write_appliesBoardCategoryFromCommand() {
+        given(postStore.save(any(Post.class))).willReturn(Post.builder()
+            .id(101L)
+            .title("launch")
+            .content("content")
+            .nickname("system")
+            .build());
+
+        boardPostWriter.write(new PostWriteCommand(
+            "launch",
+            "content",
+            "summary",
+            List.of("news"),
+            null,
+            "system",
+            PostCategory.PRODUCT_LAUNCH_NEWS,
+            BoardCategory.DIGITAL,
+            PostPublishOrigin.SYSTEM_BATCH
+        ));
+
+        ArgumentCaptor<Post> postCaptor = ArgumentCaptor.forClass(Post.class);
+        verify(postStore).save(postCaptor.capture());
+
+        assertThat(postCaptor.getValue().getBoardCategory()).isEqualTo(BoardCategory.DIGITAL);
     }
 }

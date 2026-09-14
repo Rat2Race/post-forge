@@ -22,6 +22,8 @@ public class BoardPostWriter implements PostWriter {
             command.summary(),
             command.tags(),
             command.category(),
+            command.boardCategory(),
+            command.publishOrigin(),
             command.accountId(),
             command.nickname()
         );

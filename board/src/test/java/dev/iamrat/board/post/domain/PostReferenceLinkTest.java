@@ -25,7 +25,6 @@ class PostReferenceLinkTest {
         PostReferenceLink link = PostReferenceLink.of(
             post,
             "GalaxyBook",
-            10L,
             PostReferenceProvider.NAVER_NEWS,
             "https://news.example/article",
             "https://news.example/article?utm=1",
@@ -37,7 +36,6 @@ class PostReferenceLinkTest {
 
         assertThat(link.getPost()).isSameAs(post);
         assertThat(link.getKeyword()).isEqualTo("galaxybook");
-        assertThat(link.getProductId()).isEqualTo(10L);
         assertThat(link.getProvider()).isEqualTo(PostReferenceProvider.NAVER_NEWS);
         assertThat(link.getCanonicalUrl()).isEqualTo("https://news.example/article");
         assertThat(link.getOriginalUrl()).isEqualTo("https://news.example/article?utm=1");

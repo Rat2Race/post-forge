@@ -6,11 +6,8 @@ import dev.iamrat.board.like.application.PostLikeService;
 import dev.iamrat.board.post.domain.Post;
 import dev.iamrat.board.post.domain.PostReferenceLink;
 import dev.iamrat.board.post.presentation.PostDetailResponse;
-import dev.iamrat.board.purchase.application.PurchaseVoteQueryService;
-import dev.iamrat.board.purchase.application.PurchaseVoteSummary;
-import dev.iamrat.board.purchase.domain.PurchaseVoteType;
 import dev.iamrat.board.view.application.ViewCountService;
-import dev.iamrat.core.board.post.PostBoardCategory;
+import dev.iamrat.core.board.post.BoardCategory;
 import dev.iamrat.core.board.post.PostCategory;
 import dev.iamrat.core.board.post.PostPublishOrigin;
 import dev.iamrat.core.board.post.PostReferenceProvider;
@@ -48,9 +45,6 @@ class PostQueryServiceTest {
     private ViewCountService viewCountService;
 
     @Mock
-    private PurchaseVoteQueryService purchaseVoteQueryService;
-
-    @Mock
     private PostReferenceLinkStore postReferenceLinkStore;
 
     @InjectMocks
@@ -74,20 +68,18 @@ class PostQueryServiceTest {
         given(viewCountService.getViewCount(postId)).willReturn(3L);
         given(postLikeService.getLikeInfo(postId, null)).willReturn(new LikeResult(false, 1L));
         given(commentQueryService.getCommentCount(postId)).willReturn(2);
-        given(purchaseVoteQueryService.getSummary(post, null)).willReturn(PurchaseVoteSummary.empty(postId, false));
         given(postReferenceLinkStore.findByPostId(postId)).willReturn(List.of());
 
         PostDetailResponse response = postQueryService.readPost(postId, null);
 
         assertThat(response.views()).isEqualTo(3L);
         assertThat(response.isLiked()).isFalse();
-        assertThat(response.purchaseVote().eligible()).isFalse();
         verify(viewCountService, never()).incrementIfNew(postId, null);
     }
 
     @Test
-    @DisplayName("게시글 상세 조회는 구매 투표 요약을 포함한다")
-    void readPost_includesPurchaseVoteSummary() {
+    @DisplayName("게시글 상세 조회는 참조 근거를 포함한다")
+    void getPost_includesReferenceEvidence() {
         Long postId = 2L;
         Post post = Post.builder()
             .id(postId)
@@ -100,21 +92,10 @@ class PostQueryServiceTest {
         given(viewCountService.getViewCount(postId)).willReturn(1L);
         given(postLikeService.getLikeInfo(postId, 9L)).willReturn(new LikeResult(false, 0L));
         given(commentQueryService.getCommentCount(postId)).willReturn(0);
-        given(purchaseVoteQueryService.getSummary(post, 9L)).willReturn(new PurchaseVoteSummary(
-            postId,
-            true,
-            2L,
-            1L,
-            0L,
-            PurchaseVoteType.BUYABLE
-        ));
         given(postReferenceLinkStore.findByPostId(postId)).willReturn(List.of(referenceLink(post)));
 
         PostDetailResponse response = postQueryService.getPost(postId, 9L);
 
-        assertThat(response.purchaseVote().eligible()).isTrue();
-        assertThat(response.purchaseVote().buyableCount()).isEqualTo(2L);
-        assertThat(response.purchaseVote().myVote()).isEqualTo(PurchaseVoteType.BUYABLE);
         assertThat(response.references())
             .singleElement()
             .satisfies(reference -> {
@@ -149,21 +130,19 @@ class PostQueryServiceTest {
         given(viewCountService.getViewCounts(List.of(3L))).willReturn(Map.of(3L, 5L));
         given(postLikeService.getLikeCounts(List.of(3L))).willReturn(Map.of(3L, 0L));
         given(commentQueryService.getCommentCounts(List.of(3L))).willReturn(Map.of(3L, 0));
-        given(purchaseVoteQueryService.getSummaries(List.of(post), null)).willReturn(Map.of(
-            3L,
-            PurchaseVoteSummary.empty(3L, true)
-        ));
         given(postReferenceLinkStore.findByPostIds(List.of(3L))).willReturn(List.of(referenceLink(post)));
 
         PostDetailResponse response = postQueryService.getPosts(
+            null,
+            null,
+            null,
+            null,
             org.springframework.data.domain.Pageable.unpaged(),
             null
         ).getContent().getFirst();
 
         assertThat(response.references()).hasSize(1);
         assertThat(response.references().getFirst().canonicalUrl()).isEqualTo("https://news.example/article");
-        assertThat(response.purchaseVote().eligible()).isTrue();
-        assertThat(response.boardCategory()).isEqualTo(PostBoardCategory.GENERAL);
         assertThat(response.publishOrigin()).isEqualTo(PostPublishOrigin.USER);
     }
 
@@ -174,7 +153,7 @@ class PostQueryServiceTest {
         given(postStore.findByFilters(
             "갤럭시북",
             PostCategory.PRODUCT_LAUNCH_NEWS,
-            PostBoardCategory.DIGITAL,
+            BoardCategory.DIGITAL,
             PostPublishOrigin.SYSTEM_BATCH,
             pageable
         )).willReturn(new org.springframework.data.domain.PageImpl<>(List.of()));
@@ -182,7 +161,7 @@ class PostQueryServiceTest {
         postQueryService.getPosts(
             "  갤럭시북  ",
             PostCategory.PRODUCT_LAUNCH_NEWS,
-            PostBoardCategory.DIGITAL,
+            BoardCategory.DIGITAL,
             PostPublishOrigin.SYSTEM_BATCH,
             pageable,
             null
@@ -191,7 +170,7 @@ class PostQueryServiceTest {
         org.mockito.Mockito.verify(postStore).findByFilters(
             "갤럭시북",
             PostCategory.PRODUCT_LAUNCH_NEWS,
-            PostBoardCategory.DIGITAL,
+            BoardCategory.DIGITAL,
             PostPublishOrigin.SYSTEM_BATCH,
             pageable
         );
@@ -202,7 +181,6 @@ class PostQueryServiceTest {
             .id(10L)
             .post(post)
             .keyword("갤럭시북")
-            .productId(20L)
             .provider(PostReferenceProvider.NAVER_NEWS)
             .canonicalUrl("https://news.example/article")
             .originalUrl("https://news.example/article?utm=1")

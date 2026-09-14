@@ -2,9 +2,7 @@ package dev.iamrat.board.post.presentation;
 
 import dev.iamrat.board.post.domain.Post;
 import dev.iamrat.board.post.domain.PostReferenceLink;
-import dev.iamrat.board.purchase.application.PurchaseVoteSummary;
-import dev.iamrat.board.purchase.presentation.PurchaseVoteResponse;
-import dev.iamrat.core.board.post.PostBoardCategory;
+import dev.iamrat.core.board.post.BoardCategory;
 import dev.iamrat.core.board.post.PostCategory;
 import dev.iamrat.core.board.post.PostPublishOrigin;
 import java.time.LocalDateTime;
@@ -17,7 +15,7 @@ public record PostDetailResponse(
     String summary,
     List<String> tags,
     PostCategory category,
-    PostBoardCategory boardCategory,
+    BoardCategory boardCategory,
     PostPublishOrigin publishOrigin,
     Long accountId,
     String nickname,
@@ -25,7 +23,6 @@ public record PostDetailResponse(
     Integer commentCount,
     Long likeCount,
     boolean isLiked,
-    PurchaseVoteResponse purchaseVote,
     List<PostReferenceLinkResponse> references,
     List<FileInfoResponse> files,
     LocalDateTime createdAt,
@@ -36,7 +33,7 @@ public record PostDetailResponse(
     }
 
     public static PostDetailResponse from(Post post, boolean isLiked, Long likeCount, int commentCount, long views) {
-        return from(post, isLiked, likeCount, commentCount, views, null);
+        return from(post, isLiked, likeCount, commentCount, views, List.of());
     }
 
     public static PostDetailResponse from(
@@ -45,18 +42,6 @@ public record PostDetailResponse(
         Long likeCount,
         int commentCount,
         long views,
-        PurchaseVoteSummary purchaseVoteSummary
-    ) {
-        return from(post, isLiked, likeCount, commentCount, views, purchaseVoteSummary, List.of());
-    }
-
-    public static PostDetailResponse from(
-        Post post,
-        boolean isLiked,
-        Long likeCount,
-        int commentCount,
-        long views,
-        PurchaseVoteSummary purchaseVoteSummary,
         List<PostReferenceLink> references
     ) {
         List<FileInfoResponse> files = post.getFiles().stream()
@@ -65,9 +50,6 @@ public record PostDetailResponse(
         List<PostReferenceLinkResponse> referenceResponses = references.stream()
             .map(PostReferenceLinkResponse::from)
             .toList();
-        PurchaseVoteResponse purchaseVote = purchaseVoteSummary == null
-            ? PurchaseVoteResponse.ineligible(post.getId())
-            : PurchaseVoteResponse.from(purchaseVoteSummary);
 
         return new PostDetailResponse(
             post.getId(),
@@ -84,7 +66,6 @@ public record PostDetailResponse(
             commentCount,
             likeCount,
             isLiked,
-            purchaseVote,
             referenceResponses,
             files,
             post.getCreatedAt(),

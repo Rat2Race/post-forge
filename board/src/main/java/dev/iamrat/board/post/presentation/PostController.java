@@ -5,14 +5,10 @@ import dev.iamrat.board.like.presentation.LikeResponse;
 import dev.iamrat.board.post.application.PostCommandService;
 import dev.iamrat.board.post.application.PostInteractionService;
 import dev.iamrat.board.post.application.PostQueryService;
-import dev.iamrat.board.purchase.application.PurchaseVoteService;
-import dev.iamrat.board.purchase.application.PurchaseVoteSummary;
-import dev.iamrat.board.purchase.presentation.PurchaseVoteRequest;
-import dev.iamrat.board.purchase.presentation.PurchaseVoteResponse;
 import dev.iamrat.core.global.dto.MessageResponse;
 import dev.iamrat.core.global.dto.PageResponse;
 import dev.iamrat.core.account.UserPrincipal;
-import dev.iamrat.core.board.post.PostBoardCategory;
+import dev.iamrat.core.board.post.BoardCategory;
 import dev.iamrat.core.board.post.PostCategory;
 import dev.iamrat.core.board.post.PostPublishOrigin;
 import jakarta.validation.Valid;
@@ -35,7 +31,6 @@ public class PostController {
     private final PostCommandService postCommandService;
     private final PostQueryService postQueryService;
     private final PostInteractionService postInteractionService;
-    private final PurchaseVoteService purchaseVoteService;
 
     @PostMapping
     @PreAuthorize("hasRole('USER')")
@@ -47,7 +42,6 @@ public class PostController {
             postRequest.title(),
             postRequest.content(),
             postRequest.tags(),
-            postRequest.boardCategory(),
             accountId(user),
             postRequest.fileIds()
         );
@@ -61,7 +55,7 @@ public class PostController {
     public ResponseEntity<PageResponse<PostDetailResponse>> getPosts(
         @RequestParam(required = false) String keyword,
         @RequestParam(required = false) PostCategory category,
-        @RequestParam(required = false) PostBoardCategory boardCategory,
+        @RequestParam(required = false) BoardCategory boardCategory,
         @RequestParam(required = false) PostPublishOrigin publishOrigin,
         @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable,
         @AuthenticationPrincipal UserPrincipal user
@@ -102,7 +96,6 @@ public class PostController {
             postRequest.title(),
             postRequest.content(),
             postRequest.tags(),
-            postRequest.boardCategory(),
             postRequest.fileIds()
         );
 
@@ -139,27 +132,6 @@ public class PostController {
         LikeResult likeStatus = postInteractionService.unlikePost(postId, accountId(user));
 
         return ResponseEntity.ok(LikeResponse.from(likeStatus));
-    }
-
-    @PutMapping("/{postId:\\d+}/purchase-vote")
-    @PreAuthorize("hasRole('USER')")
-    public ResponseEntity<PurchaseVoteResponse> votePurchase(
-        @PathVariable("postId") Long postId,
-        @RequestBody @Valid PurchaseVoteRequest request,
-        @AuthenticationPrincipal UserPrincipal user
-    ) {
-        PurchaseVoteSummary summary = purchaseVoteService.vote(postId, accountId(user), request.voteType());
-        return ResponseEntity.ok(PurchaseVoteResponse.from(summary));
-    }
-
-    @DeleteMapping("/{postId:\\d+}/purchase-vote")
-    @PreAuthorize("hasRole('USER')")
-    public ResponseEntity<PurchaseVoteResponse> unvotePurchase(
-        @PathVariable("postId") Long postId,
-        @AuthenticationPrincipal UserPrincipal user
-    ) {
-        PurchaseVoteSummary summary = purchaseVoteService.unvote(postId, accountId(user));
-        return ResponseEntity.ok(PurchaseVoteResponse.from(summary));
     }
 
     private static Long optionalAccountId(UserPrincipal user) {

@@ -1,7 +1,7 @@
 package dev.iamrat.board.like.application;
 
 import dev.iamrat.board.like.domain.PostLike;
-import dev.iamrat.board.post.application.PostLikeTargetService;
+import dev.iamrat.board.post.application.PostStore;
 import dev.iamrat.core.global.error.CommonErrorCode;
 import dev.iamrat.core.global.exception.CustomException;
 import java.util.List;
@@ -15,19 +15,19 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class PostLikeService extends AbstractLikeService {
     private final PostLikeStore postLikeStore;
-    private final PostLikeTargetService postLikeTargetService;
+    private final PostStore postStore;
 
     @Transactional
-    public LikeResponse like(Long postId, Long accountId) {
+    public LikeResult like(Long postId, Long accountId) {
         return likeTarget(postId, accountId);
     }
 
     @Transactional
-    public LikeResponse unlike(Long postId, Long accountId) {
+    public LikeResult unlike(Long postId, Long accountId) {
         return unlikeTarget(postId, accountId);
     }
 
-    public LikeResponse getLikeInfo(Long postId, Long accountId) {
+    public LikeResult getLikeInfo(Long postId, Long accountId) {
         if (postId == null) {
             throw new CustomException(CommonErrorCode.INVALID_INPUT);
         }
@@ -35,7 +35,7 @@ public class PostLikeService extends AbstractLikeService {
         long likeCount = postLikeStore.countByPostId(postId);
         boolean liked = accountId != null && postLikeStore.existsByPostIdAndAccountId(postId, accountId);
 
-        return new LikeResponse(liked, likeCount);
+        return new LikeResult(liked, likeCount);
     }
 
     public Map<Long, Long> getLikeCounts(List<Long> postIds) {
@@ -53,7 +53,7 @@ public class PostLikeService extends AbstractLikeService {
 
     @Override
     protected void saveLike(Long targetId, Long accountId) {
-        postLikeStore.save(PostLike.of(postLikeTargetService.getReference(targetId), accountId));
+        postLikeStore.save(PostLike.of(postStore.getReferenceById(targetId), accountId));
     }
 
     @Override
@@ -63,7 +63,7 @@ public class PostLikeService extends AbstractLikeService {
 
     @Override
     protected void updateLikeCount(Long targetId, long likeCount) {
-        postLikeTargetService.updateLikeCount(targetId, likeCount);
+        postStore.updateLikeCount(targetId, likeCount);
     }
 
     @Override

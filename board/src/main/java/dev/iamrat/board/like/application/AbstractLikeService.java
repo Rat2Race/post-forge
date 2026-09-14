@@ -12,24 +12,23 @@ import java.util.Set;
 
 public abstract class AbstractLikeService {
 
-    protected LikeResponse likeTarget(Long targetId, Long accountId) {
+    protected LikeResult likeTarget(Long targetId, Long accountId) {
         validateTargetAndAccount(targetId, accountId);
 
         if (!existsByTargetIdAndAccountId(targetId, accountId)) {
             try {
                 saveLike(targetId, accountId);
             } catch (DataIntegrityViolationException ignored) {
-                // Another concurrent request inserted the row first.
             }
         }
 
         long likeCount = countByTargetId(targetId);
         updateLikeCount(targetId, likeCount);
 
-        return new LikeResponse(true, likeCount);
+        return new LikeResult(true, likeCount);
     }
 
-    protected LikeResponse unlikeTarget(Long targetId, Long accountId) {
+    protected LikeResult unlikeTarget(Long targetId, Long accountId) {
         validateTargetAndAccount(targetId, accountId);
 
         deleteByTargetIdAndAccountId(targetId, accountId);
@@ -37,7 +36,7 @@ public abstract class AbstractLikeService {
         long likeCount = countByTargetId(targetId);
         updateLikeCount(targetId, likeCount);
 
-        return new LikeResponse(false, likeCount);
+        return new LikeResult(false, likeCount);
     }
 
     protected Map<Long, Long> getLikeCountMap(List<Long> targetIds) {

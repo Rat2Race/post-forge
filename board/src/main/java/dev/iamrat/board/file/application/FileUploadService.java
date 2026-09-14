@@ -18,7 +18,7 @@ public class FileUploadService {
     private final FileStorage fileStorage;
     private final FileTypePolicy fileTypePolicy = new FileTypePolicy();
 
-    public FileUploadResponse createPresignedUrl(String fileName, String contentType) {
+    public FileUploadResult createPresignedUrl(String fileName, String contentType) {
         ValidatedFileType fileType = fileTypePolicy.validate(fileName, contentType);
 
         String datePath = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
@@ -34,6 +34,6 @@ public class FileUploadService {
         PostFile saved = fileStore.save(fileEntity);
 
         String uploadUrl = fileStorage.createUploadUrl(objectKey, fileType.mimeType());
-        return new FileUploadResponse(saved.getId(), savedFileName, uploadUrl);
+        return new FileUploadResult(saved.getId(), savedFileName, uploadUrl);
     }
 }

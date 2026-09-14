@@ -84,7 +84,7 @@ Spring pageable resolver는 일부 잘못된 `page`/`size` 값을 `0`, 엔드포
 
 | Endpoint | Auth | Parameters — 필요한 이유 | Success | Fail |
 | --- | --- | --- | --- | --- |
-| `POST /api/ai/chat` | USER | body `ChatRequest` — 질문, 안전 검사, 유사 문서 검색, LLM 입력에 사용 | `200 ChatResponse`; 안전 정책 거절과 LLM 장애 fallback도 `answer`에 담긴 정상 응답 | `400 VALIDATION_ERROR/INVALID_INPUT`; vector 검색 장애 `503 EXTERNAL_SERVICE_UNAVAILABLE`; 인증 `401/403` |
+| `POST /api/ai/chat` | USER | body `ChatRequest` — 질문, 안전 검사, 유사 문서 검색, LLM 입력에 사용 | `200 ChatResponse`; 안전 정책 거절은 `answer`에 담긴 정상 응답 | `400 VALIDATION_ERROR/INVALID_INPUT`; vector 검색 장애와 LLM 생성 장애 `503 EXTERNAL_SERVICE_UNAVAILABLE`; 인증 `401/403` |
 
 ### 요청 DTO와 파라미터 이유
 
@@ -257,9 +257,9 @@ Source는 “수집을 실행할지” 결정하지 않고, 결과를 DB에 저�
 | Endpoint | Auth | Parameters — 필요한 이유 | Success | Fail |
 | --- | --- | --- | --- | --- |
 | `POST /api/ingest/documents` | ADMIN | body `List<DocumentIngestRequest>` — 여러 원문을 공용 RAG 저장소에 chunk·embedding 저장. 사용자별 소유권·격리가 없어 운영자만 허용 | `200 DocumentIngestResult`; 빈 배열 금지 제약은 없고 vector store 저장 성공 시 0건 | `400 VALIDATION_ERROR/INVALID_INPUT`; 인증 `401/403`; vector store `503 DOCUMENT_STORE_UNAVAILABLE` |
-| `POST /api/admin/news-documents/manual` | ADMIN | body `ProductNewsIngestRequest` — keyword+topic query로 뉴스 수집 후 vector 문서화 | `200 ProductNewsIngestResponse`; 검색 결과가 없으면 count 0 | `400 VALIDATION_ERROR/INVALID_INPUT`; 인증 `401/403`; vector store `503 DOCUMENT_STORE_UNAVAILABLE`; source 비활성·외부 runtime 오류는 현재 `500` |
-| `POST /api/admin/launch-news/manual` | ADMIN | body `LaunchNewsPublishRequest` — 뉴스 수집·벡터 적재·gate·RAG 초안·일일 한도·게시 출처 지정; manual origin은 `ADMIN_BACKFILL` | `200 LaunchNewsPublishResponse`; 중복·광고·AI 생성 실패·일일 한도는 `skips`에 포함 | `400 VALIDATION_ERROR/INVALID_INPUT`; 인증 `401/403`; DB 충돌 `409`; source 비활성·외부 runtime 오류는 현재 `500` |
-| `POST /api/admin/news/digest` | ADMIN | body `DailyDigestPublishRequest` 선택(생략 가능) — `newsDate`의 출시뉴스 게시글을 분야별로 요약해 데일리 브리핑 게시 | `200 DailyDigestPublishResponse`; 소스 없음·이미 게시·AI 생성 실패는 분야별 `skips`에 포함 | `400 INVALID_INPUT`(날짜 파싱 실패); 인증 `401/403` |
+| `POST /api/admin/news-documents/manual` | ADMIN | body `ProductNewsIngestRequest` — keyword+topic query로 뉴스 수집 후 vector 문서화 | `200 ProductNewsIngestResult`; 검색 결과가 없으면 count 0 | `400 VALIDATION_ERROR/INVALID_INPUT`; 인증 `401/403`; vector store `503 DOCUMENT_STORE_UNAVAILABLE`; source 비활성·외부 runtime 오류는 현재 `500` |
+| `POST /api/admin/launch-news/manual` | ADMIN | body `LaunchNewsPublishRequest` — 뉴스 수집·벡터 적재·gate·RAG 초안·일일 한도·게시 출처 지정; manual origin은 `ADMIN_BACKFILL` | `200 LaunchNewsPublishResult`; 중복·광고·AI 생성 실패·일일 한도는 `skips`에 포함 | `400 VALIDATION_ERROR/INVALID_INPUT`; 인증 `401/403`; DB 충돌 `409`; source 비활성·외부 runtime 오류는 현재 `500` |
+| `POST /api/admin/news/digest` | ADMIN | body `DailyDigestPublishRequest` 선택(생략 가능) — `newsDate`의 출시뉴스 게시글을 분야별로 요약해 데일리 브리핑 게시 | `200 DailyDigestPublishResult`; 소스 없음·이미 게시·AI 생성 실패는 분야별 `skips`에 포함 | `400 INVALID_INPUT`(날짜 파싱 실패); 인증 `401/403` |
 
 ### 요청 DTO와 파라미터 이유
 
@@ -291,7 +291,7 @@ Source는 “수집을 실행할지” 결정하지 않고, 결과를 DB에 저�
 
 `tracked_keywords`는 뉴스 scheduler의 영속 실행 설정이다. 등록 API는 없고 DB에 직접 넣는다. 활성 row의 `keyword`, `displayCount`, `category`를 사용하며, 분야는 이 `category`(수동 게시에서는 요청의 `category`)로 정한다. LLM이 분야를 자동 판정하는 기능은 현재 없다. LLM은 선별된 기사의 본문·요약·태그 초안을 작성한다.
 
-뉴스 작업은 스케줄 실행 안에서 수집→벡터 적재→게시 후보 선별→LLM 초안→게시까지 처리한다. 수집 건수(`displayCount`, topic당 최대 100)와 게시 건수(`dailyCap`, 기본 3)는 별개다. 동일 수집 결과를 적재와 게시 후보에 함께 사용한다. 초안을 저장해 별도 시각에 발행하는 예약 대기열은 없다.
+뉴스 작업은 스케줄 실행 안에서 수집→벡터 적재→게시 후보 선별→LLM 초안→게시까지 처리한다. 수집 건수(`displayCount`, topic당 최대 100)와 게시 건수(`dailyCap`, 기본 3)는 별개다. 동일 수집 결과를 적재와 게시 후보에 함께 사용하되, 광고성 기사는 적재에서만 제외하고 게시 후보에는 남겨 `ADVERTISING` skip으로 보고한다. 초안을 저장해 별도 시각에 발행하는 예약 대기열은 없다.
 
 데일리는 **전날 00:00 이상, 당일 00:00 미만에 작성된 `PRODUCT_LAUNCH_NEWS` 게시글**의 제목·요약을 분야별로 종합해 `DAILY_DIGEST`로 게시한다. 기사 원문의 발행일이나 수집 원문 전체를 기준으로 하지 않는다. 수집 완료와 별개로 06:00에 실행하며, Naver·벡터 검색을 다시 호출하지 않는다. 대상 글이 없는 분야와 이미 데일리가 게시된 분야는 건너뛴다. 메일 발송은 향후 계획이다.
 
@@ -304,10 +304,10 @@ Naver News source가 비활성이면 두 news endpoint 호출은 현재 `500 INT
 | DTO | 필드 |
 | --- | --- |
 | `DocumentIngestResult` | `documentCount`, `chunkCount` |
-| `ProductNewsIngestResponse` | `keyword`, `queries`, `newsCount`, `chunkCount` |
-| `LaunchNewsPublishResponse` | `keyword`, `publishedCount`, `skippedCount`, `createdPostIds`, `skips` |
-| `LaunchNewsPublishResponse.SkipResponse` | `url`, `reason` |
-| `DailyDigestPublishResponse` | `newsDate`, `publishedCount`, `skippedCount`, `createdPostIds`, `skips`(분야 → `DailyDigestSkipReason`) |
+| `ProductNewsIngestResult` | `keyword`, `queries`, `newsCount`, `chunkCount` |
+| `LaunchNewsPublishResult` | `keyword`, `publishedCount`, `skippedCount`, `createdPostIds`, `skips` |
+| `LaunchNewsSkip` | `url`, `reason` |
+| `DailyDigestPublishResult` | `newsDate`, `publishedCount`, `skippedCount`, `createdPostIds`, `skips`(분야 → `DailyDigestSkipReason`) |
 
 ### 주요 enum
 
