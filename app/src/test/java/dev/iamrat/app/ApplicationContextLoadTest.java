@@ -2,6 +2,8 @@ package dev.iamrat.app;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import dev.iamrat.ai.search.infrastructure.vector.PgVectorProperties;
+import dev.iamrat.ai.support.infrastructure.llm.LlmProperties;
 import dev.iamrat.core.board.post.LaunchNewsPostDraftGenerator;
 import dev.iamrat.ingest.news.application.DailyDigestScheduler;
 import dev.iamrat.ingest.news.application.LaunchNewsPublishScheduler;
@@ -27,5 +29,16 @@ class ApplicationContextLoadTest {
         assertThat(context.getBean(LaunchNewsPostDraftGenerator.class)).isNotNull();
         assertThat(context.getBeansOfType(LaunchNewsPublishScheduler.class)).isEmpty();
         assertThat(context.getBeansOfType(DailyDigestScheduler.class)).isEmpty();
+    }
+
+    @Test
+    @DisplayName("임베딩 요청 차원과 vector_store 차원이 같은 값으로 묶여 provider를 바꿔도 어긋나지 않는다")
+    void embeddingDimensionsAreBoundToVectorStoreDimensions() {
+        Integer requestDimensions = context.getBean(LlmProperties.class)
+            .getEmbedding().getOptions().getDimensions();
+
+        assertThat(requestDimensions)
+            .as("app.llm.embedding.options.dimensions 바인딩이 빠지면 상용 provider가 다른 차원을 돌려준다")
+            .isEqualTo(context.getBean(PgVectorProperties.class).getDimensions());
     }
 }

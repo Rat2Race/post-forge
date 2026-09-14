@@ -28,6 +28,7 @@ app:
       read-timeout: ${LLM_EMBEDDING_READ_TIMEOUT:30s}
       options:
         model: ${LLM_EMBEDDING_MODEL:bge-m3}
+        dimensions: ${LLM_EMBEDDING_DIMENSIONS:1024}
 
 spring:
   config:
