@@ -16,9 +16,17 @@ import dev.iamrat.ingest.news.application.LaunchNewsPublishCommand;
 import dev.iamrat.ingest.news.application.LaunchNewsPublishResult;
 import dev.iamrat.ingest.news.application.LaunchNewsSkip;
 import dev.iamrat.ingest.news.application.LaunchNewsSkipReason;
+import dev.iamrat.ingest.news.application.DailyDigestPublishResult;
+import dev.iamrat.ingest.news.application.DailyDigestSkipReason;
 import dev.iamrat.ingest.news.application.ProductNewsIngestResult;
+import dev.iamrat.ingest.news.application.PublishDailyDigestUseCase;
 import dev.iamrat.ingest.news.application.PublishLaunchNewsUseCase;
+import java.time.Clock;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.List;
+import java.util.Map;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -44,6 +52,12 @@ class NewsAdminControllerTest {
 
     @MockitoBean
     private PublishLaunchNewsUseCase publishLaunchNewsUseCase;
+
+    @MockitoBean
+    private PublishDailyDigestUseCase publishDailyDigestUseCase;
+
+    @MockitoBean
+    private Clock clock;
 
     @Test
     @DisplayName("관리자 출시 뉴스 수동 게시 엔드포인트는 backfill origin으로 서비스를 호출한다")
@@ -151,7 +165,47 @@ class NewsAdminControllerTest {
             .andExpect(status().isBadRequest());
     }
 
+    @Test
+    @DisplayName("관리자 데일리 브리핑 수동 게시 요청의 날짜가 유스케이스에 도달한다")
+    void publishDailyDigestManual_reachesUseCaseWithRequestedDate() throws Exception {
+        given(publishDailyDigestUseCase.publish(LocalDate.of(2026, 8, 19))).willReturn(new DailyDigestPublishResult(
+            LocalDate.of(2026, 8, 19),
+            List.of(42L),
+            Map.of(BoardCategory.SPORTS, DailyDigestSkipReason.NO_SOURCE)
+        ));
 
+        mockMvc.perform(post("/api/admin/news/digest")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(new DailyDigestPublishRequest(LocalDate.of(2026, 8, 19)))))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.newsDate").value("2026-08-19"))
+            .andExpect(jsonPath("$.publishedCount").value(1))
+            .andExpect(jsonPath("$.skippedCount").value(1))
+            .andExpect(jsonPath("$.createdPostIds[0]").value(42L))
+            .andExpect(jsonPath("$.skips.SPORTS").value("NO_SOURCE"));
+
+        verify(publishDailyDigestUseCase).publish(LocalDate.of(2026, 8, 19));
+    }
+
+    @Test
+    @DisplayName("관리자 데일리 브리핑 수동 게시는 날짜가 없으면 어제로 게시한다")
+    void publishDailyDigestManual_defaultsToYesterday() throws Exception {
+        given(clock.instant()).willReturn(Instant.parse("2026-08-21T06:00:00Z"));
+        given(clock.getZone()).willReturn(ZoneId.of("Asia/Seoul"));
+        given(publishDailyDigestUseCase.publish(LocalDate.of(2026, 8, 20))).willReturn(new DailyDigestPublishResult(
+            LocalDate.of(2026, 8, 20),
+            List.of(),
+            Map.of()
+        ));
+
+        mockMvc.perform(post("/api/admin/news/digest")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(new DailyDigestPublishRequest(null))))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.newsDate").value("2026-08-20"));
+
+        verify(publishDailyDigestUseCase).publish(LocalDate.of(2026, 8, 20));
+    }
 
     @Test
     @DisplayName("수동 출시 뉴스 게시 요청의 키워드가 비어 있으면 검증 오류를 반환한다")
