@@ -22,16 +22,25 @@ Thumbs.db
 node_modules/
 dist/
 
+# Module generated docs
+*/src/main/resources/docs/
+
 # env
 .env
 .env.*
 !.env.example
+!.env.local.example
 
 # Gemini CLI internal files
 .omx/
 .codex
 .codex-review/
 .codex_tmp/
+graphify-out/
 
 docker
 !docs/docker
+
+# agent/tool local state
+.omc/
+docker-build/
