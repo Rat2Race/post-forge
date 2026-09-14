@@ -55,6 +55,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.httpBasic;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -68,6 +69,7 @@ import static org.mockito.BDDMockito.willThrow;
     "monitoring.username=monitor",
     "monitoring.password=monitor-secret",
     "management.health.defaults.enabled=false",
+    "management.endpoints.web.exposure.include=health,info",
     "spring.autoconfigure.exclude="
         + "org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration,"
         + "org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration,"
@@ -141,53 +143,6 @@ class SecurityConfigRegressionTest {
         mockMvc.perform(get("/api/posts/1/comments"))
             .andExpect(status().isOk())
             .andExpect(content().string("comments"));
-    }
-
-    @Test
-    @DisplayName("상품 상세와 가격 이력 조회는 인증 없이 허용한다")
-    void productDetailAndPriceHistory_allowAnonymousAccess() throws Exception {
-        mockMvc.perform(get("/api/products/1"))
-            .andExpect(status().isOk())
-            .andExpect(content().string("product-detail"));
-
-        mockMvc.perform(get("/api/products/1/prices"))
-            .andExpect(status().isOk())
-            .andExpect(content().string("price-history"));
-    }
-
-    @Test
-    @DisplayName("가격 판정 API는 익명 사용자를 차단한다")
-    void priceCheck_rejectsAnonymousAccess() throws Exception {
-        mockMvc.perform(post("/api/price-checks")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("{}"))
-            .andExpect(status().isUnauthorized());
-    }
-
-    @Test
-    @WithMockUser(roles = "USER")
-    @DisplayName("가격 판정 API는 USER 권한이면 허용한다")
-    void priceCheck_allowsUserRole() throws Exception {
-        mockMvc.perform(post("/api/price-checks")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("{}"))
-            .andExpect(status().isOk())
-            .andExpect(content().string("price-check"));
-    }
-
-    @Test
-    @WithMockUser(roles = "USER")
-    @DisplayName("제거된 가격 변동 게시 경로는 wildcard 허용에 걸리지 않는다")
-    void removedPriceRoutes_areDenied() throws Exception {
-        mockMvc.perform(get(removedRoute("/api/products")))
-            .andExpect(status().isForbidden());
-
-        mockMvc.perform(get(removedRoute("/api/posts/auto")))
-            .andExpect(status().isForbidden());
-    }
-
-    private static String removedRoute(String prefix) {
-        return prefix + "/price-" + "drops";
     }
 
     @Test
@@ -272,26 +227,6 @@ class SecurityConfigRegressionTest {
     }
 
     @Test
-    @DisplayName("구매 판단 투표는 익명 사용자를 차단한다")
-    void purchaseVote_rejectsAnonymousAccess() throws Exception {
-        mockMvc.perform(put("/api/posts/1/purchase-vote")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("{}"))
-            .andExpect(status().isUnauthorized());
-    }
-
-    @Test
-    @WithMockUser(roles = "USER")
-    @DisplayName("구매 판단 투표는 USER 권한이면 허용한다")
-    void purchaseVote_allowsUserRole() throws Exception {
-        mockMvc.perform(put("/api/posts/1/purchase-vote")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("{}"))
-            .andExpect(status().isOk())
-            .andExpect(content().string("purchase-voted"));
-    }
-
-    @Test
     @WithMockUser(roles = "ADMIN")
     @DisplayName("게시글 삭제는 ADMIN 권한이면 허용한다")
     void deletePost_allowsAdminRole() throws Exception {
@@ -326,27 +261,20 @@ class SecurityConfigRegressionTest {
     }
 
     @Test
-    @DisplayName("상품 수집 관리자 경로는 익명 사용자를 차단한다")
-    void adminProductCollection_rejectsAnonymousAccess() throws Exception {
-        mockMvc.perform(post("/api/admin/collection-jobs/manual"))
-            .andExpect(status().isUnauthorized());
-    }
-
-    @Test
     @WithMockUser(roles = "USER")
-    @DisplayName("상품 수집 관리자 경로는 USER 권한을 차단한다")
-    void adminProductCollection_rejectsUserRole() throws Exception {
-        mockMvc.perform(post("/api/admin/collection-jobs/manual"))
+    @DisplayName("Ingest API는 USER 권한을 차단한다")
+    void ingestApi_rejectsUserRole() throws Exception {
+        mockMvc.perform(get("/api/ingest/ping"))
             .andExpect(status().isForbidden());
     }
 
     @Test
     @WithMockUser(roles = "ADMIN")
-    @DisplayName("상품 수집 관리자 경로는 ADMIN 권한이면 허용한다")
-    void adminProductCollection_allowsAdminRole() throws Exception {
-        mockMvc.perform(post("/api/admin/collection-jobs/manual"))
+    @DisplayName("Ingest API는 ADMIN 권한이면 허용한다")
+    void ingestApi_allowsAdminRole() throws Exception {
+        mockMvc.perform(get("/api/ingest/ping"))
             .andExpect(status().isOk())
-            .andExpect(content().string("manual-collected"));
+            .andExpect(content().string("ingest"));
     }
 
     @Test
@@ -372,6 +300,68 @@ class SecurityConfigRegressionTest {
     void undeclaredRoute_deniesAuthenticatedUser() throws Exception {
         mockMvc.perform(get("/undeclared-route"))
             .andExpect(status().isForbidden());
+
+        mockMvc.perform(get("/api/posts/1/undeclared"))
+            .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @DisplayName("공개 인증 POST 경로는 익명 요청을 허용한다")
+    void publicAuthPostRoutes_allowAnonymousAccess() throws Exception {
+        String[] publicPostRoutes = {
+            "/api/auth/register",
+            "/api/auth/login",
+            "/api/auth/token/reissue",
+            "/api/auth/oauth2/exchange",
+            "/api/auth/email/send"
+        };
+
+        for (String route : publicPostRoutes) {
+            mockMvc.perform(post(route)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("{}"))
+                .andExpect(status().isOk())
+                .andExpect(content().string("auth-public"));
+        }
+    }
+
+    @Test
+    @DisplayName("OAuth2 인가 진입점은 익명 요청을 차단하지 않고 리다이렉트한다")
+    void oauth2AuthorizationEntryPoint_allowsAnonymousAccess() throws Exception {
+        mockMvc.perform(get("/oauth2/authorization/test"))
+            .andExpect(status().is3xxRedirection());
+    }
+
+    @Test
+    @DisplayName("OAuth2 로그인 콜백 진입점은 익명 요청을 차단하지 않는다")
+    void oauth2LoginCallbackEntryPoint_allowsAnonymousAccess() throws Exception {
+        int status = mockMvc.perform(get("/login/oauth2/code/test"))
+            .andReturn()
+            .getResponse()
+            .getStatus();
+
+        assertThat(status).isNotIn(401, 403);
+    }
+
+    @Test
+    @DisplayName("액추에이터 health는 익명 요청을 허용한다")
+    void actuatorHealth_allowsAnonymousAccess() throws Exception {
+        mockMvc.perform(get("/actuator/health"))
+            .andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("health 외 액추에이터 경로는 익명 요청을 차단한다")
+    void actuatorEndpoint_rejectsAnonymousAccess() throws Exception {
+        mockMvc.perform(get("/actuator/info"))
+            .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    @DisplayName("health 외 액추에이터 경로는 monitor 계정 basic 인증을 통과한다")
+    void actuatorEndpoint_allowsMonitorBasicAuth() throws Exception {
+        mockMvc.perform(get("/actuator/info").with(httpBasic("monitor", "monitor-secret")))
+            .andExpect(status().isOk());
     }
 
     @EnableAutoConfiguration
@@ -388,10 +378,8 @@ class SecurityConfigRegressionTest {
         DummyFileController.class,
         DummyAiController.class,
         DummyIngestController.class,
-        DummyProductController.class,
-        DummyPriceCheckController.class,
         DummyEmailVerificationController.class,
-        DummyAdminProductCollectionController.class,
+        DummyPublicAuthController.class,
         DummyAdminLaunchNewsController.class
     })
     static class TestApp {
@@ -446,25 +434,26 @@ class SecurityConfigRegressionTest {
     }
 
     @RestController
-    static class DummyProductController {
-
-        @GetMapping("/api/products/{productId:\\d+}")
-        String getProduct(@PathVariable Long productId) {
-            return "product-detail";
-        }
-
-        @GetMapping("/api/products/{productId:\\d+}/prices")
-        String getPriceHistory(@PathVariable Long productId) {
-            return "price-history";
-        }
-    }
-
-    @RestController
     static class DummyEmailVerificationController {
 
         @GetMapping("/api/auth/email/verify")
         String verifyEmail() {
             return "email-verified";
+        }
+    }
+
+    @RestController
+    static class DummyPublicAuthController {
+
+        @PostMapping({
+            "/api/auth/register",
+            "/api/auth/login",
+            "/api/auth/token/reissue",
+            "/api/auth/oauth2/exchange",
+            "/api/auth/email/send"
+        })
+        String handlePublicAuthPost(@RequestBody String ignored) {
+            return "auth-public";
         }
     }
 
@@ -495,11 +484,6 @@ class SecurityConfigRegressionTest {
             return "liked";
         }
 
-        @PutMapping("/{postId}/purchase-vote")
-        @PreAuthorize("hasRole('USER')")
-        String votePurchase(@PathVariable Long postId) {
-            return "purchase-voted";
-        }
     }
 
     @RestController
@@ -557,25 +541,6 @@ class SecurityConfigRegressionTest {
         @GetMapping("/ping")
         String ping() {
             return "ingest";
-        }
-    }
-
-    @RestController
-    static class DummyPriceCheckController {
-
-        @PostMapping("/api/price-checks")
-        String checkPrice(@RequestBody String ignored) {
-            return "price-check";
-        }
-    }
-
-    @RestController
-    @RequestMapping("/api/admin/collection-jobs")
-    static class DummyAdminProductCollectionController {
-
-        @PostMapping("/manual")
-        String collect() {
-            return "manual-collected";
         }
     }
 

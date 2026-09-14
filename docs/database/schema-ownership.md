@@ -35,7 +35,7 @@
 | `board` | `post_file` | `board/file/domain/PostFile.java` | S3 object metadata and post attachment relation |
 | `board` | `post_reference_links` | `board/post/domain/PostReferenceLink.java` | 자동 게시 뉴스의 출처, canonical URL 중복 기준, publish_origin snapshot, keyword 일일 한도 metadata |
 | `ingest` | `tracked_keywords` | `ingest/news/domain/TrackedKeyword.java` | 뉴스 자동 수집 대상 키워드와 display policy, 수집 분야(category, 게시글 `board_category`로 전달) |
-| `ai` | `vector_store` | Spring AI PgVector mapping | RAG embeddings; 테이블과 HNSW 인덱스는 Flyway `V0000` baseline에 포함된다. Spring AI의 `initialize-schema: true`도 설정되어 있으며 embedding dimensions 기본값은 1536 |
+| `ai` | `vector_store` | Spring AI PgVector mapping | RAG embeddings; 테이블과 HNSW 인덱스는 Flyway `V0000` baseline에 포함되고, `V0002`에서 embedding 차원을 1024로 바꾼다. Spring AI의 `initialize-schema: true`도 설정되어 있으며 embedding dimensions 기본값은 1024 (로컬 `bge-m3`) |
 
 ## Non-Relational Storage
 

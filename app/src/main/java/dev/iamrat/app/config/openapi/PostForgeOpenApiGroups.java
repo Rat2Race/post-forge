@@ -50,22 +50,6 @@ public class PostForgeOpenApiGroups {
     }
 
     @Bean
-    public GroupedOpenApi catalogApi() {
-        return GroupedOpenApi.builder()
-            .group("catalog")
-            .pathsToMatch(PostForgeOpenApiRoutes.CATALOG)
-            .build();
-    }
-
-    @Bean
-    public GroupedOpenApi priceApi() {
-        return GroupedOpenApi.builder()
-            .group("price")
-            .pathsToMatch(PostForgeOpenApiRoutes.PRICE)
-            .build();
-    }
-
-    @Bean
     public GroupedOpenApi ingestApi() {
         return GroupedOpenApi.builder()
             .group("ingest")
