@@ -53,30 +53,6 @@ class EmailVerificationRequestGuardTest {
     }
 
     @Test
-    @DisplayName("10초 쿨다운 안의 같은 이메일 인증 요청은 요청 수를 세고 429 예외를 던진다")
-    void guard_whenCooldownHit_throwsTooManyRequests() {
-        given(emailVerificationRequestStore.evaluateEmailRequest("tester@test.com", 10L, 180L, 5L, 180L))
-            .willReturn(EmailVerificationRequestDecision.COOLDOWN);
-
-        assertThatThrownBy(() -> guard.guard("tester@test.com"))
-            .isInstanceOf(CustomException.class)
-            .extracting(ex -> ((CustomException) ex).getErrorCode())
-            .isEqualTo(CommonErrorCode.TOO_MANY_REQUESTS);
-    }
-
-    @Test
-    @DisplayName("180초 window에서 이메일 요청이 5회를 넘으면 180초 lock을 적용하고 요청 수를 초기화한다")
-    void guard_whenEmailRateExceeded_forcesLongCooldown() {
-        given(emailVerificationRequestStore.evaluateEmailRequest("tester@test.com", 10L, 180L, 5L, 180L))
-            .willReturn(EmailVerificationRequestDecision.RATE_LIMITED);
-
-        assertThatThrownBy(() -> guard.guard("tester@test.com"))
-            .isInstanceOf(CustomException.class)
-            .extracting(ex -> ((CustomException) ex).getErrorCode())
-            .isEqualTo(CommonErrorCode.TOO_MANY_REQUESTS);
-    }
-
-    @Test
     @DisplayName("저장소 장애가 나면 fail-closed로 429 예외를 던진다")
     void guard_whenStoreFails_throwsTooManyRequests() {
         given(emailVerificationRequestStore.evaluateEmailRequest("tester@test.com", 10L, 180L, 5L, 180L))

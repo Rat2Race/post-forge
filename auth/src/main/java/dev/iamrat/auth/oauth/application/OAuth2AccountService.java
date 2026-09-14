@@ -47,7 +47,6 @@ public class OAuth2AccountService {
                 return nickname;
             }
         }
-        // 10회 실패 시 타임스탬프 기반으로 유일성 보장
         return "user_" + System.currentTimeMillis() + ThreadLocalRandom.current().nextInt(100);
     }
 }

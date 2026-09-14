@@ -1,11 +1,13 @@
 package dev.iamrat.auth.login.presentation;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.iamrat.auth.security.infrastructure.principal.AuthenticatedAccount;
 import dev.iamrat.auth.login.application.LoginService;
 import dev.iamrat.auth.security.infrastructure.handler.SecurityExceptionHandler;
 import dev.iamrat.auth.token.application.TokenIssueResult;
 import dev.iamrat.auth.token.presentation.CookieProvider;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.DisplayName;
@@ -20,17 +22,22 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.willDoNothing;
+import static org.mockito.BDDMockito.willThrow;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -138,6 +145,48 @@ class LoginControllerTest {
                 .andExpect(jsonPath("$.error").value("INVALID_CREDENTIALS"));
         }
 
+        @Test
+        @DisplayName("비활성화된 계정이면 403과 ACCOUNT_NOT_ACTIVE를 반환한다")
+        void login_disabledAccount_returns403() throws Exception {
+            LoginRequest request = createValidLoginRequest();
+            given(loginService.login(anyString(), anyString(), anyString()))
+                .willThrow(new DisabledException("account disabled"));
+
+            mockMvc.perform(post("/api/auth/login")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.error").value("ACCOUNT_NOT_ACTIVE"));
+        }
+
+        @Test
+        @DisplayName("존재하지 않는 아이디도 잘못된 비밀번호와 구분 불가능한 401 응답을 반환한다")
+        void login_unknownUsername_indistinguishableFromBadCredentials() throws Exception {
+            LoginRequest request = createValidLoginRequest();
+            String requestBody = objectMapper.writeValueAsString(request);
+
+            given(loginService.login(anyString(), anyString(), anyString()))
+                .willThrow(new UsernameNotFoundException("no such user"));
+            String unknownUserBody = mockMvc.perform(post("/api/auth/login")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(requestBody))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.error").value("INVALID_CREDENTIALS"))
+                .andReturn().getResponse().getContentAsString(StandardCharsets.UTF_8);
+
+            willThrow(new BadCredentialsException("Bad credentials"))
+                .given(loginService).login(anyString(), anyString(), anyString());
+            String badCredentialsBody = mockMvc.perform(post("/api/auth/login")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(requestBody))
+                .andExpect(status().isUnauthorized())
+                .andReturn().getResponse().getContentAsString(StandardCharsets.UTF_8);
+
+            JsonNode unknownUser = objectMapper.readTree(unknownUserBody);
+            JsonNode badCredentials = objectMapper.readTree(badCredentialsBody);
+            assertThat(unknownUser.get("error")).isEqualTo(badCredentials.get("error"));
+            assertThat(unknownUser.get("message")).isEqualTo(badCredentials.get("message"));
+        }
     }
     
     @Nested
@@ -154,6 +203,21 @@ class LoginControllerTest {
                 mockMvc.perform(post("/api/auth/logout"))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.message").value("로그아웃되었습니다."));
+            } finally {
+                SecurityContextHolder.clearContext();
+            }
+        }
+
+        @Test
+        @DisplayName("접근 권한이 없으면 403과 ACCESS_DENIED를 반환한다")
+        void logout_accessDenied_returns403() throws Exception {
+            willThrow(new AccessDeniedException("access denied")).given(loginService).logout(anyLong());
+            SecurityContextHolder.getContext().setAuthentication(userAuthentication());
+
+            try {
+                mockMvc.perform(post("/api/auth/logout"))
+                    .andExpect(status().isForbidden())
+                    .andExpect(jsonPath("$.error").value("ACCESS_DENIED"));
             } finally {
                 SecurityContextHolder.clearContext();
             }
