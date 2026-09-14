@@ -50,7 +50,6 @@ class BoardPostReferenceLinkWriterTest {
         Long id = writer.write(new PostReferenceLinkCommand(
             10L,
             "갤럭시북",
-            20L,
             PostReferenceProvider.NAVER_NEWS,
             "https://news.example/a",
             "https://news.example/a?utm=1",
@@ -66,7 +65,6 @@ class BoardPostReferenceLinkWriterTest {
         assertThat(id).isEqualTo(99L);
         assertThat(captor.getValue().getPost()).isSameAs(post);
         assertThat(captor.getValue().getKeyword()).isEqualTo("갤럭시북");
-        assertThat(captor.getValue().getProductId()).isEqualTo(20L);
         assertThat(captor.getValue().getCanonicalUrl()).isEqualTo("https://news.example/a");
         assertThat(captor.getValue().getPublishOrigin()).isEqualTo(PostPublishOrigin.SYSTEM_BATCH);
     }

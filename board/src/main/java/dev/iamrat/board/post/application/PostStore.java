@@ -1,6 +1,10 @@
 package dev.iamrat.board.post.application;
 
 import dev.iamrat.board.post.domain.Post;
+import dev.iamrat.core.board.post.BoardCategory;
+import dev.iamrat.core.board.post.PostCategory;
+import dev.iamrat.core.board.post.PostPublishOrigin;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.domain.Page;
@@ -22,7 +26,22 @@ public interface PostStore {
 
     Page<Post> findAll(Pageable pageable);
 
-    Page<Post> findByKeyword(String keyword, Pageable pageable);
+    List<Post> findByCategoryAndBoardCategoryInRange(
+        PostCategory category,
+        BoardCategory boardCategory,
+        LocalDateTime startInclusive,
+        LocalDateTime endExclusive
+    );
+
+    boolean existsByCategoryAndBoardCategoryAndTitle(PostCategory category, BoardCategory boardCategory, String title);
+
+    Page<Post> findByFilters(
+        String keyword,
+        PostCategory category,
+        BoardCategory boardCategory,
+        PostPublishOrigin publishOrigin,
+        Pageable pageable
+    );
 
     void updateViews(Long postId, long views);
 

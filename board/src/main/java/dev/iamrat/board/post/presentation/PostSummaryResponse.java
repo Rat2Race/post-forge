@@ -1,7 +1,6 @@
 package dev.iamrat.board.post.presentation;
 
 import dev.iamrat.board.post.domain.Post;
-import dev.iamrat.core.board.post.PostBoardCategory;
 import dev.iamrat.core.board.post.PostCategory;
 import dev.iamrat.core.board.post.PostPublishOrigin;
 import java.time.LocalDateTime;
@@ -13,7 +12,6 @@ public record PostSummaryResponse(
     String summary,
     List<String> tags,
     PostCategory category,
-    PostBoardCategory boardCategory,
     PostPublishOrigin publishOrigin,
     Long accountId,
     String nickname,
@@ -28,7 +26,6 @@ public record PostSummaryResponse(
             post.getSummary(),
             post.getTags(),
             post.getCategory(),
-            post.getBoardCategory(),
             post.getPublishOrigin(),
             post.getAccountId(),
             post.getNickname(),

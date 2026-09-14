@@ -1,6 +1,6 @@
 package dev.iamrat.board.like.application;
 
-import dev.iamrat.board.comment.application.CommentLikeTargetService;
+import dev.iamrat.board.comment.application.CommentStore;
 import dev.iamrat.board.like.domain.CommentLike;
 import java.util.List;
 import java.util.Map;
@@ -13,15 +13,15 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class CommentLikeService extends AbstractLikeService {
     private final CommentLikeStore commentLikeStore;
-    private final CommentLikeTargetService commentLikeTargetService;
+    private final CommentStore commentStore;
 
     @Transactional
-    public LikeResponse like(Long commentId, Long accountId) {
+    public LikeResult like(Long commentId, Long accountId) {
         return likeTarget(commentId, accountId);
     }
 
     @Transactional
-    public LikeResponse unlike(Long commentId, Long accountId) {
+    public LikeResult unlike(Long commentId, Long accountId) {
         return unlikeTarget(commentId, accountId);
     }
 
@@ -40,7 +40,7 @@ public class CommentLikeService extends AbstractLikeService {
 
     @Override
     protected void saveLike(Long targetId, Long accountId) {
-        commentLikeStore.save(CommentLike.of(commentLikeTargetService.getReference(targetId), accountId));
+        commentLikeStore.save(CommentLike.of(commentStore.getReferenceById(targetId), accountId));
     }
 
     @Override
@@ -50,7 +50,7 @@ public class CommentLikeService extends AbstractLikeService {
 
     @Override
     protected void updateLikeCount(Long targetId, long likeCount) {
-        commentLikeTargetService.updateLikeCount(targetId, likeCount);
+        commentStore.updateLikeCount(targetId, likeCount);
     }
 
     @Override

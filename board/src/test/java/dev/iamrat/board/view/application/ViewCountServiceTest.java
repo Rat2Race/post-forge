@@ -1,6 +1,8 @@
 package dev.iamrat.board.view.application;
 
 import dev.iamrat.board.post.application.PostViewCountService;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -50,5 +52,18 @@ class ViewCountServiceTest {
         verify(viewCountStore).incrementViewCount(1L);
         verify(viewCountStore).markDirty(1L);
         verify(postViewCountService, never()).getViewCount(anyLong());
+    }
+
+    @Test
+    @DisplayName("일부만 캐시에 있으면 누락분을 DB에서 읽어 병합하고 캐시에 재적재한다")
+    void getViewCounts_partialCacheMiss_mergesDbValuesAndCaches() {
+        List<Long> postIds = List.of(1L, 2L);
+        given(viewCountStore.findViewCounts(postIds)).willReturn(Map.of(1L, 10L));
+        given(postViewCountService.findViewCounts(List.of(2L))).willReturn(Map.of(2L, 5L));
+
+        Map<Long, Long> result = viewCountService.getViewCounts(postIds);
+
+        assertThat(result).containsExactlyInAnyOrderEntriesOf(Map.of(1L, 10L, 2L, 5L));
+        verify(viewCountStore).cacheViewCountsIfAbsent(Map.of(2L, 5L));
     }
 }

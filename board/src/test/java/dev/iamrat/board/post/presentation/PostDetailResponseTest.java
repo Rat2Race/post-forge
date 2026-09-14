@@ -4,7 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import dev.iamrat.board.file.domain.PostFile;
 import dev.iamrat.board.post.domain.Post;
-import dev.iamrat.core.board.post.PostBoardCategory;
+import dev.iamrat.core.board.post.BoardCategory;
 import dev.iamrat.core.board.post.PostPublishOrigin;
 import java.util.List;
 import org.junit.jupiter.api.DisplayName;
@@ -28,9 +28,27 @@ class PostDetailResponseTest {
         assertThat(response.files().get(0).fileId()).isEqualTo(10L);
         assertThat(response.files().get(0).originalFileName()).isEqualTo("photo.png");
         assertThat(response.files().get(0).fileType()).isEqualTo("image/png");
-        assertThat(response.purchaseVote().eligible()).isFalse();
         assertThat(response.references()).isEmpty();
-        assertThat(response.boardCategory()).isEqualTo(PostBoardCategory.GENERAL);
         assertThat(response.publishOrigin()).isEqualTo(PostPublishOrigin.USER);
+    }
+
+    @Test
+    @DisplayName("게시글 상세 응답은 분야 카테고리를 노출한다")
+    void from_exposesBoardCategory() {
+        Post post = Post.create(
+            "title",
+            "content",
+            "summary",
+            List.of("tag"),
+            null,
+            BoardCategory.BEAUTY,
+            PostPublishOrigin.USER,
+            1L,
+            "writer"
+        );
+
+        PostDetailResponse response = PostDetailResponse.from(post, false, 0L, 0, 0L);
+
+        assertThat(response.boardCategory()).isEqualTo(BoardCategory.BEAUTY);
     }
 }

@@ -4,7 +4,5 @@ public interface LikeRequestWindow {
 
     boolean markCooldownIfAbsent(String targetType, Long entityId, Long accountId, String action);
 
-    Long incrementRateCount(Long accountId);
-
-    void startRateWindow(Long accountId);
+    Long incrementRateCount(Long accountId, long windowSeconds);
 }

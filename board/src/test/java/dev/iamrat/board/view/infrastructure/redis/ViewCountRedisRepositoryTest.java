@@ -15,7 +15,10 @@ import org.springframework.data.redis.core.ValueOperations;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.BDDMockito.willThrow;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
@@ -78,6 +81,45 @@ class ViewCountRedisRepositoryTest {
         Optional<String> processingKey = repository.claimDirtyIdsForProcessing();
 
         assertThat(processingKey).contains("post:views:dirty:processing");
+        verify(redisTemplate).rename("post:views:dirty", "post:views:dirty:processing");
+    }
+
+    @Test
+    @DisplayName("이전 처리 중 집합이 남아 있으면 rename 없이 그대로 재사용한다")
+    void claimDirtyIdsForProcessing_reusesLeftoverProcessingSet() {
+        given(redisTemplate.opsForSet()).willReturn(setOperations);
+        given(setOperations.members("post:views:dirty:processing")).willReturn(Set.of("1"));
+
+        Optional<String> processingKey = repository.claimDirtyIdsForProcessing();
+
+        assertThat(processingKey).contains("post:views:dirty:processing");
+        verify(redisTemplate, never()).rename(anyString(), anyString());
+    }
+
+    @Test
+    @DisplayName("dirty 집합이 없어 rename에 실패하면 빈 Optional을 반환한다")
+    void claimDirtyIdsForProcessing_returnsEmptyWhenRenameFails() {
+        given(redisTemplate.opsForSet()).willReturn(setOperations);
+        given(setOperations.members("post:views:dirty:processing")).willReturn(Set.of());
+        willThrow(new RuntimeException("no such key"))
+            .given(redisTemplate).rename("post:views:dirty", "post:views:dirty:processing");
+
+        Optional<String> processingKey = repository.claimDirtyIdsForProcessing();
+
+        assertThat(processingKey).isEmpty();
+    }
+
+    @Test
+    @DisplayName("빈 처리 중 키가 남아 있으면 삭제한 뒤 dirty 집합을 선점한다")
+    void claimDirtyIdsForProcessing_deletesEmptyLeftoverProcessingKey() {
+        given(redisTemplate.opsForSet()).willReturn(setOperations);
+        given(setOperations.members("post:views:dirty:processing")).willReturn(Set.of());
+        given(redisTemplate.hasKey("post:views:dirty:processing")).willReturn(true);
+
+        Optional<String> processingKey = repository.claimDirtyIdsForProcessing();
+
+        assertThat(processingKey).contains("post:views:dirty:processing");
+        verify(redisTemplate).delete("post:views:dirty:processing");
         verify(redisTemplate).rename("post:views:dirty", "post:views:dirty:processing");
     }
 }

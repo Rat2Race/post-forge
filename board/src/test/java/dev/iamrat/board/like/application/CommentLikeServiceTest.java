@@ -1,12 +1,11 @@
 package dev.iamrat.board.like.application;
 
 import dev.iamrat.board.comment.domain.Comment;
-import dev.iamrat.board.comment.application.CommentLikeTargetService;
+import dev.iamrat.board.comment.application.CommentStore;
 import dev.iamrat.board.like.domain.CommentLike;
 import dev.iamrat.board.post.domain.Post;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -30,7 +29,7 @@ class CommentLikeServiceTest {
     private CommentLikeStore commentLikeStore;
 
     @Mock
-    private CommentLikeTargetService commentLikeTargetService;
+    private CommentStore commentStore;
 
     @InjectMocks
     private CommentLikeService commentLikeService;
@@ -48,7 +47,7 @@ class CommentLikeServiceTest {
         assertThat(response.isLiked()).isTrue();
         assertThat(response.likeCount()).isEqualTo(2L);
         verify(commentLikeStore, never()).save(any(CommentLike.class));
-        verify(commentLikeTargetService).updateLikeCount(commentId, 2L);
+        verify(commentStore).updateLikeCount(commentId, 2L);
     }
 
     @Test
@@ -63,7 +62,7 @@ class CommentLikeServiceTest {
                 .build();
 
         given(commentLikeStore.existsByCommentIdAndAccountId(commentId, 2L)).willReturn(false);
-        given(commentLikeTargetService.getReference(commentId)).willReturn(commentRef);
+        given(commentStore.getReferenceById(commentId)).willReturn(commentRef);
         given(commentLikeStore.countByCommentId(commentId)).willReturn(3L);
 
         LikeResult response = commentLikeService.like(commentId, 2L);
@@ -75,7 +74,7 @@ class CommentLikeServiceTest {
         verify(commentLikeStore).save(likeCaptor.capture());
         assertThat(likeCaptor.getValue().getComment()).isEqualTo(commentRef);
         assertThat(likeCaptor.getValue().getAccountId()).isEqualTo(2L);
-        verify(commentLikeTargetService).updateLikeCount(commentId, 3L);
+        verify(commentStore).updateLikeCount(commentId, 3L);
     }
 
     @Test
@@ -90,7 +89,7 @@ class CommentLikeServiceTest {
 
         assertThat(response.isLiked()).isFalse();
         assertThat(response.likeCount()).isEqualTo(1L);
-        verify(commentLikeTargetService).updateLikeCount(commentId, 1L);
+        verify(commentStore).updateLikeCount(commentId, 1L);
     }
 
     @Test
@@ -105,19 +104,6 @@ class CommentLikeServiceTest {
 
         assertThat(result).containsEntry(5L, 8L)
                 .containsEntry(6L, 0L);
-    }
-
-    @Test
-    @DisplayName("사용자 댓글 좋아요 목록 조회 시 DB 결과를 반환한다")
-    void getLikedCommentIds_returnsLikedIds() {
-        List<Long> commentIds = List.of(7L, 8L);
-
-        given(commentLikeStore.findLikedCommentIdsByAccountIdAndCommentIds(1L, commentIds))
-                .willReturn(Set.of(8L));
-
-        Set<Long> result = commentLikeService.getLikedCommentIds(commentIds, 1L);
-
-        assertThat(result).containsExactly(8L);
     }
 
 }

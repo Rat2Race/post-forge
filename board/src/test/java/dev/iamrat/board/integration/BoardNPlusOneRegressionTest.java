@@ -12,11 +12,8 @@ import dev.iamrat.board.file.domain.PostFile;
 import dev.iamrat.board.file.infrastructure.persistence.FileRepository;
 import dev.iamrat.board.integration.security.WithMockAccount;
 import dev.iamrat.board.post.application.PostQueryService;
-import dev.iamrat.board.post.application.ProductPostQueryService;
 import dev.iamrat.board.post.domain.Post;
-import dev.iamrat.board.post.domain.PostProductLink;
 import dev.iamrat.board.post.domain.PostReferenceLink;
-import dev.iamrat.board.post.infrastructure.persistence.PostProductLinkRepository;
 import dev.iamrat.board.post.infrastructure.persistence.PostReferenceLinkRepository;
 import dev.iamrat.board.post.infrastructure.persistence.PostRepository;
 import dev.iamrat.board.post.presentation.PostDetailResponse;
@@ -26,10 +23,8 @@ import dev.iamrat.core.account.AccountProfileReader;
 import dev.iamrat.core.board.post.PostCategory;
 import dev.iamrat.core.board.post.PostPublishOrigin;
 import dev.iamrat.core.board.post.PostReferenceProvider;
-import dev.iamrat.core.event.DomainEventRecorder;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
@@ -60,17 +55,12 @@ import org.springframework.transaction.annotation.Transactional;
 class BoardNPlusOneRegressionTest {
 
     private static final long PRODUCT_ID = 100L;
-    private static final long SMALL_PRODUCT_ID = 101L;
-    private static final long LARGE_PRODUCT_ID = 102L;
 
     @Autowired
     private PostQueryService postQueryService;
 
     @Autowired
     private CommentQueryService commentQueryService;
-
-    @Autowired
-    private ProductPostQueryService productPostQueryService;
 
     @Autowired
     private PostRepository postRepository;
@@ -80,9 +70,6 @@ class BoardNPlusOneRegressionTest {
 
     @Autowired
     private PostReferenceLinkRepository postReferenceLinkRepository;
-
-    @Autowired
-    private PostProductLinkRepository postProductLinkRepository;
 
     @Autowired
     private FileRepository fileRepository;
@@ -102,9 +89,6 @@ class BoardNPlusOneRegressionTest {
     @MockitoBean
     private AccountProfileManager accountProfileManager;
 
-    @MockitoBean
-    private DomainEventRecorder domainEventRecorder;
-
     private Statistics statistics;
 
     @BeforeEach
@@ -121,14 +105,16 @@ class BoardNPlusOneRegressionTest {
     @WithMockAccount
     @DisplayName("게시글 목록 조회는 DTO 변환까지 데이터 수에 비례해 쿼리가 증가하지 않는다")
     void getPosts_doesNotIntroduceNPlusOneQueries() {
-        seedPosts(20, false, PRODUCT_ID);
+        seedPosts(20, PRODUCT_ID);
 
         long smallCount = countQueries(() -> {
-            Page<PostDetailResponse> responses = postQueryService.getPosts(pageable(1), null);
+            Page<PostDetailResponse> responses = postQueryService.getPosts(
+                null, null, null, null, pageable(1), null);
             assertThat(responses.getContent()).hasSize(1);
         });
         long largeCount = countQueries(() -> {
-            Page<PostDetailResponse> responses = postQueryService.getPosts(pageable(20), null);
+            Page<PostDetailResponse> responses = postQueryService.getPosts(
+                null, null, null, null, pageable(20), null);
             assertThat(responses.getContent()).hasSize(20);
         });
 
@@ -154,25 +140,6 @@ class BoardNPlusOneRegressionTest {
         assertThat(largeCount).isLessThanOrEqualTo(smallCount + 2);
     }
 
-    @Test
-    @WithMockAccount
-    @DisplayName("상품 연결 게시글 조회는 link->post 접근과 DTO 변환까지 데이터 수에 비례해 쿼리가 증가하지 않는다")
-    void getProductPosts_doesNotIntroduceNPlusOneQueries() {
-        seedPosts(1, true, SMALL_PRODUCT_ID);
-        seedPosts(20, true, LARGE_PRODUCT_ID);
-
-        long smallCount = countQueries(() -> {
-            List<PostDetailResponse> responses = productPostQueryService.getProductPosts(SMALL_PRODUCT_ID);
-            assertThat(responses).hasSize(1);
-        });
-        long largeCount = countQueries(() -> {
-            List<PostDetailResponse> responses = productPostQueryService.getProductPosts(LARGE_PRODUCT_ID);
-            assertThat(responses).hasSize(20);
-        });
-
-        assertThat(largeCount).isLessThanOrEqualTo(smallCount + 2);
-    }
-
     private long countQueries(Runnable action) {
         entityManager.flush();
         entityManager.clear();
@@ -183,19 +150,12 @@ class BoardNPlusOneRegressionTest {
         return statistics.getPrepareStatementCount();
     }
 
-    private void seedPosts(int count, boolean linkProduct, long productId) {
+    private void seedPosts(int count, long productId) {
         for (int index = 0; index < count; index++) {
             Post post = postRepository.save(post(index));
             commentRepository.save(Comment.create(post, null, "댓글 " + index, 2L, "commenter"));
             fileRepository.save(file(post, index));
             postReferenceLinkRepository.save(reference(post, productId, index));
-            if (linkProduct) {
-                postProductLinkRepository.save(PostProductLink.of(
-                    post,
-                    productId,
-                    LocalDate.of(2026, 7, 1).plusDays(index)
-                ));
-            }
         }
         postRepository.flush();
     }
@@ -234,7 +194,6 @@ class BoardNPlusOneRegressionTest {
         return PostReferenceLink.of(
             post,
             "keyword-" + index,
-            productId,
             PostReferenceProvider.NAVER_NEWS,
             "https://news.example/product-" + productId + "/article-" + index,
             "https://news.example/product-" + productId + "/article-" + index + "?utm=1",

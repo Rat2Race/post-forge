@@ -3,7 +3,6 @@ package dev.iamrat.board.post.presentation;
 import dev.iamrat.board.post.application.PostCommandService;
 import dev.iamrat.board.post.application.PostInteractionService;
 import dev.iamrat.board.post.application.PostQueryService;
-import dev.iamrat.board.purchase.application.PurchaseVoteService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -34,9 +33,6 @@ class PostControllerValidationTest {
     @Mock
     private PostInteractionService postInteractionService;
 
-    @Mock
-    private PurchaseVoteService purchaseVoteService;
-
     @InjectMocks
     private PostController postController;
 
@@ -64,7 +60,7 @@ class PostControllerValidationTest {
                 .content(INVALID_POST_REQUEST))
             .andExpect(status().isBadRequest());
 
-        verify(postCommandService, never()).savePost(any(), any(), any(), any(), any(), any());
+        verify(postCommandService, never()).savePost(any(), any(), any(), any(), any());
     }
 
     @Test
@@ -75,6 +71,6 @@ class PostControllerValidationTest {
                 .content(INVALID_POST_REQUEST))
             .andExpect(status().isBadRequest());
 
-        verify(postCommandService, never()).updatePost(any(), any(), any(), any(), any(), any());
+        verify(postCommandService, never()).updatePost(any(), any(), any(), any(), any());
     }
 }

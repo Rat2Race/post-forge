@@ -10,7 +10,6 @@ import dev.iamrat.board.post.presentation.PostSummaryResponse;
 import dev.iamrat.core.account.AccountProfile;
 import dev.iamrat.core.account.AccountProfileManager;
 import dev.iamrat.core.account.AccountProfileReader;
-import dev.iamrat.core.event.DomainEventRecorder;
 import jakarta.transaction.Transactional;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
@@ -48,9 +47,6 @@ class CommentIntegrationTest {
     @MockitoBean
     private AccountProfileManager accountProfileManager;
 
-    @MockitoBean
-    private DomainEventRecorder domainEventRecorder;
-
     @Test
     @Transactional
     @WithMockAccount
@@ -62,6 +58,7 @@ class CommentIntegrationTest {
         PostSummaryResponse savedPost = postCommandService.savePost(
             "댓글 통합 테스트",
             "댓글 통합 테스트용 게시글 본문입니다.",
+            null,
             1L,
             List.of()
         );

@@ -8,7 +8,6 @@ import java.time.LocalDateTime;
 public record PostReferenceLinkResponse(
     Long id,
     String keyword,
-    Long productId,
     PostReferenceProvider provider,
     String canonicalUrl,
     String originalUrl,
@@ -21,7 +20,6 @@ public record PostReferenceLinkResponse(
         return new PostReferenceLinkResponse(
             referenceLink.getId(),
             referenceLink.getKeyword(),
-            referenceLink.getProductId(),
             referenceLink.getProvider(),
             referenceLink.getCanonicalUrl(),
             referenceLink.getOriginalUrl(),
