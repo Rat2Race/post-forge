@@ -6,7 +6,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import dev.iamrat.core.openapi.OpenApiSecurityPolicy;
 import io.swagger.v3.oas.models.Operation;
 import io.swagger.v3.oas.models.security.SecurityRequirement;
-import org.springdoc.core.models.GroupedOpenApi;
 import java.util.List;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -17,64 +16,6 @@ import org.springframework.web.method.HandlerMethod;
 class PostForgeOpenApiGroupsTest {
     private final PostForgeOpenApiGroups groups = new PostForgeOpenApiGroups();
     private final OperationCustomizer customizer = groups.securityOperationCustomizer();
-
-    @Test
-    @DisplayName("app OpenAPI 조립은 전체 API 그룹 경로를 정의한다")
-    void allApi_definesAllPublicGroups() {
-        assertOpenApiGroup(
-            groups.allApi(),
-            "all",
-            "/api/auth/**",
-            "/api/user/account",
-            "/api/user/account/**",
-            "/api/posts/**",
-            "/api/user/profile",
-            "/api/user/profile/**",
-            "/api/products/**",
-            "/api/price-checks",
-            "/api/admin/products/**",
-            "/api/admin/product-match-candidates/**",
-            "/api/admin/tracked-keywords/**",
-            "/api/admin/collection-jobs/**",
-            "/api/admin/news-documents/**",
-            "/api/admin/launch-news/**",
-            "/api/files/**",
-            "/api/ai/**",
-            "/api/ingest/**"
-        );
-    }
-
-    @Test
-    @DisplayName("app OpenAPI 조립은 모듈별 API 그룹 경로를 정의한다")
-    void moduleApis_defineModuleGroups() {
-        assertOpenApiGroup(groups.authApi(), "auth", "/api/auth/**", "/api/user/account", "/api/user/account/**");
-        assertOpenApiGroup(
-            groups.boardApi(),
-            "board",
-            "/api/posts/**",
-            "/api/user/profile",
-            "/api/user/profile/**",
-            "/api/files/**"
-        );
-        assertOpenApiGroup(groups.aiApi(), "ai", "/api/ai/**");
-        assertOpenApiGroup(
-            groups.catalogApi(),
-            "catalog",
-            "/api/products/**",
-            "/api/admin/products/**",
-            "/api/admin/product-match-candidates/**"
-        );
-        assertOpenApiGroup(groups.priceApi(), "price", "/api/products/*/prices", "/api/price-checks");
-        assertOpenApiGroup(
-            groups.ingestApi(),
-            "ingest",
-            "/api/ingest/**",
-            "/api/admin/tracked-keywords/**",
-            "/api/admin/collection-jobs/**",
-            "/api/admin/news-documents/**",
-            "/api/admin/launch-news/**"
-        );
-    }
 
     @Test
     @DisplayName("명시적인 JWT 정책 애너테이션이 bearerAuth 요구사항을 추가한다")
@@ -113,11 +54,6 @@ class PostForgeOpenApiGroupsTest {
         Object controller = controllerType.getDeclaredConstructor().newInstance();
         HandlerMethod handlerMethod = new HandlerMethod(controller, methodName);
         return customizer.customize(new Operation(), handlerMethod);
-    }
-
-    private void assertOpenApiGroup(GroupedOpenApi api, String group, String... pathsToMatch) {
-        assertThat(api.getGroup()).isEqualTo(group);
-        assertThat(api.getPathsToMatch()).containsExactly(pathsToMatch);
     }
 
     private void assertSecuritySchemes(Operation operation, String... schemes) {

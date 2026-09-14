@@ -33,14 +33,7 @@ public class PostForgeAuthorizationRules {
             "/api/auth/email/verify",
             "/api/posts",
             "/api/posts/{postId:\\d+}",
-            "/api/posts/{postId:\\d+}/comments",
-            "/api/products",
-            "/api/products/search",
-            "/api/products/{productId:\\d+}",
-            "/api/products/{productId:\\d+}/prices",
-            "/api/products/categories",
-            "/api/products/categories/{categoryId:\\d+}",
-            "/api/products/{productId:\\d+}/posts"
+            "/api/posts/{postId:\\d+}/comments"
     };
 
     private static final String[] USER_OR_ADMIN = {
@@ -52,18 +45,16 @@ public class PostForgeAuthorizationRules {
             "/api/posts",
             "/api/posts/*",
             "/api/posts/*/like",
-            "/api/posts/*/purchase-vote",
             "/api/posts/*/comments",
             "/api/posts/*/comments/*",
             "/api/posts/*/comments/*/like",
             "/api/files/**",
-            "/api/ai/**",
-            "/api/price-checks",
-            "/api/ingest/**"
+            "/api/ai/**"
     };
 
     private static final String[] ADMIN = {
-            "/api/admin/**"
+            "/api/admin/**",
+            "/api/ingest/**"
     };
 
     public void customize(
