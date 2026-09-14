@@ -9,6 +9,8 @@ public record PostWriteCommand(
     List<String> tags,
     Long accountId,
     String nickname,
-    PostCategory category
+    PostCategory category,
+    BoardCategory boardCategory,
+    PostPublishOrigin publishOrigin
 ) {
 }

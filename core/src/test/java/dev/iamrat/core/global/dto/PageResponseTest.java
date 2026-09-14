@@ -11,7 +11,7 @@ import org.springframework.data.domain.PageRequest;
 class PageResponseTest {
 
     @Test
-    @DisplayName("Page를 API 응답 DTO로 변환한다")
+    @DisplayName("페이지를 API 응답 DTO로 변환한다")
     void from_convertsPageToResponse() {
         PageImpl<String> page = new PageImpl<>(
             List.of("first", "second"),
