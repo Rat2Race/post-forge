@@ -3,7 +3,6 @@ package dev.iamrat.source.news.infrastructure.naver;
 import dev.iamrat.source.news.application.NewsSourceClient;
 import dev.iamrat.source.news.application.NewsSourceItem;
 import dev.iamrat.source.news.application.NewsSourceQuery;
-import dev.iamrat.source.news.application.NewsSourceResult;
 import dev.iamrat.source.news.infrastructure.naver.NaverNewsMetrics.Observation;
 import dev.iamrat.source.support.error.SourceExceptionMessages;
 import java.net.URI;
@@ -37,7 +36,7 @@ public class NaverNewsSourceClient implements NewsSourceClient {
     }
 
     @Override
-    public NewsSourceResult search(NewsSourceQuery query) {
+    public List<NewsSourceItem> search(NewsSourceQuery query) {
         Observation observation = metrics.start();
         try {
             ensureReady();
@@ -78,7 +77,7 @@ public class NaverNewsSourceClient implements NewsSourceClient {
             }
             metrics.recordSuccess(items.size());
             observation.stopSuccess();
-            return new NewsSourceResult(items);
+            return items;
         } catch (RuntimeException exception) {
             log.warn(
                 "Naver News 검색 실패. keyword={}, requestedDisplay={}, sort={}, status={}, reason={}",
@@ -126,7 +125,6 @@ public class NaverNewsSourceClient implements NewsSourceClient {
         if (title.isBlank()) {
             return null;
         }
-        // raw title/description의 null·trim 정규화는 NewsSourceItem 생성자가 맡는다.
         return new NewsSourceItem(
             title,
             clean(item.description(), 1000),
@@ -142,8 +140,6 @@ public class NaverNewsSourceClient implements NewsSourceClient {
         if (value == null) {
             return "";
         }
-        // 알려진 마크업은 복원 뒤 제거하고 <Pro> 같은 일반 텍스트는 보존한다.
-        // HtmlUtils는 HTML 4.0 엔티티만 알아서 &apos;를 복원하지 못하므로 직접 치환한다.
         String cleaned = HtmlUtils.htmlUnescape(value.replace("&apos;", "'"))
             .replaceAll("(?i)</?(?:b|strong|em|i|script|style)(?:\\s[^>]*)?>", "")
             .replaceAll("\\s+", " ")

@@ -1,5 +1,7 @@
 package dev.iamrat.source.news.application;
 
+import java.util.List;
+
 public interface NewsSourceClient {
-    NewsSourceResult search(NewsSourceQuery query);
+    List<NewsSourceItem> search(NewsSourceQuery query);
 }
