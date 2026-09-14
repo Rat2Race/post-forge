@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.util.Locale;
 import java.util.UUID;
 import lombok.extern.slf4j.Slf4j;
+import org.slf4j.MDC;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
@@ -20,6 +21,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 public class RequestLoggingFilter extends OncePerRequestFilter {
 
     static final String REQUEST_ID_HEADER = "X-Request-Id";
+    static final String MDC_REQUEST_ID_KEY = "requestId";
     private static final int MAX_REQUEST_ID_LENGTH = 100;
 
     @Override
@@ -31,19 +33,20 @@ public class RequestLoggingFilter extends OncePerRequestFilter {
         long startNanos = System.nanoTime();
         String requestId = resolveRequestId(request);
         response.setHeader(REQUEST_ID_HEADER, requestId);
+        MDC.put(MDC_REQUEST_ID_KEY, requestId);
 
         try {
             filterChain.doFilter(request, response);
         } finally {
             double elapsedMs = (System.nanoTime() - startNanos) / 1_000_000.0;
             log.info(
-                "http_request requestId={} method={} uri={} status={} elapsedMs={}",
-                requestId,
+                "http_request method={} uri={} status={} elapsedMs={}",
                 request.getMethod(),
                 request.getRequestURI(),
                 response.getStatus(),
                 String.format(Locale.ROOT, "%.3f", elapsedMs)
             );
+            MDC.remove(MDC_REQUEST_ID_KEY);
         }
     }
 

@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import dev.iamrat.core.global.dto.ErrorResponse;
 import dev.iamrat.core.global.error.CommonErrorCode;
 import dev.iamrat.core.global.exception.CustomException;
+import java.io.IOException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.core.MethodParameter;
@@ -15,11 +16,15 @@ import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.mock.http.MockHttpInputMessage;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 class ExceptionResponseHandlerTest {
@@ -108,6 +113,98 @@ class ExceptionResponseHandlerTest {
         assertThat(response.getBody().getStatus()).isEqualTo(409);
         assertThat(response.getBody().getError()).isEqualTo("CONCURRENT_MODIFICATION");
         assertThat(response.getBody().getMessage()).isEqualTo("동시에 변경된 데이터입니다. 다시 조회 후 시도해주세요");
+    }
+
+    @Test
+    @DisplayName("읽을 수 없는 요청 본문은 400 INVALID_INPUT으로 응답한다")
+    void handleHttpMessageNotReadableException_returnsBadRequest() {
+        HttpMessageNotReadableException exception = new HttpMessageNotReadableException(
+            "malformed json",
+            new MockHttpInputMessage(new byte[0])
+        );
+
+        ResponseEntity<ErrorResponse> response = handler.handleHttpMessageNotReadableException(exception);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+        assertThat(response.getBody()).isNotNull();
+        assertThat(response.getBody().getStatus()).isEqualTo(400);
+        assertThat(response.getBody().getError()).isEqualTo("INVALID_INPUT");
+        assertThat(response.getBody().getMessage()).isEqualTo("잘못된 입력입니다");
+    }
+
+    @Test
+    @DisplayName("경로 변수 타입 변환 실패는 400 INVALID_INPUT으로 응답한다")
+    void handleMethodArgumentTypeMismatchException_returnsBadRequest() throws Exception {
+        MethodParameter parameter = new MethodParameter(
+            ExceptionResponseHandlerTest.class.getDeclaredMethod("validatedMethod", String.class),
+            0
+        );
+        MethodArgumentTypeMismatchException exception = new MethodArgumentTypeMismatchException(
+            "abc", Long.class, "postId", parameter, new NumberFormatException("abc")
+        );
+
+        ResponseEntity<ErrorResponse> response = handler.handleMethodArgumentTypeMismatchException(exception);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+        assertThat(response.getBody()).isNotNull();
+        assertThat(response.getBody().getError()).isEqualTo("INVALID_INPUT");
+    }
+
+    @Test
+    @DisplayName("requiredType이 없는 타입 변환 실패도 NPE 없이 400으로 응답한다")
+    void handleMethodArgumentTypeMismatchException_withNullRequiredType_returnsBadRequest() throws Exception {
+        MethodParameter parameter = new MethodParameter(
+            ExceptionResponseHandlerTest.class.getDeclaredMethod("validatedMethod", String.class),
+            0
+        );
+        MethodArgumentTypeMismatchException exception = new MethodArgumentTypeMismatchException(
+            "abc", null, "postId", parameter, new IllegalArgumentException("abc")
+        );
+
+        ResponseEntity<ErrorResponse> response = handler.handleMethodArgumentTypeMismatchException(exception);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+        assertThat(response.getBody()).isNotNull();
+        assertThat(response.getBody().getError()).isEqualTo("INVALID_INPUT");
+    }
+
+    @Test
+    @DisplayName("필수 요청 파라미터 누락은 400 INVALID_INPUT으로 응답한다")
+    void handleMissingServletRequestParameterException_returnsBadRequest() {
+        MissingServletRequestParameterException exception =
+            new MissingServletRequestParameterException("page", "int");
+
+        ResponseEntity<ErrorResponse> response = handler.handleMissingServletRequestParameterException(exception);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+        assertThat(response.getBody()).isNotNull();
+        assertThat(response.getBody().getError()).isEqualTo("INVALID_INPUT");
+    }
+
+    @Test
+    @DisplayName("IOException은 500 INTERNAL_SERVER_ERROR로 응답한다")
+    void handleIOException_returnsInternalServerError() {
+        IOException exception = new IOException("connection reset");
+
+        ResponseEntity<ErrorResponse> response = handler.handleIOException(exception);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
+        assertThat(response.getBody()).isNotNull();
+        assertThat(response.getBody().getStatus()).isEqualTo(500);
+        assertThat(response.getBody().getError()).isEqualTo("INTERNAL_SERVER_ERROR");
+        assertThat(response.getBody().getMessage()).isEqualTo("서버 오류가 발생했습니다");
+    }
+
+    @Test
+    @DisplayName("처리되지 않은 예외는 최종적으로 500 INTERNAL_SERVER_ERROR로 응답한다")
+    void handleException_returnsInternalServerErrorFallback() {
+        IllegalStateException exception = new IllegalStateException("unexpected");
+
+        ResponseEntity<ErrorResponse> response = handler.handleException(exception);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
+        assertThat(response.getBody()).isNotNull();
+        assertThat(response.getBody().getError()).isEqualTo("INTERNAL_SERVER_ERROR");
     }
 
     @SuppressWarnings("unused")
