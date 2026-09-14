@@ -42,6 +42,7 @@ PostForge는 외부 뉴스를 수집하고 분야별로 선별한 뒤, LLM으로
 - [모듈 책임과 의존 방향](./docs/architecture/module-dependencies.md)
 - [모듈별 요청 처리 흐름](./docs/architecture/flows.md)
 - [모듈러 모놀리스 선택과 MSA 전환 경로](./docs/decisions/adr-003-modular-monolith.md)
+- [관측 스택 선택과 대안 비교](./docs/decisions/adr-006-observability-stack.md)
 
 ## Tech Stack
 
