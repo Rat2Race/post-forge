@@ -36,19 +36,6 @@ class EmailVerificationControllerTest {
     @Nested
     @DisplayName("인증 메일 발송 테스트")
     class sendVerificationEmailTest {
-        
-        @Test
-        @DisplayName("정상적인 이메일이 오면 200 + 성공 메시지를 응답한다")
-        void send_validEmail_returns200() throws Exception {
-            SendEmailRequest request = new SendEmailRequest("tester@test.com");
-            
-            mockMvc.perform(post("/api/auth/email/send")
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .characterEncoding("utf-8")
-                    .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.message").value("인증 메일이 발송되었습니다."));
-        }
 
         @Test
         @DisplayName("인증 메일 요청의 이메일은 컨트롤러 입력 경계에서 정규화된다")

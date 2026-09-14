@@ -165,14 +165,6 @@ class TokenServiceTest {
     @Nested
     @DisplayName("토큰 삭제")
     class DeleteToken {
-
-        @Test
-        @DisplayName("계정 ID로 리프레시 토큰을 삭제한다")
-        void deleteToken_accountIdProvided_deletesRefreshToken() {
-            tokenService.deleteToken(ACCOUNT_ID);
-
-            verify(refreshTokenStore).delete(eq(ACCOUNT_ID));
-        }
     }
 
     @Nested

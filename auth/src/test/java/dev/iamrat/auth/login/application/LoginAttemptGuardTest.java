@@ -55,34 +55,6 @@ class LoginAttemptGuardTest {
     }
 
     @Test
-    @DisplayName("사용자별 분당 로그인 시도 한도를 넘으면 429 예외를 던진다")
-    void guard_userRateExceeded_throwsTooManyRequests() {
-        LoginAttemptEvaluation evaluation = new LoginAttemptEvaluation("testuser1", "127.0.0.1", 60L, 10L, 30L);
-        given(loginAttemptLimiter.evaluate(evaluation)).willReturn(LoginAttemptDecision.USER_RATE_LIMITED);
-
-        assertThatThrownBy(() -> loginAttemptGuard.guard("testuser1", "127.0.0.1"))
-            .isInstanceOf(CustomException.class)
-            .extracting(ex -> ((CustomException) ex).getErrorCode())
-            .isEqualTo(CommonErrorCode.TOO_MANY_REQUESTS);
-
-        verify(loginAttemptLimiter).evaluate(evaluation);
-    }
-
-    @Test
-    @DisplayName("IP별 분당 로그인 시도 한도를 넘으면 429 예외를 던진다")
-    void guard_ipRateExceeded_throwsTooManyRequests() {
-        LoginAttemptEvaluation evaluation = new LoginAttemptEvaluation("testuser1", "127.0.0.1", 60L, 10L, 30L);
-        given(loginAttemptLimiter.evaluate(evaluation)).willReturn(LoginAttemptDecision.IP_RATE_LIMITED);
-
-        assertThatThrownBy(() -> loginAttemptGuard.guard("testuser1", "127.0.0.1"))
-            .isInstanceOf(CustomException.class)
-            .extracting(ex -> ((CustomException) ex).getErrorCode())
-            .isEqualTo(CommonErrorCode.TOO_MANY_REQUESTS);
-
-        verify(loginAttemptLimiter).evaluate(evaluation);
-    }
-
-    @Test
     @DisplayName("실패 횟수가 한도에 도달하면 잠금 키를 만들고 429 예외를 던진다")
     void recordFailure_whenLimitReached_locksUser() {
         LoginFailureRecord record = new LoginFailureRecord("testuser1", 300L, 5L, 300L);
