@@ -79,7 +79,7 @@ docs/performance/runs/YYYYMMDD-HHMMSS-<target>-<scenario>/
 
 ## 외부 Source / LLM 계측
 
-뉴스 자동 게시의 처리 비용은 HTTP latency만으로 판단하지 않는다. 앱 내부 metric으로 외부 뉴스 수집, 벡터 적재, RAG 검색, LLM 생성을 분리해 남긴다.
+뉴스 자동 게시의 처리 비용은 HTTP latency만으로 판단하지 않는다. 앱 내부 metric으로 외부 뉴스 수집, 벡터 적재, RAG 검색, LLM 생성을 분리해 남긴다. 스택 선택 근거와 대안 비교는 [ADR-006](../decisions/adr-006-observability-stack.md)에 둔다.
 
 | Metric | 용도 |
 |---|---|
