@@ -18,12 +18,12 @@ class OAuth2FailureHandlerTest {
     @BeforeEach
     void setUp() {
         OAuth2RedirectProperties oAuth2RedirectProperties = new OAuth2RedirectProperties();
-        oAuth2RedirectProperties.setRedirectUrl("https://front.example");
+        oAuth2RedirectProperties.setRedirectUrl("https://front.example/oauth2/callback");
         failureHandler = new OAuth2FailureHandler(oAuth2RedirectProperties);
     }
 
     @Test
-    @DisplayName("OAuth2 인증 실패 시 오류 메시지를 인코딩해 프론트 콜백 URL로 리다이렉트한다")
+    @DisplayName("OAuth2 인증 실패 시 설정된 redirect-url에 오류 메시지만 붙여 리다이렉트한다")
     void onAuthenticationFailure_redirectsWithEncodedErrorMessage() throws Exception {
         MockHttpServletResponse response = new MockHttpServletResponse();
 

@@ -5,6 +5,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.util.Objects;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.AuthenticationException;
@@ -16,6 +17,8 @@ import org.springframework.stereotype.Component;
 @Slf4j
 public class OAuth2FailureHandler extends SimpleUrlAuthenticationFailureHandler {
 
+    private static final String DEFAULT_ERROR_MESSAGE = "OAuth2 로그인에 실패했습니다.";
+
     private final OAuth2RedirectProperties oAuth2RedirectProperties;
 
     @Override
@@ -26,10 +29,13 @@ public class OAuth2FailureHandler extends SimpleUrlAuthenticationFailureHandler 
     ) throws IOException {
         log.error("OAuth2 로그인 실패: {}", exception.getMessage());
 
-        String errorMessage = URLEncoder.encode(exception.getMessage(), StandardCharsets.UTF_8);
+        String errorMessage = URLEncoder.encode(
+            Objects.requireNonNullElse(exception.getMessage(), DEFAULT_ERROR_MESSAGE),
+            StandardCharsets.UTF_8
+        );
 
         String redirectUrl = String.format(
-            "%s/oauth2/callback?error=%s",
+            "%s?error=%s",
             oAuth2RedirectProperties.getRedirectUrl(),
             errorMessage
         );
