@@ -9,6 +9,7 @@ ext {
     springAiVersion = '1.0.7'
     awsSdkVersion = '2.42.41'
     jjwtVersion = '0.12.7'
+    archunitVersion = '1.4.1'
 }
 
 allprojects {
