@@ -13,7 +13,6 @@ dependencies {
 }
 
 tasks.named('test') {
-    // 실서버 호출은 -PnaverSmoke=true로 명시한 경우에만 허용한다.
     def runNaverSmoke = project.findProperty('naverSmoke') == 'true'
     systemProperty 'naver.smoke', runNaverSmoke.toString()
     def envFile = rootProject.file('.env')
@@ -26,7 +25,6 @@ tasks.named('test') {
         }
     }
 
-    // skip은 조용해서 "통과"로 오해하기 쉽다. 콘솔에 남긴다.
     testLogging {
         events 'skipped'
     }

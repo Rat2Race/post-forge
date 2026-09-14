@@ -55,7 +55,6 @@ public class NaverNewsMetrics {
             .register(meterRegistry);
     }
 
-    // 첫 increment 전까지는 시계열이 스크레이프에 안 잡혀 대시보드가 "no data"가 되므로 기동 시 미리 등록한다.
     private void registerIdleMeters() {
         counter(SUCCESS_COUNTER);
         counter(ITEMS_COUNTER);
