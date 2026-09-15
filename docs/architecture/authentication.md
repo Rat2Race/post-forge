@@ -1,24 +1,53 @@
-## 로그인 보호 정책
+# Authentication Architecture
 
-`POST /auth/login`은 BCrypt 검증 때문에 CPU 비용이 큰 endpoint다.
-BCrypt cost는 보안 강도와 직접 연결되므로 기본 정책에서는 낮추지 않고, Redis 기반 보호 정책으로 과도한 반복 시도를 먼저 제한한다.
+이 문서는 인증/인가 흐름과 운영 경계를 설명한다. HTTP endpoint, request/response DTO, validation 상세는 [통합 API 명세의 Auth](../api/README.md#auth)를 canonical source로 둔다. 단계별 요청 흐름은 [요청 흐름](./flows.md#auth)에 있다.
 
-현재 기본값은 다음과 같다.
+## Runtime Ownership
 
-| 항목 | 기본값 |
-| --- | ---: |
-| 사용자별 로그인 시도 제한 | 60초당 10회 |
-| IP별 로그인 시도 제한 | 60초당 30회 |
-| 실패 누적 관찰 구간 | 300초 |
-| 사용자별 실패 허용 횟수 | 5회 |
-| 실패 한도 도달 시 잠금 | 300초 |
+| 영역 | 소유 모듈 | 비고 |
+| --- | --- | --- |
+| 계정/권한 | `auth` | `accounts`, `account_roles` |
+| JWT 발급/검증 | `auth` | access token은 stateless, refresh token은 Redis stateful |
+| OAuth2 callback | `auth` + Spring Security | provider callback 이후 frontend에는 one-time exchange code만 전달 |
+| route authorization | `app` | `PostForgeAuthorizationRules`에서 조립 |
+| MVC 인증 예외 변환 | `auth` | `SecurityExceptionHandler`가 인증 예외를 `ErrorResponse`로 변환 |
+| Security filter 오류 응답 | `auth` | `JwtAuthenticationEntryPoint` 401, `JwtAccessDeniedHandler` 403 |
+| 공통 MVC 예외 변환 | `support` | `ExceptionResponseHandler`가 공통 예외와 최종 fallback 처리 |
+| 공통 principal 계약 | `core` | `UserPrincipal` 기반 account id 사용 |
+| Redis infrastructure | `support` | key ownership은 `auth`에 남김 |
 
-처리 순서:
+## Core Rules
 
-1. `LoginService`가 `AuthenticationManager` 호출 전에 `LoginAttemptGuard`로 사용자/IP별 rate limit과 잠금 상태를 확인한다.
-2. 인증 실패 시 사용자별 실패 카운터를 증가시킨다.
-3. 실패 횟수가 한도에 도달하면 사용자 잠금 키를 만들고 `429 TOO_MANY_REQUESTS`를 반환한다.
-4. 인증 성공 시 해당 사용자의 실패 카운터와 잠금 키를 삭제한다.
+- 권한과 소유권 판단은 username이나 nickname이 아니라 `accountId`를 기준으로 한다.
+- refresh token은 Redis에 저장하고 재발급 시 rotation한다.
+- OAuth2 redirect URL에는 refresh token이나 access token을 노출하지 않는다.
+- 로그인 실패, 이메일 인증, OAuth2 exchange code는 Redis guard/TTL state로 보호한다.
+- refresh token, 로그인 guard, 이메일 인증, OAuth2 exchange code의 Redis state 장애는 인증 안전성을 위해 fail-closed로 처리한다.
+- 계정 비활성 상태는 login, token reissue, OAuth2 exchange에서 거절한다.
+- 존재하지 않는 username과 잘못된 password는 모두 `INVALID_CREDENTIALS`로 응답해 계정 존재 여부를 노출하지 않는다.
 
-Redis 장애 시에는 정상 로그인을 막지 않기 위해 fail-open으로 동작하고 warn 로그를 남긴다.
-운영값은 `auth.login.protection.*` 설정으로 조정한다.
+## Error Handling Paths
+
+인증 오류는 발생 위치에 따라 MVC Advice 또는 Security filter handler가 응답한다.
+
+| 발생 위치/예외 | 처리 클래스 | 응답 |
+| --- | --- | --- |
+| MVC `BadCredentialsException` | `SecurityExceptionHandler` | `401 INVALID_CREDENTIALS` |
+| MVC `UsernameNotFoundException` | `SecurityExceptionHandler` | `401 INVALID_CREDENTIALS` |
+| MVC `DisabledException` | `SecurityExceptionHandler` | `403 ACCOUNT_NOT_ACTIVE` |
+| MVC `AccessDeniedException` | `SecurityExceptionHandler` | `403 ACCESS_DENIED` |
+| 보호 경로의 미인증 요청 | `JwtAuthenticationEntryPoint` | `401 UNAUTHORIZED` |
+| 인증됐지만 권한이 부족한 요청 | `JwtAccessDeniedHandler` | `403 FORBIDDEN` |
+| 그 밖의 MVC 예외 | `support.ExceptionResponseHandler` | 각 공통 오류 코드 또는 최종 `500 INTERNAL_SERVER_ERROR` |
+
+`SecurityExceptionHandler`는 `HIGHEST_PRECEDENCE`, 공통 `ExceptionResponseHandler`는 `LOWEST_PRECEDENCE`다. 따라서 인증 예외는 auth 정책이 먼저 처리하고, 매핑되지 않은 MVC 예외만 공통 handler로 넘어간다.
+
+`JwtAuthenticationFilter`는 유효하지 않거나 만료된 JWT를 발견하면 예외를 MVC로 전달하지 않고 `SecurityContext`를 비운 뒤 filter chain을 계속 진행한다. 보호 경로라면 이후 `JwtAuthenticationEntryPoint`가 401을 반환하고, 공개 경로라면 익명 요청으로 계속 처리한다.
+
+## Token Boundary
+
+- access token은 stateless이며 API 응답 후 `Authorization` header로 사용한다.
+- refresh token은 Redis에 저장하는 stateful credential이며 재발급 때 rotation한다.
+- OAuth2 handoff code는 짧은 TTL의 1회성 값이다.
+
+cookie 속성과 response header의 HTTP 계약은 [통합 API 명세의 Token/Cookie](../api/README.md#token--cookie)를 따른다.

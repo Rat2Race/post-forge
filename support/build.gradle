@@ -8,12 +8,11 @@ dependencies {
     implementation 'org.springframework:spring-webmvc'
     implementation 'org.springframework.data:spring-data-jpa'
     implementation 'org.springframework.boot:spring-boot-starter-data-redis'
-    implementation "org.springdoc:springdoc-openapi-starter-webmvc-ui:${springdocOpenapiVersion}"
     implementation 'org.springframework.security:spring-security-core'
 
     compileOnly 'jakarta.servlet:jakarta.servlet-api'
 
     testImplementation "org.springframework.boot:spring-boot-starter-test"
-    testRuntimeOnly 'jakarta.servlet:jakarta.servlet-api'
+    testImplementation 'jakarta.servlet:jakarta.servlet-api'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }

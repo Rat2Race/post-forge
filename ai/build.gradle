@@ -6,14 +6,14 @@ dependencies {
     implementation project(':core')
 
     implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springframework.boot:spring-boot-starter-security'
     implementation 'org.springframework.boot:spring-boot-starter-jdbc'
     implementation platform("org.springframework.ai:spring-ai-bom:${springAiVersion}")
     implementation 'org.springframework.ai:spring-ai-openai'
     implementation 'org.springframework.ai:spring-ai-pgvector-store'
-    implementation "org.springdoc:springdoc-openapi-starter-webmvc-api:${springdocOpenapiVersion}"
     implementation 'org.springframework.boot:spring-boot-starter-validation'
+    implementation 'io.micrometer:micrometer-core'
 
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
-    testImplementation project(':support')
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }

@@ -2,5 +2,6 @@ package dev.iamrat.core.board.post;
 
 public enum PostCategory {
     GENERAL,
-    AI_ANALYSIS
+    DAILY_DIGEST,
+    PRODUCT_LAUNCH_NEWS
 }

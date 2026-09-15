@@ -7,4 +7,5 @@ public record SourceDocumentCommand(
     String source,
     Map<String, String> metadata
 ) {
+    public static final String SOURCE_METADATA_KEY = "source";
 }

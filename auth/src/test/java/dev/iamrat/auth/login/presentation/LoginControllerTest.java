@@ -1,0 +1,235 @@
+package dev.iamrat.auth.login.presentation;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import dev.iamrat.auth.security.infrastructure.principal.AuthenticatedAccount;
+import dev.iamrat.auth.login.application.LoginService;
+import dev.iamrat.auth.security.infrastructure.handler.SecurityExceptionHandler;
+import dev.iamrat.auth.token.application.TokenIssueResult;
+import dev.iamrat.auth.token.presentation.CookieProvider;
+import java.nio.charset.StandardCharsets;
+import java.util.List;
+import java.util.stream.Stream;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.context.annotation.Import;
+import org.springframework.http.MediaType;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.DisabledException;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.web.servlet.MockMvc;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.BDDMockito.given;
+import static org.mockito.BDDMockito.willDoNothing;
+import static org.mockito.BDDMockito.willThrow;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+@Tag("webmvc")
+@WebMvcTest(LoginController.class)
+@AutoConfigureMockMvc(addFilters = false)
+@Import(SecurityExceptionHandler.class)
+class LoginControllerTest {
+    
+    @Autowired
+    MockMvc mockMvc;
+    
+    @Autowired
+    ObjectMapper objectMapper;
+    
+    @MockitoBean
+    LoginService loginService;
+
+    @MockitoBean
+    CookieProvider cookieProvider;
+    
+    private LoginRequest createValidLoginRequest() {
+        return new LoginRequest("testuser1", "Test1234!");
+    }
+    
+    private TokenIssueResult createTokenResponse() {
+        return TokenIssueResult.builder()
+            .grantType("Bearer")
+            .accessToken("mock-access-token")
+            .refreshToken("mock-refresh-token")
+            .build();
+    }
+    
+    @Nested
+    @DisplayName("로그인 성공")
+    class LoginSuccess {
+        
+        @Test
+        @DisplayName("유효한 자격 증명이면 200과 토큰을 반환한다")
+        void login_validCredentials_returns200() throws Exception {
+            LoginRequest request = createValidLoginRequest();
+            TokenIssueResult tokenResponse = createTokenResponse();
+            given(loginService.login(anyString(), anyString(), anyString())).willReturn(tokenResponse);
+            
+            mockMvc.perform(post("/api/auth/login")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .characterEncoding("utf-8")
+                    .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.grantType").value("Bearer"))
+                .andExpect(jsonPath("$.accessToken").value("mock-access-token"))
+                .andExpect(jsonPath("$.refreshToken").doesNotExist());
+        }
+    }
+    
+    @Nested
+    @DisplayName("로그인 실패 - 입력값 검증")
+    class LoginValidationFail {
+        
+        @ParameterizedTest(name = "{0}")
+        @DisplayName("유효하지 않은 로그인 요청이면 400을 반환한다")
+        @MethodSource("loginBusinessExceptions")
+        void login_invalidRequest_returns400(String description, LoginRequest request) throws Exception {
+            mockMvc.perform(post("/api/auth/login")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .characterEncoding("utf-8")
+                    .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest());
+        }
+        
+        @Test
+        @DisplayName("요청 바디가 없으면 400을 반환한다")
+        void login_missingBody_returns400() throws Exception {
+            mockMvc.perform(post("/api/auth/login")
+                    .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isBadRequest());
+        }
+        
+        static Stream<Arguments> loginBusinessExceptions() {
+            return Stream.of(
+                Arguments.of("username이 빈 값이면 400을 반환한다", new LoginRequest("", "Test1234!")),
+                Arguments.of("username이 4자 미만이면 400을 반환한다", new LoginRequest("abc", "Test1234!")),
+                Arguments.of("username에 특수문자가 포함되면 400을 반환한다", new LoginRequest("testuser1*^_^*", "Test1234!")),
+                Arguments.of("비밀번호가 빈 값이면 400을 반환한다", new LoginRequest("testuser1", ""))
+            );
+        }
+    }
+    
+    @Nested
+    @DisplayName("로그인 실패 - 인증")
+    class LoginAuthFail {
+        
+        @Test
+        @DisplayName("아이디 또는 비밀번호가 틀리면 401을 반환한다")
+        void login_invalidCredentials_returns401() throws Exception {
+            LoginRequest request = createValidLoginRequest();
+            given(loginService.login(anyString(), anyString(), anyString()))
+                .willThrow(new BadCredentialsException("Bad credentials"));
+            
+            mockMvc.perform(post("/api/auth/login")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.error").value("INVALID_CREDENTIALS"));
+        }
+
+        @Test
+        @DisplayName("비활성화된 계정이면 403과 ACCOUNT_NOT_ACTIVE를 반환한다")
+        void login_disabledAccount_returns403() throws Exception {
+            LoginRequest request = createValidLoginRequest();
+            given(loginService.login(anyString(), anyString(), anyString()))
+                .willThrow(new DisabledException("account disabled"));
+
+            mockMvc.perform(post("/api/auth/login")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.error").value("ACCOUNT_NOT_ACTIVE"));
+        }
+
+        @Test
+        @DisplayName("존재하지 않는 아이디도 잘못된 비밀번호와 구분 불가능한 401 응답을 반환한다")
+        void login_unknownUsername_indistinguishableFromBadCredentials() throws Exception {
+            LoginRequest request = createValidLoginRequest();
+            String requestBody = objectMapper.writeValueAsString(request);
+
+            given(loginService.login(anyString(), anyString(), anyString()))
+                .willThrow(new UsernameNotFoundException("no such user"));
+            String unknownUserBody = mockMvc.perform(post("/api/auth/login")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(requestBody))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.error").value("INVALID_CREDENTIALS"))
+                .andReturn().getResponse().getContentAsString(StandardCharsets.UTF_8);
+
+            willThrow(new BadCredentialsException("Bad credentials"))
+                .given(loginService).login(anyString(), anyString(), anyString());
+            String badCredentialsBody = mockMvc.perform(post("/api/auth/login")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(requestBody))
+                .andExpect(status().isUnauthorized())
+                .andReturn().getResponse().getContentAsString(StandardCharsets.UTF_8);
+
+            JsonNode unknownUser = objectMapper.readTree(unknownUserBody);
+            JsonNode badCredentials = objectMapper.readTree(badCredentialsBody);
+            assertThat(unknownUser.get("error")).isEqualTo(badCredentials.get("error"));
+            assertThat(unknownUser.get("message")).isEqualTo(badCredentials.get("message"));
+        }
+    }
+    
+    @Nested
+    @DisplayName("로그아웃")
+    class Logout {
+        
+        @Test
+        @DisplayName("인증된 사용자가 로그아웃하면 200을 반환한다")
+        void logout_authenticatedUser_returns200() throws Exception {
+            willDoNothing().given(loginService).logout(anyLong());
+            SecurityContextHolder.getContext().setAuthentication(userAuthentication());
+
+            try {
+                mockMvc.perform(post("/api/auth/logout"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.message").value("로그아웃되었습니다."));
+            } finally {
+                SecurityContextHolder.clearContext();
+            }
+        }
+
+        @Test
+        @DisplayName("접근 권한이 없으면 403과 ACCESS_DENIED를 반환한다")
+        void logout_accessDenied_returns403() throws Exception {
+            willThrow(new AccessDeniedException("access denied")).given(loginService).logout(anyLong());
+            SecurityContextHolder.getContext().setAuthentication(userAuthentication());
+
+            try {
+                mockMvc.perform(post("/api/auth/logout"))
+                    .andExpect(status().isForbidden())
+                    .andExpect(jsonPath("$.error").value("ACCESS_DENIED"));
+            } finally {
+                SecurityContextHolder.clearContext();
+            }
+        }
+    }
+
+    private UsernamePasswordAuthenticationToken userAuthentication() {
+        List<SimpleGrantedAuthority> authorities = List.of(new SimpleGrantedAuthority("ROLE_USER"));
+        return UsernamePasswordAuthenticationToken.authenticated(
+            new AuthenticatedAccount(1L),
+            null,
+            authorities
+        );
+    }
+}
