@@ -1,0 +1,49 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:app-context-test;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+  flyway:
+    enabled: false
+  jpa:
+    database-platform: org.hibernate.dialect.H2Dialect
+    hibernate:
+      ddl-auto: create-drop
+  ai:
+    vectorstore:
+      pgvector:
+        initialize-schema: false
+
+source:
+  naver-news:
+    enabled: false
+
+ingest:
+  news:
+    launch:
+      scheduler:
+        enabled: false
+    digest:
+      scheduler:
+        enabled: false
+
+APP_FRONTEND_BASE_URL: http://localhost:3000
+APP_API_BASE_URL: http://localhost:8080
+REDIS_HOST: localhost
+REDIS_PORT: 6379
+GMAIL_USERNAME: dummy@example.com
+GMAIL_PASSWORD: dummy-mail-password
+GOOGLE_CLIENT_ID: dummy-google-client-id
+GOOGLE_CLIENT_SECRET: dummy-google-secret
+NAVER_CLIENT_ID: dummy-naver-client-id
+NAVER_CLIENT_SECRET: dummy-naver-secret
+KAKAO_CLIENT_ID: dummy-kakao-client-id
+KAKAO_CLIENT_SECRET: dummy-kakao-secret
+JWT_SECRET: test-only-jwt-secret-key-postforge-0123456789abcdef0123456789
+AWS_BUCKET: test-bucket
+AWS_REGION: ap-northeast-2
+AWS_ACCESS_KEY_ID: test-access-key
+AWS_SECRET_ACCESS_KEY: test-secret-key
+MONITORING_USERNAME: monitor
+MONITORING_PASSWORD: monitor-secret

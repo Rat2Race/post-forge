@@ -7,8 +7,10 @@ public record PostWriteCommand(
     String content,
     String summary,
     List<String> tags,
-    String userId,
+    Long accountId,
     String nickname,
-    PostCategory category
+    PostCategory category,
+    BoardCategory boardCategory,
+    PostPublishOrigin publishOrigin
 ) {
 }

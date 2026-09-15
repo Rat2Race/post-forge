@@ -1,83 +1,162 @@
-<!DOCTYPE html>
-<html lang="ko">
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html lang="ko" xmlns="http://www.w3.org/1999/xhtml" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="x-apple-disable-message-reformatting" />
+    <meta name="color-scheme" content="light dark" />
+    <meta name="supported-color-schemes" content="light dark" />
     <title>PostForge 이메일 인증</title>
+
+    <!--[if mso]>
+    <xml>
+        <o:OfficeDocumentSettings>
+            <o:AllowPNG/>
+            <o:PixelsPerInch>96</o:PixelsPerInch>
+        </o:OfficeDocumentSettings>
+    </xml>
+    <style type="text/css">
+        body, table, td, p, a, h1, h2 { font-family: 'Malgun Gothic', 'Segoe UI', Arial, sans-serif !important; }
+    </style>
+    <![endif]-->
+
+    <style type="text/css">
+        body { margin: 0 !important; padding: 0 !important; width: 100% !important; }
+        table { border-collapse: collapse; }
+        a { text-decoration: none; }
+
+        @media only screen and (max-width: 620px) {
+            .sm-full { width: 100% !important; max-width: 100% !important; }
+            .sm-pad { padding-left: 24px !important; padding-right: 24px !important; }
+            .sm-pad-y { padding-top: 32px !important; padding-bottom: 32px !important; }
+            .sm-title { font-size: 22px !important; }
+            .sm-btn { display: block !important; padding-left: 0 !important; padding-right: 0 !important; }
+        }
+
+        @media (prefers-color-scheme: dark) {
+            .d-bg { background-color: #0d1117 !important; }
+            .d-card { background-color: #161b26 !important; border-color: #252c3b !important; }
+            .d-title { color: #f0f2f6 !important; }
+            .d-text { color: #c2c8d4 !important; }
+            .d-muted { color: #8b94a6 !important; }
+            .d-box { background-color: #1b2230 !important; border-color: #2a3242 !important; }
+            .d-link { color: #a5b4fc !important; }
+            .d-rule { background-color: #252c3b !important; }
+        }
+    </style>
 </head>
-<body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f5f5f5;">
-    <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #f5f5f5; padding: 40px 0;">
+<body class="d-bg" style="margin: 0; padding: 0; width: 100%; background-color: #f2f4f7; -webkit-font-smoothing: antialiased; -webkit-text-size-adjust: 100%;">
+
+    <!-- 받은편지함 미리보기 문구 -->
+    <div style="display: none; max-height: 0; max-width: 0; overflow: hidden; opacity: 0; font-size: 1px; line-height: 1px; color: #f2f4f7;">
+        30분 안에 이메일 인증을 완료해 주세요.
+        &#8199;&#65279;&#847;&#8199;&#65279;&#847;&#8199;&#65279;&#847;&#8199;&#65279;&#847;&#8199;&#65279;&#847;&#8199;&#65279;&#847;&#8199;&#65279;&#847;&#8199;&#65279;&#847;
+    </div>
+
+    <table role="presentation" class="d-bg" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #f2f4f7;">
         <tr>
-            <td align="center">
-                <table width="600" cellpadding="0" cellspacing="0" border="0" style="background-color: #ffffff; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
-                    <!-- Header -->
+            <td align="center" class="sm-pad" style="padding: 48px 16px;">
+
+                <table role="presentation" class="sm-full" width="600" cellpadding="0" cellspacing="0" border="0" style="width: 600px; max-width: 600px;">
+
+                    <!-- 카드 -->
                     <tr>
-                        <td style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 40px 30px; text-align: center; border-radius: 8px 8px 0 0;">
-                            <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: bold;">PostForge</h1>
-                            <p style="color: #e0e7ff; margin: 10px 0 0 0; font-size: 16px;">이메일 인증</p>
-                        </td>
-                    </tr>
+                        <td class="d-card" style="background-color: #ffffff; border: 1px solid #e4e7ec; border-radius: 12px;">
+                            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
 
-                    <!-- Content -->
-                    <tr>
-                        <td style="padding: 40px 30px;">
-                            <h2 style="color: #333333; margin: 0 0 20px 0; font-size: 24px;">안녕하세요!</h2>
-
-                            <p style="color: #666666; line-height: 1.6; margin: 0 0 20px 0; font-size: 16px;">
-                                PostForge 회원가입을 위한 이메일 인증을 진행해주세요.
-                            </p>
-
-                            <p style="color: #666666; line-height: 1.6; margin: 0 0 30px 0; font-size: 16px;">
-                                아래 버튼을 클릭하시면 이메일 인증이 완료됩니다.
-                            </p>
-
-                            <!-- Button -->
-                            <table width="100%" cellpadding="0" cellspacing="0" border="0">
+                                <!-- 브랜드 액센트 바 -->
                                 <tr>
-                                    <td align="center" style="padding: 10px 0;">
-                                        <a href="{{VERIFICATION_URL}}" target="_self" style="display: inline-block; padding: 18px 60px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: #ffffff; text-decoration: none; border-radius: 50px; font-size: 16px; font-weight: 700; box-shadow: 0 8px 24px rgba(102, 126, 234, 0.4); transition: all 0.3s ease; letter-spacing: 0.5px;">
-                                            🚀 이메일 인증하기
-                                        </a>
+                                    <td height="4" style="height: 4px; line-height: 4px; font-size: 4px; background-color: #4f46e5; border-radius: 12px 12px 0 0;">&nbsp;</td>
+                                </tr>
+
+                                <tr>
+                                    <td class="sm-pad sm-pad-y" style="padding: 40px;">
+
+                                        <!-- 워드마크 -->
+                                        <p style="margin: 0 0 32px; font-family: -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', Pretendard, 'Malgun Gothic', 'Segoe UI', Roboto, Arial, sans-serif; font-size: 18px; font-weight: 700; letter-spacing: -0.3px; line-height: 24px; mso-line-height-rule: exactly; color: #4f46e5;">
+                                            PostForge
+                                        </p>
+
+                                        <!-- 제목 -->
+                                        <h1 class="d-title sm-title" style="margin: 0 0 16px; font-family: -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', Pretendard, 'Malgun Gothic', 'Segoe UI', Roboto, Arial, sans-serif; font-size: 26px; font-weight: 700; letter-spacing: -0.4px; line-height: 36px; mso-line-height-rule: exactly; color: #101828;">
+                                            이메일 주소를 인증해 주세요
+                                        </h1>
+
+                                        <!-- 본문 -->
+                                        <p class="d-text" style="margin: 0 0 32px; font-family: -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', Pretendard, 'Malgun Gothic', 'Segoe UI', Roboto, Arial, sans-serif; font-size: 16px; line-height: 27px; mso-line-height-rule: exactly; color: #475467;">
+                                            PostForge 회원가입을 마치려면 이메일 주소 확인이 필요합니다.<br />
+                                            아래 버튼을 눌러 인증을 완료해 주세요.
+                                        </p>
+
+                                        <!-- CTA -->
+                                        <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin: 0 0 24px;">
+                                            <tr>
+                                                <td align="center">
+                                                    <!--[if mso]>
+                                                    <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="{{VERIFICATION_URL}}" style="height:48px;v-text-anchor:middle;width:200px;" arcsize="17%" stroke="f" fillcolor="#4f46e5">
+                                                        <w:anchorlock/>
+                                                        <center style="color:#ffffff;font-family:'Malgun Gothic',Arial,sans-serif;font-size:16px;font-weight:bold;">이메일 인증하기</center>
+                                                    </v:roundrect>
+                                                    <![endif]-->
+                                                    <!--[if !mso]><!-- -->
+                                                    <a class="sm-btn" href="{{VERIFICATION_URL}}" target="_blank" rel="noopener" style="display: inline-block; padding: 14px 32px; background-color: #4f46e5; border-radius: 8px; font-family: -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', Pretendard, 'Malgun Gothic', 'Segoe UI', Roboto, Arial, sans-serif; font-size: 16px; font-weight: 600; line-height: 20px; mso-line-height-rule: exactly; letter-spacing: -0.2px; color: #ffffff; text-align: center; text-decoration: none;">
+                                                        이메일 인증하기
+                                                    </a>
+                                                    <!--<![endif]-->
+                                                </td>
+                                            </tr>
+                                        </table>
+
+                                        <!-- 유효 시간 -->
+                                        <p class="d-muted" style="margin: 0 0 32px; font-family: -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', Pretendard, 'Malgun Gothic', 'Segoe UI', Roboto, Arial, sans-serif; font-size: 14px; line-height: 22px; mso-line-height-rule: exactly; color: #98a2b3;">
+                                            이 링크는 발송 후 30분 동안만 사용할 수 있습니다.
+                                        </p>
+
+                                        <!-- 구분선 -->
+                                        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                                            <tr>
+                                                <td class="d-rule" height="1" style="height: 1px; line-height: 1px; font-size: 1px; background-color: #e4e7ec;">&nbsp;</td>
+                                            </tr>
+                                        </table>
+
+                                        <!-- 대체 링크 -->
+                                        <p class="d-muted" style="margin: 32px 0 12px; font-family: -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', Pretendard, 'Malgun Gothic', 'Segoe UI', Roboto, Arial, sans-serif; font-size: 13px; line-height: 20px; mso-line-height-rule: exactly; color: #98a2b3;">
+                                            버튼이 눌리지 않는다면, 아래 주소를 복사해 브라우저 주소창에 붙여넣어 주세요.
+                                        </p>
+
+                                        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                                            <tr>
+                                                <td class="d-box" style="padding: 12px 14px; background-color: #f9fafb; border: 1px solid #e4e7ec; border-radius: 8px;">
+                                                    <a class="d-link" href="{{VERIFICATION_URL}}" target="_blank" rel="noopener" style="font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace; font-size: 13px; line-height: 20px; mso-line-height-rule: exactly; color: #4f46e5; text-decoration: none; word-break: break-all; overflow-wrap: anywhere;">{{VERIFICATION_URL}}</a>
+                                                </td>
+                                            </tr>
+                                        </table>
+
+                                        <!-- 안내 -->
+                                        <p class="d-muted" style="margin: 24px 0 0; font-family: -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', Pretendard, 'Malgun Gothic', 'Segoe UI', Roboto, Arial, sans-serif; font-size: 13px; line-height: 20px; mso-line-height-rule: exactly; color: #98a2b3;">
+                                            본인이 요청한 것이 아니라면 이 메일은 무시하셔도 됩니다.
+                                        </p>
+
                                     </td>
                                 </tr>
                             </table>
-
-                            <!-- Info Box -->
-                            <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top: 40px;">
-                                <tr>
-                                    <td style="background: linear-gradient(135deg, #f6f9fc 0%, #eef2f7 100%); border-radius: 16px; padding: 24px; border: 1px solid #e2e8f0;">
-                                        <p style="color: #4a5568; margin: 0 0 12px 0; font-size: 14px; line-height: 1.8; text-align: left;">
-                                            <span style="display: inline-block; width: 32px; height: 32px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 8px; text-align: center; line-height: 32px; margin-right: 8px; vertical-align: middle;">⏰</span>
-                                            이 인증 링크는 <strong style="color: #2d3748;">30분간 유효</strong>합니다.
-                                        </p>
-                                        <p style="color: #4a5568; margin: 0; font-size: 14px; line-height: 1.8; text-align: left;">
-                                            <span style="display: inline-block; width: 32px; height: 32px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 8px; text-align: center; line-height: 32px; margin-right: 8px; vertical-align: middle;">🔒</span>
-                                            본인이 요청하지 않았다면 이 메일을 무시하셔도 됩니다.
-                                        </p>
-                                    </td>
-                                </tr>
-                            </table>
-
-                            <!-- Alternative Link -->
-                            <p style="color: #999999; font-size: 12px; line-height: 1.6; margin: 30px 0 0 0;">
-                                버튼이 작동하지 않는다면 아래 링크를 복사하여 브라우저에 붙여넣으세요:<br>
-                                <a href="{{VERIFICATION_URL}}" style="color: #667eea; word-break: break-all;">{{VERIFICATION_URL}}</a>
-                            </p>
                         </td>
                     </tr>
 
-                    <!-- Footer -->
+                    <!-- 푸터 -->
                     <tr>
-                        <td style="background-color: #f8f9fa; padding: 30px; text-align: center; border-radius: 0 0 8px 8px;">
-                            <p style="color: #999999; margin: 0; font-size: 14px;">
-                                © 2025 PostForge. All rights reserved.
+                        <td class="sm-pad" style="padding: 28px 40px 0; text-align: center;">
+                            <p class="d-muted" style="margin: 0 0 6px; font-family: -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', Pretendard, 'Malgun Gothic', 'Segoe UI', Roboto, Arial, sans-serif; font-size: 12px; line-height: 20px; mso-line-height-rule: exactly; color: #98a2b3;">
+                                이 메일은 PostForge 회원가입 과정에서 자동으로 발송되었으며, 회신을 받지 않습니다.
                             </p>
-                            <p style="color: #999999; margin: 10px 0 0 0; font-size: 12px;">
-                                이 메일은 PostForge 회원가입 시 자동으로 발송되었습니다.
+                            <p class="d-muted" style="margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', Pretendard, 'Malgun Gothic', 'Segoe UI', Roboto, Arial, sans-serif; font-size: 12px; line-height: 20px; mso-line-height-rule: exactly; color: #b0b7c3;">
+                                &copy; PostForge
                             </p>
                         </td>
                     </tr>
+
                 </table>
+
             </td>
         </tr>
     </table>

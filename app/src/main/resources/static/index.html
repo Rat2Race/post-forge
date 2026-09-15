@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PostForge</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+KR:wght@300;400;500;600;700&display=swap">
+<style>
+:root {
+  --ground:#f3f6f6; --surface:#ffffff; --surface-2:#e9eeee;
+  --ink:#10201f; --ink-2:#46585a; --ink-3:#7a8b8c;
+  --rule:#d6dedf; --rule-soft:#e6ecec;
+  --accent:#0d5c63; --accent-ink:#ffffff; --accent-soft:#dfeced;
+  --warn:#a13a37;
+  --sans:'IBM Plex Sans KR',-apple-system,'Apple SD Gothic Neo',system-ui,sans-serif;
+  --mono:'IBM Plex Mono','IBM Plex Sans KR',ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --ground:#0d1415; --surface:#131c1d; --surface-2:#1a2526;
+    --ink:#e5eded; --ink-2:#a1b3b3; --ink-3:#6d8182;
+    --rule:#253334; --rule-soft:#1c2829;
+    --accent:#52b5bc; --accent-ink:#0d1415; --accent-soft:#15302f;
+    --warn:#e08a84;
+  }
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--ground);color:var(--ink);font-family:var(--sans);font-size:15.5px;line-height:1.65;-webkit-font-smoothing:antialiased}
+a{color:var(--accent);text-decoration:none}
+button{font-family:var(--sans);cursor:pointer}
+.wrap{max-width:46rem;margin:0 auto;padding:0 1.1rem 4rem}
+header.site{border-bottom:2px solid var(--ink);padding:1.1rem 0 .9rem;margin-bottom:1rem;display:flex;align-items:center;gap:1rem;flex-wrap:wrap}
+.brand{font-weight:700;font-size:1.25rem;letter-spacing:-.02em}
+.brand small{font-family:var(--mono);font-size:.62rem;font-weight:500;letter-spacing:.16em;color:var(--accent);display:block;text-transform:uppercase}
+.spacer{flex:1}
+.authbox{display:flex;align-items:center;gap:.6rem;font-size:.85rem}
+.authbox .me{color:var(--ink-2)}
+.btn{border:1px solid var(--rule);background:var(--surface);color:var(--ink);padding:.38rem .85rem;border-radius:3px;font-size:.85rem}
+.btn:hover{border-color:var(--accent);color:var(--accent)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn.primary:hover{opacity:.9;color:var(--accent-ink)}
+.btn:focus-visible,.chip:focus-visible,.seg button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+nav.seg{display:flex;gap:1px;background:var(--rule);border:1px solid var(--rule);width:max-content;margin-bottom:.8rem}
+.seg button{border:0;background:var(--surface);padding:.45rem 1.1rem;font-size:.88rem;color:var(--ink-2)}
+.seg button.on{background:var(--accent);color:var(--accent-ink);font-weight:600}
+.chips{display:flex;gap:.4rem;flex-wrap:wrap;margin-bottom:1.1rem}
+.chip{border:1px solid var(--rule);background:var(--surface);color:var(--ink-2);padding:.22rem .7rem;border-radius:999px;font-size:.78rem}
+.chip.on{border-color:var(--accent);background:var(--accent-soft);color:var(--accent);font-weight:600}
+.cards{display:flex;flex-direction:column;gap:1px;background:var(--rule-soft);border:1px solid var(--rule)}
+.card{background:var(--surface);padding:1rem 1.15rem;display:block;color:var(--ink)}
+.card:hover{background:var(--surface-2)}
+.card .badges{display:flex;gap:.35rem;margin-bottom:.25rem}
+.badge{font-family:var(--mono);font-size:.6rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;padding:.14em .5em;border-radius:2px;background:var(--surface-2);color:var(--ink-2)}
+.badge.cat{background:var(--accent-soft);color:var(--accent)}
+.badge.digest{background:var(--accent);color:var(--accent-ink)}
+.card h3{margin:0 0 .2rem;font-size:1.02rem;font-weight:600;letter-spacing:-.01em}
+.card p.sum{margin:0 0 .45rem;font-size:.85rem;color:var(--ink-2);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.meta{font-size:.76rem;color:var(--ink-3);display:flex;gap:.7rem;flex-wrap:wrap}
+.pager{display:flex;gap:.6rem;justify-content:center;align-items:center;margin-top:1.2rem;font-size:.85rem;color:var(--ink-3)}
+.empty{padding:3rem 1rem;text-align:center;color:var(--ink-3);background:var(--surface);border:1px solid var(--rule)}
+article.post{background:var(--surface);border:1px solid var(--rule);padding:1.5rem 1.6rem}
+article.post h1{font-size:1.5rem;font-weight:700;letter-spacing:-.02em;line-height:1.3;margin:.4rem 0 .5rem}
+article.post .body{white-space:pre-wrap;font-size:.95rem;margin:1.1rem 0;line-height:1.8}
+.tags{display:flex;gap:.35rem;flex-wrap:wrap;margin:.8rem 0}
+.tag{font-family:var(--mono);font-size:.72rem;color:var(--accent);background:var(--accent-soft);padding:.1em .55em;border-radius:2px}
+.refs{border-top:1px solid var(--rule-soft);margin-top:1rem;padding-top:.8rem}
+.refs h4{margin:0 0 .4rem;font-family:var(--mono);font-size:.66rem;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3)}
+.refs a{display:block;font-size:.83rem;margin-bottom:.2rem}
+.refs small{color:var(--ink-3);font-size:.74rem}
+.actions{display:flex;gap:.7rem;align-items:center;border-top:1px solid var(--rule-soft);margin-top:1rem;padding-top:1rem}
+.like{border:1px solid var(--rule);background:var(--surface);border-radius:999px;padding:.35rem .95rem;font-size:.85rem;color:var(--ink-2)}
+.like.on{border-color:var(--accent);background:var(--accent-soft);color:var(--accent);font-weight:600}
+section.comments{margin-top:1.4rem}
+section.comments h2{font-size:1rem;border-bottom:1px solid var(--ink);padding-bottom:.4rem}
+.cmt{background:var(--surface);border:1px solid var(--rule);border-top:0;padding:.75rem 1rem}
+.cmt:first-of-type{border-top:1px solid var(--rule)}
+.cmt.reply{margin-left:1.6rem;background:var(--surface-2)}
+.cmt .head{display:flex;gap:.6rem;align-items:baseline;font-size:.78rem;color:var(--ink-3);margin-bottom:.15rem}
+.cmt .head b{color:var(--ink);font-size:.83rem}
+.cmt .body{font-size:.88rem;white-space:pre-wrap}
+.cmt .rowa{margin-top:.3rem;display:flex;gap:.7rem}
+.cmt .rowa button{border:0;background:none;font-size:.74rem;color:var(--ink-3);padding:0}
+.cmt .rowa button:hover{color:var(--accent)}
+form.cform{margin-top:.8rem;display:flex;flex-direction:column;gap:.5rem}
+textarea,input[type=text],input[type=password]{font-family:var(--sans);font-size:.9rem;border:1px solid var(--rule);background:var(--surface);color:var(--ink);border-radius:3px;padding:.55rem .7rem;width:100%}
+textarea:focus,input:focus{outline:2px solid var(--accent);outline-offset:-1px}
+textarea{resize:vertical;min-height:4.5rem}
+.replyto{font-size:.78rem;color:var(--accent);display:flex;gap:.5rem;align-items:center}
+.replyto button{border:0;background:none;color:var(--warn);font-size:.74rem;padding:0}
+form.wform{background:var(--surface);border:1px solid var(--rule);padding:1.3rem 1.4rem;display:flex;flex-direction:column;gap:.7rem}
+form.wform label{font-family:var(--mono);font-size:.66rem;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3)}
+dialog{border:1px solid var(--rule);border-radius:4px;background:var(--surface);color:var(--ink);padding:1.5rem 1.6rem;max-width:20rem;width:90%}
+dialog::backdrop{background:rgba(0,0,0,.45)}
+dialog h3{margin:0 0 .8rem;font-size:1.05rem}
+dialog form{display:flex;flex-direction:column;gap:.6rem}
+dialog .hint{font-size:.76rem;color:var(--ink-3);margin:.2rem 0 0}
+#toast{position:fixed;bottom:1.2rem;left:50%;transform:translateX(-50%);background:var(--ink);color:var(--ground);padding:.55rem 1.1rem;border-radius:4px;font-size:.85rem;opacity:0;transition:opacity .2s;pointer-events:none;max-width:90%}
+#toast.show{opacity:1}
+.back{font-size:.82rem;display:inline-block;margin-bottom:.7rem}
+.loading{padding:2.5rem;text-align:center;color:var(--ink-3);font-family:var(--mono);font-size:.8rem}
+@media (prefers-reduced-motion: reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="site">
+    <a href="#/" style="color:inherit"><div class="brand"><small>PostForge</small>신제품 출시 뉴스</div></a>
+    <div class="spacer"></div>
+    <div class="authbox" id="authbox"></div>
+  </header>
+  <main id="app"><div class="loading">LOADING…</div></main>
+</div>
+
+<dialog id="loginDlg">
+  <h3>로그인</h3>
+  <form id="loginForm">
+    <input type="text" id="loginU" placeholder="아이디" autocomplete="username" required>
+    <input type="password" id="loginP" placeholder="비밀번호" autocomplete="current-password" required>
+    <button class="btn primary" type="submit">로그인</button>
+    <button class="btn" type="button" onclick="loginDlg.close()">닫기</button>
+    <p class="hint">회원가입은 이메일 인증이 필요해 API로만 제공됩니다 (POST /api/auth/register).</p>
+  </form>
+</dialog>
+<div id="toast" role="status"></div>
+
+<script>
+'use strict';
+/* ---------- 상태 ---------- */
+const KINDS = [
+  { key:'PRODUCT_LAUNCH_NEWS', label:'뉴스' },
+  { key:'DAILY_DIGEST', label:'데일리 요약' },
+  { key:'GENERAL', label:'자유게시판' },
+];
+const CATS = [
+  ['','전체'],['DIGITAL','디지털'],['APPLIANCE','가전'],['LIVING','리빙'],
+  ['HEALTH','헬스'],['BEAUTY','뷰티'],['SPORTS','스포츠'],['GENERAL','일반'],
+];
+const CATL = Object.fromEntries(CATS.map(([k,v])=>[k,v]));
+const state = { kind:'PRODUCT_LAUNCH_NEWS', cat:'', page:0, replyTo:null };
+const token  = () => localStorage.getItem('pf.token');
+const meName = () => localStorage.getItem('pf.name');
+
+/* ---------- 유틸 ---------- */
+const $ = (s,el=document)=>el.querySelector(s);
+const esc = s => String(s??'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const dt = s => s ? s.replace('T',' ').slice(0,16) : '';
+let toastT;
+function toast(msg){ const t=$('#toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(toastT); toastT=setTimeout(()=>t.classList.remove('show'),2600); }
+
+async function api(path, opt={}){
+  const headers = { ...(opt.headers||{}) };
+  if (opt.body) headers['Content-Type'] = 'application/json';
+  if (token()) headers['Authorization'] = 'Bearer ' + token();
+  const res = await fetch(path, { ...opt, headers });
+  if (res.status === 401 && token()) { localStorage.removeItem('pf.token'); renderAuth(); }
+  if (!res.ok) {
+    let msg = res.status + ' 오류';
+    try { const b = await res.json(); msg = b.message || msg; } catch(e){}
+    throw new Error(msg);
+  }
+  return res.status === 204 ? null : res.json();
+}
+
+/* ---------- 인증 ---------- */
+function renderAuth(){
+  const el = $('#authbox');
+  if (token()) {
+    el.innerHTML = `<span class="me">${esc(meName()||'회원')}님</span>
+      <a class="btn" href="#/write">글쓰기</a>
+      <button class="btn" id="logoutBtn">로그아웃</button>`;
+    $('#logoutBtn').onclick = ()=>{ localStorage.removeItem('pf.token'); localStorage.removeItem('pf.name'); renderAuth(); route(); };
+  } else {
+    el.innerHTML = `<button class="btn primary" id="loginBtn">로그인</button>`;
+    $('#loginBtn').onclick = ()=>loginDlg.showModal();
+  }
+}
+$('#loginForm').addEventListener('submit', async e=>{
+  e.preventDefault();
+  try {
+    const body = JSON.stringify({ username:$('#loginU').value, password:$('#loginP').value });
+    const r = await api('/api/auth/login', { method:'POST', body });
+    localStorage.setItem('pf.token', r.accessToken);
+    localStorage.setItem('pf.name', $('#loginU').value);
+    loginDlg.close(); renderAuth(); route(); toast('로그인되었습니다');
+  } catch(err){ toast(err.message); }
+});
+
+/* ---------- 목록 ---------- */
+async function viewList(){
+  const app = $('#app');
+  const segs = KINDS.map(k=>`<button class="${k.key===state.kind?'on':''}" data-k="${k.key}">${k.label}</button>`).join('');
+  const showChips = state.kind !== 'GENERAL';
+  const chips = CATS.map(([k,l])=>`<button class="chip ${k===state.cat?'on':''}" data-c="${k}">${l}</button>`).join('');
+  app.innerHTML = `<nav class="seg" role="tablist">${segs}</nav>
+    ${showChips?`<div class="chips">${chips}</div>`:''}
+    <div id="list" class="loading">LOADING…</div>`;
+  app.querySelectorAll('.seg button').forEach(b=>b.onclick=()=>{ state.kind=b.dataset.k; state.cat=''; state.page=0; viewList(); });
+  app.querySelectorAll('.chip').forEach(b=>b.onclick=()=>{ state.cat=b.dataset.c; state.page=0; viewList(); });
+
+  const q = new URLSearchParams({ category: state.kind, page: state.page, size: 20 });
+  if (state.cat) q.set('boardCategory', state.cat);
+  try {
+    const data = await api('/api/posts?'+q);
+    const list = $('#list');
+    if (!data.content.length) { list.outerHTML = `<div class="empty">아직 게시글이 없습니다</div>`; return; }
+    list.outerHTML = `<div class="cards">${data.content.map(p=>`
+      <a class="card" href="#/post/${p.id}">
+        <div class="badges">
+          ${p.category==='DAILY_DIGEST'?'<span class="badge digest">데일리 요약</span>':''}
+          ${p.boardCategory && p.boardCategory!=='GENERAL'?`<span class="badge cat">${CATL[p.boardCategory]||p.boardCategory}</span>`:''}
+          ${p.publishOrigin==='USER'?'<span class="badge">회원 글</span>':''}
+        </div>
+        <h3>${esc(p.title)}</h3>
+        ${p.summary?`<p class="sum">${esc(p.summary)}</p>`:''}
+        <div class="meta"><span>${esc(p.nickname)}</span><span>조회 ${p.views}</span><span>좋아요 ${p.likeCount}</span><span>댓글 ${p.commentCount}</span><span>${dt(p.createdAt)}</span></div>
+      </a>`).join('')}</div>
+      <div class="pager">
+        <button class="btn" id="prev" ${data.first?'disabled':''}>← 이전</button>
+        <span>${data.page+1} / ${Math.max(data.totalPages,1)}</span>
+        <button class="btn" id="next" ${data.last?'disabled':''}>다음 →</button>
+      </div>`;
+    $('#prev').onclick=()=>{ state.page--; viewList(); };
+    $('#next').onclick=()=>{ state.page++; viewList(); };
+  } catch(err){ $('#list').textContent = err.message; }
+}
+
+/* ---------- 상세 ---------- */
+async function viewPost(id){
+  const app = $('#app');
+  app.innerHTML = `<div class="loading">LOADING…</div>`;
+  try {
+    const [p, cs] = await Promise.all([ api('/api/posts/'+id), api(`/api/posts/${id}/comments?size=100`) ]);
+    state.replyTo = null;
+    app.innerHTML = `<a class="back" href="#/">← 목록</a>
+      <article class="post">
+        <div class="badges">
+          ${p.category==='DAILY_DIGEST'?'<span class="badge digest">데일리 요약</span>':''}
+          ${p.category==='PRODUCT_LAUNCH_NEWS'?'<span class="badge cat">출시 뉴스</span>':''}
+          ${p.boardCategory&&p.boardCategory!=='GENERAL'?`<span class="badge cat">${CATL[p.boardCategory]||p.boardCategory}</span>`:''}
+          ${p.publishOrigin==='SYSTEM_BATCH'?'<span class="badge">자동 게시</span>':''}
+        </div>
+        <h1>${esc(p.title)}</h1>
+        <div class="meta"><span>${esc(p.nickname)}</span><span>조회 ${p.views}</span><span>${dt(p.createdAt)}</span></div>
+        <div class="body">${esc(p.content)}</div>
+        ${p.tags?.length?`<div class="tags">${p.tags.map(t=>`<span class="tag">#${esc(t)}</span>`).join('')}</div>`:''}
+        ${p.references?.length?`<div class="refs"><h4>출처</h4>${p.references.map(r=>
+          `<a href="${esc(r.originalUrl||r.canonicalUrl)}" target="_blank" rel="noopener noreferrer">${esc(r.titleSnapshot||r.canonicalUrl)} <small>· ${esc(r.sourceName)}</small></a>`).join('')}</div>`:''}
+        <div class="actions">
+          <button class="like ${p.isLiked?'on':''}" id="likeBtn">♥ 좋아요 <span id="likeN">${p.likeCount}</span></button>
+        </div>
+      </article>
+      <section class="comments">
+        <h2>댓글 ${cs.totalElements}</h2>
+        <div id="clist"></div>
+        <form class="cform" id="cform">
+          <div class="replyto" id="replyBox" hidden></div>
+          <textarea id="cbody" placeholder="${token()?'댓글을 입력하세요 (2자 이상)':'댓글을 쓰려면 로그인하세요'}" ${token()?'':'disabled'}></textarea>
+          <div><button class="btn primary" type="submit" ${token()?'':'disabled'}>등록</button></div>
+        </form>
+      </section>`;
+
+    /* 댓글: 부모 우선 + 대댓글 들여쓰기 */
+    const roots = cs.content.filter(c=>!c.parentId);
+    const byParent = {};
+    cs.content.filter(c=>c.parentId).forEach(c=>(byParent[c.parentId] ||= []).push(c));
+    const cmtHtml = c => `<div class="cmt ${c.parentId?'reply':''}">
+        <div class="head"><b>${esc(c.nickname)}</b><span>${dt(c.createdAt)}</span></div>
+        <div class="body">${esc(c.content)}</div>
+        <div class="rowa">
+          <button data-like="${c.id}" ${token()?'':'disabled'}>♥ ${c.likeCount}</button>
+          ${!c.parentId?`<button data-reply="${c.id}" data-name="${esc(c.nickname)}">답글</button>`:''}
+        </div></div>`;
+    $('#clist').innerHTML = roots.map(r=>cmtHtml(r)+(byParent[r.id]||[]).map(cmtHtml).join('')).join('')
+      || `<div class="empty">첫 댓글을 남겨보세요</div>`;
+
+    /* 좋아요 토글 */
+    let liked = p.isLiked;
+    $('#likeBtn').onclick = async ()=>{
+      if (!token()) { loginDlg.showModal(); return; }
+      try {
+        const r = await api(`/api/posts/${id}/like`, { method: liked?'DELETE':'POST' });
+        liked = r.isLiked;
+        $('#likeBtn').classList.toggle('on', liked);
+        $('#likeN').textContent = r.likeCount;
+      } catch(err){ toast(err.message); }
+    };
+    /* 답글 대상 지정 */
+    $('#clist').addEventListener('click', e=>{
+      const rb = e.target.closest('[data-reply]');
+      if (rb) {
+        state.replyTo = Number(rb.dataset.reply);
+        const box = $('#replyBox'); box.hidden = false;
+        box.innerHTML = `↳ ${esc(rb.dataset.name)}님에게 답글 <button type="button" id="cancelReply">취소</button>`;
+        $('#cancelReply').onclick = ()=>{ state.replyTo=null; box.hidden=true; };
+        $('#cbody').focus();
+      }
+      const lb = e.target.closest('[data-like]');
+      if (lb && token()) {
+        api(`/api/posts/${id}/comments/${lb.dataset.like}/like`, { method:'POST' })
+          .then(r=>{ lb.textContent = '♥ '+r.likeCount; })
+          .catch(err=>toast(err.message));
+      }
+    });
+    /* 댓글 등록 */
+    $('#cform').addEventListener('submit', async e=>{
+      e.preventDefault();
+      try {
+        await api(`/api/posts/${id}/comments`, { method:'POST',
+          body: JSON.stringify({ content: $('#cbody').value, parentId: state.replyTo }) });
+        viewPost(id);
+      } catch(err){ toast(err.message); }
+    });
+  } catch(err){ app.innerHTML = `<div class="empty">${esc(err.message)}</div>`; }
+}
+
+/* ---------- 글쓰기 ---------- */
+function viewWrite(){
+  if (!token()) { location.hash = '#/'; loginDlg.showModal(); return; }
+  $('#app').innerHTML = `<a class="back" href="#/">← 목록</a>
+    <form class="wform" id="wform">
+      <label>제목</label><input type="text" id="wTitle" maxlength="100" required>
+      <label>내용</label><textarea id="wBody" style="min-height:12rem" maxlength="10000" required></textarea>
+      <label>태그 (쉼표 구분, 선택)</label><input type="text" id="wTags" placeholder="spring, backend">
+      <div><button class="btn primary" type="submit">등록</button></div>
+    </form>`;
+  $('#wform').addEventListener('submit', async e=>{
+    e.preventDefault();
+    try {
+      const tags = $('#wTags').value.split(',').map(s=>s.trim()).filter(Boolean);
+      const r = await api('/api/posts', { method:'POST',
+        body: JSON.stringify({ title:$('#wTitle').value, content:$('#wBody').value, tags, fileIds:[] }) });
+      toast('등록되었습니다'); location.hash = '#/post/'+r.id;
+    } catch(err){ toast(err.message); }
+  });
+}
+
+/* ---------- 라우터 ---------- */
+function route(){
+  const h = location.hash || '#/';
+  const m = h.match(/^#\/post\/(\d+)/);
+  if (m) return viewPost(m[1]);
+  if (h.startsWith('#/write')) return viewWrite();
+  viewList();
+}
+window.addEventListener('hashchange', route);
+renderAuth();
+route();
+</script>
+</body>
+</html>
