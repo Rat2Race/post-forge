@@ -60,7 +60,7 @@ Decision:
 
 런타임 마이그레이션은 `app/src/main/resources/db/migration/`의 `VNNNN__description.sql`에 둔다.
 신규 빈 DB는 `V0000` baseline부터 실행하고, production-like 환경은 Flyway 적용 후 Hibernate `validate`로 mapping 불일치를 잡는다.
-로컬 개발도 `application.yml`과 `.env.local.example` 기준으로 Flyway가 기본 활성화되고 Hibernate는 `validate`를 사용한다. 기존 non-empty DB 편입만 아래의 1회성 baseline 절차를 따른다.
+로컬 개발도 `application.yml` 기준으로 Flyway가 기본 활성화되고 Hibernate는 `validate`를 사용한다. 기존 non-empty DB 편입만 아래의 1회성 baseline 절차를 따른다.
 
 각 migration은 primary owner 하나를 갖고 다음 header에 호환성, rollback, 검증 방법을 남긴다.
 
