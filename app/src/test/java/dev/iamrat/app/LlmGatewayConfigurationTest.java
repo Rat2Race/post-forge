@@ -24,10 +24,9 @@ class LlmGatewayConfigurationTest {
 
     @ParameterizedTest
     @ValueSource(strings = {"application.yml", "application-prod.yml"})
-    void bothProfilesUseGatewayTokenUnlessEmbeddingKeyOverridesIt(String resource) throws IOException {
+    void bothProfilesShareGatewayAndSupportEmbeddingOverrides(String resource) throws IOException {
         MockEnvironment env = load(resource)
-            .withProperty("LLM_CHAT_BASE_URL", "http://10.0.0.1:8088")
-            .withProperty("LLM_EMBEDDING_BASE_URL", "http://10.0.0.1:8088")
+            .withProperty("LLM_GATEWAY_BASE_URL", "http://10.0.0.1:8088")
             .withProperty("LLM_GATEWAY_TOKEN", "test-gateway-token")
             .withProperty("OPENAI_API_KEY", "test-openai-key");
 
@@ -36,7 +35,10 @@ class LlmGatewayConfigurationTest {
         assertThat(env.getProperty("app.llm.chat.api-key")).isEqualTo("test-gateway-token");
         assertThat(env.getProperty("app.llm.embedding.api-key")).isEqualTo("test-gateway-token");
 
-        env.withProperty("LLM_EMBEDDING_API_KEY", "test-embedding-key");
+        env.withProperty("LLM_EMBEDDING_API_KEY", "test-embedding-key")
+            .withProperty("LLM_EMBEDDING_BASE_URL", "https://api.openai.com");
+        assertThat(env.getProperty("app.llm.chat.base-url")).isEqualTo("http://10.0.0.1:8088");
+        assertThat(env.getProperty("app.llm.embedding.base-url")).isEqualTo("https://api.openai.com");
         assertThat(env.getProperty("app.llm.embedding.api-key")).isEqualTo("test-embedding-key");
         assertThat(env.getProperty("app.llm.chat.api-key")).isEqualTo("test-gateway-token");
     }
