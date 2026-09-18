@@ -2,13 +2,16 @@
 # Works with JetBrains HTTP Client and VS Code REST Client style variables.
 # Keep real credentials in local IDE environment variables or replace the placeholders locally.
 
-@appBaseUrl = http://localhost:8080
-@gatewayBaseUrl = http://localhost:8088
+@appBaseUrl = https://api.iamrat.dev
+@gatewayBaseUrl = http://10.0.0.1:8088
 @gatewayToken = change-me
 @chatModel = qwen3:8b
 @accessToken = paste-access-token-here
 @monitoringUsername = monitor
 @monitoringPassword = monitor-secret
+@BASE_URL = https://api.iamrat.dev
+
+GET {{gatewayBaseUrl}}/health
 
 ### Gateway chat completion: verify raw OpenAI-compatible usage
 POST {{gatewayBaseUrl}}/v1/chat/completions
@@ -60,3 +63,10 @@ GET {{appBaseUrl}}/actuator/health
 ### Actuator prometheus: verify ai_text_generation_* metrics
 GET {{appBaseUrl}}/actuator/prometheus
 Authorization: Basic {{monitoringUsername}} {{monitoringPassword}}
+
+
+###
+# curl -sS -i "$BASE_URL/actuator/health"
+GET {{BASE_URL}}/actuator/health
+
+###

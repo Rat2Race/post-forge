@@ -81,6 +81,8 @@ public class LlmConfig {
     private ClientHttpRequestFactory timeoutRequestFactory(Duration connectTimeout, Duration readTimeout) {
         JdkClientHttpRequestFactory requestFactory = new JdkClientHttpRequestFactory(
             HttpClient.newBuilder()
+                // The gateway's HTTP parser mishandles h2c upgrades; use HTTP/1.1 for both models.
+                .version(HttpClient.Version.HTTP_1_1)
                 .connectTimeout(connectTimeout)
                 .build()
         );
