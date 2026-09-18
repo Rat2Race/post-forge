@@ -22,8 +22,8 @@ app:
       options:
         model: ${LLM_CHAT_MODEL:qwen3:8b}
     embedding:
-      base-url: ${LLM_EMBEDDING_BASE_URL:http://localhost:11434}
-      api-key: ${LLM_EMBEDDING_API_KEY:${OPENAI_API_KEY:}}
+      base-url: ${LLM_EMBEDDING_BASE_URL:${LLM_GATEWAY_BASE_URL:http://localhost:8088}}
+      api-key: ${LLM_EMBEDDING_API_KEY:${LLM_GATEWAY_TOKEN:${OPENAI_API_KEY:}}}
       connect-timeout: ${LLM_EMBEDDING_CONNECT_TIMEOUT:3s}
       read-timeout: ${LLM_EMBEDDING_READ_TIMEOUT:30s}
       options:

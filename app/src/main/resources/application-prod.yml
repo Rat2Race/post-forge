@@ -11,7 +11,7 @@ app:
         model: ${LLM_CHAT_MODEL}
     embedding:
       base-url: ${LLM_EMBEDDING_BASE_URL}
-      api-key: ${LLM_EMBEDDING_API_KEY:${OPENAI_API_KEY:}}
+      api-key: ${LLM_EMBEDDING_API_KEY:${LLM_GATEWAY_TOKEN:${OPENAI_API_KEY:}}}
       connect-timeout: ${LLM_EMBEDDING_CONNECT_TIMEOUT:3s}
       read-timeout: ${LLM_EMBEDDING_READ_TIMEOUT:30s}
       options:
