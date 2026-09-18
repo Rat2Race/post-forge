@@ -86,14 +86,19 @@ docker compose -f docker-compose.local.yml up -d
 전체 환경변수 목록의 정본은 [`.env.example`](./.env.example)입니다.
 실제 secret이 든 `.env`는 커밋하지 않습니다. `bootRun`은 루트 `.env`를 자동으로 읽습니다.
 
-로컬 LLM을 사용할 때 애플리케이션은 OpenAI-compatible gateway를 거쳐 Ollama/Qwen을 호출합니다.
-`LLM_CHAT_BASE_URL`에는 Ollama 자체 주소가 아니라 gateway 주소를 설정합니다.
+로컬 LLM을 사용할 때 채팅과 임베딩 모두 OpenAI-compatible gateway를 거쳐 Ollama를 호출합니다.
+`LLM_CHAT_BASE_URL`과 `LLM_EMBEDDING_BASE_URL`을 동일한 gateway 주소(예: `http://10.0.0.1:8088`)로 설정합니다.
+`LLM_GATEWAY_TOKEN`은 두 요청의 인증에 공통으로 사용합니다. 개별 키가 필요할 때만 `LLM_CHAT_API_KEY` 또는
+`LLM_EMBEDDING_API_KEY`를 지정하고, 공용 토큰을 사용할 때는 이 두 항목을 빈 값으로 선언하지 말고 생략합니다.
+게이트웨이에 `/v1/embeddings`를 지원하는 버전을 먼저 배포해야 합니다. 채팅 모델 `qwen3:8b`,
+임베딩 모델 `bge-m3`, 임베딩 차원 `1024`는 유지합니다.
+별도 임베딩 제공자로 전환할 때는 임베딩 주소·모델·`LLM_EMBEDDING_API_KEY`를 함께 지정합니다.
 
 ```text
 PostForge app
 -> OpenAI-compatible LLM gateway
 -> Ollama
--> Qwen model
+-> Qwen (chat) / bge-m3 (embedding)
 ```
 
 ## Test
