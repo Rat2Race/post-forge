@@ -284,7 +284,7 @@ Source는 “수집을 실행할지” 결정하지 않고, 결과를 DB에 저�
 
 | 작업 | 기본 주기 | 활성화 조건 | 주기 환경변수 |
 | --- | --- | --- | --- |
-| 뉴스 수집·초안 작성·자동 게시 | 매시 30분 (`0 30 * * * *`) | `NAVER_NEWS_ENABLED=true`, `INGEST_NEWS_LAUNCH_SCHEDULER_ENABLED=true` | `INGEST_NEWS_LAUNCH_CRON` |
+| 뉴스 수집·초안 작성·자동 게시 | 10분마다 (`0 */10 * * * *`) | `NAVER_NEWS_ENABLED=true`, `INGEST_NEWS_LAUNCH_SCHEDULER_ENABLED=true` | `INGEST_NEWS_LAUNCH_CRON` |
 | 전날 뉴스의 데일리 포스트 게시 | 매일 **06:00** (`0 0 6 * * *`) | `INGEST_NEWS_DIGEST_SCHEDULER_ENABLED=true` | `INGEST_NEWS_DIGEST_CRON` |
 
 설정 위치는 `ingest.news.launch.scheduler.enabled`·`ingest.news.launch.cron`, `ingest.news.digest.scheduler.enabled`·`ingest.news.digest.cron`이다. 기본값과 전체 환경변수는 [application.yml](../../app/src/main/resources/application.yml), [.env.example](../../.env.example)을 따른다. 활성화 전 Naver 인증, LLM, PostgreSQL/PgVector 연결과 수집 키워드를 준비한다. 데일리 실행 자체는 이미 게시된 글과 LLM을 사용하므로 Naver 수집이 꺼져 있어도 실행할 수 있다.
