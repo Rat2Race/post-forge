@@ -140,7 +140,7 @@ ingest:
     launch:
       scheduler:
         enabled: ${INGEST_NEWS_LAUNCH_SCHEDULER_ENABLED:false}
-      cron: ${INGEST_NEWS_LAUNCH_CRON:0 30 * * * *}
+      cron: ${INGEST_NEWS_LAUNCH_CRON:0 */10 * * * *}
     digest:
       scheduler:
         enabled: ${INGEST_NEWS_DIGEST_SCHEDULER_ENABLED:false}

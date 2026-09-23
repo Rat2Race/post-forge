@@ -22,7 +22,7 @@ public class LaunchNewsPublishScheduler {
     private final TrackedKeywordRepository trackedKeywordRepository;
     private final PublishLaunchNewsUseCase publishLaunchNewsUseCase;
 
-    @Scheduled(cron = "${ingest.news.launch.cron:0 30 * * * *}", zone = "Asia/Seoul")
+    @Scheduled(cron = "${ingest.news.launch.cron:0 */10 * * * *}", zone = "Asia/Seoul")
     public void publishTrackedLaunchNews() {
         trackedKeywordRepository.findByEnabledTrue()
             .forEach(this::publishLaunchNews);
