@@ -63,58 +63,54 @@ PostForge는 외부 뉴스를 수집하고 분야별로 선별한 뒤, LLM으로
 관계 시각화는 [MVP ERD](./docs/database/postforge-mvp-erd.md)를 봅니다.
 
 신규 DB는 Flyway `V0000__baseline_schema.sql` 이후 증분 migration을 적용합니다.
-운영 환경은 `ddl-auto=validate`로 entity와 schema의 일치만 검증합니다.
+모든 프로필은 `ddl-auto=validate`로 entity와 schema의 일치만 검증합니다.
 
 Endpoint, DTO, status, 인증 조건의 정본은 [API 명세](./docs/api/README.md)입니다.
 실행 중에는 [Swagger UI](http://localhost:8080/swagger-ui.html)에서 현재 OpenAPI schema를 확인할 수 있습니다.
 
 ## Local Run
 
-필수 도구는 Java 21+와 Docker Compose입니다. 환경변수 예제는 [`.env.example`](./.env.example) 하나를 사용합니다.
+필수 도구는 Java 21+, Docker Compose, [Ollama](https://ollama.com)입니다.
+
+설정은 세 층입니다. `application.yml`은 공통이고, `application-local.yml`·`application-prod.yml`에는 환경마다 값이
+달라야 하는 항목(DB·Redis 호스트, LLM 주소·모델 기본값, 메일 서버, 프록시 헤더)만 둡니다. 프로필을 지정하지 않으면
+`local`이며, 운영은 `SPRING_PROFILES_ACTIVE=prod`로 바꿉니다.
+
+| | local | prod |
+| --- | --- | --- |
+| 프로필 설정 | `application-local.yml` (커밋) | `application-prod.yml` (커밋 안 함, 배포 호스트에서 컨테이너에 마운트) |
+| 환경변수 | `.env.local` (커밋 안 함) | `.env` (커밋 안 함, compose `env_file`) |
+| compose | `docker-compose.local.yml` (커밋) | `docker-compose.prod.yml` (커밋 안 함) |
+
+[`.env.example`](./.env.example)은 두 환경에서 쓰는 변수명만 값 없이 나열합니다. 로컬은 주소·DB 계정·JWT·소셜 로그인·S3·
+모니터링·네이버 API 값만 채우면 됩니다. LLM 주소·모델, Redis 호스트, 메일 서버는 `application-local.yml` 기본값
+(Ollama `localhost:11434`의 `qwen3:8b`·`bge-m3`, Redis `localhost`, Mailpit `localhost:1025`)을 쓰므로 비워 둡니다.
 
 ```bash
-cp .env.example .env
+cp .env.example .env.local                                               # 값 채우기
+ollama pull qwen3:8b && ollama pull bge-m3
+docker compose --env-file .env.local -f docker-compose.local.yml up -d   # PostgreSQL(pgvector), Redis, Mailpit
+./gradlew :app:bootRun                                                   # 프로필 local, 루트의 .env.local 을 읽음
 ```
 
-`.env.example`에는 직접 지정할 주소·모델명·인증값만 두었습니다. 복사한 `.env`에 실행 환경의 값을 입력한 뒤 실행합니다.
-타임아웃·로그 수준·Flyway·스케줄 등은 `application.yml`과 `application-prod.yml`의 기본값을 사용합니다.
-기본값을 바꿔야 할 때만 해당 환경변수를 `.env`에 추가합니다.
-`LLM_GATEWAY_TOKEN`과 네이버 API 인증값은 해당 연동에 필요하므로 예제에 포함합니다.
-뉴스 수집·스케줄러는 기본 비활성이며, 사용할 때만 설정 파일의 활성화 변수를 추가합니다.
-
-```bash
-docker compose -f docker-compose.local.yml up -d
-./gradlew :app:bootRun
-```
-
-첫 부팅 시 Flyway가 `db/migration`의 baseline(V0000)을 적용해 스키마를 만들고, Hibernate는 `validate`로
+첫 부팅 시 Flyway가 `db/migration`의 baseline(V0000)부터 적용해 스키마를 만들고, Hibernate는 `validate`로
 엔티티와 스키마가 일치하는지만 검사합니다. 부팅 확인은 `curl localhost:8080/actuator/health`.
+인증 메일은 실제로 발송되지 않고 [Mailpit](http://localhost:8025)에 쌓입니다. 데모 계정과 게시글은 `scripts/local-demo-seed.sql`로 넣습니다.
 
-로컬·운영 환경은 같은 변수 목록을 사용하고 주소와 인증값을 환경에 맞게 설정합니다.
-외부 연동(소셜 로그인, 메일 발송, S3 업로드, 뉴스 수집)에는 해당 서비스의 인증값이 필요합니다.
-실제 secret이 든 `.env`는 커밋하지 않습니다. `bootRun`은 루트 `.env`를 자동으로 읽습니다.
-
-기존 `.env`는 예제가 바뀌어도 자동 갱신되지 않습니다. 배포 시 새 항목만 병합하고 기존 비밀키는 유지합니다.
-`prod`에서는 공용 주소 `LLM_GATEWAY_BASE_URL`과 모델명 `LLM_CHAT_MODEL`, `LLM_EMBEDDING_MODEL`을 지정합니다.
-컨테이너에서 LLM 주소는 앱 컨테이너가 접근할 수 있는 주소여야 합니다. Redis는 Compose 서비스명 `redis`를 사용합니다.
-기본 실행 설정은 루트 `.env`를 읽으며 `.env.local`을 자동으로 읽지는 않습니다. `.env` 변경 후에는 앱 컨테이너를 재생성해야 반영됩니다.
-
-로컬 LLM을 사용할 때 채팅과 임베딩 모두 OpenAI-compatible gateway를 거쳐 Ollama를 호출합니다.
-`LLM_GATEWAY_BASE_URL`에 gateway 주소(예: `http://10.0.0.1:8088`)를 한 번만 설정합니다.
-`LLM_GATEWAY_TOKEN`은 두 요청의 인증에 공통으로 사용합니다. 기본 예제에는 이 공용 주소와 토큰만 둡니다.
-기존 개별 설정은 계속 지원합니다. 별도 서버를 사용할 때만 `LLM_CHAT_BASE_URL`/`LLM_CHAT_API_KEY` 또는
-`LLM_EMBEDDING_BASE_URL`/`LLM_EMBEDDING_API_KEY`를 추가하면 공용 설정보다 우선합니다.
-공용 설정을 사용할 때는 개별 변수를 빈 값으로 선언하지 말고 생략합니다.
-게이트웨이에 `/v1/embeddings`를 지원하는 버전을 먼저 배포해야 합니다. 채팅 모델 `qwen3:8b`,
-임베딩 모델 `bge-m3`, 임베딩 차원 `1024`는 유지합니다.
-별도 임베딩 제공자로 전환할 때는 임베딩 주소·모델·`LLM_EMBEDDING_API_KEY`를 함께 지정합니다.
+LLM은 로컬에서 Ollama를 직접 호출하고 운영에서는 OpenAI-compatible gateway를 거칩니다. 두 환경 모두 공용 주소
+`LLM_GATEWAY_BASE_URL`/`LLM_GATEWAY_TOKEN`과, 그보다 우선하는 개별 주소 `LLM_CHAT_BASE_URL`/`LLM_CHAT_API_KEY`,
+`LLM_EMBEDDING_BASE_URL`/`LLM_EMBEDDING_API_KEY`로 덮어쓸 수 있습니다. 운영은 기본값이 없어 `LLM_GATEWAY_BASE_URL`,
+`LLM_CHAT_MODEL`, `LLM_EMBEDDING_MODEL`이 빠지면 기동에 실패합니다. 임베딩 차원 `1024`는 `vector_store` 스키마와 묶여 있으므로 유지합니다.
 
 ```text
-PostForge app
--> OpenAI-compatible LLM gateway
--> Ollama
--> Qwen (chat) / bge-m3 (embedding)
+local: PostForge app -> Ollama(localhost:11434) -> qwen3:8b (chat) / bge-m3 (embedding)
+prod:  PostForge app -> OpenAI-compatible LLM gateway -> Ollama -> qwen3:8b / bge-m3
 ```
+
+운영 배포 호스트에는 `docker-compose.prod.yml`, `.env`, `application-prod.yml`을 같은 디렉터리에 둡니다. compose가
+`application-prod.yml`을 `/app/config/`에 마운트하므로 이미지를 다시 만들지 않고 설정을 바꿀 수 있습니다.
+`.env`는 예제가 바뀌어도 자동 갱신되지 않으므로 배포 시 새 항목만 병합하고 기존 비밀키는 유지합니다.
+두 파일을 바꾼 뒤에는 앱 컨테이너를 재생성해야 반영됩니다.
 
 ## Test
 
@@ -159,3 +155,4 @@ GitHub push
 ## License
 
 No license file is currently included. Reuse and distribution are controlled by the repository owner.
+

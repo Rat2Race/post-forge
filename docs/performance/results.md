@@ -87,7 +87,7 @@ CPU가 여유 있는 상태에서 특정 조회 API만 느리면 DB 쿼리 수�
 | N+1 해결 후 | 6042/6042 | 285.04ms | 195.83ms | 191.04ms | 1.40s |
 | batch size 설정 후 | 7416/7416 | 180.75ms | 104.47ms | 97.98ms | 864.34ms |
 
-`batch size 설정`은 `hibernate.default_batch_fetch_size: 1000`(`app/src/main/resources/application.yml`, `application-prod.yml`)이며, 재발 방지는 `board/src/test/java/dev/iamrat/board/integration/BoardNPlusOneRegressionTest.java`가 강제한다(게시글 목록·댓글 목록 조회의 Hibernate prepared statement 수가 page size 1→20에서 +2를 넘지 않아야 함).
+`batch size 설정`은 `hibernate.default_batch_fetch_size: 1000`(`app/src/main/resources/application.yml`)이며, 재발 방지는 `board/src/test/java/dev/iamrat/board/integration/BoardNPlusOneRegressionTest.java`가 강제한다(게시글 목록·댓글 목록 조회의 Hibernate prepared statement 수가 page size 1→20에서 +2를 넘지 않아야 함).
 
 ## Redis 캐시 벤치마크
 
