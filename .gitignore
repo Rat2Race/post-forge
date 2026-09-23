@@ -25,10 +25,15 @@ dist/
 # Module generated docs
 */src/main/resources/docs/
 
-# env
+# env — 값이 든 env 파일은 전부 제외한다. 변수명만 있는 예제만 커밋한다.
 .env
 .env.*
+*.env
 !.env.example
+
+# prod 전용 — 레포에 두지 않는다. 배포 호스트가 관리한다.
+docker-compose.prod.yml
+**/application-prod.yml
 
 # Gemini CLI internal files
 .omx/
