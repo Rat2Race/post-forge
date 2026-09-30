@@ -18,7 +18,7 @@ spring:
         initialize-schema: false
 
 source:
-  naver-news:
+  google-news:
     enabled: false
 
 ingest:

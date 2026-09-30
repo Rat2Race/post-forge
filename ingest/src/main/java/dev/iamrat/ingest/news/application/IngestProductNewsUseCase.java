@@ -22,7 +22,7 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class IngestProductNewsUseCase {
 
-    private static final String SOURCE = "naver-news";
+    private static final String SOURCE = "google-news";
     private static final List<String> DEFAULT_TOPICS = List.of(
         "신제품",
         "출시",

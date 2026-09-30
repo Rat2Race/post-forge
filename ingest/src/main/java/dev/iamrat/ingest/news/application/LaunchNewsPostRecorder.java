@@ -57,7 +57,7 @@ public class LaunchNewsPostRecorder {
         return new PostReferenceLinkCommand(
             postId,
             candidate.keyword(),
-            PostReferenceProvider.NAVER_NEWS,
+            PostReferenceProvider.GOOGLE_NEWS,
             candidate.canonicalUrl(),
             candidate.originalUrl(),
             candidate.sourceName(),

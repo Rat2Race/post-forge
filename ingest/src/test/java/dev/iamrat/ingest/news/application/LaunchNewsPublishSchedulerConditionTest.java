@@ -20,23 +20,23 @@ class LaunchNewsPublishSchedulerConditionTest {
     void registersSchedulerOnlyWhenBothFlagsAreTrue() {
         runner.withPropertyValues(
             "ingest.news.launch.scheduler.enabled=true",
-            "source.naver-news.enabled=true"
+            "source.google-news.enabled=true"
         ).run(context -> assertThat(context).hasSingleBean(LaunchNewsPublishScheduler.class));
     }
 
     @Test
     @DisplayName("뉴스 수집이 꺼져 있으면 스케줄러 플래그가 켜져 있어도 배치 bean을 만들지 않는다")
-    void doesNotRegisterSchedulerWhenNaverSourceIsDisabled() {
+    void doesNotRegisterSchedulerWhenGoogleNewsSourceIsDisabled() {
         runner.withPropertyValues(
             "ingest.news.launch.scheduler.enabled=true",
-            "source.naver-news.enabled=false"
+            "source.google-news.enabled=false"
         ).run(context -> assertThat(context).doesNotHaveBean(LaunchNewsPublishScheduler.class));
     }
 
     @Test
     @DisplayName("스케줄러 플래그가 없으면 배치 bean을 만들지 않는다")
     void doesNotRegisterSchedulerWhenSchedulerFlagIsMissing() {
-        runner.withPropertyValues("source.naver-news.enabled=true")
+        runner.withPropertyValues("source.google-news.enabled=true")
             .run(context -> assertThat(context).doesNotHaveBean(LaunchNewsPublishScheduler.class));
     }
 }

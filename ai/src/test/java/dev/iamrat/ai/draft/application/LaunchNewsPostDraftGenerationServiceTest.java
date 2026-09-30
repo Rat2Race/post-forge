@@ -61,7 +61,7 @@ class LaunchNewsPostDraftGenerationServiceTest {
         given(searchPort.searchSimilar(anyString(), eq(5))).willReturn(List.of(
             "제목: 갤럭시북 이전 모델 출시\n링크: https://example.com/previous\n발행일: 2025-06-21"
         ));
-        given(textGenerationClient.generate(anyString(), anyString())).willReturn("갤럭시북 신제품 출시 소식입니다.");
+        given(textGenerationClient.generateForPublishing(anyString(), anyString())).willReturn("갤럭시북 신제품 출시 소식입니다.");
 
         Optional<LaunchNewsPostDraft> draft = service.generate(command());
 
@@ -73,7 +73,7 @@ class LaunchNewsPostDraftGenerationServiceTest {
         ArgumentCaptor<String> systemPromptCaptor = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<String> userPromptCaptor = ArgumentCaptor.forClass(String.class);
         verify(searchPort).searchSimilar("갤럭시북 갤럭시북 신제품 출시", 5);
-        verify(textGenerationClient).generate(systemPromptCaptor.capture(), userPromptCaptor.capture());
+        verify(textGenerationClient).generateForPublishing(systemPromptCaptor.capture(), userPromptCaptor.capture());
         assertThat(systemPromptCaptor.getValue())
             .contains("concise Korean public board post")
             .contains("Do not invent specs, prices, availability, or purchase recommendations")
@@ -91,12 +91,12 @@ class LaunchNewsPostDraftGenerationServiceTest {
     @DisplayName("관련 문서가 없어도 현재 기사만 근거로 초안을 생성한다")
     void generate_whenNoRelatedContext_usesPrimaryArticleOnly() {
         given(searchPort.searchSimilar(anyString(), eq(5))).willReturn(List.of());
-        given(textGenerationClient.generate(anyString(), anyString())).willReturn("현재 기사 기반 초안");
+        given(textGenerationClient.generateForPublishing(anyString(), anyString())).willReturn("현재 기사 기반 초안");
 
         assertThat(service.generate(command())).isPresent();
 
         ArgumentCaptor<String> userPromptCaptor = ArgumentCaptor.forClass(String.class);
-        verify(textGenerationClient).generate(anyString(), userPromptCaptor.capture());
+        verify(textGenerationClient).generateForPublishing(anyString(), userPromptCaptor.capture());
         assertThat(userPromptCaptor.getValue())
             .contains("Primary current news article")
             .contains("No related stored context was found")
@@ -107,7 +107,7 @@ class LaunchNewsPostDraftGenerationServiceTest {
     @DisplayName("생성 클라이언트가 실패하면 빈 결과를 반환한다")
     void generate_returnsEmptyWhenClientFails() {
         given(searchPort.searchSimilar(anyString(), eq(5))).willReturn(List.of());
-        given(textGenerationClient.generate(anyString(), anyString())).willThrow(new IllegalStateException("boom"));
+        given(textGenerationClient.generateForPublishing(anyString(), anyString())).willThrow(new IllegalStateException("boom"));
 
         assertThat(service.generate(command())).isEmpty();
     }
@@ -152,7 +152,7 @@ class LaunchNewsPostDraftGenerationServiceTest {
     @DisplayName("생성 결과가 거절 문구로 sanitize되면 public 초안으로 반환하지 않는다")
     void generate_whenSanitizedOutputIsRefusal_returnsEmpty() {
         given(searchPort.searchSimilar(anyString(), eq(5))).willReturn(List.of());
-        given(textGenerationClient.generate(anyString(), anyString()))
+        given(textGenerationClient.generateForPublishing(anyString(), anyString()))
             .willReturn("OPENAI_API_KEY=sk-proj-secret-value");
         given(aiSafetyGuard.sanitizeOutput("OPENAI_API_KEY=sk-proj-secret-value"))
             .willReturn(REFUSAL);
@@ -176,7 +176,7 @@ class LaunchNewsPostDraftGenerationServiceTest {
             "2026-06-21"
         );
         given(searchPort.searchSimilar(anyString(), eq(5))).willReturn(List.of());
-        given(textGenerationClient.generate(anyString(), anyString())).willReturn(content);
+        given(textGenerationClient.generateForPublishing(anyString(), anyString())).willReturn(content);
 
         LaunchNewsPostDraft draft = service.generate(command).orElseThrow();
 
@@ -203,7 +203,7 @@ class LaunchNewsPostDraftGenerationServiceTest {
     @DisplayName("본문이 저장 한계를 넘으면 잘라서 담는다")
     void generate_truncatesContentToStorageLimit() {
         given(searchPort.searchSimilar(anyString(), eq(5))).willReturn(List.of());
-        given(textGenerationClient.generate(anyString(), anyString()))
+        given(textGenerationClient.generateForPublishing(anyString(), anyString()))
             .willReturn("가".repeat(10_500));
 
         Optional<LaunchNewsPostDraft> draft = service.generate(command());

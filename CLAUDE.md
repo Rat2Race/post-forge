@@ -17,7 +17,7 @@ Gradle modular monolith. 의존성 허용 표와 새 코드 배치 기준은 [mo
 | `board` | 게시글·댓글·좋아요·조회수·파일 |
 | `ai` | `chat`·`search`(RAG), `draft`(뉴스·데일리 포스트 초안 생성) |
 | `ingest` | `document`(pgvector 적재), `news`(뉴스 수집·선별·스케줄 게시·데일리 종합) |
-| `source` | 외부 뉴스 source adapter (Naver API HUB News) |
+| `source` | 외부 뉴스 source adapter (Google News RSS, 실험용) |
 
 이전 제품 기능을 제거한 배경은 [ADR-004](docs/decisions/adr-004-scope-reduction.md)에 이력으로 보존한다. 새 작업의 범위는 현재 제품 정의와 실제 코드에서 판단한다.
 

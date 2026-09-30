@@ -14,7 +14,7 @@ import org.springframework.stereotype.Component;
 @Component
 @RequiredArgsConstructor
 @ConditionalOnProperty(
-    name = {"ingest.news.launch.scheduler.enabled", "source.naver-news.enabled"},
+    name = {"ingest.news.launch.scheduler.enabled", "source.google-news.enabled"},
     havingValue = "true"
 )
 public class LaunchNewsPublishScheduler {

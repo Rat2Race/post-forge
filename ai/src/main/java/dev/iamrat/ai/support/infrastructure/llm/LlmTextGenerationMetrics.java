@@ -4,6 +4,7 @@ import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.DistributionSummary;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
+import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.metadata.Usage;
@@ -68,13 +69,10 @@ public class LlmTextGenerationMetrics {
             .register(meterRegistry);
     }
 
+    @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
     public class Observation {
 
         private final Timer.Sample sample;
-
-        private Observation(Timer.Sample sample) {
-            this.sample = sample;
-        }
 
         public void stop() {
             sample.stop(Timer.builder("ai_text_generation")

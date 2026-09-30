@@ -40,7 +40,7 @@ public class LaunchNewsPostDraftGenerationService implements LaunchNewsPostDraft
             if (aiSafetyGuard.shouldRefuse(relevantDocs.toArray(String[]::new))) {
                 return Optional.empty();
             }
-            String content = normalize(aiSafetyGuard.sanitizeOutput(textGenerationClient.generate(
+            String content = normalize(aiSafetyGuard.sanitizeOutput(textGenerationClient.generateForPublishing(
                 promptResourceLoader.load(LAUNCH_NEWS_DRAFT_SYSTEM_PROMPT_PATH),
                 userPrompt(command, relevantDocs)
             )));

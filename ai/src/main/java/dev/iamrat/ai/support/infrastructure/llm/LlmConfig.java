@@ -14,10 +14,12 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
 import org.springframework.http.client.ClientHttpRequestFactory;
 import org.springframework.http.client.JdkClientHttpRequestFactory;
 import org.springframework.util.StringUtils;
 import org.springframework.web.client.RestClient;
+import org.springframework.retry.support.RetryTemplate;
 
 @Configuration
 @EnableConfigurationProperties(LlmProperties.class)
@@ -38,6 +40,17 @@ public class LlmConfig {
     }
 
     @Bean
+    @Qualifier("llmPublishingApi")
+    public OpenAiApi llmPublishingApi() {
+        return compatibleApi(
+            llmProperties.getChat().getBaseUrl(),
+            llmProperties.chatApiKey(),
+            llmProperties.getChat().getConnectTimeout(),
+            llmProperties.getChat().getPublishingReadTimeout()
+        );
+    }
+
+    @Bean
     @Qualifier("llmEmbeddingApi")
     public OpenAiApi llmEmbeddingApi() {
         return compatibleApi(
@@ -49,12 +62,24 @@ public class LlmConfig {
     }
 
     @Bean
+    @Primary
     public OpenAiChatModel llmChatModel(@Qualifier("llmChatApi") OpenAiApi compatibleApi) {
         return OpenAiChatModel.builder()
             .openAiApi(compatibleApi)
             .defaultOptions(OpenAiChatOptions.builder()
                 .model(llmProperties.getChat().getOptions().getModel())
                 .build())
+            .build();
+    }
+
+    @Bean
+    public OpenAiChatModel llmPublishingChatModel(@Qualifier("llmPublishingApi") OpenAiApi compatibleApi) {
+        return OpenAiChatModel.builder()
+            .openAiApi(compatibleApi)
+            .defaultOptions(OpenAiChatOptions.builder()
+                .model(llmProperties.getChat().getOptions().getModel())
+                .build())
+            .retryTemplate(RetryTemplate.builder().maxAttempts(1).build())
             .build();
     }
 

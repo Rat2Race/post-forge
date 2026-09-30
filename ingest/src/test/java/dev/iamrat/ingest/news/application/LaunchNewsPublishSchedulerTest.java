@@ -61,7 +61,7 @@ class LaunchNewsPublishSchedulerTest {
             trackedKeyword("정상키워드")
         ));
         given(publishLaunchNewsUseCase.publish(any(LaunchNewsPublishCommand.class)))
-            .willThrow(new IllegalStateException("Naver 호출 실패"))
+            .willThrow(new IllegalStateException("피드 호출 실패"))
             .willReturn(new LaunchNewsPublishResult("정상키워드", List.of(1L), List.of()));
 
         scheduler.publishTrackedLaunchNews();

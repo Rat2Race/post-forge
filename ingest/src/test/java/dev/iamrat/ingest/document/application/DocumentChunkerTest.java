@@ -45,7 +45,7 @@ class DocumentChunkerTest {
     void toChunks_sameContent_producesSameChunkIds() {
         SourceDocumentCommand command = new SourceDocumentCommand(
             "갤럭시북 신제품이 출시됐다. ".repeat(200),
-            "naver-news",
+            "google-news",
             Map.of("newsUrl", "https://n.news.naver.com/article/001/1")
         );
 
@@ -61,7 +61,7 @@ class DocumentChunkerTest {
     @DisplayName("chunk id는 임의값이 아니라 chunk 본문에서 유도한다")
     void toChunks_derivesIdFromChunkText() {
         List<Document> chunks = new DocumentChunker().toChunks(List.of(
-            new SourceDocumentCommand("첫 번째 기사", "naver-news", Map.of())
+            new SourceDocumentCommand("첫 번째 기사", "google-news", Map.of())
         ));
 
         Document chunk = chunks.getFirst();
@@ -75,7 +75,7 @@ class DocumentChunkerTest {
     void toChunks_repeatedChunkTextWithinOneDocument_keepsDistinctIds() {
         SourceDocumentCommand command = new SourceDocumentCommand(
             "갤럭시북 신제품이 출시됐다. ".repeat(200),
-            "naver-news",
+            "google-news",
             Map.of()
         );
 
@@ -89,10 +89,10 @@ class DocumentChunkerTest {
     @DisplayName("metadata가 달라도 본문이 같으면 같은 id로 덮어쓴다")
     void toChunks_sameTextDifferentMetadata_sharesId() {
         List<Document> first = new DocumentChunker().toChunks(List.of(
-            new SourceDocumentCommand("같은 본문", "naver-news", Map.of("keyword", "갤럭시북"))
+            new SourceDocumentCommand("같은 본문", "google-news", Map.of("keyword", "갤럭시북"))
         ));
         List<Document> second = new DocumentChunker().toChunks(List.of(
-            new SourceDocumentCommand("같은 본문", "naver-news", Map.of("keyword", "아이폰"))
+            new SourceDocumentCommand("같은 본문", "google-news", Map.of("keyword", "아이폰"))
         ));
 
         assertThat(first.getFirst().getId()).isEqualTo(second.getFirst().getId());
