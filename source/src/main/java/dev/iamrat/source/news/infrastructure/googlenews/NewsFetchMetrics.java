@@ -1,4 +1,4 @@
-package dev.iamrat.source.news.infrastructure.naver;
+package dev.iamrat.source.news.infrastructure.googlenews;
 
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -9,19 +9,21 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClientResponseException;
 
 @Component
-public class NaverNewsMetrics {
+public class NewsFetchMetrics {
 
-    private static final String FETCH_TIMER = "external_naver_fetch";
-    private static final String SUCCESS_COUNTER = "external_naver_fetch_success_total";
-    private static final String FAILURE_COUNTER = "external_naver_fetch_failure_total";
-    private static final String ITEMS_COUNTER = "external_naver_fetch_items_total";
+    private static final String FETCH_TIMER = "external_news_fetch";
+    private static final String SUCCESS_COUNTER = "external_news_fetch_success_total";
+    private static final String FAILURE_COUNTER = "external_news_fetch_failure_total";
+    private static final String ITEMS_COUNTER = "external_news_fetch_items_total";
     private static final String API = "news";
 
     private final MeterRegistry meterRegistry;
 
-    public NaverNewsMetrics(MeterRegistry meterRegistry) {
+    public NewsFetchMetrics(MeterRegistry meterRegistry) {
         this.meterRegistry = meterRegistry;
-        registerIdleMeters();
+        counter(SUCCESS_COUNTER);
+        counter(ITEMS_COUNTER);
+        fetchTimer("success", "200");
     }
 
     public Observation start() {
@@ -43,22 +45,13 @@ public class NaverNewsMetrics {
     }
 
     static String status(RuntimeException exception) {
-        if (exception instanceof RestClientResponseException responseException) {
-            return String.valueOf(responseException.getStatusCode().value());
-        }
-        return "none";
+        return exception instanceof RestClientResponseException response
+            ? String.valueOf(response.getStatusCode().value())
+            : "none";
     }
 
     private Counter counter(String name) {
-        return Counter.builder(name)
-            .tag("api", API)
-            .register(meterRegistry);
-    }
-
-    private void registerIdleMeters() {
-        counter(SUCCESS_COUNTER);
-        counter(ITEMS_COUNTER);
-        fetchTimer("success", "200");
+        return Counter.builder(name).tag("api", API).register(meterRegistry);
     }
 
     private Timer fetchTimer(String outcome, String status) {

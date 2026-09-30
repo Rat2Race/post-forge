@@ -17,9 +17,11 @@ import dev.iamrat.ai.support.prompt.PromptResourceLoader;
 import java.util.List;
 import java.util.Locale;
 import java.util.regex.Pattern;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 @Component
+@RequiredArgsConstructor
 public class AiSafetyGuard {
 
     private static final String REFUSAL_PROMPT_PATH = "prompts/refusal-security.md";
@@ -32,10 +34,6 @@ public class AiSafetyGuard {
     );
 
     private final PromptResourceLoader promptResourceLoader;
-
-    public AiSafetyGuard(PromptResourceLoader promptResourceLoader) {
-        this.promptResourceLoader = promptResourceLoader;
-    }
 
     public boolean shouldRefuse(String... inputs) {
         String text = normalize(inputs);

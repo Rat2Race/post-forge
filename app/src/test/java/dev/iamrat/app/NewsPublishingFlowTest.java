@@ -77,7 +77,7 @@ class NewsPublishingFlowTest {
             assertThat(stored).isNotEmpty();
             return stored.stream().map(SourceDocumentCommand::content).toList();
         });
-        when(model.generate(anyString(), anyString())).thenReturn("갤럭시북 신제품 출시 소식입니다.");
+        when(model.generateForPublishing(anyString(), anyString())).thenReturn("갤럭시북 신제품 출시 소식입니다.");
         when(posts.write(any())).thenAnswer(call -> {
             written.add(call.getArgument(0));
             return (long) written.size();
@@ -104,7 +104,7 @@ class NewsPublishingFlowTest {
         publisher.publish(command);
 
         ArgumentCaptor<String> prompt = ArgumentCaptor.forClass(String.class);
-        verify(model).generate(anyString(), prompt.capture());
+        verify(model).generateForPublishing(anyString(), prompt.capture());
         assertThat(prompt.getValue()).contains(stored.getFirst().content());
         verify(source).search(any(NewsSourceQuery.class));
         assertThat(written).extracting(PostWriteCommand::category)
@@ -119,6 +119,6 @@ class NewsPublishingFlowTest {
         publisher.publish(command);
         digestPublisher.publish(LocalDate.of(2026, 9, 8));
         assertThat(written).hasSize(2);
-        verify(model, times(2)).generate(anyString(), anyString());
+        verify(model, times(2)).generateForPublishing(anyString(), anyString());
     }
 }

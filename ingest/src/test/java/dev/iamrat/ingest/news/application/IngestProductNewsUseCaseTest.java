@@ -110,7 +110,7 @@ class IngestProductNewsUseCaseTest {
         verify(ingestDocumentsUseCase).ingest(commandsCaptor.capture());
 
         SourceDocumentCommand command = commandsCaptor.getValue().getFirst();
-        assertThat(command.source()).isEqualTo("naver-news");
+        assertThat(command.source()).isEqualTo("google-news");
         assertThat(command.content()).contains("갤럭시북 신제품 출시", "갤럭시북 신제품이 공개됐다.");
         assertThat(command.metadata())
             .containsEntry("type", "PRODUCT_NEWS")

@@ -1,5 +1,6 @@
 package dev.iamrat.core.board.post;
 
 public enum PostReferenceProvider {
-    NAVER_NEWS
+    NAVER_NEWS,
+    GOOGLE_NEWS
 }

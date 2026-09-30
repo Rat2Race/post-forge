@@ -31,6 +31,9 @@ class LlmTextGenerationAdapterTest {
     @Mock
     private ChatModel chatModel;
 
+    @Mock
+    private ChatModel publishingChatModel;
+
     private SimpleMeterRegistry meterRegistry;
 
     @BeforeEach
@@ -111,9 +114,22 @@ class LlmTextGenerationAdapterTest {
             .count()).isEqualTo(1);
     }
 
+    @Test
+    @DisplayName("발행 생성은 발행 전용 모델을 사용하고 일반 채팅 모델은 호출하지 않는다")
+    void generateForPublishing_usesPublishingModel() {
+        LlmTextGenerationAdapter adapter = adapter("gateway");
+        given(publishingChatModel.call(any(Prompt.class))).willReturn(chatResponse("발행 초안", 10, 3));
+
+        assertThat(adapter.generateForPublishing("system", "user")).isEqualTo("발행 초안");
+
+        verify(publishingChatModel).call(any(Prompt.class));
+        org.mockito.Mockito.verifyNoInteractions(chatModel);
+    }
+
     private LlmTextGenerationAdapter adapter(String provider) {
         return new LlmTextGenerationAdapter(
             chatModel,
+            publishingChatModel,
             metrics(provider)
         );
     }

@@ -64,7 +64,7 @@ class DailyDigestDraftGenerationServiceTest {
     @Test
     @DisplayName("데일리 요약 초안은 md 기반 시스템 프롬프트로 생성하고 daily-digest 태그를 붙인다")
     void generate_returnsDraftFromAiContent() {
-        given(textGenerationClient.generate(anyString(), anyString()))
+        given(textGenerationClient.generateForPublishing(anyString(), anyString()))
             .willReturn("  오늘의 디지털 신제품 브리핑입니다.  ");
 
         Optional<DailyDigestDraft> draft = service.generate(command());
@@ -74,7 +74,7 @@ class DailyDigestDraftGenerationServiceTest {
         assertThat(draft.get().tags()).containsExactly("digital", "daily-digest");
         ArgumentCaptor<String> systemPromptCaptor = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<String> userPromptCaptor = ArgumentCaptor.forClass(String.class);
-        verify(textGenerationClient).generate(systemPromptCaptor.capture(), userPromptCaptor.capture());
+        verify(textGenerationClient).generateForPublishing(systemPromptCaptor.capture(), userPromptCaptor.capture());
         assertThat(systemPromptCaptor.getValue())
             .contains("daily briefing")
             .contains("Do not invent specs, prices, availability, or purchase recommendations");
@@ -88,7 +88,7 @@ class DailyDigestDraftGenerationServiceTest {
     @Test
     @DisplayName("생성 결과가 거절 문구로 sanitize되면 빈 결과를 반환한다")
     void generate_whenSanitizedOutputIsRefusal_returnsEmpty() {
-        given(textGenerationClient.generate(anyString(), anyString()))
+        given(textGenerationClient.generateForPublishing(anyString(), anyString()))
             .willReturn("OPENAI_API_KEY=sk-proj-secret-value");
         given(aiSafetyGuard.sanitizeOutput("OPENAI_API_KEY=sk-proj-secret-value"))
             .willReturn(REFUSAL);
@@ -100,7 +100,7 @@ class DailyDigestDraftGenerationServiceTest {
     @Test
     @DisplayName("생성 클라이언트가 실패하면 예외를 전파하지 않고 빈 결과를 반환한다")
     void generate_returnsEmptyWhenClientFails() {
-        given(textGenerationClient.generate(anyString(), anyString())).willThrow(new IllegalStateException("boom"));
+        given(textGenerationClient.generateForPublishing(anyString(), anyString())).willThrow(new IllegalStateException("boom"));
 
         assertThat(service.generate(command())).isEmpty();
     }
@@ -119,7 +119,7 @@ class DailyDigestDraftGenerationServiceTest {
     @Test
     @DisplayName("본문이 저장 한계를 넘으면 잘라서 담는다")
     void generate_truncatesContentToStorageLimit() {
-        given(textGenerationClient.generate(anyString(), anyString()))
+        given(textGenerationClient.generateForPublishing(anyString(), anyString()))
             .willReturn("가".repeat(10_500));
 
         Optional<DailyDigestDraft> draft = service.generate(command());

@@ -4,6 +4,7 @@ import com.sun.net.httpserver.HttpServer;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.ai.openai.OpenAiChatModel;
@@ -11,6 +12,7 @@ import org.springframework.ai.openai.OpenAiEmbeddingModel;
 import org.springframework.ai.openai.api.OpenAiApi;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class LlmConfigTest {
 
@@ -85,5 +87,35 @@ class LlmConfigTest {
         assertThat(chatApi).isNotSameAs(embeddingApi);
         assertThat(chatModel.getDefaultOptions().getModel()).isEqualTo("chat-model");
         assertThat(embeddingModel).isNotNull();
+    }
+
+    @Test
+    @DisplayName("발행 생성은 게이트웨이 503을 재시도하지 않는다")
+    void publishingModel_doesNotRetryGatewayFailure() throws Exception {
+        AtomicInteger calls = new AtomicInteger();
+        HttpServer server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
+        server.createContext("/v1/chat/completions", exchange -> {
+            calls.incrementAndGet();
+            exchange.getRequestBody().readAllBytes();
+            byte[] body = "{\"detail\":\"llm gateway busy\"}".getBytes(StandardCharsets.UTF_8);
+            exchange.getResponseHeaders().set("Content-Type", "application/json");
+            exchange.sendResponseHeaders(503, body.length);
+            try (var output = exchange.getResponseBody()) {
+                output.write(body);
+            }
+        });
+        server.start();
+        try {
+            LlmProperties properties = new LlmProperties();
+            properties.getChat().setBaseUrl("http://127.0.0.1:" + server.getAddress().getPort());
+            properties.getChat().getOptions().setModel("chat-model");
+            LlmConfig config = new LlmConfig(properties);
+
+            assertThatThrownBy(() -> config.llmPublishingChatModel(config.llmPublishingApi()).call("test"))
+                .hasMessageContaining("503");
+            assertThat(calls).hasValue(1);
+        } finally {
+            server.stop(0);
+        }
     }
 }

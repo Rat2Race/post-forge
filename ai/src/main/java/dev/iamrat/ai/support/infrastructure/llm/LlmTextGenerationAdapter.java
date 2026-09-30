@@ -4,25 +4,44 @@ import dev.iamrat.ai.support.application.TextGenerationClient;
 import java.util.List;
 
 import dev.iamrat.ai.support.infrastructure.llm.LlmTextGenerationMetrics.Observation;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.messages.SystemMessage;
 import org.springframework.ai.chat.messages.UserMessage;
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.chat.model.ChatResponse;
 import org.springframework.ai.chat.prompt.Prompt;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 
 @Slf4j
 @Component
-@RequiredArgsConstructor
 public class LlmTextGenerationAdapter implements TextGenerationClient {
 
     private final ChatModel chatModel;
+    private final ChatModel publishingChatModel;
     private final LlmTextGenerationMetrics metrics;
+
+    public LlmTextGenerationAdapter(
+        @Qualifier("llmChatModel") ChatModel chatModel,
+        @Qualifier("llmPublishingChatModel") ChatModel publishingChatModel,
+        LlmTextGenerationMetrics metrics
+    ) {
+        this.chatModel = chatModel;
+        this.publishingChatModel = publishingChatModel;
+        this.metrics = metrics;
+    }
 
     @Override
     public String generate(String systemPrompt, String userPrompt) {
+        return generate(chatModel, systemPrompt, userPrompt);
+    }
+
+    @Override
+    public String generateForPublishing(String systemPrompt, String userPrompt) {
+        return generate(publishingChatModel, systemPrompt, userPrompt);
+    }
+
+    private String generate(ChatModel model, String systemPrompt, String userPrompt) {
         Prompt prompt = new Prompt(List.of(
             new SystemMessage(systemPrompt),
             new UserMessage(userPrompt)
@@ -31,7 +50,7 @@ public class LlmTextGenerationAdapter implements TextGenerationClient {
         Observation observation = metrics.start(systemPrompt, userPrompt);
 
         try {
-            ChatResponse chatResponse = chatModel.call(prompt);
+            ChatResponse chatResponse = model.call(prompt);
             String response = chatResponse
                 .getResult()
                 .getOutput()

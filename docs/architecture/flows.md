@@ -27,7 +27,7 @@ presentation -> application -> domain
 
 ```text
 tracked keyword 또는 admin 요청
-  -> Naver 뉴스 검색
+  -> Google News RSS 검색 피드 (실험용)
   -> 링크 중복 제거 및 광고성 기사 제외 후 vector_store 적재
   -> 중복·콘텐츠·일일 상한 gate
   -> 관련 문서 검색 + LLM 초안 생성

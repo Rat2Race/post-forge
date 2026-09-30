@@ -70,7 +70,7 @@ class LaunchNewsPostRecorderTest {
         verify(referenceLinkWriter).write(referenceCommand.capture());
         assertThat(referenceCommand.getValue().postId()).isEqualTo(42L);
         assertThat(referenceCommand.getValue().keyword()).isEqualTo("갤럭시북");
-        assertThat(referenceCommand.getValue().provider()).isEqualTo(PostReferenceProvider.NAVER_NEWS);
+        assertThat(referenceCommand.getValue().provider()).isEqualTo(PostReferenceProvider.GOOGLE_NEWS);
         assertThat(referenceCommand.getValue().canonicalUrl())
             .isEqualTo("https://n.news.naver.com/article/001/1");
         assertThat(referenceCommand.getValue().publishedAt())

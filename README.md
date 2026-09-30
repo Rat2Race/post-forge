@@ -10,7 +10,7 @@ PostForge는 외부 뉴스를 수집하고 분야별로 선별한 뒤, LLM으로
 
 | 영역 | 현재 구현 |
 | --- | --- |
-| 뉴스 수집·자동 게시 | Naver API HUB News 수집, 중복·광고·출시 관련성 검사, LLM 초안 생성 후 게시 |
+| 뉴스 수집·자동 게시 | Google News RSS 검색 피드 수집(실험용), 중복·광고·출시 관련성 검사, LLM 초안 생성 후 게시 |
 | 분야 분류 | 수집 키워드 또는 수동 요청의 분야를 게시글에 적용하고 분야별로 조회 |
 | 데일리 포스트 | 전날 게시된 출시뉴스의 제목·요약을 LLM으로 종합해 분야별 게시글 생성 |
 | 인증 | JWT, Redis refresh token rotation, OAuth2, 이메일 인증, 로그인 보호 |
@@ -18,6 +18,7 @@ PostForge는 외부 뉴스를 수집하고 분야별로 선별한 뒤, LLM으로
 | AI / RAG | Spring AI, OpenAI-compatible LLM, PgVector 문서 검색, 수집 자료에 대한 RAG 채팅 |
 | 운영 기반 | Flyway baseline, Docker layered jar, 구조화 로그, Prometheus/Grafana |
 
+이 브랜치의 수집원은 Google News RSS 검색 피드다. 피드 자체가 개인·비상업 용도로 제한된다고 명시하므로 파이프라인 검증용이며 배포 소스가 아니다.
 현재 수집·게시 정책은 신제품 출시뉴스를 대상으로 하며, 뉴스 글은 `PRODUCT_LAUNCH_NEWS`, 데일리 글은 `DAILY_DIGEST`로 저장합니다.
 분야는 수집 설정에서 결정하고 LLM은 초안을 작성합니다. 스케줄 실행 안에서 수집부터 게시까지 처리하며, 초안을 별도 예약 대기열에 저장하지는 않습니다.
 뉴스 자동 게시는 기본 매시 30분, 데일리는 매일 06:00이고 두 스케줄러는 기본 비활성입니다.
@@ -83,7 +84,7 @@ Endpoint, DTO, status, 인증 조건의 정본은 [API 명세](./docs/api/README
 | compose | `docker-compose.local.yml` (커밋) | `docker-compose.prod.yml` (커밋 안 함) |
 
 [`.env.example`](./.env.example)은 두 환경에서 쓰는 변수명만 값 없이 나열합니다. 로컬은 주소·DB 계정·JWT·소셜 로그인·S3·
-모니터링·네이버 API 값만 채우면 됩니다. LLM 주소·모델, Redis 호스트, 메일 서버는 `application-local.yml` 기본값
+모니터링 값만 채우면 됩니다. Google News RSS는 키가 없고 `GOOGLE_NEWS_ENABLED=true`로 켭니다. LLM 주소·모델, Redis 호스트, 메일 서버는 `application-local.yml` 기본값
 (Ollama `localhost:11434`의 `qwen3:8b`·`bge-m3`, Redis `localhost`, Mailpit `localhost:1025`)을 쓰므로 비워 둡니다.
 
 ```bash

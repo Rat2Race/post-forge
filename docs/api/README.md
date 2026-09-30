@@ -5,7 +5,7 @@
 현재 제품 흐름은 뉴스 수집·분야별 선별·LLM 초안 작성·자동 게시와 전날 뉴스의 데일리 종합 게시다. 메일 구독 API는 아직 구현되지 않았다.
 
 - AI 채팅 실행 예시: [ai-chat-smoke.http](./ai-chat-smoke.http)
-- Naver source 실행 예시: [naver-source-smoke.http](./naver-source-smoke.http)
+- 뉴스 source 실행 예시: [news-source-smoke.http](./news-source-smoke.http)
 
 ## 공통 계약
 
@@ -244,11 +244,11 @@ Board의 게시글·댓글 path ID는 `\d+` 경로만 매핑한다. 숫자가 �
 
 | 흐름 | 입력 계약 — 필요한 이유 | routing·처리 | 출력 계약 | 실패·현재 상태 |
 | --- | --- | --- | --- | --- |
-| 뉴스 검색 | `NewsSourceQuery(keyword, displayCount, sort)` — 검색어, 최대 결과 수, provider 정렬. count는 기본 10·최대 100, sort 기본 `date`, 허용값 `date`/`sim` | 현재는 단일 `NaverNewsSourceClient`가 API HUB 인증 header, `/search/v1/news` 호출, 강조 태그 제거·텍스트 길이 제한·URL 검증·metric 기록 수행 | `List<NewsSourceItem>`; 정제 title/description/link/originalLink/publishedAt와 추적용 raw title/description | 기본 비활성. 활성화 시 API key ID/key가 없으면 시작 설정 검증 실패; 비활성 상태 호출이나 runtime credential 이상은 source 예외 |
+| 뉴스 검색 | `NewsSourceQuery(keyword, displayCount, sort)` — 검색어, 최대 결과 수, 정렬. count는 기본 10·최대 100, sort 기본 `date`, 허용값 `date`/`sim` | 현재는 단일 `GoogleNewsRssSourceClient`(실험용)가 `/rss/search?q=&hl=ko&gl=KR&ceid=KR:ko` 피드를 읽고, 제목의 " - 출처" 접미사 제거·HTML 제거·URL 검증·링크 중복 제거·metric 기록 수행. `date`는 pubDate 최신순, `sim`은 피드 순서. link와 originalLink는 모두 Google 리다이렉트 URL이고 description은 제목+출처명이다 | `List<NewsSourceItem>`; 정제 title/description/link/originalLink/publishedAt와 추적용 raw title/description | 기본 비활성. 키는 없다. 비활성 상태 호출은 source 예외. 피드는 개인·비상업 용도로 제한된다고 명시하므로 배포 소스로 쓰지 않는다 |
 
 Source는 “수집을 실행할지” 결정하지 않고, 결과를 DB에 저장하지도 않는다. 따라서 Source를 외부 데이터 보관소로 이해하면 안 되고, 외부 provider를 교체 가능하게 만드는 anti-corruption boundary로 이해하는 것이 정확하다.
 
-일반 테스트는 실서버를 호출하지 않는다. 실 API 확인은 `./gradlew :source:test -PnaverSmoke=true --tests '*NaverNewsSmokeTest'`로 명시적으로 실행한다. 이때만 루트 `.env`의 네이버 인증값을 읽으며 셸 환경변수가 우선한다. 플래그나 인증값이 없으면 스모크는 건너뛴다.
+일반 테스트는 실서버를 호출하지 않는다. 실 피드 확인은 `./gradlew :source:test -PgoogleNewsSmoke=true --tests '*GoogleNewsRssSmokeTest'`로 명시적으로 실행한다. 네트워크만 필요하다. 플래그가 없으면 스모크는 건너뛴다.
 
 ## Ingest
 
@@ -284,20 +284,20 @@ Source는 “수집을 실행할지” 결정하지 않고, 결과를 DB에 저�
 
 | 작업 | 기본 주기 | 활성화 조건 | 주기 환경변수 |
 | --- | --- | --- | --- |
-| 뉴스 수집·초안 작성·자동 게시 | 10분마다 (`0 */10 * * * *`) | `NAVER_NEWS_ENABLED=true`, `INGEST_NEWS_LAUNCH_SCHEDULER_ENABLED=true` | `INGEST_NEWS_LAUNCH_CRON` |
+| 뉴스 수집·초안 작성·자동 게시 | 10분마다 (`0 */10 * * * *`) | `GOOGLE_NEWS_ENABLED=true`, `INGEST_NEWS_LAUNCH_SCHEDULER_ENABLED=true` | `INGEST_NEWS_LAUNCH_CRON` |
 | 전날 뉴스의 데일리 포스트 게시 | 매일 **06:00** (`0 0 6 * * *`) | `INGEST_NEWS_DIGEST_SCHEDULER_ENABLED=true` | `INGEST_NEWS_DIGEST_CRON` |
 
-설정 위치는 `ingest.news.launch.scheduler.enabled`·`ingest.news.launch.cron`, `ingest.news.digest.scheduler.enabled`·`ingest.news.digest.cron`이다. 기본값과 전체 환경변수는 [application.yml](../../app/src/main/resources/application.yml), [.env.example](../../.env.example)을 따른다. 활성화 전 Naver 인증, LLM, PostgreSQL/PgVector 연결과 수집 키워드를 준비한다. 데일리 실행 자체는 이미 게시된 글과 LLM을 사용하므로 Naver 수집이 꺼져 있어도 실행할 수 있다.
+설정 위치는 `ingest.news.launch.scheduler.enabled`·`ingest.news.launch.cron`, `ingest.news.digest.scheduler.enabled`·`ingest.news.digest.cron`이다. 기본값과 전체 환경변수는 [application.yml](../../app/src/main/resources/application.yml), [.env.example](../../.env.example)을 따른다. 활성화 전 LLM, PostgreSQL/PgVector 연결과 수집 키워드를 준비한다. 데일리 실행 자체는 이미 게시된 글과 LLM을 사용하므로 뉴스 수집이 꺼져 있어도 실행할 수 있다.
 
 `tracked_keywords`는 뉴스 scheduler의 영속 실행 설정이다. 등록 API는 없고 DB에 직접 넣는다. 활성 row의 `keyword`, `displayCount`, `category`를 사용하며, 분야는 이 `category`(수동 게시에서는 요청의 `category`)로 정한다. LLM이 분야를 자동 판정하는 기능은 현재 없다. LLM은 선별된 기사의 본문·요약·태그 초안을 작성한다.
 
 뉴스 작업은 스케줄 실행 안에서 수집→벡터 적재→게시 후보 선별→LLM 초안→게시까지 처리한다. 수집 건수(`displayCount`, topic당 최대 100)와 게시 건수(`dailyCap`, 기본 3)는 별개다. 동일 수집 결과를 적재와 게시 후보에 함께 사용하되, 광고성 기사는 적재에서만 제외하고 게시 후보에는 남겨 `ADVERTISING` skip으로 보고한다. 초안을 저장해 별도 시각에 발행하는 예약 대기열은 없다.
 
-데일리는 **전날 00:00 이상, 당일 00:00 미만에 작성된 `PRODUCT_LAUNCH_NEWS` 게시글**의 제목·요약을 분야별로 종합해 `DAILY_DIGEST`로 게시한다. 기사 원문의 발행일이나 수집 원문 전체를 기준으로 하지 않는다. 수집 완료와 별개로 06:00에 실행하며, Naver·벡터 검색을 다시 호출하지 않는다. 대상 글이 없는 분야와 이미 데일리가 게시된 분야는 건너뛴다. 메일 발송은 향후 계획이다.
+데일리는 **전날 00:00 이상, 당일 00:00 미만에 작성된 `PRODUCT_LAUNCH_NEWS` 게시글**의 제목·요약을 분야별로 종합해 `DAILY_DIGEST`로 게시한다. 기사 원문의 발행일이나 수집 원문 전체를 기준으로 하지 않는다. 수집 완료와 별개로 06:00에 실행하며, 뉴스 피드·벡터 검색을 다시 호출하지 않는다. 대상 글이 없는 분야와 이미 데일리가 게시된 분야는 건너뛴다. 메일 발송은 향후 계획이다.
 
 게시 흐름은 적재 실패 시 중단한다. 적재 후 RAG 검색이나 LLM 생성이 실패하면 해당 기사는 `AI_GENERATION_FAILED`로 건너뛰고 게시 완료 기록을 남기지 않는다. 같은 요청의 재실행은 원본 자료를 재적재할 수 있지만, 이미 게시한 URL은 중복 gate에서 제외한다. 정상 검색 결과가 비어 있으면 주 기사 정보로만 초안을 작성한다.
 
-Naver News source가 비활성이면 두 news endpoint 호출은 현재 `500 INTERNAL_SERVER_ERROR`다. `enabled=true`인데 credential이 없으면 endpoint 호출 전 애플리케이션 설정 검증 단계에서 시작이 실패한다.
+Google News source가 비활성이면 두 news endpoint 호출은 현재 `500 INTERNAL_SERVER_ERROR`다.
 
 ### 응답 DTO
 
@@ -316,6 +316,6 @@ Naver News source가 비활성이면 두 news endpoint 호출은 현재 `500 INT
 | `PostCategory` | `GENERAL`, `DAILY_DIGEST`(분야별 데일리 뉴스 브리핑, system이 게시), `PRODUCT_LAUNCH_NEWS` |
 | `BoardCategory` | `GENERAL`, `DIGITAL`, `APPLIANCE`, `LIVING`, `HEALTH`, `BEAUTY`, `SPORTS` |
 | `PostPublishOrigin` | `USER`, `SYSTEM_BATCH`, `ADMIN_BACKFILL` |
-| `PostReferenceProvider` | `NAVER_NEWS` |
+| `PostReferenceProvider` | `NAVER_NEWS`(기존 행), `GOOGLE_NEWS` |
 | `LaunchNewsSkipReason` | `DUPLICATE_ARTICLE`, `ADVERTISING`, `UNKNOWN_SOURCE`, `MISSING_LAUNCH_KEYWORD`, `AI_GENERATION_FAILED`, `DAILY_CAP_EXCEEDED` |
 | `DailyDigestSkipReason` | `NO_SOURCE`, `ALREADY_PUBLISHED`, `AI_GENERATION_FAILED` |

@@ -22,6 +22,7 @@ app:
       api-key: ${LLM_CHAT_API_KEY:${LLM_GATEWAY_TOKEN:}}
       connect-timeout: ${LLM_CHAT_CONNECT_TIMEOUT:3s}
       read-timeout: ${LLM_CHAT_READ_TIMEOUT:60s}
+      publishing-read-timeout: ${LLM_PUBLISHING_READ_TIMEOUT:210s}
       options:
         model: ${LLM_CHAT_MODEL}
     embedding:
@@ -127,13 +128,13 @@ spring:
             user-name-attribute: id
 
 source:
-  naver-news:
-    enabled: ${NAVER_NEWS_ENABLED:false}
-    base-url: ${NAVER_API_HUB_BASE_URL:https://naverapihub.apigw.ntruss.com}
-    api-key-id: ${NAVER_API_HUB_API_KEY_ID:}
-    api-key: ${NAVER_API_HUB_API_KEY:}
-    connect-timeout: ${NAVER_API_HUB_CONNECT_TIMEOUT:3s}
-    read-timeout: ${NAVER_API_HUB_READ_TIMEOUT:10s}
+  google-news:
+    enabled: ${GOOGLE_NEWS_ENABLED:false}
+    base-url: ${GOOGLE_NEWS_BASE_URL:https://news.google.com}
+    language: ${GOOGLE_NEWS_LANGUAGE:ko}
+    country: ${GOOGLE_NEWS_COUNTRY:KR}
+    connect-timeout: ${GOOGLE_NEWS_CONNECT_TIMEOUT:3s}
+    read-timeout: ${GOOGLE_NEWS_READ_TIMEOUT:10s}
 
 ingest:
   news:

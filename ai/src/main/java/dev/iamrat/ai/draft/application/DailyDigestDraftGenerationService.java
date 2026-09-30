@@ -33,7 +33,7 @@ public class DailyDigestDraftGenerationService implements DailyDigestDraftGenera
         }
 
         try {
-            String content = normalize(aiSafetyGuard.sanitizeOutput(textGenerationClient.generate(
+            String content = normalize(aiSafetyGuard.sanitizeOutput(textGenerationClient.generateForPublishing(
                 promptResourceLoader.load(DAILY_DIGEST_SYSTEM_PROMPT_PATH),
                 userPrompt(command)
             )));
