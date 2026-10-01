@@ -69,6 +69,44 @@ class LlmConfigTest {
     }
 
     @Test
+    @DisplayName("reasoning-effort를 정하면 두 채팅 모델 요청에 싣고, 비우면 보내지 않는다")
+    void reasoningEffort_isSentOnlyWhenConfigured() throws Exception {
+        var bodies = new ConcurrentLinkedQueue<String>();
+        HttpServer server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
+        server.createContext("/v1/chat/completions", exchange -> {
+            bodies.add(new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8));
+            byte[] response = """
+                {"id":"test","object":"chat.completion","created":1,"model":"chat-model",
+                 "choices":[{"index":0,"message":{"role":"assistant","content":"ok"},"finish_reason":"stop"}],
+                 "usage":{"prompt_tokens":1,"completion_tokens":1,"total_tokens":2}}
+                """.getBytes(StandardCharsets.UTF_8);
+            exchange.getResponseHeaders().set("Content-Type", "application/json");
+            exchange.sendResponseHeaders(200, response.length);
+            try (var output = exchange.getResponseBody()) {
+                output.write(response);
+            }
+        });
+        server.start();
+        try {
+            LlmProperties properties = new LlmProperties();
+            properties.getChat().setBaseUrl("http://127.0.0.1:" + server.getAddress().getPort());
+            properties.getChat().getOptions().setModel("chat-model");
+            LlmConfig config = new LlmConfig(properties);
+
+            config.llmChatModel(config.llmChatApi()).call("test");
+            properties.getChat().getOptions().setReasoningEffort("none");
+            config.llmChatModel(config.llmChatApi()).call("test");
+            config.llmPublishingChatModel(config.llmPublishingApi()).call("test");
+
+            assertThat(bodies).hasSize(3);
+            assertThat(bodies.poll()).doesNotContain("reasoning_effort");
+            assertThat(bodies).allSatisfy(body -> assertThat(body).contains("\"reasoning_effort\":\"none\""));
+        } finally {
+            server.stop(0);
+        }
+    }
+
+    @Test
     @DisplayName("LLM 설정은 chat과 embedding용 compatible client를 분리해 만든다")
     void llmConfig_buildsSeparateChatAndEmbeddingModels() {
         LlmProperties properties = new LlmProperties();
