@@ -18,7 +18,9 @@ public class PromptResourceLoader {
         "prompts/daily-digest-system.md",
         "prompts/launch-news-draft-system.md",
         "prompts/refusal-security.md",
-        "prompts/safety-policy.md"
+        "prompts/safety-policy.md",
+        "prompts/study-question-system.md",
+        "prompts/study-student-system.md"
     );
 
     private final Map<String, String> prompts;

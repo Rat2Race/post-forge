@@ -2,7 +2,7 @@
 
 현재 `@RestController`, 요청·응답 DTO, `PostForgeAuthorizationRules`, 전역 예외 처리기를 기준으로 한 단일 명세다. Spring Security가 소유하는 `/oauth2/**`, `/login/oauth2/**`와 Swagger/static 경로는 제외한다.
 
-현재 제품 흐름은 뉴스 수집·분야별 선별·LLM 초안 작성·자동 게시와 전날 뉴스의 데일리 종합 게시다. 메일 구독 API는 아직 구현되지 않았다.
+현재 제품 흐름은 뉴스 수집·분야별 선별·LLM 초안 작성·자동 게시와 전날 뉴스의 데일리 종합 게시다. 메일 구독 API는 아직 구현되지 않았다. 사용자가 올린 자료로 학습하는 프로토타입은 [Study](#study)와 화면 `/study.html`에 있다.
 
 - AI 채팅 실행 예시: [ai-chat-smoke.http](./ai-chat-smoke.http)
 - 뉴스 source 실행 예시: [news-source-smoke.http](./news-source-smoke.http)
@@ -318,3 +318,68 @@ Google News source가 비활성이면 두 news endpoint 호출은 현재 `500 IN
 | `PostPublishOrigin` | `USER`, `SYSTEM_BATCH`, `ADMIN_BACKFILL` |
 | `LaunchNewsPublishResult.SkipReason` | `DUPLICATE_ARTICLE`, `ADVERTISING`, `UNKNOWN_SOURCE`, `MISSING_LAUNCH_KEYWORD`, `AI_GENERATION_FAILED`, `DAILY_CAP_EXCEEDED` |
 | `DailyDigestPublishResult.SkipReason` | `NO_SOURCE`, `ALREADY_PUBLISHED`, `AI_GENERATION_FAILED` |
+
+<a id="study"></a>
+## Study
+
+사용자가 올린 자료로 학습한다. LLM은 묻거나 제안만 하고 채점하지 않는다. 모든 데이터는 계정 소유이며, 남의 자료·문제는 `403`이 아니라 `404`로 숨긴다.
+
+### 엔드포인트
+
+| Endpoint | Auth | Parameters — 필요한 이유 | Success | Fail |
+| --- | --- | --- | --- | --- |
+| `POST /api/study/sources` | USER | body `SourceRequest` — 학습할 자료. 저장 직후 문제 생성을 비동기로 시작 | `201 IdResponse`; 상태는 `GENERATING` | `400 VALIDATION_ERROR`; 인증 `401/403` |
+| `GET /api/study/sources` | USER | 없음 | `200 List<SourceSummary>` 최신순 | 인증 `401/403` |
+| `GET /api/study/sources/{sourceId}` | USER | path `sourceId` | `200 SourceDetail`; 생성이 끝나면 `questionStatus=READY` | 남의 자료·없는 자료 `404 SOURCE_NOT_FOUND` |
+| `POST /api/study/sources/{sourceId}/questions` | USER | body `QuestionRequest` — 사용자가 만든 문제와 자료에서 그대로 옮긴 근거 | `201 IdResponse`; 바로 복습 대상 | 근거가 자료에 없음 `400 EVIDENCE_NOT_IN_SOURCE`; `404 SOURCE_NOT_FOUND` |
+| `POST /api/study/sources/{sourceId}/recalls` | USER | body `RecallRequest` — 빈 페이지에 쓴 글과 사용자가 직접 체크한 핵심 항목 번호 | `200 RecallResult` | 없는 항목 번호 `400 INVALID_KEY_POINT`; `404 SOURCE_NOT_FOUND` |
+| `POST /api/study/sources/{sourceId}/teachings` | USER | body `TeachRequest` — 자료를 설명한 글 | `200 TeachResponse`; LLM이 실패하면 설명에 빠진 핵심 항목을 되묻는 질문으로 대체 | `404 SOURCE_NOT_FOUND` |
+| `GET /api/study/today` | USER | 없음 | `200 List<DueQuestion>`; 복습 시각이 지난 내 문제 최대 20개, 오래된 순 | 인증 `401/403` |
+| `POST /api/study/questions/{questionId}/reviews` | USER | body `ReviewRequest` — 내 답과 자가 평가 | `200 ReviewResult`; 다음 상자와 복습 시각 | 아직 복습 시각 전(중복 제출 포함) `409 NOT_DUE_YET`; 동시 제출의 패자 `409 CONCURRENT_MODIFICATION`; `404 QUESTION_NOT_FOUND` |
+| `GET /api/study/records` | USER | 없음 | `200 List<RecordView>` 최신순 50개 | 인증 `401/403` |
+
+### 요청 DTO와 파라미터 이유
+
+| DTO.field | 제약 | 필요한 이유 |
+| --- | --- | --- |
+| `SourceRequest.title` | 필수, 100자 이하 | 목록과 기록에 표시 |
+| `SourceRequest.content` | 필수, 20000자 이하 | 문제·핵심 항목·근거 검증의 원문. LLM에는 앞 4000자만 보낸다 |
+| `QuestionRequest.question` | 필수, 500자 이하 | 문제를 직접 만드는 활동(생성 효과) |
+| `QuestionRequest.evidence` | 필수, 1000자 이하, 공백 차이를 빼고 자료에 그대로 있어야 함 | 어디서 온 문제든 근거가 자료에 있어야 복습 목록에 들어간다 |
+| `ReviewRequest.answer` | 10000자 이하, 선택 | 근거를 보기 전에 쓴 내 답을 기록 |
+| `ReviewRequest.grade` | 필수, `AGAIN`·`HARD`·`GOOD` | 시스템이 아니라 학습자가 판단한다 |
+| `RecallRequest.text` | 필수, 10000자 이하 | 빈 페이지에 떠올린 내용 |
+| `RecallRequest.recalledIndexes` | 선택, `SourceDetail.keyPoints`의 번호 | 자료와 대조해 학습자가 직접 체크한 항목 |
+| `TeachRequest.explanation` | 필수, 10000자 이하 | AI 학생이 되물을 설명 |
+
+### 응답 DTO
+
+| DTO | 필드 |
+| --- | --- |
+| `IdResponse` | `id` |
+| `SourceSummary` | `id`, `title`, `questionStatus`, `createdAt` |
+| `SourceDetail` | `id`, `title`, `content`, `questionStatus`, `discardedQuestionCount`(근거가 자료에 없어 버린 LLM 문제 수), `keyPoints`, `questions`, `createdAt` |
+| `QuestionView` | `id`, `question`, `evidence`, `origin`, `box`, `dueAt` |
+| `DueQuestion` | `id`, `sourceId`, `sourceTitle`, `question`, `evidence`, `box` |
+| `ReviewResult` | `box`, `dueAt` |
+| `RecallResult` | `recalled`, `total`, `missed` |
+| `TeachResponse` | `questions` |
+| `RecordView` | `id`, `kind`, `sourceId`, `sourceTitle`, `prompt`, `userText`, `result`, `createdAt` |
+
+### 규칙
+
+| 규칙 | 내용 |
+| --- | --- |
+| 문제 생성 | 자료 저장을 커밋한 뒤 메모리 실행기에서 LLM을 부른다. LLM 문제 중 근거가 자료에 그대로 없는 것은 버리고 수를 남긴다. 하나도 남지 않으면 마크다운 제목·목록(없으면 문단 첫 문장)으로 규칙 문제를 만든다. 재시작하면 진행 중이던 생성은 사라지고 `GENERATING`에 머문다 |
+| 간격 반복 | 라이트너 상자 0~5, 간격 10분·1일·3일·7일·14일·30일. `GOOD`은 한 칸 위, `HARD`는 제자리, `AGAIN`은 0칸 |
+| 중복·동시 제출 | 복습 시각 전 문제는 받지 않는다. 동시에 들어온 두 제출은 `@Version`으로 한 번만 반영하고, 기록도 하나만 남는다 |
+| 가르치기 | LLM 호출은 트랜잭션 밖에서 한다. 학생 질문은 최대 3개이며 판정·정답 제시는 하지 않는다 |
+
+### 주요 enum
+
+| Enum | 값 |
+| --- | --- |
+| `QuestionStatus` | `GENERATING`, `READY` |
+| `Origin` | `LLM`, `RULE`(LLM 대체 경로), `USER` |
+| `ReviewGrade` | `AGAIN`, `HARD`, `GOOD` |
+| `StudyRecord.Kind` | `ANSWER`, `RECALL`, `TEACH`, `QUESTION` |

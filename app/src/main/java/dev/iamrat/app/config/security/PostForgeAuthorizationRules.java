@@ -11,6 +11,7 @@ public class PostForgeAuthorizationRules {
     private static final String[] PUBLIC = {
             "/",
             "/index.html",
+            "/study.html",
             "/favicon.ico",
             "/images/**",
             "/v3/api-docs/**",
@@ -49,7 +50,8 @@ public class PostForgeAuthorizationRules {
             "/api/posts/*/comments/*",
             "/api/posts/*/comments/*/like",
             "/api/files/**",
-            "/api/ai/**"
+            "/api/ai/**",
+            "/api/study/**"
     };
 
     private static final String[] ADMIN = {
