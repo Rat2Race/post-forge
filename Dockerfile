@@ -14,6 +14,7 @@ COPY board/build.gradle ./board/
 COPY source/build.gradle ./source/
 COPY core/build.gradle ./core/
 COPY support/build.gradle ./support/
+COPY study/build.gradle ./study/
 
 RUN --mount=type=cache,target=/home/gradle/.gradle \
     gradle :app:dependencies --configuration runtimeClasspath --no-daemon
@@ -26,6 +27,7 @@ COPY board/src ./board/src
 COPY source/src ./source/src
 COPY core/src ./core/src
 COPY support/src ./support/src
+COPY study/src ./study/src
 
 RUN --mount=type=cache,target=/home/gradle/.gradle \
     --mount=type=cache,target=/workspace/.gradle \
