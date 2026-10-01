@@ -89,6 +89,9 @@ public class LlmProperties {
 
         @NotBlank
         private String model;
+
+        // 비우면 보내지 않는다. 로컬 qwen3:8b는 none이면 생각 단계를 건너뛰어 같은 요청이 34s에서 13s로 준다.
+        private String reasoningEffort;
     }
 
     @Getter
