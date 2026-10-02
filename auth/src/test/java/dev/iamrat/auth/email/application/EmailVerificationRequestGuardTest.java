@@ -1,9 +1,12 @@
 package dev.iamrat.auth.email.application;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
 
+import org.springframework.boot.test.system.OutputCaptureExtension;
+import org.springframework.boot.test.system.CapturedOutput;
 import dev.iamrat.core.global.error.CommonErrorCode;
 import dev.iamrat.core.global.exception.CustomException;
 import org.junit.jupiter.api.BeforeEach;
@@ -15,7 +18,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @Tag("unit")
-@ExtendWith(MockitoExtension.class)
+@ExtendWith({MockitoExtension.class, OutputCaptureExtension.class})
 class EmailVerificationRequestGuardTest {
 
     @Mock
@@ -62,5 +65,16 @@ class EmailVerificationRequestGuardTest {
             .isInstanceOf(CustomException.class)
             .extracting(ex -> ((CustomException) ex).getErrorCode())
             .isEqualTo(CommonErrorCode.TOO_MANY_REQUESTS);
+    }
+
+    @Test
+    @DisplayName("저장소 장애 로그에는 이메일을 남기지 않는다")
+    void storeFailureLog_doesNotContainEmail(CapturedOutput output) {
+        given(emailVerificationRequestStore.evaluateEmailRequest("leaky@test.com", 10L, 180L, 5L, 180L))
+            .willThrow(new RuntimeException("redis down"));
+
+        assertThatThrownBy(() -> guard.guard("leaky@test.com")).isInstanceOf(CustomException.class);
+
+        assertThat(output.getAll()).contains("이메일 인증 요청 가드 저장소 장애").doesNotContain("leaky@test.com");
     }
 }

@@ -1,5 +1,7 @@
 package dev.iamrat.auth.login.application;
 
+import org.springframework.boot.test.system.OutputCaptureExtension;
+import org.springframework.boot.test.system.CapturedOutput;
 import dev.iamrat.auth.security.infrastructure.principal.CustomUserDetails;
 import dev.iamrat.auth.token.application.TokenIssueResult;
 import dev.iamrat.auth.token.application.TokenService;
@@ -29,7 +31,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
 @Tag("unit")
-@ExtendWith(MockitoExtension.class)
+@ExtendWith({MockitoExtension.class, OutputCaptureExtension.class})
 class LoginServiceTest {
 
     @Mock
@@ -105,5 +107,20 @@ class LoginServiceTest {
             null,
             authorities
         );
+    }
+
+    @Test
+    @DisplayName("로그인 성공 로그에는 로그인 아이디 대신 accountId만 남긴다")
+    void login_successLog_containsAccountIdNotUsername(CapturedOutput output) {
+        given(authenticationManager.authenticate(any())).willReturn(authentication());
+        given(tokenService.createToken(eq(1L), any())).willReturn(TokenIssueResult.builder()
+            .grantType("Bearer")
+            .accessToken("access-token")
+            .refreshToken("refresh-token")
+            .build());
+
+        loginService.login("testuser1", "Test1234!", "127.0.0.1");
+
+        assertThat(output.getAll()).contains("accountId=1").doesNotContain("testuser1");
     }
 }
