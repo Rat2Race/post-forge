@@ -466,6 +466,23 @@ class StudyFlowTest {
     }
 
     @Test
+    @DisplayName("빈 페이지는 응답마다가 아니라 하루에 3개까지다 — 오늘 한 정리를 빼고 남은 만큼만 다시 받고, 다음 날 다시 3개다")
+    void recallCapIsPerDayAcrossRefetches() {
+        for (int i = 0; i < 4; i++) {
+            sources.create(me, "자료 " + i, CONTENT);
+        }
+        clock.advance(java.time.Duration.ofDays(1));
+        List<TodayItem> recalls = practice.today(me).items().stream().filter(item -> item.type().equals("RECALL")).toList();
+        assertThat(recalls).hasSize(3);
+
+        recalls.forEach(item -> practice.recall(me, item.sourceId(), "기억나는 것", List.of()));
+
+        assertThat(practice.today(me).items()).extracting(TodayItem::type).doesNotContain("RECALL");
+        clock.advance(java.time.Duration.ofDays(1));
+        assertThat(practice.today(me).items()).filteredOn(item -> item.type().equals("RECALL")).hasSize(3);
+    }
+
+    @Test
     @DisplayName("매일 반복 루프(오늘 할 것·복습·빈 페이지 제안과 기록)는 LLM을 부르지 않는다")
     void dailyLoopNeverCallsLlm() {
         assistant.drafts = List.of(new QuestionDraft("무엇을 읽나요?", "커밋된 데이터만 읽는다"));

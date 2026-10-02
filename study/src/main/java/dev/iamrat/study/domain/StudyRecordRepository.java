@@ -11,6 +11,8 @@ public interface StudyRecordRepository extends JpaRepository<StudyRecord, Long> 
 
     List<StudyRecord> findTop50ByOwnerAccountIdOrderByIdDesc(Long ownerAccountId);
 
+    long countByOwnerAccountIdAndKindAndCreatedAtGreaterThanEqual(Long ownerAccountId, StudyRecord.Kind kind, LocalDateTime from);
+
     @Query("select r.createdAt from StudyRecord r "
         + "where r.ownerAccountId = :owner and r.createdAt >= :from and r.kind in :kinds")
     List<LocalDateTime> findActivityTimes(@Param("owner") Long ownerAccountId, @Param("from") LocalDateTime from,
