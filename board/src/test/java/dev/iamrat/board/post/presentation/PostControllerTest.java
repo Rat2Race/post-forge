@@ -28,14 +28,17 @@ import org.springframework.web.method.support.HandlerMethodArgumentResolver;
 import org.springframework.web.method.support.ModelAndViewContainer;
 
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.verify;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.support.WebDataBinderFactory;
 
 @ExtendWith(MockitoExtension.class)
-class PostControllerLikeTest {
+class PostControllerTest {
 
     @Mock
     private PostCommandService postCommandService;
@@ -67,6 +70,16 @@ class PostControllerLikeTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.isLiked").value(true))
                 .andExpect(jsonPath("$.likeCount").value(3L));
+    }
+
+    @Test
+    @DisplayName("DELETE /api/posts/{id} 는 게시글을 삭제하고 본문 없이 204를 반환한다")
+    void deletePost_returnsNoContent() throws Exception {
+        mockMvc.perform(delete("/api/posts/1").with(user(1L)))
+                .andExpect(status().isNoContent())
+                .andExpect(content().string(""));
+
+        verify(postCommandService).deletePost(1L);
     }
 
     private RequestPostProcessor user(Long accountId) {

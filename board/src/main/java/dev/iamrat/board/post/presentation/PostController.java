@@ -5,7 +5,6 @@ import dev.iamrat.board.like.presentation.LikeResponse;
 import dev.iamrat.board.post.application.PostCommandService;
 import dev.iamrat.board.post.application.PostInteractionService;
 import dev.iamrat.board.post.application.PostQueryService;
-import dev.iamrat.core.global.dto.MessageResponse;
 import dev.iamrat.core.global.dto.PageResponse;
 import dev.iamrat.core.account.UserPrincipal;
 import dev.iamrat.core.board.post.BoardCategory;
@@ -104,12 +103,12 @@ public class PostController {
 
     @DeleteMapping("/{postId:\\d+}")
     @PreAuthorize("hasRole('ADMIN') or hasRole('USER') and @postCommandService.isOwner(#postId, principal.accountId)")
-    public ResponseEntity<MessageResponse> deletePost(
+    public ResponseEntity<Void> deletePost(
         @PathVariable("postId") Long postId
     ) {
         postCommandService.deletePost(postId);
 
-        return ResponseEntity.ok(MessageResponse.of("게시글 삭제 완료"));
+        return ResponseEntity.noContent().build();
     }
 
     @PostMapping("/{postId:\\d+}/like")

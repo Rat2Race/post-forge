@@ -44,8 +44,6 @@ Spring pageable resolver는 일부 잘못된 `page`/`size` 값을 `0`, 엔드포
 
 | 공통 DTO | 필드 |
 | --- | --- |
-| `MessageResponse` | `message` |
-| `UrlResponse` | `url` |
 | `PageResponse<T>` | 위 pagination 필드와 `content` |
 
 ### Fail
@@ -121,16 +119,16 @@ Spring pageable resolver는 일부 잘못된 `page`/`size` 값을 `0`, 엔드포
 
 | Endpoint | Auth | Parameters — 필요한 이유 | Success | Fail |
 | --- | --- | --- | --- | --- |
-| `POST /api/auth/email/send` | PUBLIC | body `SendEmailRequest` — 인증 대상 이메일과 중복 여부를 확인하고 일회용 링크를 발송 | `200 MessageResponse` | `400 VALIDATION_ERROR`; `409 DUPLICATE_EMAIL`; `429 TOO_MANY_REQUESTS`; `500 EMAIL_SEND_FAILED` |
+| `POST /api/auth/email/send` | PUBLIC | body `SendEmailRequest` — 인증 대상 이메일과 중복 여부를 확인하고 일회용 링크를 발송 | `204 No Content` | `400 VALIDATION_ERROR`; `409 DUPLICATE_EMAIL`; `429 TOO_MANY_REQUESTS`; `500 EMAIL_SEND_FAILED` |
 | `GET /api/auth/email/verify` | PUBLIC | query `token` 필수 — 발송된 일회용 토큰을 이메일과 연결하고 사용 후 제거 | `200 EmailVerificationResponse` | 누락 `400 INVALID_INPUT`; 만료·없음·이미 사용된 토큰 `404 EMAIL_CODE_NOT_FOUND` |
 | `POST /api/auth/register` | PUBLIC | body `RegisterRequest` — local 계정 생성과 이메일 인증 여부·중복 검사에 사용 | `201 RegisterResponse` | `400 VALIDATION_ERROR/EMAIL_NOT_VERIFIED`; `409 DUPLICATE_USERNAME/DUPLICATE_NICKNAME/DATA_INTEGRITY_VIOLATION` |
 | `POST /api/auth/login` | PUBLIC | body `LoginRequest` — 자격 증명 검증. 원격 IP는 서버가 로그인 보호에 사용 | `200 AccessTokenResponse` + refresh cookie | `400 VALIDATION_ERROR`; `401 INVALID_CREDENTIALS`; `403 ACCOUNT_NOT_ACTIVE`; `429 TOO_MANY_REQUESTS` |
-| `POST /api/auth/logout` | USER | body 없음. JWT의 account ID로 저장된 refresh token을 삭제 | `200 MessageResponse` + refresh cookie 제거 | 인증 `401/403`; 처리되지 않은 저장소 예외 `500 INTERNAL_SERVER_ERROR` |
+| `POST /api/auth/logout` | USER | body 없음. JWT의 account ID로 저장된 refresh token을 삭제 | `204 No Content` + refresh cookie 제거 | 인증 `401/403`; 처리되지 않은 저장소 예외 `500 INTERNAL_SERVER_ERROR` |
 | `POST /api/auth/token/reissue` | PUBLIC | cookie `refresh_token` 필수 — route는 공개지만 저장된 refresh 자격 증명과 대조해 탈취·폐기된 토큰의 재사용을 막음 | `200 AccessTokenResponse` + refresh cookie 회전 | 누락 `401 UNAUTHORIZED`; `401 INVALID_TOKEN/EXPIRED_TOKEN`; `403 ACCOUNT_NOT_ACTIVE`; `404 USER_NOT_FOUND` |
 | `POST /api/auth/oauth2/exchange` | PUBLIC | body `OAuth2ExchangeRequest` — OAuth 성공 후 받은 일회용 code를 계정 토큰으로 교환 | `200 AccessTokenResponse` + refresh cookie | `400 VALIDATION_ERROR/INVALID_INPUT`; `401 INVALID_TOKEN`; `403 ACCOUNT_NOT_ACTIVE`; `404 USER_NOT_FOUND` |
 | `GET /api/user/account` | USER | body 없음. JWT account ID로 현재 계정 조회 | `200 AccountResponse` | 인증 `401/403`; `404 USER_NOT_FOUND` |
-| `PATCH /api/user/account/nickname` | USER | body `AccountUpdateRequest` — 새 공개 닉네임 지정 | `200 MessageResponse` | `400 VALIDATION_ERROR`; 인증·비활성 `401/403`; `404 USER_NOT_FOUND`; `409 DUPLICATE_NICKNAME` |
-| `PATCH /api/user/account/password` | USER | body `PasswordUpdateRequest` — 현재 비밀번호로 본인 확인 후 새 비밀번호 저장 | `200 MessageResponse`; 기존 refresh token 폐기 | `400 VALIDATION_ERROR/INVALID_PASSWORD/OAUTH_PASSWORD_UPDATE_NOT_ALLOWED`; 인증·비활성 `401/403`; `404 USER_NOT_FOUND` |
+| `PATCH /api/user/account/nickname` | USER | body `AccountUpdateRequest` — 새 공개 닉네임 지정 | `204 No Content` | `400 VALIDATION_ERROR`; 인증·비활성 `401/403`; `404 USER_NOT_FOUND`; `409 DUPLICATE_NICKNAME` |
+| `PATCH /api/user/account/password` | USER | body `PasswordUpdateRequest` — 현재 비밀번호로 본인 확인 후 새 비밀번호 저장 | `204 No Content`; 기존 refresh token 폐기 | `400 VALIDATION_ERROR/INVALID_PASSWORD/OAUTH_PASSWORD_UPDATE_NOT_ALLOWED`; 인증·비활성 `401/403`; `404 USER_NOT_FOUND` |
 | `PUT /api/admin/accounts/{accountId}/roles/admin` | ADMIN | path `accountId` — 기존 관리자만 다른 활성 계정에 ADMIN 권한 부여. 본인 승격은 거절 | `204 No Content`; 이미 ADMIN이면 동일하게 성공 | 인증 `401/403`; 대상 없음 `404 USER_NOT_FOUND` |
 
 ### 요청 DTO와 파라미터 이유
@@ -169,18 +167,18 @@ Spring pageable resolver는 일부 잘못된 `page`/`size` 값을 `0`, 엔드포
 | `POST /api/posts` | USER | body `PostRequest` — 일반 게시글 본문·태그·첨부 지정; JWT account ID는 작성자 | `201 PostSummaryResponse` | `400 VALIDATION_ERROR`; 인증·계정 상태 `401/403`; 작성자 `404 USER_NOT_FOUND`; 충돌 `409` |
 | `GET /api/posts/{postId}` | PUBLIC | path `postId` — 조회할 게시글 식별. 선택 JWT가 있으면 개인화 및 사용자별 조회수 증가 | `200 PostDetailResponse` | `404 POST_NOT_FOUND`; 숫자가 아닌 경로 `404 RESOURCE_NOT_FOUND` |
 | `PUT /api/posts/{postId}` | USER | path `postId` 대상 식별, body `PostRequest` 새 상태. 작성자 또는 ADMIN만 허용 | `200 PostSummaryResponse` | `400 VALIDATION_ERROR`; 인증·소유권 `401/403`; `404 POST_NOT_FOUND` |
-| `DELETE /api/posts/{postId}` | USER | path `postId` — 삭제할 게시글과 연결 파일·조회수 정리 대상 식별. 작성자 또는 ADMIN만 허용 | `200 MessageResponse` | 인증·소유권 `401/403`; `404 POST_NOT_FOUND` |
+| `DELETE /api/posts/{postId}` | USER | path `postId` — 삭제할 게시글과 연결 파일·조회수 정리 대상 식별. 작성자 또는 ADMIN만 허용 | `204 No Content` | 인증·소유권 `401/403`; `404 POST_NOT_FOUND` |
 | `POST /api/posts/{postId}/like` | USER | path `postId` 대상, JWT account ID 중복 방지·개인 상태 | `200 LikeResponse` | 인증 `401/403`; `404 POST_NOT_FOUND`; cooldown·분당 한도·guard 장애 `429 TOO_MANY_REQUESTS` |
 | `DELETE /api/posts/{postId}/like` | USER | path `postId` 대상, JWT account ID의 좋아요만 제거 | `200 LikeResponse` | 인증 `401/403`; `404 POST_NOT_FOUND`; 요청 보호 `429 TOO_MANY_REQUESTS` |
 | `GET /api/posts/{postId}/comments` | PUBLIC | path `postId` 댓글 묶음, pageable 기본 `size=50`, `sort=createdAt,ASC`; 선택 JWT는 `isLiked` 계산 | `200 PageResponse<CommentDetailResponse>`; 댓글이 없으면 빈 page | 지원하지 않는 sort property·내부 조회 오류 `500` |
 | `POST /api/posts/{postId}/comments` | USER | path `postId` 작성 대상, body `CommentRequest`, JWT account ID 작성자 | `201 CommentSummaryResponse` | `400 VALIDATION_ERROR/INVALID_COMMENT_PARENT/MAX_COMMENT_DEPTH_EXCEEDED`; 인증·계정 `401/403`; `404 POST_NOT_FOUND/COMMENT_NOT_FOUND` |
 | `PUT /api/posts/{postId}/comments/{commentId}` | USER | `postId`는 중첩 URI 문맥, `commentId`가 실제 수정 대상, body `CommentRequest`의 `content` 사용. 작성자 또는 ADMIN만 허용 | `200 CommentSummaryResponse` | `400 VALIDATION_ERROR`; 인증·소유권 `401/403`; `404 COMMENT_NOT_FOUND` |
-| `DELETE /api/posts/{postId}/comments/{commentId}` | USER | `postId`는 중첩 URI 문맥, `commentId`가 실제 삭제 대상. 작성자 또는 ADMIN만 허용 | `200 MessageResponse` | 인증·소유권 `401/403`; `404 COMMENT_NOT_FOUND` |
+| `DELETE /api/posts/{postId}/comments/{commentId}` | USER | `postId`는 중첩 URI 문맥, `commentId`가 실제 삭제 대상. 작성자 또는 ADMIN만 허용 | `204 No Content` | 인증·소유권 `401/403`; `404 COMMENT_NOT_FOUND` |
 | `POST /api/posts/{postId}/comments/{commentId}/like` | USER | `postId`는 URI 문맥, `commentId` 대상, JWT account ID 개인 상태 | `200 LikeResponse` | 인증 `401/403`; `404 COMMENT_NOT_FOUND`; 요청 보호 `429 TOO_MANY_REQUESTS` |
 | `DELETE /api/posts/{postId}/comments/{commentId}/like` | USER | `postId`는 URI 문맥, `commentId` 대상, JWT account ID의 좋아요 제거 | `200 LikeResponse` | 인증 `401/403`; `404 COMMENT_NOT_FOUND`; 요청 보호 `429 TOO_MANY_REQUESTS` |
 | `GET /api/user/profile` | USER | body 없음. JWT account ID로 상세 프로필 조회 | `200 ProfileResponse` | 인증·비활성 `401/403`; `404 USER_NOT_FOUND` |
-| `PATCH /api/user/profile/nickname` | USER | body `ProfileNicknameUpdateRequest` — 새 공개 닉네임 | `200 MessageResponse` | `400 VALIDATION_ERROR`; 인증·비활성 `401/403`; `404 USER_NOT_FOUND`; `409 DUPLICATE_NICKNAME` |
-| `PATCH /api/user/profile/password` | USER | body `ProfilePasswordUpdateRequest` — 현재 비밀번호 확인 후 변경 | `200 MessageResponse`; refresh token 폐기 | `400 VALIDATION_ERROR/INVALID_PASSWORD/OAUTH_PASSWORD_UPDATE_NOT_ALLOWED`; 인증·비활성 `401/403`; `404 USER_NOT_FOUND` |
+| `PATCH /api/user/profile/nickname` | USER | body `ProfileNicknameUpdateRequest` — 새 공개 닉네임 | `204 No Content` | `400 VALIDATION_ERROR`; 인증·비활성 `401/403`; `404 USER_NOT_FOUND`; `409 DUPLICATE_NICKNAME` |
+| `PATCH /api/user/profile/password` | USER | body `ProfilePasswordUpdateRequest` — 현재 비밀번호 확인 후 변경 | `204 No Content`; refresh token 폐기 | `400 VALIDATION_ERROR/INVALID_PASSWORD/OAUTH_PASSWORD_UPDATE_NOT_ALLOWED`; 인증·비활성 `401/403`; `404 USER_NOT_FOUND` |
 | `GET /api/files/presigned-url` | USER | query `fileName` 확장자·저장명 생성, `contentType` 실제 업로드 MIME 서명. `/api/files/s3/presigned-url` 별칭도 동일 | `200 FileUploadResponse`; URL TTL 5분 | 누락 `400 INVALID_INPUT`; `400 FILE_EXTENSION_NOT_ALLOWED/FILE_TYPE_MISMATCH`; 인증 `401/403`; S3/DB 오류 `500` |
 | `GET /api/files/{fileId}/download-url` | USER | path `fileId` — 저장 object key를 조회. `/api/files/s3/{fileId}/download-url` 별칭도 동일 | `200 UrlResponse`; URL TTL 5분 | 타입 오류 `400 INVALID_INPUT`; 인증 `401/403`; `404 FILE_NOT_FOUND`; S3 오류 `500` |
 
@@ -238,6 +236,7 @@ Board의 게시글·댓글 path ID는 `\d+` 경로만 매핑한다. 숫자가 �
 | `LikeResponse` | `isLiked`, `likeCount` |
 | `ProfileResponse` | `accountId`, `username`, `email`, `nickname`, `provider`, `isOAuthUser`, `roles`, `createdAt`, `updatedAt` |
 | `FileUploadResponse` | `fileId`, `savedName`, `url` |
+| `UrlResponse` | `url` |
 
 ## Source (내부 계약)
 

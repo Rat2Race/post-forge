@@ -73,8 +73,7 @@ class AccountControllerTest {
         mockMvc.perform(patch("/api/user/account/nickname")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$.message").value("닉네임 변경 완료"));
+            .andExpect(status().isNoContent());
 
         verify(accountCommandService).updateNickname(1L, "새닉네임");
     }
@@ -88,8 +87,7 @@ class AccountControllerTest {
         mockMvc.perform(patch("/api/user/account/password")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$.message").value("비밀번호 변경 완료"));
+            .andExpect(status().isNoContent());
 
         verify(accountCommandService).updatePassword(1L, "Old1234!", "New1234!");
     }

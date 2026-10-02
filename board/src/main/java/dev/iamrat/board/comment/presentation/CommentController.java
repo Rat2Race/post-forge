@@ -5,7 +5,6 @@ import dev.iamrat.board.comment.application.CommentInteractionService;
 import dev.iamrat.board.comment.application.CommentQueryService;
 import dev.iamrat.board.like.application.LikeResult;
 import dev.iamrat.board.like.presentation.LikeResponse;
-import dev.iamrat.core.global.dto.MessageResponse;
 import dev.iamrat.core.global.dto.PageResponse;
 import dev.iamrat.core.account.UserPrincipal;
 import jakarta.validation.Valid;
@@ -76,12 +75,12 @@ public class CommentController {
 
     @DeleteMapping("/{commentId:\\d+}")
     @PreAuthorize("hasRole('ADMIN') or hasRole('USER') and @commentCommandService.isCommentOwner(#commentId, principal.accountId)")
-    public ResponseEntity<MessageResponse> deleteComment(
+    public ResponseEntity<Void> deleteComment(
             @PathVariable Long commentId
     ) {
         commentCommandService.deleteComment(commentId);
 
-        return ResponseEntity.ok(MessageResponse.of("댓글 삭제 완료"));
+        return ResponseEntity.noContent().build();
     }
 
     @PostMapping("/{commentId:\\d+}/like")
