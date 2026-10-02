@@ -333,6 +333,7 @@ Google News source가 비활성이면 두 news endpoint 호출은 현재 `500 IN
 | `GET /api/study/sources/{sourceId}` | USER | path `sourceId` | `200 SourceDetail`; 생성이 끝나면 `questionStatus=READY` | 남의 자료·없는 자료 `404 SOURCE_NOT_FOUND` |
 | `POST /api/study/sources/{sourceId}/questions` | USER | body `QuestionRequest` — 사용자가 만든 문제와 자료에서 그대로 옮긴 근거 | `201 IdResponse`; 바로 복습 대상 | 근거가 자료에 없음 `400 EVIDENCE_NOT_IN_SOURCE`; `404 SOURCE_NOT_FOUND` |
 | `POST /api/study/sources/{sourceId}/recalls` | USER | body `RecallRequest` — 빈 페이지에 쓴 글과 사용자가 직접 체크한 핵심 항목 번호 | `200 RecallResult` | 없는 항목 번호 `400 INVALID_KEY_POINT`; `404 SOURCE_NOT_FOUND` |
+| `POST /api/study/sources/{sourceId}/recalls/suggestions` | USER | body `SuggestRequest` — 빈 페이지에 쓴 글 | `200 SuggestResponse`; '언급한 것 같아요' 후보 번호. 기록하지 않고 LLM을 쓰지 않는다 | `400 VALIDATION_ERROR`; `404 SOURCE_NOT_FOUND` |
 | `POST /api/study/sources/{sourceId}/teachings` | USER | body `TeachRequest` — 자료를 설명한 글 | `200 TeachResponse`; LLM이 실패하면 설명에 빠진 핵심 항목을 되묻는 질문으로 대체 | `404 SOURCE_NOT_FOUND` |
 | `GET /api/study/today` | USER | 없음 | `200 List<DueQuestion>`; 복습 시각이 지난 내 문제 최대 20개, 오래된 순 | 인증 `401/403` |
 | `POST /api/study/questions/{questionId}/reviews` | USER | body `ReviewRequest` — 내 답과 자가 평가 | `200 ReviewResult`; 다음 상자와 복습 시각 | 아직 복습 시각 전(중복 제출 포함) `409 NOT_DUE_YET`; 동시 제출의 패자 `409 CONCURRENT_MODIFICATION`; `404 QUESTION_NOT_FOUND` |
@@ -351,6 +352,7 @@ Google News source가 비활성이면 두 news endpoint 호출은 현재 `500 IN
 | `RecallRequest.text` | 필수, 10000자 이하 | 빈 페이지에 떠올린 내용 |
 | `RecallRequest.recalledIndexes` | 선택, `SourceDetail.keyPoints`의 번호. 범위 밖이거나 null이면 `400 INVALID_KEY_POINT` | 자료와 대조해 학습자가 직접 체크한 항목 |
 | `TeachRequest.explanation` | 필수, 10000자 이하 | AI 학생이 되물을 설명 |
+| `SuggestRequest.text` | 필수, 10000자 이하 | 핵심 항목과 겹치는지 볼 빈 페이지 글 |
 
 ### 응답 DTO
 
@@ -364,6 +366,7 @@ Google News source가 비활성이면 두 news endpoint 호출은 현재 `500 IN
 | `ReviewResult` | `box`, `dueAt` |
 | `RecallResult` | `recalled`, `total`, `missed` |
 | `TeachResponse` | `questions` |
+| `SuggestResponse` | `mentionedIndexes` — `SourceDetail.keyPoints` 번호 |
 | `RecordView` | `id`, `kind`, `sourceId`, `sourceTitle`, `prompt`, `userText`, `result`, `reviewBox`(복습 기록일 때 복습 직전 상자, 그 밖에는 null), `createdAt` |
 
 ### 규칙
@@ -373,6 +376,7 @@ Google News source가 비활성이면 두 news endpoint 호출은 현재 `500 IN
 | 문제 생성 | 자료 저장을 커밋한 뒤 메모리 실행기에서 LLM을 부른다. LLM 문제 중 근거가 자료에 그대로 없는 것은 버리고 수를 남긴다. 하나도 남지 않으면 마크다운 제목·목록(없으면 문단 첫 문장)으로 규칙 문제를 만든다. 규칙 문제도 문제 500자·근거 1000자 상한과 근거 검증을 똑같이 거친다. 재시작하면 진행 중이던 생성은 사라지고 `GENERATING`에 머문다 |
 | 간격 반복 | 라이트너 상자 0~5, 간격 10분·1일·3일·7일·14일·30일. `GOOD`은 한 칸 위, `HARD`는 제자리, `AGAIN`은 0칸 |
 | 중복·동시 제출 | 복습 시각 전 문제는 받지 않는다. 동시에 들어온 두 제출은 `@Version`으로 한 번만 반영하고, 기록도 하나만 남는다 |
+| 빈 페이지 제안 | 핵심 항목마다 두 글자 조각의 절반 이상이 글에 나오면 '언급한 것 같아요' 후보로 낸다. 화면은 후보를 미리 체크해 보여 주고, 기록되는 것은 사용자가 최종 체크한 번호다 |
 | 가르치기 | LLM 호출은 트랜잭션 밖에서 한다. 학생 질문은 최대 3개이며 판정·정답 제시는 하지 않는다. 기록에는 질문을 2000자까지만 남긴다 |
 
 ### 주요 enum

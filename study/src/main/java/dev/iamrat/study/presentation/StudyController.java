@@ -70,6 +70,16 @@ public class StudyController {
     ) {
     }
 
+    public record SuggestRequest(
+        @NotBlank(message = "기억나는 내용을 적어 주세요")
+        @Size(max = 10000, message = "10000자 이하여야 합니다")
+        String text
+    ) {
+    }
+
+    public record SuggestResponse(List<Integer> mentionedIndexes) {
+    }
+
     public record TeachRequest(
         @NotBlank(message = "설명을 적어 주세요")
         @Size(max = 10000, message = "설명은 10000자 이하여야 합니다")
@@ -120,6 +130,15 @@ public class StudyController {
     ) {
         List<Integer> recalled = request.recalledIndexes() == null ? List.of() : request.recalledIndexes();
         return practiceService.recall(user.getAccountId(), sourceId, request.text(), recalled);
+    }
+
+    @PostMapping("/sources/{sourceId:\\d+}/recalls/suggestions")
+    public SuggestResponse suggestRecalled(
+        @PathVariable Long sourceId,
+        @RequestBody @Valid SuggestRequest request,
+        @AuthenticationPrincipal UserPrincipal user
+    ) {
+        return new SuggestResponse(practiceService.suggestRecalled(user.getAccountId(), sourceId, request.text()));
     }
 
     @PostMapping("/sources/{sourceId:\\d+}/teachings")

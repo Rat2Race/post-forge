@@ -9,14 +9,18 @@ class FakeStudyAssistant implements StudyAssistant {
 
     List<QuestionDraft> drafts = List.of();
     List<String> studentQuestions = List.of();
+    // 매일 반복 루프에 LLM 호출이 섞이지 않았는지 세기 위한 수.
+    int calls;
 
     @Override
     public List<QuestionDraft> draftQuestions(String content, int limit) {
+        calls++;
         return drafts;
     }
 
     @Override
     public List<String> askAsStudent(String content, String explanation, int limit) {
+        calls++;
         return studentQuestions;
     }
 }
