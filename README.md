@@ -113,8 +113,8 @@ prod:  PostForge app -> OpenAI-compatible LLM gateway -> Ollama -> qwen3:8b
 # 전체 테스트
 ./gradlew test
 
-# 통합 테스트 제외
-./gradlew test -PexcludeTags=integration
+# 태그 제외(쉼표로 여러 개). CI는 LLM이 필요한 평가 테스트용 eval만 뺀다
+./gradlew test -PexcludeTags=integration,persistence
 
 # 실행 jar 생성
 ./gradlew :app:bootJar -PexcludeTags=integration
