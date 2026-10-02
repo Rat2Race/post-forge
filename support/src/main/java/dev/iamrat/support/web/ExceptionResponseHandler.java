@@ -6,9 +6,12 @@ import dev.iamrat.core.global.error.ErrorCode;
 import dev.iamrat.core.global.dto.ErrorResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import java.io.IOException;
+import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
@@ -28,6 +31,8 @@ import org.springframework.web.servlet.resource.NoResourceFoundException;
 @Order(Ordered.LOWEST_PRECEDENCE)
 @RestControllerAdvice
 public class ExceptionResponseHandler {
+
+    private static final Pattern CONSTRAINT_NAME = Pattern.compile("constraint \"([^\"]+)\"");
 
     private ResponseEntity<ErrorResponse> buildErrorResponse(ErrorCode errorCode) {
         ErrorResponse response = ErrorResponse.builder()
@@ -70,7 +75,10 @@ public class ExceptionResponseHandler {
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ErrorResponse> handleValidationException(MethodArgumentNotValidException e) {
-        log.warn("MethodArgumentNotValidException: {}", e.getMessage());
+        // 예외 메시지에는 거절된 값(비밀번호 등)이 그대로 실리므로 필드 이름과 위반 코드만 남긴다.
+        log.warn("MethodArgumentNotValidException: {}", e.getBindingResult().getFieldErrors().stream()
+            .map(error -> error.getField() + ":" + error.getCode())
+            .toList());
         Map<String, String> errors = new HashMap<>();
 
         e.getBindingResult().getAllErrors().forEach((error) -> {
@@ -84,7 +92,8 @@ public class ExceptionResponseHandler {
 
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<ErrorResponse> handleHttpMessageNotReadableException(HttpMessageNotReadableException e) {
-        log.error("HttpMessageNotReadableException: {}", e.getMessage());
+        // 파싱 오류 메시지에는 본문 조각이 실린다. 원인 종류만 남긴다.
+        log.warn("HttpMessageNotReadableException: {}", e.getMostSpecificCause().getClass().getSimpleName());
         return buildErrorResponse(CommonErrorCode.INVALID_INPUT);
     }
 
@@ -113,7 +122,7 @@ public class ExceptionResponseHandler {
 
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ResponseEntity<ErrorResponse> handleDataIntegrityViolationException(DataIntegrityViolationException e) {
-        log.warn("DataIntegrityViolationException: {}", e.getMessage());
+        log.warn("DataIntegrityViolationException: {}", constraintOf(e));
         return buildErrorResponse(CommonErrorCode.DATA_INTEGRITY_VIOLATION);
     }
 
@@ -135,5 +144,16 @@ public class ExceptionResponseHandler {
     public ResponseEntity<ErrorResponse> handleException(Exception e) {
         log.error("Unexpected error: ", e);
         return buildErrorResponse(CommonErrorCode.INTERNAL_SERVER_ERROR);
+    }
+
+    /** 무결성 위반 메시지에는 충돌한 값(이메일 등)이 실리므로 SQLState와 제약 이름만 꺼낸다. */
+    private static String constraintOf(Throwable e) {
+        for (Throwable cause = e; cause != null; cause = cause.getCause()) {
+            if (cause instanceof SQLException sql) {
+                Matcher matcher = CONSTRAINT_NAME.matcher(String.valueOf(sql.getMessage()));
+                return "sqlState=" + sql.getSQLState() + (matcher.find() ? ", constraint=" + matcher.group(1) : "");
+            }
+        }
+        return e.getClass().getSimpleName();
     }
 }
