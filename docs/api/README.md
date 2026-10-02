@@ -131,6 +131,7 @@ Spring pageable resolver는 일부 잘못된 `page`/`size` 값을 `0`, 엔드포
 | `GET /api/user/account` | USER | body 없음. JWT account ID로 현재 계정 조회 | `200 AccountResponse` | 인증 `401/403`; `404 USER_NOT_FOUND` |
 | `PATCH /api/user/account/nickname` | USER | body `AccountUpdateRequest` — 새 공개 닉네임 지정 | `200 MessageResponse` | `400 VALIDATION_ERROR`; 인증·비활성 `401/403`; `404 USER_NOT_FOUND`; `409 DUPLICATE_NICKNAME` |
 | `PATCH /api/user/account/password` | USER | body `PasswordUpdateRequest` — 현재 비밀번호로 본인 확인 후 새 비밀번호 저장 | `200 MessageResponse`; 기존 refresh token 폐기 | `400 VALIDATION_ERROR/INVALID_PASSWORD/OAUTH_PASSWORD_UPDATE_NOT_ALLOWED`; 인증·비활성 `401/403`; `404 USER_NOT_FOUND` |
+| `PUT /api/admin/accounts/{accountId}/roles/admin` | ADMIN | path `accountId` — 기존 관리자만 다른 활성 계정에 ADMIN 권한 부여. 본인 승격은 거절 | `204 No Content`; 이미 ADMIN이면 동일하게 성공 | 인증 `401/403`; 대상 없음 `404 USER_NOT_FOUND` |
 
 ### 요청 DTO와 파라미터 이유
 
