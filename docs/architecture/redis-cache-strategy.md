@@ -30,8 +30,8 @@ Redis를 **조회수 버퍼**로 사용한다.
 [스케줄러 5분 주기]
   1. rename(post:views:dirty → post:views:dirty:processing)   → 원자적 이동
   2. smembers(post:views:dirty:processing)                    → 변경된 ID 목록 조회
-  3. 각 postId에 대해: get(post:views:{id})                    → posts.views UPDATE
-  4. 성공한 ID만 processing SET에서 제거
+  3. 각 postId에 대해: get(post:views:{id})                    → posts.views UPDATE (글마다 따로 커밋)
+  4. 커밋한 ID만 processing SET에서 제거
   5. 실패한 ID는 processing SET에 남겨 다음 실행에서 재시도
 ```
 
@@ -41,6 +41,7 @@ Redis를 **조회수 버퍼**로 사용한다.
 - **setIfAbsent로 캐시 저장**: 동시 miss가 기존 값을 덮어쓰지 않는다. 동시 요청이 각각 DB를 읽을 수는 있다.
 - **dirty tracking**: `KEYS` 명령은 O(N) 블로킹이라 사용하지 않음. 변경된 건만 SET으로 추적
 - **rename으로 dirty 이동**: `smembers`→`delete` 사이에 `sadd`된 postId가 유실되지 않도록 dirty SET을 원자적으로 rename한 뒤 읽는다. 처리 중 추가분은 새 dirty 키에 쌓인다.
+- **커밋 뒤에 제거**: 스케줄러 전체를 트랜잭션 하나로 묶지 않는다. 묶으면 한 글의 실패가 전체를 롤백시키는데, Redis 제거는 롤백되지 않아 그 글들의 조회수가 DB에 반영되지 않은 채 목록에서 사라진다(`ViewCountSyncTransactionTest`).
 
 ---
 
