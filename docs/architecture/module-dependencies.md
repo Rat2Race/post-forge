@@ -96,7 +96,7 @@ modular monolith 선택 근거는 [ADR-003](../decisions/adr-003-modular-monolit
 | PostgreSQL driver와 JJWT codec은 `runtimeOnly` | compile-time contract가 아니라 런타임 구현체다. |
 | servlet API는 필요한 library에서 `compileOnly` | embedded container가 런타임에 제공한다. |
 | Spring Boot, Spring AI는 BOM 사용 | 함께 동작하는 라이브러리의 version set을 맞춘다. |
-| test helper(slice test, spring-security-test)와 H2는 test configuration | production classpath에 포함할 이유가 없다. |
+| test helper(slice test, spring-security-test)와 Testcontainers PostgreSQL은 test configuration | production classpath에 포함할 이유가 없다. |
 
 ## 주요 연결 경계
 
