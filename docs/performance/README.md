@@ -43,7 +43,7 @@ Gradle `:app:smoke` task와 `app/src/smoke` source set은 2026-06-11 기준 제�
 성능 부하 실행은 전용 모듈로 유지하지 않으며, 필요할 때 수동 k6/Bruno 실행 또는 별도 CI smoke suite로 수행하고 산출물을 `docs/performance/runs/<run>/`에 남긴다.
 
 ```bash
-./gradlew check -PexcludeTags=integration
+./gradlew check -PexcludeTags=eval
 ./gradlew :app:bootJar
 ```
 
@@ -73,7 +73,7 @@ docs/performance/runs/YYYYMMDD-HHMMSS-<target>-<scenario>/
 - checks, request count, failure rate, RPS
 - latency avg/med/p90/p95/p99/max
 - 가능하면 CPU, memory, network, disk I/O 관측값
-- 외부 source fetch, DB persist, LLM generation timer와 token summary
+- LLM generation timer(`ai_text_generation_seconds`)와 token summary
 - Grafana screenshot, k6 summary JSON 같은 artifact 링크
 - 다음 조치
 

@@ -7,7 +7,7 @@
 
 1. production 물리 schema와 적용 순서: `app/src/main/resources/db/migration/`의 Flyway SQL
 2. table·key·resource owner: 이 문서
-3. application mapping: JPA entity, JDBC initializer, Spring AI initializer. 위 두 기준과 일치해야 하며 독립적인 정본이 아니다.
+3. application mapping: JPA entity. 위 두 기준과 일치해야 하며 독립적인 정본이 아니다.
 4. 시각화: [PostForge MVP ERD](./postforge-mvp-erd.md). 위 기준에서 파생한다.
 
 ## Ownership Rules
@@ -21,7 +21,7 @@
 
 ## Relational Tables
 
-아래 표는 현재 구현의 owner 기준이다. 메일 구독은 향후 범위이며 관련 table과 mapping은 아직 없다.
+아래 표는 현재 구현의 owner 기준이다.
 
 | Owner | Table | Source | Notes |
 | --- | --- | --- | --- |

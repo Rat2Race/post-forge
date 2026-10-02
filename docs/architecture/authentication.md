@@ -23,10 +23,10 @@
 - OAuth2 redirect URL에는 refresh token이나 access token을 노출하지 않는다.
 - 로그인 실패, 이메일 인증, OAuth2 exchange code는 Redis guard/TTL state로 보호한다.
 - refresh token, 로그인 guard, 이메일 인증, OAuth2 exchange code의 Redis state 장애는 인증 안전성을 위해 fail-closed로 처리한다.
-- Redis 명령은 2초, 연결은 1초 안에 끊는다(`spring.data.redis.timeout`·`connect-timeout`). 지정하지 않으면 Lettuce 기본 60초를 기다려 장애 중 로그인·메일 요청이 스레드를 붙잡는다. 끊기면 위 fail-closed 규칙대로 `429 TOO_MANY_REQUESTS`나 인증 실패로 응답한다. 막는 쪽을 고른 이유는 장애 중 무차별 대입·메일 폭주를 막는 것이 로그인 가용성보다 중요해서다.
+- Redis 명령은 2초, 연결은 1초 안에 끊는다(`spring.data.redis.timeout`·`connect-timeout`). 지정하지 않으면 Lettuce 기본 60초를 기다려 장애 중 로그인·메일 요청이 스레드를 붙잡는다. 끊기면 위 fail-closed 규칙대로 요청을 막는다. 로그인·인증 메일 발송은 가드가 `429 TOO_MANY_REQUESTS`로 막고, OAuth2 콜백은 frontend redirect 주소에 `?error=`를 붙여 리다이렉트한다. 토큰 재발급·OAuth2 교환·이메일 인증 확인·회원가입·로그아웃·비밀번호 변경은 Redis 예외를 따로 바꾸지 않아 `500 INTERNAL_SERVER_ERROR`가 된다. 막는 쪽을 고른 이유는 장애 중 무차별 대입·메일 폭주를 막는 것이 로그인 가용성보다 중요해서다.
 - 인증 메일 발송이 실패하면(`MessagingException`·`MailException` 모두) `EMAIL_SEND_FAILED`로 응답하고, 요청 가드의 쿨다운은 이미 쓴 것으로 둔다. 메일 서버 장애는 대개 한동안 이어지므로 바로 다시 보내게 하면 실패만 쌓인다. 사용자는 쿨다운이 끝난 뒤 다시 요청한다.
 - 계정 비활성 상태는 login, token reissue, OAuth2 exchange에서 거절한다.
-- 존재하지 않는 username과 잘못된 password는 모두 `INVALID_CREDENTIALS`로 응답해 계정 존재 여부를 노출하지 않는다.
+- 존재하지 않는 username과 잘못된 password는 모두 `INVALID_CREDENTIALS`로 응답한다. 다만 비활성 계정은 비밀번호를 확인하기 전에 `403 ACCOUNT_NOT_ACTIVE`로 거절하므로, 비활성 계정이 있다는 사실은 드러난다.
 
 ## Error Handling Paths
 

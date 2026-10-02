@@ -13,7 +13,7 @@ PostForge는 사용자가 올린 자료(마크다운·텍스트)에서 근거 �
 | 인증 | JWT, Redis refresh token rotation, OAuth2, 이메일 인증, 로그인 보호 |
 | 게시판 | 게시글, 댓글/대댓글, 좋아요, 조회수, 작성자 소유권 검증 |
 | AI | Spring AI, OpenAI-compatible LLM(로컬은 Ollama `qwen3:8b`). 문제 초안·AI 학생 질문·꼬리질문만 만들고 채점하지 않는다 |
-| 운영 기반 | Flyway baseline, Docker layered jar, 구조화 로그, Prometheus/Grafana |
+| 운영 기반 | Flyway baseline, Docker layered jar, requestId 로그, Prometheus/Grafana |
 
 뉴스 수집·자동 게시·데일리 종합, 그 시절의 초안 생성기·RAG 채팅·문서 적재·첨부파일은 ADR-008에 따라 지웠습니다.
 
@@ -48,7 +48,7 @@ PostForge는 사용자가 올린 자료(마크다운·텍스트)에서 근거 �
 | AI | Spring AI 1.0.7, OpenAI-compatible API |
 | API | Spring MVC, SpringDoc OpenAPI |
 | Test | JUnit 5, Spring Boot Test, ArchUnit |
-| Operations | Docker Compose, GitHub Actions, Prometheus, Grafana, ECS JSON logging |
+| Operations | Docker Compose, GitHub Actions, Prometheus, Grafana, MDC requestId logging |
 
 ## Data And API
 
@@ -79,8 +79,11 @@ Endpoint, DTO, status, 인증 조건의 정본은 [API 명세](./docs/api/README
 | compose | `docker-compose.local.yml` (커밋) | `docker-compose.prod.yml` (커밋 안 함) |
 
 [`.env.example`](./.env.example)은 두 환경에서 쓰는 변수명만 값 없이 나열합니다. 로컬은 주소·DB 계정·JWT·소셜 로그인·
-모니터링 값만 채우면 됩니다. LLM 주소·모델, Redis 호스트, 메일 서버는 `application-local.yml` 기본값
-(Ollama `localhost:11434`의 `qwen3:8b`, Redis `localhost`, Mailpit `localhost:1025`)을 쓰므로 비워 둡니다.
+모니터링 값만 채우면 됩니다. LLM 주소·모델, Redis 호스트·포트, CORS 허용 origin은 설정 기본값(Ollama `localhost:11434`의
+`qwen3:8b`, Redis `localhost:6379`, CORS는 `APP_FRONTEND_BASE_URL` 값)을 쓰므로 복사한 `.env.local`에서 `LLM_GATEWAY_BASE_URL`·
+`LLM_CHAT_MODEL`·`REDIS_HOST`·`REDIS_PORT`·`APP_CORS_ALLOWED_ORIGINS` 줄을 지웁니다. `KEY=`처럼 값 없이 남기면 빈 문자열이
+기본값을 덮어 기동에 실패합니다. 메일 서버는 `application-local.yml`에 Mailpit `localhost:1025`로 고정돼 있어 `GMAIL_*`은
+비워 둬도 됩니다.
 
 ```bash
 cp .env.example .env.local                                               # 값 채우기
@@ -113,7 +116,7 @@ prod:  PostForge app -> OpenAI-compatible LLM gateway -> Ollama -> qwen3:8b
 # 전체 테스트
 ./gradlew test
 
-# 태그 제외(쉼표로 여러 개). CI는 LLM이 필요한 평가 테스트용 eval만 뺀다
+# 태그 제외(쉼표로 여러 개). CI는 eval만 빼지만 지금 eval 태그 테스트는 없어 integration·persistence까지 모두 돈다
 ./gradlew test -PexcludeTags=integration,persistence
 
 # 실행 jar 생성
@@ -134,7 +137,7 @@ dependency와 application layer를 분리해 registry cache 효율을 높입니�
 
 ```text
 workflow_dispatch (release/postforge)
--> ./gradlew check -PexcludeTags=integration
+-> ./gradlew check -PexcludeTags=eval
 -> ./gradlew :app:bootJar
 -> Dockerfile.runtime
 -> Docker Hub latest + commit SHA
