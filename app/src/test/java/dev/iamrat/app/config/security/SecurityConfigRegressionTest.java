@@ -313,23 +313,6 @@ class SecurityConfigRegressionTest {
     }
 
     @Test
-    @WithMockUser(roles = "USER")
-    @DisplayName("출시 뉴스 관리자 경로는 USER 권한을 차단한다")
-    void adminLaunchNews_rejectsUserRole() throws Exception {
-        mockMvc.perform(post("/api/admin/launch-news/manual"))
-            .andExpect(status().isForbidden());
-    }
-
-    @Test
-    @WithMockUser(roles = "ADMIN")
-    @DisplayName("출시 뉴스 관리자 경로는 ADMIN 권한이면 허용한다")
-    void adminLaunchNews_allowsAdminRole() throws Exception {
-        mockMvc.perform(post("/api/admin/launch-news/manual"))
-            .andExpect(status().isOk())
-            .andExpect(content().string("launch-news-posted"));
-    }
-
-    @Test
     void grantAdminRole_rejectsAnonymousRequest() throws Exception {
         mockMvc.perform(put("/api/admin/accounts/2/roles/admin"))
             .andExpect(status().isUnauthorized());
@@ -452,7 +435,6 @@ class SecurityConfigRegressionTest {
         DummyIngestController.class,
         DummyEmailVerificationController.class,
         DummyPublicAuthController.class,
-        DummyAdminLaunchNewsController.class,
         AccountAdminController.class
     })
     static class TestApp {
@@ -624,16 +606,6 @@ class SecurityConfigRegressionTest {
         @GetMapping("/ping")
         String ping() {
             return "ingest";
-        }
-    }
-
-    @RestController
-    @RequestMapping("/api/admin/launch-news")
-    static class DummyAdminLaunchNewsController {
-
-        @PostMapping("/manual")
-        String postLaunchNews() {
-            return "launch-news-posted";
         }
     }
 

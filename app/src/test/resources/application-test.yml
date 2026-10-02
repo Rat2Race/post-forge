@@ -17,19 +17,6 @@ spring:
       pgvector:
         initialize-schema: false
 
-source:
-  google-news:
-    enabled: false
-
-ingest:
-  news:
-    launch:
-      scheduler:
-        enabled: false
-    digest:
-      scheduler:
-        enabled: false
-
 APP_FRONTEND_BASE_URL: http://localhost:3000
 APP_API_BASE_URL: http://localhost:8080
 LLM_GATEWAY_BASE_URL: http://localhost:8088

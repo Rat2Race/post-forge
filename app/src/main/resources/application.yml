@@ -127,37 +127,6 @@ spring:
             user-info-uri: https://kapi.kakao.com/v2/user/me
             user-name-attribute: id
 
-source:
-  google-news:
-    enabled: ${GOOGLE_NEWS_ENABLED:false}
-    base-url: ${GOOGLE_NEWS_BASE_URL:https://news.google.com}
-    language: ${GOOGLE_NEWS_LANGUAGE:ko}
-    country: ${GOOGLE_NEWS_COUNTRY:KR}
-    connect-timeout: ${GOOGLE_NEWS_CONNECT_TIMEOUT:3s}
-    read-timeout: ${GOOGLE_NEWS_READ_TIMEOUT:10s}
-    sections:   # 키는 NewsSection 이름, 값은 Google 뉴스 한국판(hl=ko, gl=KR) 섹션의 topics 식별자
-      NATION: CAAqIQgKIhtDQkFTRGdvSUwyMHZNRFp4WkRNU0FtdHZLQUFQAQ
-      WORLD: CAAqJggKIiBDQkFTRWdvSUwyMHZNRGx1YlY4U0FtdHZHZ0pMVWlnQVAB
-      BUSINESS: CAAqJggKIiBDQkFTRWdvSUwyMHZNRGx6TVdZU0FtdHZHZ0pMVWlnQVAB
-      TECHNOLOGY: CAAqKAgKIiJDQkFTRXdvSkwyMHZNR1ptZHpWbUVnSnJieG9DUzFJb0FBUAE
-      ENTERTAINMENT: CAAqJggKIiBDQkFTRWdvSUwyMHZNREpxYW5RU0FtdHZHZ0pMVWlnQVAB
-      SPORTS: CAAqJggKIiBDQkFTRWdvSUwyMHZNRFp1ZEdvU0FtdHZHZ0pMVWlnQVAB
-      HEALTH: CAAqIQgKIhtDQkFTRGdvSUwyMHZNR3QwTlRFU0FtdHZLQUFQAQ
-
-ingest:
-  news:
-    launch:
-      scheduler:
-        enabled: ${INGEST_NEWS_LAUNCH_SCHEDULER_ENABLED:false}
-      cron: ${INGEST_NEWS_LAUNCH_CRON:0 */10 * * * *}
-      sections: ${INGEST_NEWS_LAUNCH_SECTIONS:TECHNOLOGY,BUSINESS}
-      display-count: ${INGEST_NEWS_LAUNCH_DISPLAY_COUNT:5}
-      daily-cap: ${INGEST_NEWS_LAUNCH_DAILY_CAP:3}
-    digest:
-      scheduler:
-        enabled: ${INGEST_NEWS_DIGEST_SCHEDULER_ENABLED:false}
-      cron: ${INGEST_NEWS_DIGEST_CRON:0 0 6 * * *}
-
 auth:
   login:
     protection:

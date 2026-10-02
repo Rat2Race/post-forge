@@ -2,10 +2,9 @@
 
 현재 `@RestController`, 요청·응답 DTO, `PostForgeAuthorizationRules`, 전역 예외 처리기를 기준으로 한 단일 명세다. Spring Security가 소유하는 `/oauth2/**`, `/login/oauth2/**`와 Swagger/static 경로는 제외한다.
 
-현재 제품 흐름은 뉴스 수집·분야별 선별·LLM 초안 작성·자동 게시와 전날 뉴스의 데일리 종합 게시다. 메일 구독 API는 아직 구현되지 않았다. 사용자가 올린 자료로 학습하는 프로토타입은 [Study](#study)와 화면 `/study.html`에 있다.
+제품은 사용자가 올린 자료로 학습하는 서비스다([ADR-008](../decisions/adr-008-switch-to-learning-platform.md)). 학습 API는 [Study](#study), 화면은 `/study.html`이다. 뉴스 수집·자동 게시·데일리 종합 API는 지웠다.
 
 - AI 채팅 실행 예시: [ai-chat-smoke.http](./ai-chat-smoke.http)
-- 뉴스 source 실행 예시: [news-source-smoke.http](./news-source-smoke.http)
 
 ## 공통 계약
 
@@ -96,7 +95,7 @@ Spring pageable resolver는 일부 잘못된 `page`/`size` 값을 `0`, 엔드포
 | --- | --- |
 | `ChatResponse` | `answer` |
 
-클라이언트가 직접 호출하는 AI endpoint는 이 RAG 채팅 하나다. 별도 검색 endpoint는 없고, `ChatService`가 내부적으로 vector 유사 문서 검색을 수행한다. 뉴스·데일리 초안 생성은 admin 수동 게시 또는 scheduler가 내부 port로 호출한다.
+클라이언트가 직접 호출하는 AI endpoint는 이 RAG 채팅 하나다. 별도 검색 endpoint는 없고, `ChatService`가 내부적으로 vector 유사 문서 검색을 수행한다.
 
 <a id="auth"></a>
 ## Auth
@@ -238,18 +237,6 @@ Board의 게시글·댓글 path ID는 `\d+` 경로만 매핑한다. 숫자가 �
 | `FileUploadResponse` | `fileId`, `savedName`, `url` |
 | `UrlResponse` | `url` |
 
-## Source (내부 계약)
-
-공개 HTTP endpoint는 없다. Ingest가 Java port를 호출한다.
-
-| 흐름 | 입력 계약 — 필요한 이유 | routing·처리 | 출력 계약 | 실패·현재 상태 |
-| --- | --- | --- | --- | --- |
-| 뉴스 검색 | `NewsSourceQuery(keyword, displayCount, sort)` — 검색어 또는 섹션 이름, 최대 결과 수, 정렬. count는 기본 10·최대 100, sort 기본 `date`, 허용값 `date`/`sim` | 현재는 단일 `GoogleNewsRssSourceClient`(실험용)가 keyword가 `source.google-news.sections`에 있으면 주제 피드(`TECHNOLOGY` 같은 키워드형은 `/rss/headlines/section/topic/{TOPIC}`, `CAAq…` topics 식별자는 `/rss/topics/{ID}`), 아니면 검색 피드 `/rss/search?q=`를 읽고(둘 다 `hl=ko&gl=KR&ceid=KR:ko`), 제목의 " - 출처" 접미사 제거·HTML 제거·URL 검증·링크 중복 제거·metric 기록 수행. `date`는 pubDate 최신순, `sim`은 피드 순서. link와 originalLink는 모두 Google 리다이렉트 URL이고 description은 제목+출처명이다 | `List<NewsSourceItem>`; 정제 title/description/link/originalLink/publishedAt와 추적용 raw title/description | 기본 비활성. 키는 없다. 비활성 상태 호출은 source 예외. 피드는 개인·비상업 용도로 제한된다고 명시하므로 배포 소스로 쓰지 않는다 |
-
-Source는 “수집을 실행할지” 결정하지 않고, 결과를 DB에 저장하지도 않는다. 따라서 Source를 외부 데이터 보관소로 이해하면 안 되고, 외부 provider를 교체 가능하게 만드는 anti-corruption boundary로 이해하는 것이 정확하다.
-
-일반 테스트는 실서버를 호출하지 않는다. 실 피드 확인은 `./gradlew :source:test -PgoogleNewsSmoke=true --tests '*GoogleNewsRssSmokeTest'`로 명시적으로 실행한다. 네트워크만 필요하다. 플래그가 없으면 스모크는 건너뛴다.
-
 ## Ingest
 
 ### 엔드포인트
@@ -257,9 +244,6 @@ Source는 “수집을 실행할지” 결정하지 않고, 결과를 DB에 저�
 | Endpoint | Auth | Parameters — 필요한 이유 | Success | Fail |
 | --- | --- | --- | --- | --- |
 | `POST /api/ingest/documents` | ADMIN | body `List<DocumentIngestRequest>` — 여러 원문을 공용 RAG 저장소에 chunk·embedding 저장. 사용자별 소유권·격리가 없어 운영자만 허용 | `200 DocumentIngestResult`; 빈 배열 금지 제약은 없고 vector store 저장 성공 시 0건 | `400 VALIDATION_ERROR/INVALID_INPUT`; 인증 `401/403`; vector store `503 DOCUMENT_STORE_UNAVAILABLE` |
-| `POST /api/admin/news-documents/manual` | ADMIN | body `ProductNewsIngestRequest` — keyword+topic query로 뉴스 수집 후 vector 문서화 | `200 ProductNewsIngestResult`; 검색 결과가 없으면 count 0 | `400 VALIDATION_ERROR/INVALID_INPUT`; 인증 `401/403`; vector store `503 DOCUMENT_STORE_UNAVAILABLE`; source 비활성·외부 runtime 오류는 현재 `500` |
-| `POST /api/admin/launch-news/manual` | ADMIN | body `LaunchNewsPublishRequest` — 뉴스 수집·벡터 적재·gate·RAG 초안·일일 한도·게시 출처 지정; manual origin은 `ADMIN_BACKFILL` | `200 LaunchNewsPublishResult`; 중복·광고·AI 생성 실패·일일 한도는 `skips`에 포함 | `400 VALIDATION_ERROR/INVALID_INPUT`; 인증 `401/403`; DB 충돌 `409`; source 비활성·외부 runtime 오류는 현재 `500` |
-| `POST /api/admin/news/digest` | ADMIN | body `DailyDigestPublishRequest` 선택(생략 가능) — `newsDate`의 출시뉴스 게시글을 분야별로 요약해 데일리 브리핑 게시 | `200 DailyDigestPublishResult`; 소스 없음·이미 게시·AI 생성 실패는 분야별 `skips`에 포함 | `400 INVALID_INPUT`(날짜 파싱 실패); 인증 `401/403` |
 
 ### 요청 DTO와 파라미터 이유
 
@@ -268,46 +252,12 @@ Source는 “수집을 실행할지” 결정하지 않고, 결과를 DB에 저�
 | `DocumentIngestRequest.content` | DTO는 필수·non-blank 선언. 현재 controller의 list element cascade 검증은 별도 보장 없음 | chunk와 embedding을 만들 원문 |
 | `DocumentIngestRequest.source` | 선택 | 각 chunk의 `source` metadata로 원문 출처 보존 |
 | `DocumentIngestRequest.metadata` | 선택, `Map<String,String>` | news URL 등 검색·추적용 부가 정보 보존. `source` key가 있으면 별도 `source` 값을 덮어씀 |
-| `ProductNewsIngestRequest.keyword` | 필수, non-blank | 모든 뉴스 query의 기준어 |
-| `ProductNewsIngestRequest.displayCount` | 선택, 1~100, 기본 5 | topic별 뉴스 요청 건수 제한 |
-| `ProductNewsIngestRequest.topics` | 선택, 최대 10개·각 30자 | keyword에 붙일 검색 주제. `null`/빈 배열이거나 모두 blank면 keyword 단독 query |
-| `LaunchNewsPublishRequest.keyword` | 필수, non-blank | 후보 검색, 중복·일일 한도 집계 기준 |
-| `LaunchNewsPublishRequest.displayCount` | 선택, 1~100, 기본 10 | topic별 후보 검색 건수 |
-| `LaunchNewsPublishRequest.dailyCap` | 선택, 1~20, 기본 3 | 같은 keyword+발행일 게시 수 제한 |
-| `LaunchNewsPublishRequest.topics` | 선택, 최대 10개·각 30자 | keyword에 붙일 후보 검색 주제. `null`/빈 배열이거나 blank 제거 후 비면 keyword 단독 query; 그 외 trim·중복 제거 후 최대 10개 사용 |
-| `LaunchNewsPublishRequest.category` | 선택, 기본 `GENERAL` | 생성 게시글에 저장할 분야(`NewsSection`) 지정 |
-| `DailyDigestPublishRequest.newsDate` | 선택, 기본 어제(Asia/Seoul clock) | 요약 대상 출시뉴스 게시글의 작성일. 분야+날짜로 제목을 만들어 재실행 시 기존 글을 확인 |
-
-### 자동 게시 스케줄
-
-두 scheduler는 **Asia/Seoul** 시간대를 사용하며 기본 비활성이다. 수동 endpoint는 scheduler 설정과 무관하게 즉시 실행한다.
-
-| 작업 | 기본 주기 | 활성화 조건 | 주기 환경변수 |
-| --- | --- | --- | --- |
-| 뉴스 수집·초안 작성·자동 게시 | 10분마다 (`0 */10 * * * *`) | `GOOGLE_NEWS_ENABLED=true`, `INGEST_NEWS_LAUNCH_SCHEDULER_ENABLED=true` | `INGEST_NEWS_LAUNCH_CRON` |
-| 전날 뉴스의 데일리 포스트 게시 | 매일 **06:00** (`0 0 6 * * *`) | `INGEST_NEWS_DIGEST_SCHEDULER_ENABLED=true` | `INGEST_NEWS_DIGEST_CRON` |
-
-설정 위치는 `ingest.news.launch.scheduler.enabled`·`ingest.news.launch.cron`·`ingest.news.launch.sections`·`display-count`·`daily-cap`, `ingest.news.digest.scheduler.enabled`·`ingest.news.digest.cron`이다. 기본값과 전체 환경변수는 [application.yml](../../app/src/main/resources/application.yml), [.env.example](../../.env.example)을 따른다. 활성화 전 LLM, PostgreSQL/PgVector 연결과 수집 키워드를 준비한다. 데일리 실행 자체는 이미 게시된 글과 LLM을 사용하므로 뉴스 수집이 꺼져 있어도 실행할 수 있다.
-
-자동 수집 대상은 `INGEST_NEWS_LAUNCH_SECTIONS`(기본 `TECHNOLOGY,BUSINESS`, 쉼표 구분)의 섹션 이름이고, 이름은 `BoardCategory`와 같아야 한다. `source.google-news.sections`가 각 이름을 Google 뉴스 한국판 섹션의 topics 식별자로 매핑하며(대한민국·세계·비즈니스·과학/기술·엔터테인먼트·스포츠·건강 7개), 키워드 검색이 아니므로 등록 테이블이 없다. 섹션마다 최신 `INGEST_NEWS_LAUNCH_DISPLAY_COUNT`건(기본 5)을 받아 같은 선별 정책을 거치고, 게시글 분야는 섹션 이름 그대로, 섹션+발행일당 `INGEST_NEWS_LAUNCH_DAILY_CAP`건(기본 3)까지 게시한다. LLM이 분야를 자동 판정하는 기능은 현재 없다. LLM은 선별된 기사의 본문·요약·태그 초안을 작성한다.
-
-뉴스 작업은 스케줄 실행 안에서 수집→벡터 적재→게시 후보 선별→LLM 초안→게시까지 처리한다. 수집 건수(`displayCount`, topic당 최대 100)와 게시 건수(`dailyCap`, 기본 3)는 별개다. 동일 수집 결과를 적재와 게시 후보에 함께 사용하되, 광고성 기사는 적재에서만 제외하고 게시 후보에는 남겨 `ADVERTISING` skip으로 보고한다. 초안을 저장해 별도 시각에 발행하는 예약 대기열은 없다.
-
-데일리는 **전날 00:00 이상, 당일 00:00 미만에 작성된 `PRODUCT_LAUNCH_NEWS` 게시글**의 제목·요약을 분야별로 종합해 `DAILY_DIGEST`로 게시한다. 기사 원문의 발행일이나 수집 원문 전체를 기준으로 하지 않는다. 수집 완료와 별개로 06:00에 실행하며, 뉴스 피드·벡터 검색을 다시 호출하지 않는다. 대상 글이 없는 분야와 이미 데일리가 게시된 분야는 건너뛴다. 메일 발송은 향후 계획이다.
-
-게시 흐름은 적재 실패 시 중단한다. 적재 후 RAG 검색이나 LLM 생성이 실패하면 해당 기사는 `AI_GENERATION_FAILED`로 건너뛰고 게시 완료 기록을 남기지 않는다. 같은 요청의 재실행은 원본 자료를 재적재할 수 있지만, 이미 게시한 URL은 중복 gate에서 제외한다. 정상 검색 결과가 비어 있으면 주 기사 정보로만 초안을 작성한다.
-
-Google News source가 비활성이면 두 news endpoint 호출은 현재 `500 INTERNAL_SERVER_ERROR`다.
 
 ### 응답 DTO
 
 | DTO | 필드 |
 | --- | --- |
 | `DocumentIngestResult` | `documentCount`, `chunkCount` |
-| `ProductNewsIngestResult` | `keyword`, `queries`, `newsCount`, `chunkCount` |
-| `LaunchNewsPublishResult` | `keyword`, `publishedCount`, `skippedCount`, `createdPostIds`, `skips` |
-| `LaunchNewsPublishResult.Skip` | `url`, `reason` |
-| `DailyDigestPublishResult` | `newsDate`, `publishedCount`, `skippedCount`, `createdPostIds`, `skips`(분야 → `DailyDigestPublishResult.SkipReason`) |
 
 ### 주요 enum
 
@@ -316,8 +266,6 @@ Google News source가 비활성이면 두 news endpoint 호출은 현재 `500 IN
 | `PostType` | `GENERAL`, `DAILY_DIGEST`(분야별 데일리 뉴스 브리핑, system이 게시), `PRODUCT_LAUNCH_NEWS` |
 | `NewsSection` | `GENERAL`, `NATION`, `WORLD`, `BUSINESS`, `TECHNOLOGY`, `ENTERTAINMENT`, `SPORTS`, `HEALTH` — Google 뉴스 한국판 섹션과 1:1. `GENERAL`은 회원 글·미분류 |
 | `PostPublishOrigin` | `USER`, `SYSTEM_BATCH`, `ADMIN_BACKFILL` |
-| `LaunchNewsPublishResult.SkipReason` | `DUPLICATE_ARTICLE`, `ADVERTISING`, `UNKNOWN_SOURCE`, `MISSING_LAUNCH_KEYWORD`, `AI_GENERATION_FAILED`, `DAILY_CAP_EXCEEDED` |
-| `DailyDigestPublishResult.SkipReason` | `NO_SOURCE`, `ALREADY_PUBLISHED`, `AI_GENERATION_FAILED` |
 
 <a id="study"></a>
 ## Study

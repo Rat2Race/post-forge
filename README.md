@@ -1,41 +1,34 @@
 # PostForge
 
-> 뉴스 수집·분류·LLM 초안 작성·스케줄 자동 게시 서비스
+> 사용자가 올린 자료로 학습하는 서비스 — 근거가 검증된 복습 문제, 간격 반복, 빈 페이지 정리, 가르치기
 
-PostForge는 외부 뉴스를 수집하고 분야별로 선별한 뒤, LLM으로 본문·요약·태그 초안을 작성해 자동 게시하는 백엔드입니다.
-정해진 스케줄에 뉴스 게시글을 발행하고, 매일 **06:00(Asia/Seoul)**에는 전날 게시된 뉴스를 분야별로 종합한 데일리 포스트를 자동 게시합니다.
-메일 구독 서비스는 향후 확장 계획입니다.
+PostForge는 사용자가 올린 자료(마크다운·텍스트)에서 근거 문장이 그대로 있는 복습 문제를 만들고, 간격 반복으로 다시 풀게 하는 학습 서비스의 백엔드입니다.
+채점은 학습자가 직접 하고, LLM은 문제 초안·AI 학생 질문·꼬리질문처럼 버튼을 누를 때만 부릅니다. 전환 근거와 원칙은 [ADR-008](./docs/decisions/adr-008-switch-to-learning-platform.md)에 있습니다.
 
 ## 핵심 기능
 
 | 영역 | 현재 구현 |
 | --- | --- |
-| 뉴스 수집·자동 게시 | Google News RSS 검색 피드 수집(실험용), 중복·광고·출시 관련성 검사, LLM 초안 생성 후 게시 |
-| 분야 분류 | 수집 키워드 또는 수동 요청의 분야를 게시글에 적용하고 분야별로 조회 |
-| 데일리 포스트 | 전날 게시된 출시뉴스의 제목·요약을 LLM으로 종합해 분야별 게시글 생성 |
+| 학습 | 근거 문장 검증 문제(LLM 초안, 실패하면 규칙 문제), 간격 반복(10분·1·3·7·14·30일), 빈 페이지 정리(자료별 일정·언급 제안), 가르치기, 꼬리질문, 잔디·게이트 지표 (`/study.html`) |
 | 인증 | JWT, Redis refresh token rotation, OAuth2, 이메일 인증, 로그인 보호 |
 | 게시판 | 게시글, 댓글/대댓글, 좋아요, 조회수, S3 presigned URL, 작성자 소유권 검증 |
-| AI / RAG | Spring AI, OpenAI-compatible LLM, PgVector 문서 검색, 수집 자료에 대한 RAG 채팅 |
+| AI / RAG | Spring AI, OpenAI-compatible LLM, PgVector 문서 검색, 적재 문서에 대한 RAG 채팅 |
 | 운영 기반 | Flyway baseline, Docker layered jar, 구조화 로그, Prometheus/Grafana |
 
-이 브랜치의 수집원은 Google News RSS다. 스케줄러는 설정된 섹션(기본 `TECHNOLOGY,BUSINESS`)의 주제 피드를 키워드 없이 읽고, 게시글 분야는 Google 뉴스 한국판 섹션(대한민국·세계·비즈니스·과학/기술·엔터테인먼트·스포츠·건강)과 같다. 수동 게시는 키워드 검색 피드를 읽는다. 피드 자체가 개인·비상업 용도로 제한된다고 명시하므로 파이프라인 검증용이며 배포 소스가 아니다.
-현재 수집·게시 정책은 신제품 출시뉴스를 대상으로 하며, 뉴스 글은 `PRODUCT_LAUNCH_NEWS`, 데일리 글은 `DAILY_DIGEST`로 저장합니다.
-분야는 수집 설정에서 결정하고 LLM은 초안을 작성합니다. 스케줄 실행 안에서 수집부터 게시까지 처리하며, 초안을 별도 예약 대기열에 저장하지는 않습니다.
-뉴스 자동 게시는 기본 매시 30분, 데일리는 매일 06:00이고 두 스케줄러는 기본 비활성입니다.
-활성화 조건과 환경변수는 [자동 게시 스케줄](./docs/api/README.md#자동-게시-스케줄), 처리 과정은 [뉴스 처리 흐름](./docs/architecture/flows.md#ingest)을 봅니다.
+뉴스 수집·자동 게시·데일리 종합은 ADR-008에 따라 지웠습니다. 그 시절의 초안 생성기·RAG 채팅·문서 적재·첨부파일도 같은 ADR의 삭제 목록에 따라 지우는 중입니다.
 
 ## Architecture
 
 ![PostForge Architecture](./docs/images/PostForge_Architecture_v4.png)
 
-다이어그램 원본은 [PostForge_Architecture_v4.svg](./docs/images/PostForge_Architecture_v4.svg)다.
+다이어그램 원본은 [PostForge_Architecture_v4.svg](./docs/images/PostForge_Architecture_v4.svg)다. 그림은 ADR-008 전환 전 뉴스 자동 게시 시절의 구조다.
 
 8개 Gradle 모듈로 구성된 DDD-lite 모듈러 모놀리스입니다.
 
 - `app`: 실행 조립과 route/security/OpenAPI 정책
 - `core`: 모듈 간 port, DTO, 오류 및 principal 계약
 - `support`: Redis, JPA auditing, 요청 로깅, 공통 MVC 예외 응답
-- `auth`, `board`, `source`, `ingest`, `ai`: 기능별 소유권
+- `auth`, `board`, `ingest`, `ai`, `study`: 기능별 소유권
 
 기능 모듈은 서로의 구현 대신 port 또는 공개 application API를 사용하고, 의존성 방향은
 `ModuleBoundaryTest`로 검증합니다.
@@ -87,7 +80,7 @@ Endpoint, DTO, status, 인증 조건의 정본은 [API 명세](./docs/api/README
 | compose | `docker-compose.local.yml` (커밋) | `docker-compose.prod.yml` (커밋 안 함) |
 
 [`.env.example`](./.env.example)은 두 환경에서 쓰는 변수명만 값 없이 나열합니다. 로컬은 주소·DB 계정·JWT·소셜 로그인·S3·
-모니터링 값만 채우면 됩니다. Google News RSS는 키가 없고 `GOOGLE_NEWS_ENABLED=true`로 켭니다. LLM 주소·모델, Redis 호스트, 메일 서버는 `application-local.yml` 기본값
+모니터링 값만 채우면 됩니다. LLM 주소·모델, Redis 호스트, 메일 서버는 `application-local.yml` 기본값
 (Ollama `localhost:11434`의 `qwen3:8b`·`bge-m3`, Redis `localhost`, Mailpit `localhost:1025`)을 쓰므로 비워 둡니다.
 
 ```bash
