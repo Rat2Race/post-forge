@@ -16,7 +16,7 @@ PostForge는 사용자가 올린 자료로 학습하는 서비스입니다. 근�
 | 모듈 경계 검토 | [Module Dependency Policy](./architecture/module-dependencies.md) → [ADR-003](./decisions/adr-003-modular-monolith.md) |
 | 데이터 검토 | [Schema Ownership](./database/schema-ownership.md) → [MVP ERD](./database/postforge-mvp-erd.md) |
 | 성능 근거 | [성능 리포트](./performance/README.md) |
-| 관측·모니터링 | [ADR-006](./decisions/adr-006-observability-stack.md) → [계측 항목](./performance/README.md#외부-source--llm-계측) |
+| 관측·모니터링 | [ADR-006](./decisions/adr-006-observability-stack.md) → [계측 항목](./performance/README.md#llm-계측) |
 
 ## 정본 경계
 

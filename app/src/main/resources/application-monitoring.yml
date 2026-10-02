@@ -12,11 +12,9 @@ management:
     distribution:
       percentiles-histogram:
         http.server.requests: true
-        external_source_db_persist: true
         ai_text_generation: true
       slo:
         http.server.requests: 100ms,300ms,500ms,1s,2s
-        external_source_db_persist: 100ms,300ms,500ms,1s,2s,5s
         ai_text_generation: 500ms,1s,2s,5s,10s,30s
 
 monitoring:

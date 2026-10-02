@@ -12,10 +12,10 @@ PostForge는 사용자가 올린 자료(마크다운·텍스트)에서 근거 �
 | 학습 | 근거 문장 검증 문제(LLM 초안, 실패하면 규칙 문제), 간격 반복(10분·1·3·7·14·30일), 빈 페이지 정리(자료별 일정·언급 제안), 가르치기, 꼬리질문, 잔디·게이트 지표 (`/study.html`) |
 | 인증 | JWT, Redis refresh token rotation, OAuth2, 이메일 인증, 로그인 보호 |
 | 게시판 | 게시글, 댓글/대댓글, 좋아요, 조회수, S3 presigned URL, 작성자 소유권 검증 |
-| AI / RAG | Spring AI, OpenAI-compatible LLM, PgVector 문서 검색, 적재 문서에 대한 RAG 채팅 |
+| AI | Spring AI, OpenAI-compatible LLM(로컬은 Ollama `qwen3:8b`). 문제 초안·AI 학생 질문·꼬리질문만 만들고 채점하지 않는다 |
 | 운영 기반 | Flyway baseline, Docker layered jar, 구조화 로그, Prometheus/Grafana |
 
-뉴스 수집·자동 게시·데일리 종합은 ADR-008에 따라 지웠습니다. 그 시절의 RAG 채팅·문서 적재·첨부파일도 같은 ADR의 삭제 목록에 따라 지우는 중입니다.
+뉴스 수집·자동 게시·데일리 종합은 ADR-008에 따라 지웠습니다. 그 시절의 첨부파일도 같은 ADR의 삭제 목록에 따라 지우는 중입니다.
 
 ## Architecture
 
@@ -23,12 +23,12 @@ PostForge는 사용자가 올린 자료(마크다운·텍스트)에서 근거 �
 
 다이어그램 원본은 [PostForge_Architecture_v4.svg](./docs/images/PostForge_Architecture_v4.svg)다. 그림은 ADR-008 전환 전 뉴스 자동 게시 시절의 구조다.
 
-8개 Gradle 모듈로 구성된 DDD-lite 모듈러 모놀리스입니다.
+7개 Gradle 모듈로 구성된 DDD-lite 모듈러 모놀리스입니다.
 
 - `app`: 실행 조립과 route/security/OpenAPI 정책
 - `core`: 모듈 간 port, DTO, 오류 및 principal 계약
 - `support`: Redis, JPA auditing, 요청 로깅, 공통 MVC 예외 응답
-- `auth`, `board`, `ingest`, `ai`, `study`: 기능별 소유권
+- `auth`, `board`, `ai`, `study`: 기능별 소유권
 
 기능 모듈은 서로의 구현 대신 port 또는 공개 application API를 사용하고, 의존성 방향은
 `ModuleBoundaryTest`로 검증합니다.
@@ -43,9 +43,9 @@ PostForge는 사용자가 올린 자료(마크다운·텍스트)에서 근거 �
 | 영역 | 기술 |
 | --- | --- |
 | Runtime | Java 21, Spring Boot 3.5.14, Gradle 8.14.3 |
-| Data | PostgreSQL, PgVector, Redis, Spring Data JPA, Flyway |
+| Data | PostgreSQL, Redis, Spring Data JPA, Flyway |
 | Security | Spring Security, JWT, OAuth2, Gmail SMTP |
-| AI | Spring AI 1.0.7, OpenAI-compatible API, PgVector |
+| AI | Spring AI 1.0.7, OpenAI-compatible API |
 | Storage | S3-compatible storage |
 | API | Spring MVC, SpringDoc OpenAPI |
 | Test | JUnit 5, Spring Boot Test, ArchUnit |
@@ -81,12 +81,12 @@ Endpoint, DTO, status, 인증 조건의 정본은 [API 명세](./docs/api/README
 
 [`.env.example`](./.env.example)은 두 환경에서 쓰는 변수명만 값 없이 나열합니다. 로컬은 주소·DB 계정·JWT·소셜 로그인·S3·
 모니터링 값만 채우면 됩니다. LLM 주소·모델, Redis 호스트, 메일 서버는 `application-local.yml` 기본값
-(Ollama `localhost:11434`의 `qwen3:8b`·`bge-m3`, Redis `localhost`, Mailpit `localhost:1025`)을 쓰므로 비워 둡니다.
+(Ollama `localhost:11434`의 `qwen3:8b`, Redis `localhost`, Mailpit `localhost:1025`)을 쓰므로 비워 둡니다.
 
 ```bash
 cp .env.example .env.local                                               # 값 채우기
-ollama pull qwen3:8b && ollama pull bge-m3
-docker compose --env-file .env.local -f docker-compose.local.yml up -d   # PostgreSQL(pgvector), Redis, Mailpit
+ollama pull qwen3:8b
+docker compose --env-file .env.local -f docker-compose.local.yml up -d   # PostgreSQL, Redis, Mailpit
 ./gradlew :app:bootRun                                                   # 프로필 local, 루트의 .env.local 을 읽음
 ```
 
@@ -95,13 +95,12 @@ docker compose --env-file .env.local -f docker-compose.local.yml up -d   # Postg
 인증 메일은 실제로 발송되지 않고 [Mailpit](http://localhost:8025)에 쌓입니다. 데모 계정과 게시글은 `scripts/local-demo-seed.sql`로 넣습니다.
 
 LLM은 로컬에서 Ollama를 직접 호출하고 운영에서는 OpenAI-compatible gateway를 거칩니다. 두 환경 모두 공용 주소
-`LLM_GATEWAY_BASE_URL`/`LLM_GATEWAY_TOKEN`과, 그보다 우선하는 개별 주소 `LLM_CHAT_BASE_URL`/`LLM_CHAT_API_KEY`,
-`LLM_EMBEDDING_BASE_URL`/`LLM_EMBEDDING_API_KEY`로 덮어쓸 수 있습니다. 운영은 기본값이 없어 `LLM_GATEWAY_BASE_URL`,
-`LLM_CHAT_MODEL`, `LLM_EMBEDDING_MODEL`이 빠지면 기동에 실패합니다. 임베딩 차원 `1024`는 `vector_store` 스키마와 묶여 있으므로 유지합니다.
+`LLM_GATEWAY_BASE_URL`/`LLM_GATEWAY_TOKEN`과, 그보다 우선하는 개별 주소 `LLM_CHAT_BASE_URL`/`LLM_CHAT_API_KEY`로
+덮어쓸 수 있습니다. 운영은 기본값이 없어 `LLM_GATEWAY_BASE_URL`, `LLM_CHAT_MODEL`이 빠지면 기동에 실패합니다.
 
 ```text
-local: PostForge app -> Ollama(localhost:11434) -> qwen3:8b (chat) / bge-m3 (embedding)
-prod:  PostForge app -> OpenAI-compatible LLM gateway -> Ollama -> qwen3:8b / bge-m3
+local: PostForge app -> Ollama(localhost:11434) -> qwen3:8b
+prod:  PostForge app -> OpenAI-compatible LLM gateway -> Ollama -> qwen3:8b
 ```
 
 운영 배포 호스트에는 `docker-compose.prod.yml`, `.env`, `application-prod.yml`을 같은 디렉터리에 둡니다. compose가
@@ -147,7 +146,7 @@ workflow_dispatch (release/postforge)
 | [전체 문서 안내](./docs/README.md) | 정본 경계, 읽는 순서, 전체 분류 |
 | [API 명세](./docs/api/README.md) | 모듈별 endpoint, DTO, status, 인증 조건 |
 | [모듈 의존성](./docs/architecture/module-dependencies.md) | 모듈 책임과 dependency policy |
-| [DB Schema Ownership](./docs/database/schema-ownership.md) | DB/PgVector/Redis/S3 소유권과 migration 규칙 |
+| [DB Schema Ownership](./docs/database/schema-ownership.md) | DB/Redis/S3 소유권과 migration 규칙 |
 | [성능 리포트](./docs/performance/README.md) | 현재 검증 표면과 historical evidence 구분 |
 
 ## License

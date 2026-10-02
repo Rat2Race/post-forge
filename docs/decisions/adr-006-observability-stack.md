@@ -80,7 +80,7 @@
 
 ## 변경 기록
 
-- 2026-10-02: [ADR-008](./adr-008-switch-to-learning-platform.md)에 따라 뉴스 수집을 지워 `external_news_fetch` 축이 사라졌다. 위 표와 후속 과제의 뉴스 항목(피드 실패 알림, 스케줄러 무응답)은 결정 당시 기록으로 남긴다.
+- 2026-10-02: [ADR-008](./adr-008-switch-to-learning-platform.md)에 따라 뉴스 수집을 지워 `external_news_fetch` 축이, RAG를 지워 `external_source_db_persist`·`ai_vector_search`·`ingest_documents_embeddings` 축이 사라졌다. 남은 축은 `ai_text_generation`이다. 위 표와 후속 과제의 뉴스 항목(피드 실패 알림, 스케줄러 무응답)은 결정 당시 기록으로 남긴다.
 
 ## 관련 문서
 

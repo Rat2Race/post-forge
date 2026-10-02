@@ -259,13 +259,6 @@ class SecurityConfigRegressionTest {
     }
 
     @Test
-    @DisplayName("AI API는 익명 사용자를 차단한다")
-    void aiApi_rejectsAnonymousAccess() throws Exception {
-        mockMvc.perform(get("/api/ai/ping"))
-            .andExpect(status().isUnauthorized());
-    }
-
-    @Test
     @DisplayName("학습 API는 익명 사용자를 차단한다")
     void studyApi_rejectsAnonymousAccess() throws Exception {
         mockMvc.perform(get("/api/study/ping"))
@@ -286,30 +279,6 @@ class SecurityConfigRegressionTest {
     void studyPage_isPublic() throws Exception {
         mockMvc.perform(get("/study.html"))
             .andExpect(status().isOk());
-    }
-
-    @Test
-    @DisplayName("Ingest API는 익명 사용자를 차단한다")
-    void ingestApi_rejectsAnonymousAccess() throws Exception {
-        mockMvc.perform(get("/api/ingest/ping"))
-            .andExpect(status().isUnauthorized());
-    }
-
-    @Test
-    @WithMockUser(roles = "USER")
-    @DisplayName("Ingest API는 USER 권한을 차단한다")
-    void ingestApi_rejectsUserRole() throws Exception {
-        mockMvc.perform(get("/api/ingest/ping"))
-            .andExpect(status().isForbidden());
-    }
-
-    @Test
-    @WithMockUser(roles = "ADMIN")
-    @DisplayName("Ingest API는 ADMIN 권한이면 허용한다")
-    void ingestApi_allowsAdminRole() throws Exception {
-        mockMvc.perform(get("/api/ingest/ping"))
-            .andExpect(status().isOk())
-            .andExpect(content().string("ingest"));
     }
 
     @Test
@@ -430,9 +399,7 @@ class SecurityConfigRegressionTest {
         DummyCommentController.class,
         DummyAccountController.class,
         DummyFileController.class,
-        DummyAiController.class,
         DummyStudyController.class,
-        DummyIngestController.class,
         DummyEmailVerificationController.class,
         DummyPublicAuthController.class,
         AccountAdminController.class
@@ -580,32 +547,12 @@ class SecurityConfigRegressionTest {
     }
 
     @RestController
-    @RequestMapping("/api/ai")
-    static class DummyAiController {
-
-        @GetMapping("/ping")
-        String ping() {
-            return "ai";
-        }
-    }
-
-    @RestController
     @RequestMapping("/api/study")
     static class DummyStudyController {
 
         @GetMapping("/ping")
         String ping() {
             return "study";
-        }
-    }
-
-    @RestController
-    @RequestMapping("/api/ingest")
-    static class DummyIngestController {
-
-        @GetMapping("/ping")
-        String ping() {
-            return "ingest";
         }
     }
 

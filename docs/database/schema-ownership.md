@@ -36,7 +36,6 @@
 | `study` | `study_sources` | `study/domain/StudySource.java` | 사용자가 올린 학습 자료, 문제 생성 상태, LLM 문제 초안 수와 버린 수(근거 검증 통과율 기준), 빈 페이지 상자와 다음 예정 시각, 낙관적 잠금 `version`; 브랜치 마이그레이션 `V20261002_1` |
 | `study` | `study_questions` | `study/domain/StudyQuestion.java` | 근거가 자료에 그대로 있는 복습 문제, 출처(LLM/RULE/USER), 라이트너 상자와 다음 복습 시각, 동시 채점용 `version` |
 | `study` | `study_records` | `study/domain/StudyRecord.java` | 덧붙이기만 하는 학습 기록. 자료 제목·질문 문장은 그때 모습으로 복사해 둔다. 복습 기록은 복습 직전 상자(`review_box`)를 남겨 간격별 유지율을 계산한다 |
-| `ai` | `vector_store` | Spring AI PgVector mapping | RAG embeddings; 테이블(1024차원)과 HNSW 인덱스는 Flyway `V0000` baseline에 포함된다. Spring AI의 `initialize-schema: true`도 설정되어 있다. **1024는 provider 교체와 무관한 고정 계약이다** — `LLM_EMBEDDING_DIMENSIONS`가 pgvector와 임베딩 요청 양쪽에 같은 값으로 들어가므로, 로컬 `bge-m3`와 상용 `text-embedding-3-small/large` 모두 1024를 내도록 맞춰 쓴다. 차원 자체를 바꾸려면 새 migration과 전체 재적재가 필요하다 |
 
 ## Non-Relational Storage
 
@@ -50,12 +49,6 @@
 | `board` | `post:views:*`, `post:viewed:*`, view dirty/processing keys | `board/view/infrastructure/redis/ViewCountRedisKeys.java` | view count cache, dedupe, sync queue |
 | `board` | `like:cooldown:*`, `like:rate:*` | `board/like/infrastructure/redis/LikeRequestRedisRepository.java` | like abuse guard |
 | `board` | S3 bucket objects | `board/file/infrastructure/storage/S3FileStorageAdapter.java` | `post_file` stores metadata; object lifecycle belongs to board file domain |
-
-## PgVector Decision
-
-Decision:
-- The Spring AI PgVector table, `vector_store`, is owned by `ai`/RAG.
-- `ingest` may submit documents during the current monolith phase, but it does not own PgVector schema, index, dimensions, or embedding model decisions.
 
 ## 마이그레이션 규칙
 

@@ -17,23 +17,11 @@ presentation -> application -> domain
 - Redis에는 인증 보호, token, 좋아요 보호, 조회수처럼 복구 가능한 보조 상태만 둔다.
 - 공개 조회는 LLM을 호출하지 않는다. 비용이 드는 호출은 사용자 요청 또는 admin/system 흐름에서만 수행한다([AI Cost Policy](../policy.md#ai-cost)).
 
-## Ingest
-
-`ingest`는 운영자가 `POST /api/ingest/documents`로 올린 문서를 chunk로 나눠 RAG용 `vector_store`에 적재한다. 벡터 저장소 장애는 `503 DOCUMENT_STORE_UNAVAILABLE`로 구분한다.
-
 ## AI
 
-LLM은 application port 뒤에서 실행하며 provider와 model은 실행 설정으로 선택한다. 현재 호출 지점은 사용자 RAG 채팅과 학습 문제 초안·AI 학생 질문·꼬리질문이다.
+LLM은 `core`의 `StudyAssistant` port 뒤에서 실행하며 provider와 model은 실행 설정으로 선택한다. 호출 지점은 학습 문제 초안·AI 학생 질문·꼬리질문뿐이다.
 
-### 공통 안전·실패 경계
-
-`AiSafetyGuard`가 호출 전 입력을 검사하고 호출 후 출력을 정리한다. 내부 프롬프트·secret 노출 요청은 LLM을 호출하지 않고 거절하며, 출력에서 API key나 내부 프롬프트 흔적을 찾으면 전체 응답을 고정 거절문으로 바꾼다. 이 규칙은 보조 방어이므로 secret 자체를 프롬프트에 넣지 않는 원칙을 함께 지킨다.
-
-LLM adapter는 장애 시 null을 반환하고 metric을 남긴다. 채팅은 고정 fallback으로 응답하고, 학습은 규칙 문제와 빠진 핵심 항목을 되묻는 질문으로 대신한다.
-
-### RAG 채팅
-
-`ChatService`는 안전 검사를 통과한 질문으로 PgVector에서 관련 문서 최대 5개를 검색한 뒤 system prompt에 넣어 답변을 생성한다. 검색 결과가 없으면 빈 컨텍스트로 계속하고, vector store 장애는 `503 EXTERNAL_SERVICE_UNAVAILABLE`로 구분한다. 생성 결과가 비어 있으면 고정 fallback을 반환한다.
+LLM adapter는 장애 시 null을 반환하고 metric을 남긴다. 학습은 규칙 문제와 빠진 핵심 항목을 되묻는 질문으로 대신한다. LLM 출력은 문제 초안과 질문으로만 쓰고, 근거 문장이 자료에 그대로 있어야 저장한다([Study](#study)).
 
 ## Auth
 
