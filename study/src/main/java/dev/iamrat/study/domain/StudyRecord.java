@@ -53,12 +53,17 @@ public class StudyRecord {
     @Column(length = 2000)
     private String result;
 
+    // 복습 직전 상자. 간격별 유지율(ADR-008 게이트)의 기준이다.
+    private Integer reviewBox;
+
     @Column(nullable = false)
     private LocalDateTime createdAt;
 
-    public static StudyRecord answer(StudySource source, StudyQuestion question, String answer, ReviewGrade grade,
-                                     LocalDateTime now) {
-        return of(Kind.ANSWER, source, question.getId(), question.getQuestion(), answer, grade.name(), now);
+    public static StudyRecord answer(StudySource source, StudyQuestion question, int boxBeforeReview, String answer,
+                                     ReviewGrade grade, LocalDateTime now) {
+        StudyRecord record = of(Kind.ANSWER, source, question.getId(), question.getQuestion(), answer, grade.name(), now);
+        record.reviewBox = boxBeforeReview;
+        return record;
     }
 
     public static StudyRecord questionMade(StudySource source, StudyQuestion question, LocalDateTime now) {

@@ -358,13 +358,13 @@ Google News source가 비활성이면 두 news endpoint 호출은 현재 `500 IN
 | --- | --- |
 | `IdResponse` | `id` |
 | `SourceSummary` | `id`, `title`, `questionStatus`, `createdAt` |
-| `SourceDetail` | `id`, `title`, `content`, `questionStatus`, `discardedQuestionCount`(근거가 자료에 없어 버린 LLM 문제 수), `keyPoints`, `questions`, `createdAt` |
+| `SourceDetail` | `id`, `title`, `content`, `questionStatus`, `draftedQuestionCount`(LLM이 낸 문제 초안 수), `discardedQuestionCount`(근거 검증·길이 검사에서 버린 LLM 문제 수), `keyPoints`, `questions`, `createdAt` |
 | `QuestionView` | `id`, `question`, `evidence`, `origin`, `box`, `dueAt` |
 | `DueQuestion` | `id`, `sourceId`, `sourceTitle`, `question`, `evidence`, `box` |
 | `ReviewResult` | `box`, `dueAt` |
 | `RecallResult` | `recalled`, `total`, `missed` |
 | `TeachResponse` | `questions` |
-| `RecordView` | `id`, `kind`, `sourceId`, `sourceTitle`, `prompt`, `userText`, `result`, `createdAt` |
+| `RecordView` | `id`, `kind`, `sourceId`, `sourceTitle`, `prompt`, `userText`, `result`, `reviewBox`(복습 기록일 때 복습 직전 상자, 그 밖에는 null), `createdAt` |
 
 ### 규칙
 

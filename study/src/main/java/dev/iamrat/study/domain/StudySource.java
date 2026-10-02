@@ -38,6 +38,10 @@ public class StudySource {
     @Column(nullable = false, length = 20)
     private QuestionStatus questionStatus;
 
+    // LLM이 낸 문제 초안 수. 근거 검증 통과율(ADR-008 게이트)의 분모다.
+    @Column(nullable = false)
+    private int draftedQuestionCount;
+
     @Column(nullable = false)
     private int discardedQuestionCount;
 
@@ -54,8 +58,9 @@ public class StudySource {
         return source;
     }
 
-    public void questionsReady(int discardedQuestionCount) {
+    public void questionsReady(int draftedQuestionCount, int discardedQuestionCount) {
         this.questionStatus = QuestionStatus.READY;
+        this.draftedQuestionCount = draftedQuestionCount;
         this.discardedQuestionCount = discardedQuestionCount;
     }
 }

@@ -49,6 +49,7 @@ public class StudyPracticeService {
         String prompt,
         String userText,
         String result,
+        Integer reviewBox,
         LocalDateTime createdAt
     ) {
     }
@@ -77,9 +78,10 @@ public class StudyPracticeService {
         StudyQuestion question = questionRepository.findByIdAndOwnerAccountId(questionId, ownerAccountId)
             .orElseThrow(() -> new CustomException(StudyErrorCode.QUESTION_NOT_FOUND));
         LocalDateTime now = now();
+        int boxBeforeReview = question.getBox();
         question.review(grade, now);
         StudySource source = sourceRepository.getOwned(question.getSourceId(), ownerAccountId);
-        recordRepository.save(StudyRecord.answer(source, question, answer, grade, now));
+        recordRepository.save(StudyRecord.answer(source, question, boxBeforeReview, answer, grade, now));
         return new ReviewResult(question.getBox(), question.getDueAt());
     }
 
@@ -118,7 +120,7 @@ public class StudyPracticeService {
         return recordRepository.findTop50ByOwnerAccountIdOrderByIdDesc(ownerAccountId).stream()
             .map(record -> new RecordView(record.getId(), record.getKind().name(), record.getSourceId(),
                 record.getSourceTitle(), record.getPrompt(), record.getUserText(), record.getResult(),
-                record.getCreatedAt()))
+                record.getReviewBox(), record.getCreatedAt()))
             .toList();
     }
 
