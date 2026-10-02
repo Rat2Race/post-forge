@@ -28,6 +28,8 @@ modular monolith 선택 근거는 [ADR-003](../decisions/adr-003-modular-monolit
 - `study` → `ai`
 - `core` → 다른 프로젝트 모듈
 
+모듈 안에서는 `domain`이 `presentation`·`infrastructure`에, `application`이 `presentation`에 의존하지 않는다. 예외는 없다. 응답으로 그대로 나가는 조회 결과(`PostDetail`, `CommentDetail`, study의 `SourceDetail` 등)는 `application` record로 두고 컨트롤러가 그대로 반환한다. 필드가 같은 Response를 하나 더 만들어 옮겨 담지 않는다.
+
 ## 코드 배치 기준
 
 새 코드는 다음 순서로 위치를 결정한다.

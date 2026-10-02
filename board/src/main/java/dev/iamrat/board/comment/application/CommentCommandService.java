@@ -2,7 +2,6 @@ package dev.iamrat.board.comment.application;
 
 import dev.iamrat.board.comment.domain.Comment;
 import dev.iamrat.board.comment.domain.CommentPolicy;
-import dev.iamrat.board.comment.presentation.CommentSummaryResponse;
 import dev.iamrat.board.post.application.PostReader;
 import dev.iamrat.board.post.domain.Post;
 import dev.iamrat.core.account.AccountProfileReader;
@@ -22,7 +21,7 @@ public class CommentCommandService {
     private final CommentPolicy commentPolicy = new CommentPolicy();
 
     @Transactional
-    public CommentSummaryResponse saveComment(Long postId, Long parentId, String content, Long accountId) {
+    public CommentSummary saveComment(Long postId, Long parentId, String content, Long accountId) {
         commentPolicy.validateAuthor(accountId);
         String nickname = accountProfileReader.getProfile(accountId).nickname();
 
@@ -38,16 +37,16 @@ public class CommentCommandService {
         post.addComment(newComment);
         commentStore.save(newComment);
 
-        return CommentSummaryResponse.from(newComment);
+        return CommentSummary.from(newComment);
     }
 
     @Transactional
-    public CommentSummaryResponse updateComment(Long commentId, String newContent) {
+    public CommentSummary updateComment(Long commentId, String newContent) {
         Comment comment = commentReader.getById(commentId);
 
         comment.updateContent(newContent);
 
-        return CommentSummaryResponse.from(comment);
+        return CommentSummary.from(comment);
     }
 
     @Transactional

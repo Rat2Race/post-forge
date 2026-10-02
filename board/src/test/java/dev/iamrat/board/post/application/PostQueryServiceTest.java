@@ -4,7 +4,6 @@ import dev.iamrat.board.comment.application.CommentQueryService;
 import dev.iamrat.board.like.application.LikeResult;
 import dev.iamrat.board.like.application.PostLikeService;
 import dev.iamrat.board.post.domain.Post;
-import dev.iamrat.board.post.presentation.PostDetailResponse;
 import dev.iamrat.board.view.application.ViewCountService;
 import java.util.List;
 import java.util.Map;
@@ -62,7 +61,7 @@ class PostQueryServiceTest {
         given(postLikeService.getLikeInfo(postId, null)).willReturn(new LikeResult(false, 1L));
         given(commentQueryService.getCommentCount(postId)).willReturn(2);
 
-        PostDetailResponse response = postQueryService.readPost(postId, null);
+        PostDetail response = postQueryService.readPost(postId, null);
 
         assertThat(response.views()).isEqualTo(3L);
         assertThat(response.isLiked()).isFalse();
@@ -85,7 +84,7 @@ class PostQueryServiceTest {
         given(postLikeService.getLikeCounts(List.of(3L))).willReturn(Map.of(3L, 0L));
         given(commentQueryService.getCommentCounts(List.of(3L))).willReturn(Map.of(3L, 0));
 
-        PostDetailResponse response = postQueryService.getPosts(null, Pageable.unpaged(), null).getContent().getFirst();
+        PostDetail response = postQueryService.getPosts(null, Pageable.unpaged(), null).getContent().getFirst();
 
         assertThat(response.views()).isEqualTo(5L);
         assertThat(response.commentCount()).isZero();

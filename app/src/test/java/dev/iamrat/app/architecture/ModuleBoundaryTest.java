@@ -69,7 +69,6 @@ class ModuleBoundaryTest {
     void applicationDoesNotDependOnPresentation() {
         noClasses()
             .that().resideInAnyPackage("..application..", "..domain..")
-            .and().resideOutsideOfPackage(BASE + ".board..")
             .should().dependOnClassesThat().resideInAPackage("..presentation..")
             .check(CLASSES);
     }
