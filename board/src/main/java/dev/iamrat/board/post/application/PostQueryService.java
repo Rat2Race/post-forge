@@ -4,16 +4,11 @@ import dev.iamrat.board.comment.application.CommentQueryService;
 import dev.iamrat.board.like.application.LikeResult;
 import dev.iamrat.board.like.application.PostLikeService;
 import dev.iamrat.board.post.domain.Post;
-import dev.iamrat.board.post.domain.PostReferenceLink;
-import dev.iamrat.board.post.domain.PostType;
 import dev.iamrat.board.post.presentation.PostDetailResponse;
 import dev.iamrat.board.view.application.ViewCountService;
-import dev.iamrat.core.board.post.NewsSection;
-import dev.iamrat.core.board.post.PostPublishOrigin;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -31,23 +26,9 @@ public class PostQueryService {
     private final PostLikeService postLikeService;
     private final CommentQueryService commentQueryService;
     private final ViewCountService viewCountService;
-    private final PostReferenceLinkStore postReferenceLinkStore;
 
-    public Page<PostDetailResponse> getPosts(
-        String keyword,
-        PostType category,
-        NewsSection boardCategory,
-        PostPublishOrigin publishOrigin,
-        Pageable pageable,
-        Long accountId
-    ) {
-        Page<Post> posts = postStore.findByFilters(
-            normalizeKeyword(keyword),
-            category,
-            boardCategory,
-            publishOrigin,
-            pageable
-        );
+    public Page<PostDetailResponse> getPosts(String keyword, Pageable pageable, Long accountId) {
+        Page<Post> posts = postStore.findByKeyword(normalizeKeyword(keyword), pageable);
         return toDetailPage(posts, pageable, accountId);
     }
 
@@ -57,15 +38,7 @@ public class PostQueryService {
         long views = viewCountService.getViewCount(postId);
         LikeResult likeInfo = postLikeService.getLikeInfo(postId, accountId);
         int commentCount = commentQueryService.getCommentCount(postId);
-        List<PostReferenceLink> references = postReferenceLinkStore.findByPostId(postId);
-        return PostDetailResponse.from(
-            post,
-            likeInfo.isLiked(),
-            likeInfo.likeCount(),
-            commentCount,
-            views,
-            references
-        );
+        return PostDetailResponse.from(post, likeInfo.isLiked(), likeInfo.likeCount(), commentCount, views);
     }
 
     public PostDetailResponse readPost(Long postId, Long accountId) {
@@ -89,8 +62,6 @@ public class PostQueryService {
         Map<Long, Long> viewCounts = viewCountService.getViewCounts(postIds);
         Map<Long, Long> likeCounts = postLikeService.getLikeCounts(postIds);
         Map<Long, Integer> commentCounts = commentQueryService.getCommentCounts(postIds);
-        Map<Long, List<PostReferenceLink>> references = postReferenceLinkStore.findByPostIds(postIds).stream()
-            .collect(Collectors.groupingBy(reference -> reference.getPost().getId()));
 
         List<PostDetailResponse> responses = content.stream()
             .map(post -> PostDetailResponse.from(
@@ -98,8 +69,7 @@ public class PostQueryService {
                 likedPostIds.contains(post.getId()),
                 likeCounts.getOrDefault(post.getId(), 0L),
                 commentCounts.getOrDefault(post.getId(), 0),
-                viewCounts.getOrDefault(post.getId(), 0L),
-                references.getOrDefault(post.getId(), List.of())
+                viewCounts.getOrDefault(post.getId(), 0L)
             ))
             .toList();
 

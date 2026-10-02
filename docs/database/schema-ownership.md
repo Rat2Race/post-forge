@@ -27,13 +27,12 @@
 | --- | --- | --- | --- |
 | `auth` | `accounts` | `auth/account/domain/Account.java` | 계정 identity, OAuth provider identity, account fields, optimistic lock version |
 | `auth` | `account_roles` | `Account.roles` `@CollectionTable` | account role set; `accounts` lifecycle에 종속 |
-| `board` | `posts` | `board/post/domain/Post.java` | 게시글 본문, summary/tags/category/board_category/publish_origin, 조회수, like count, 작성자 account id와 nickname snapshot; 자동 수집 뉴스는 `PRODUCT_LAUNCH_NEWS`, 전날 뉴스의 분야별 요약은 `DAILY_DIGEST`로 저장 |
+| `board` | `posts` | `board/post/domain/Post.java` | 게시글 본문, tags, 조회수, like count, 작성자 account id와 nickname snapshot |
 | `board` | `post_tags` | `Post.tags` `@CollectionTable` | 게시글 tag collection; `posts` lifecycle에 종속 |
 | `board` | `comments` | `board/comment/domain/Comment.java` | 댓글/대댓글 tree; 작성자는 `accounts.id` 값을 `account_id` scalar로 보관 |
 | `board` | `post_like` | `board/like/domain/PostLike.java` | 게시글 좋아요 uniqueness: `(post_id, account_id)` |
 | `board` | `comment_like` | `board/like/domain/CommentLike.java` | 댓글 좋아요 uniqueness: `(comment_id, account_id)` |
 | `board` | `post_file` | `board/file/domain/PostFile.java` | S3 object metadata and post attachment relation |
-| `board` | `post_reference_links` | `board/post/domain/PostReferenceLink.java` | 자동 게시 뉴스의 출처, canonical URL 중복 기준, keyword 일일 한도 metadata. 발행 출처는 `posts.publish_origin`에만 둔다 |
 | `study` | `study_sources` | `study/domain/StudySource.java` | 사용자가 올린 학습 자료, 문제 생성 상태, LLM 문제 초안 수와 버린 수(근거 검증 통과율 기준), 빈 페이지 상자와 다음 예정 시각, 낙관적 잠금 `version`; 브랜치 마이그레이션 `V20261002_1` |
 | `study` | `study_questions` | `study/domain/StudyQuestion.java` | 근거가 자료에 그대로 있는 복습 문제, 출처(LLM/RULE/USER), 라이트너 상자와 다음 복습 시각, 동시 채점용 `version` |
 | `study` | `study_records` | `study/domain/StudyRecord.java` | 덧붙이기만 하는 학습 기록. 자료 제목·질문 문장은 그때 모습으로 복사해 둔다. 복습 기록은 복습 직전 상자(`review_box`)를 남겨 간격별 유지율을 계산한다 |

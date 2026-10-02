@@ -13,9 +13,6 @@ import dev.iamrat.board.file.infrastructure.persistence.FileRepository;
 import dev.iamrat.board.integration.security.WithMockAccount;
 import dev.iamrat.board.post.application.PostQueryService;
 import dev.iamrat.board.post.domain.Post;
-import dev.iamrat.board.post.domain.PostReferenceLink;
-import dev.iamrat.board.post.domain.PostType;
-import dev.iamrat.board.post.infrastructure.persistence.PostReferenceLinkRepository;
 import dev.iamrat.board.post.infrastructure.persistence.PostRepository;
 import dev.iamrat.board.post.presentation.PostDetailResponse;
 import dev.iamrat.board.view.application.ViewCountService;
@@ -23,7 +20,6 @@ import dev.iamrat.core.account.AccountProfileManager;
 import dev.iamrat.core.account.AccountProfileReader;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -52,8 +48,6 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional
 class BoardNPlusOneRegressionTest {
 
-    private static final long PRODUCT_ID = 100L;
-
     @Autowired
     private PostQueryService postQueryService;
 
@@ -65,9 +59,6 @@ class BoardNPlusOneRegressionTest {
 
     @Autowired
     private CommentRepository commentRepository;
-
-    @Autowired
-    private PostReferenceLinkRepository postReferenceLinkRepository;
 
     @Autowired
     private FileRepository fileRepository;
@@ -103,16 +94,14 @@ class BoardNPlusOneRegressionTest {
     @WithMockAccount
     @DisplayName("게시글 목록 조회는 DTO 변환까지 데이터 수에 비례해 쿼리가 증가하지 않는다")
     void getPosts_doesNotIntroduceNPlusOneQueries() {
-        seedPosts(20, PRODUCT_ID);
+        seedPosts(20);
 
         long smallCount = countQueries(() -> {
-            Page<PostDetailResponse> responses = postQueryService.getPosts(
-                null, null, null, null, pageable(1), null);
+            Page<PostDetailResponse> responses = postQueryService.getPosts(null, pageable(1), null);
             assertThat(responses.getContent()).hasSize(1);
         });
         long largeCount = countQueries(() -> {
-            Page<PostDetailResponse> responses = postQueryService.getPosts(
-                null, null, null, null, pageable(20), null);
+            Page<PostDetailResponse> responses = postQueryService.getPosts(null, pageable(20), null);
             assertThat(responses.getContent()).hasSize(20);
         });
 
@@ -148,12 +137,11 @@ class BoardNPlusOneRegressionTest {
         return statistics.getPrepareStatementCount();
     }
 
-    private void seedPosts(int count, long productId) {
+    private void seedPosts(int count) {
         for (int index = 0; index < count; index++) {
             Post post = postRepository.save(post(index));
             commentRepository.save(Comment.create(post, null, "댓글 " + index, 2L, "commenter"));
             fileRepository.save(file(post, index));
-            postReferenceLinkRepository.save(reference(post, productId, index));
         }
         postRepository.flush();
     }
@@ -166,15 +154,7 @@ class BoardNPlusOneRegressionTest {
     }
 
     private Post post(int index) {
-        return Post.create(
-            "게시글 " + index,
-            "게시글 본문입니다 " + index,
-            "요약 " + index,
-            List.of("tag-" + index),
-            PostType.GENERAL,
-            1L,
-            "writer"
-        );
+        return Post.create("게시글 " + index, "게시글 본문입니다 " + index, List.of("tag-" + index), 1L, "writer");
     }
 
     private PostFile file(Post post, int index) {
@@ -186,18 +166,6 @@ class BoardNPlusOneRegressionTest {
             .fileType("image/png")
             .post(post)
             .build();
-    }
-
-    private PostReferenceLink reference(Post post, long productId, int index) {
-        return PostReferenceLink.of(
-            post,
-            "keyword-" + index,
-            "https://news.example/product-" + productId + "/article-" + index,
-            "https://news.example/product-" + productId + "/article-" + index + "?utm=1",
-            "Example News",
-            LocalDateTime.of(2026, 7, 1, 10, 0).plusMinutes(index),
-            "출시 기사 " + index
-        );
     }
 
     private PageRequest pageable(int size) {

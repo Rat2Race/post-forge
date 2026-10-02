@@ -2,7 +2,6 @@ package dev.iamrat.board.post.application;
 
 import dev.iamrat.board.post.domain.Post;
 import dev.iamrat.board.post.domain.PostPolicy;
-import dev.iamrat.board.post.domain.PostType;
 import dev.iamrat.board.post.presentation.PostSummaryResponse;
 import dev.iamrat.board.view.application.ViewCountService;
 import dev.iamrat.core.account.AccountProfileReader;
@@ -34,15 +33,7 @@ public class PostCommandService {
         postPolicy.validateAuthor(accountId);
         String nickname = accountProfileReader.getProfile(accountId).nickname();
 
-        Post newPost = Post.create(
-            title,
-            content,
-            null,
-            tags,
-            PostType.GENERAL,
-            accountId,
-            nickname
-        );
+        Post newPost = Post.create(title, content, tags, accountId, nickname);
 
         postStore.save(newPost);
         postFileAppender.appendFiles(newPost, fileIds);

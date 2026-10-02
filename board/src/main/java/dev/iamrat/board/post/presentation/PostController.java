@@ -7,9 +7,6 @@ import dev.iamrat.board.post.application.PostInteractionService;
 import dev.iamrat.board.post.application.PostQueryService;
 import dev.iamrat.core.global.dto.PageResponse;
 import dev.iamrat.core.account.UserPrincipal;
-import dev.iamrat.core.board.post.NewsSection;
-import dev.iamrat.board.post.domain.PostType;
-import dev.iamrat.core.board.post.PostPublishOrigin;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -53,22 +50,12 @@ public class PostController {
     @GetMapping
     public ResponseEntity<PageResponse<PostDetailResponse>> getPosts(
         @RequestParam(required = false) String keyword,
-        @RequestParam(required = false) PostType category,
-        @RequestParam(required = false) NewsSection boardCategory,
-        @RequestParam(required = false) PostPublishOrigin publishOrigin,
         @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable,
         @AuthenticationPrincipal UserPrincipal user
     ) {
         Long accountId = optionalAccountId(user);
 
-        Page<PostDetailResponse> posts = postQueryService.getPosts(
-            keyword,
-            category,
-            boardCategory,
-            publishOrigin,
-            pageable,
-            accountId
-        );
+        Page<PostDetailResponse> posts = postQueryService.getPosts(keyword, pageable, accountId);
 
         return ResponseEntity.ok(PageResponse.from(posts));
     }

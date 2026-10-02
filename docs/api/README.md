@@ -162,7 +162,7 @@ Spring pageable resolver는 일부 잘못된 `page`/`size` 값을 `0`, 엔드포
 
 | Endpoint | Auth | Parameters — 필요한 이유 | Success | Fail |
 | --- | --- | --- | --- | --- |
-| `GET /api/posts` | PUBLIC | `keyword?` 제목·본문 검색, `category?` 게시글 종류 필터, `boardCategory?` 분야 필터, `publishOrigin?` 사용자·batch·backfill 출처 필터, pageable 기본 `size=20`, `sort=createdAt,DESC`; 선택 JWT는 `isLiked` 계산에 사용 | `200 PageResponse<PostDetailResponse>` | 잘못된 enum `400 INVALID_INPUT`; 지원하지 않는 sort property·내부 조회 오류 `500` |
+| `GET /api/posts` | PUBLIC | `keyword?` 제목·본문 검색, pageable 기본 `size=20`, `sort=createdAt,DESC`; 선택 JWT는 `isLiked` 계산에 사용 | `200 PageResponse<PostDetailResponse>` | 지원하지 않는 sort property·내부 조회 오류 `500` |
 | `POST /api/posts` | USER | body `PostRequest` — 일반 게시글 본문·태그·첨부 지정; JWT account ID는 작성자 | `201 PostSummaryResponse` | `400 VALIDATION_ERROR`; 인증·계정 상태 `401/403`; 작성자 `404 USER_NOT_FOUND`; 충돌 `409` |
 | `GET /api/posts/{postId}` | PUBLIC | path `postId` — 조회할 게시글 식별. 선택 JWT가 있으면 개인화 및 사용자별 조회수 증가 | `200 PostDetailResponse` | `404 POST_NOT_FOUND`; 숫자가 아닌 경로 `404 RESOURCE_NOT_FOUND` |
 | `PUT /api/posts/{postId}` | USER | path `postId` 대상 식별, body `PostRequest` 새 상태. 작성자 또는 ADMIN만 허용 | `200 PostSummaryResponse` | `400 VALIDATION_ERROR`; 인증·소유권 `401/403`; `404 POST_NOT_FOUND` |
@@ -202,7 +202,7 @@ Spring pageable resolver는 일부 잘못된 `page`/`size` 값을 `0`, 엔드포
 
 PUT/PATCH의 기준은 ID·작성자·생성일 같은 서버 관리 필드를 보존하느냐가 아니다. client가 관리하는 편집 필드를 매번 완전한 상태로 보내면 PUT이고, 일부 필드만 보내며 누락 필드를 유지해야 하면 PATCH다. PATCH로 바꾸려면 annotation만 교체할 것이 아니라 DTO가 `누락`과 `명시적 null/빈 값`을 구분하고 service가 기존 값과 merge하도록 바꿔야 한다.
 
-현재 `PUT /api/posts/{postId}`는 client가 편집 가능한 `title`, `content`, `tags`, `fileIds` 묶음을 교체한다. `tags`를 생략하면 빈 목록이 되고 `fileIds`를 생략하면 기존 첨부가 모두 해제되므로, edit client는 네 필드를 전체 전송해야 한다. `summary`, `publishOrigin`은 서버 관리 필드로 유지하지만 category는 무조건 `GENERAL`로 바꾼다. 따라서 ADMIN이 system 출시뉴스를 수정하면 category가 바뀌는 결함이 있다. 댓글 `PUT`도 생성용 `CommentRequest`를 재사용해 `parentId`를 받지만 수정에서는 무시하고 `content`만 바꾼다. 게시글 category는 보존하고, 댓글 수정에는 `content`만 가진 별도 DTO를 쓰는 것이 현재 의도에 맞다.
+현재 `PUT /api/posts/{postId}`는 client가 편집 가능한 `title`, `content`, `tags`, `fileIds` 묶음을 교체한다. `tags`를 생략하면 빈 목록이 되고 `fileIds`를 생략하면 기존 첨부가 모두 해제되므로, edit client는 네 필드를 전체 전송해야 한다. 댓글 `PUT`도 생성용 `CommentRequest`를 재사용해 `parentId`를 받지만 수정에서는 무시하고 `content`만 바꾼다. 댓글 수정에는 `content`만 가진 별도 DTO를 쓰는 것이 현재 의도에 맞다.
 
 Board의 게시글·댓글 path ID는 `\d+` 경로만 매핑한다. 숫자가 아니면 controller에 도달하지 않고 `404 RESOURCE_NOT_FOUND`다. `PUT/DELETE` 댓글 경로의 `postId`는 현재 서비스 계층에서 `commentId`와의 소속 관계 검증에 사용되지 않는다. 호출자는 실제 댓글의 게시글 ID를 넣어야 한다.
 
@@ -220,15 +220,12 @@ Board의 게시글·댓글 path ID는 `\d+` 경로만 매핑한다. 숫자가 �
 | `ProfilePasswordUpdateRequest.currentPassword` | 필수 | 본인 확인 |
 | `ProfilePasswordUpdateRequest.newPassword` | 필수, 8~100자 | 새 password hash 입력 |
 
-사용자 게시글 생성·수정은 요청에서 category를 받지 않고 항상 `GENERAL`, `publishOrigin=USER`로 저장한다.
-
 ### 응답 DTO
 
 | DTO | 필드 |
 | --- | --- |
-| `PostDetailResponse` | `id`, `title`, `content`, `summary`, `tags`, `category`, `boardCategory`, `publishOrigin`, `accountId`, `nickname`, `views`, `commentCount`, `likeCount`, `isLiked`, `references`, `files`, `createdAt`, `modifiedAt` |
-| `PostSummaryResponse` | `id`, `title`, `summary`, `tags`, `category`, `publishOrigin`, `accountId`, `nickname`, `createdAt`, `modifiedAt` |
-| `PostReferenceLinkResponse` | `id`, `keyword`, `canonicalUrl`, `originalUrl`, `sourceName`, `publishedAt`, `titleSnapshot` |
+| `PostDetailResponse` | `id`, `title`, `content`, `tags`, `accountId`, `nickname`, `views`, `commentCount`, `likeCount`, `isLiked`, `files`, `createdAt`, `modifiedAt` |
+| `PostSummaryResponse` | `id`, `title`, `tags`, `accountId`, `nickname`, `createdAt`, `modifiedAt` |
 | `FileInfoResponse` | `fileId`, `originalFileName`, `fileType` |
 | `CommentDetailResponse` | `id`, `content`, `accountId`, `nickname`, `parentId`, `replyCount`, `likeCount`, `isLiked`, `createdAt`, `modifiedAt` |
 | `CommentSummaryResponse` | `id`, `content`, `accountId`, `nickname`, `parentId`, `createdAt`, `modifiedAt` |
@@ -258,14 +255,6 @@ Board의 게시글·댓글 path ID는 `\d+` 경로만 매핑한다. 숫자가 �
 | DTO | 필드 |
 | --- | --- |
 | `DocumentIngestResult` | `documentCount`, `chunkCount` |
-
-### 주요 enum
-
-| Enum | 값 |
-| --- | --- |
-| `PostType` | `GENERAL`, `DAILY_DIGEST`(분야별 데일리 뉴스 브리핑, system이 게시), `PRODUCT_LAUNCH_NEWS` |
-| `NewsSection` | `GENERAL`, `NATION`, `WORLD`, `BUSINESS`, `TECHNOLOGY`, `ENTERTAINMENT`, `SPORTS`, `HEALTH` — Google 뉴스 한국판 섹션과 1:1. `GENERAL`은 회원 글·미분류 |
-| `PostPublishOrigin` | `USER`, `SYSTEM_BATCH`, `ADMIN_BACKFILL` |
 
 <a id="study"></a>
 ## Study

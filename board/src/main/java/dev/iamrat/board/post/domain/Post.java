@@ -3,8 +3,6 @@ package dev.iamrat.board.post.domain;
 import dev.iamrat.board.support.persistence.AuditingFields;
 import dev.iamrat.board.comment.domain.Comment;
 import dev.iamrat.board.file.domain.PostFile;
-import dev.iamrat.core.board.post.NewsSection;
-import dev.iamrat.core.board.post.PostPublishOrigin;
 import jakarta.persistence.*;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
@@ -21,10 +19,7 @@ import lombok.ToString;
 	name = "posts",
 	indexes = {
 		@Index(name = "idx_posts_created_at", columnList = "created_at"),
-		@Index(name = "idx_posts_account_id", columnList = "account_id"),
-		@Index(name = "idx_posts_category", columnList = "category"),
-		@Index(name = "idx_posts_board_category", columnList = "board_category"),
-		@Index(name = "idx_posts_publish_origin", columnList = "publish_origin")
+		@Index(name = "idx_posts_account_id", columnList = "account_id")
 	}
 )
 @Getter
@@ -43,9 +38,6 @@ public class Post extends AuditingFields {
 	@Column(nullable = false, length = 10000)
 	private String content;
 
-	@Column(length = 500)
-	private String summary;
-
 	@ElementCollection
 	@CollectionTable(
 		name = "post_tags",
@@ -55,21 +47,6 @@ public class Post extends AuditingFields {
 	@Column(name = "tag", length = 50)
 	@Builder.Default
 	private List<String> tags = new ArrayList<>();
-
-	@Enumerated(EnumType.STRING)
-	@Column(name = "category", nullable = false, length = 30)
-	@Builder.Default
-	private PostType category = PostType.GENERAL;
-
-	@Enumerated(EnumType.STRING)
-	@Column(name = "board_category", nullable = false, length = 30)
-	@Builder.Default
-	private NewsSection boardCategory = NewsSection.GENERAL;
-
-	@Enumerated(EnumType.STRING)
-	@Column(name = "publish_origin", nullable = false, length = 30, updatable = false)
-	@Builder.Default
-	private PostPublishOrigin publishOrigin = PostPublishOrigin.USER;
 
 	@Column(name = "views", nullable = false)
 	@Builder.Default
@@ -97,53 +74,14 @@ public class Post extends AuditingFields {
 	private Set<PostFile> files = new LinkedHashSet<>();
 
 	public static Post general(String title, String content, Long accountId, String nickname) {
-		return create(title, content, null, null, PostType.GENERAL, accountId, nickname);
+		return create(title, content, null, accountId, nickname);
 	}
 
-	public static Post create(
-		String title,
-		String content,
-		String summary,
-		List<String> tags,
-		PostType category,
-		Long accountId,
-		String nickname
-	) {
-		return create(title, content, summary, tags, category, null, PostPublishOrigin.USER, accountId, nickname);
-	}
-
-	public static Post create(
-		String title,
-		String content,
-		String summary,
-		List<String> tags,
-		PostType category,
-		PostPublishOrigin publishOrigin,
-		Long accountId,
-		String nickname
-	) {
-		return create(title, content, summary, tags, category, null, publishOrigin, accountId, nickname);
-	}
-
-	public static Post create(
-		String title,
-		String content,
-		String summary,
-		List<String> tags,
-		PostType category,
-		NewsSection boardCategory,
-		PostPublishOrigin publishOrigin,
-		Long accountId,
-		String nickname
-	) {
+	public static Post create(String title, String content, List<String> tags, Long accountId, String nickname) {
 		return Post.builder()
 			.title(title)
 			.content(content)
-			.summary(summary)
 			.tags(tags == null ? new ArrayList<>() : new ArrayList<>(tags))
-			.category(category == null ? PostType.GENERAL : category)
-			.boardCategory(boardCategory == null ? NewsSection.GENERAL : boardCategory)
-			.publishOrigin(publishOrigin == null ? PostPublishOrigin.USER : publishOrigin)
 			.accountId(accountId)
 			.nickname(nickname)
 			.build();

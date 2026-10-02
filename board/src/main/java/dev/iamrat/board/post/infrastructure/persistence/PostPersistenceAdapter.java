@@ -2,12 +2,6 @@ package dev.iamrat.board.post.infrastructure.persistence;
 
 import dev.iamrat.board.post.application.PostStore;
 import dev.iamrat.board.post.domain.Post;
-import dev.iamrat.board.post.domain.PostType;
-import dev.iamrat.core.board.post.NewsSection;
-import dev.iamrat.core.board.post.PostPublishOrigin;
-import jakarta.persistence.criteria.Predicate;
-import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
@@ -59,38 +53,8 @@ public class PostPersistenceAdapter implements PostStore {
     }
 
     @Override
-    public List<Post> findByCategoryAndBoardCategoryInRange(
-        PostType category,
-        NewsSection boardCategory,
-        LocalDateTime startInclusive,
-        LocalDateTime endExclusive
-    ) {
-        return postRepository.findAllByCategoryAndBoardCategoryInRange(
-            category,
-            boardCategory,
-            startInclusive,
-            endExclusive
-        );
-    }
-
-    @Override
-    public boolean existsByCategoryAndBoardCategoryAndTitle(
-        PostType category,
-        NewsSection boardCategory,
-        String title
-    ) {
-        return postRepository.existsByCategoryAndBoardCategoryAndTitle(category, boardCategory, title);
-    }
-
-    @Override
-    public Page<Post> findByFilters(
-        String keyword,
-        PostType category,
-        NewsSection boardCategory,
-        PostPublishOrigin publishOrigin,
-        Pageable pageable
-    ) {
-        return postRepository.findAll(filters(keyword, category, boardCategory, publishOrigin), pageable);
+    public Page<Post> findByKeyword(String keyword, Pageable pageable) {
+        return postRepository.findAll(keywordFilter(keyword), pageable);
     }
 
     @Override
@@ -103,35 +67,16 @@ public class PostPersistenceAdapter implements PostStore {
         postRepository.updateLikeCount(postId, likeCount);
     }
 
-    private Specification<Post> filters(
-        String keyword,
-        PostType category,
-        NewsSection boardCategory,
-        PostPublishOrigin publishOrigin
-    ) {
+    private Specification<Post> keywordFilter(String keyword) {
         return (root, query, criteriaBuilder) -> {
-            List<Predicate> predicates = new ArrayList<>();
-
-            if (keyword != null && !keyword.isBlank()) {
-                String pattern = "%" + keyword.toLowerCase(Locale.ROOT) + "%";
-                predicates.add(criteriaBuilder.or(
-                    criteriaBuilder.like(criteriaBuilder.lower(root.get("title")), pattern),
-                    criteriaBuilder.like(criteriaBuilder.lower(root.get("content")), pattern)
-                ));
+            if (keyword == null || keyword.isBlank()) {
+                return criteriaBuilder.conjunction();
             }
-            if (category != null) {
-                predicates.add(criteriaBuilder.equal(root.get("category"), category));
-            }
-            if (boardCategory != null) {
-                predicates.add(criteriaBuilder.equal(root.get("boardCategory"), boardCategory));
-            }
-            if (publishOrigin != null) {
-                predicates.add(criteriaBuilder.equal(root.get("publishOrigin"), publishOrigin));
-            }
-
-            return predicates.isEmpty()
-                ? criteriaBuilder.conjunction()
-                : criteriaBuilder.and(predicates.toArray(Predicate[]::new));
+            String pattern = "%" + keyword.toLowerCase(Locale.ROOT) + "%";
+            return criteriaBuilder.or(
+                criteriaBuilder.like(criteriaBuilder.lower(root.get("title")), pattern),
+                criteriaBuilder.like(criteriaBuilder.lower(root.get("content")), pattern)
+            );
         };
     }
 }
