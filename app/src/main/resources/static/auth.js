@@ -73,9 +73,10 @@ const { api, post, login, logout } = (() => {
       const res = await fetch('/api/auth/login', { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify({ username, password }) });
       if (!res.ok) throw await failure(res);
       const r = await res.json();
-      localStorage.setItem('pf.session', Date.now().toString(36) + Math.random().toString(36).slice(2));
+      // 세션 표식은 마지막에 쓴다. 다른 탭은 표식이 바뀐 것을 보고 다시 그리므로, 그때 토큰·이름도 이미 새 값이어야 한다.
       localStorage.setItem('pf.token', r.accessToken);
       localStorage.setItem('pf.name', username);
+      localStorage.setItem('pf.session', Date.now().toString(36) + Math.random().toString(36).slice(2));
     });
     changed();
   }
@@ -94,6 +95,13 @@ const { api, post, login, logout } = (() => {
     }).catch(() => {});
     changed();
   }
+
+  // 다른 탭에서 로그인·로그아웃해 세션 표식이 바뀌면 이 탭도 새 상태로 다시 그린다. 그대로 두면 이전 계정의 화면에서
+  // 보낸 요청이 지금 저장된 다른 계정의 토큰으로 나간다. 같은 세션의 토큰 재발급(pf.token만 바뀜)은 다시 그리지 않아
+  // 쓰던 답이 남는다. 로그아웃은 세션 표식을 마지막에 지우고, clear()는 key가 null이다.
+  window.addEventListener('storage', e => {
+    if (e.key === 'pf.session' || e.key === null) changed();
+  });
 
   return { api, post: (path, body) => api(path, { method:'POST', body: JSON.stringify(body) }), login, logout };
 })();
