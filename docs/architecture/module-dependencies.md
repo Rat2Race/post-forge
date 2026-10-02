@@ -13,13 +13,11 @@ modular monolith 선택 근거는 [ADR-003](../decisions/adr-003-modular-monolit
 
 | 모듈 | 직접 참조할 수 있는 모듈 |
 |------|--------------------------|
-| `app` | `core`, `support`, `auth`, `board`, `source`, `ingest`, `ai`, `study` |
+| `app` | `core`, `support`, `auth`, `board`, `ai`, `study` |
 | `core` | 없음 |
 | `support` | `core` |
 | `auth` | `core`, `support` |
 | `board` | `core`, `support` |
-| `source` | 없음 |
-| `ingest` | `core`, `source` |
 | `ai` | `core` |
 | `study` | `core` |
 
@@ -27,7 +25,6 @@ modular monolith 선택 근거는 [ADR-003](../decisions/adr-003-modular-monolit
 
 - 기능 모듈 → `app`
 - `board` → `auth`
-- `ingest` → `ai`
 - `study` → `ai`
 - `core` → 다른 프로젝트 모듈
 
@@ -39,7 +36,7 @@ modular monolith 선택 근거는 [ADR-003](../decisions/adr-003-modular-monolit
 |------|------|
 | 여러 모듈이 컴파일할 때 알아야 하는 계약인가? | `core` |
 | Spring 실행 시 공통으로 등록할 bean/config/advice인가? | `support` |
-| 특정 기능의 비즈니스 규칙이나 구현인가? | `auth`, `board`, `source`, `ingest`, `ai`, `study` |
+| 특정 기능의 비즈니스 규칙이나 구현인가? | `auth`, `board`, `ai`, `study` |
 | 여러 기능 모듈을 최종 실행 형태로 조립하는가? | `app` |
 | 특정 외부 시스템을 실제로 사용하는가? | 그 기능을 소유한 모듈의 adapter |
 | 로컬 운영·테스트만을 위한 도구인가? | 별도 모듈 또는 외부 스크립트 |
@@ -52,10 +49,10 @@ modular monolith 선택 근거는 [ADR-003](../decisions/adr-003-modular-monolit
 |------|--------|-----------|
 | 역할 | 모듈 간 계약 | 공통 Spring 인프라 구현 |
 | 들어가는 것 | interface, record, 공통 DTO·예외·principal | `@Configuration`, `@Bean`, 공통 web/redis/persistence helper |
-| 들어가면 안 되는 것 | Redis/OpenAPI/S3/OpenAI/JPA 구현, feature service | 도메인 계약·규칙, feature service |
+| 들어가면 안 되는 것 | Redis/OpenAPI/OpenAI/JPA 구현, feature service | 도메인 계약·규칙, feature service |
 | 참조 방식 | 기능 모듈이 컴파일 시 참조 | `app`이 조립하고 필요한 기능 모듈만 참조 |
 
-예를 들어 `NewsPostPort`와 `SourceDocumentCommand`는 모듈 간 약속이므로 `core`에 둔다. Redis TTL primitive와 MVC 예외 응답 변환은 공통 Spring 구현이므로 `support`에 둔다.
+예를 들어 `StudyAssistant`는 모듈 간 약속이므로 `core`에 둔다. Redis TTL primitive와 MVC 예외 응답 변환은 공통 Spring 구현이므로 `support`에 둔다.
 
 기능 모듈 내부의 `auth.support.error`, `board.support.error` 같은 패키지는 전역 `support` 모듈과 무관한 module-local namespace다. 다른 모듈도 알아야 하는 계약은 이 패키지에 두지 않고 `core`로 올린다.
 
@@ -67,10 +64,8 @@ modular monolith 선택 근거는 [ADR-003](../decisions/adr-003-modular-monolit
 | `core` | 공통 DTO·예외·principal/API metadata와 모듈 간 port 계약 |
 | `support` | Redis guard primitive, JPA auditing, request logging, MVC 예외 응답 |
 | `auth` | 계정, 로그인, JWT, OAuth2, 이메일 인증, 인증/인가 오류 응답 |
-| `board` | 게시글, 댓글, 좋아요, 파일/S3, 조회수 |
-| `source` | 외부 뉴스 source adapter |
-| `ingest` | 문서 적재, 뉴스 수집·분야별 선별, tracked keyword, 뉴스 스케줄 게시, 전날 뉴스의 데일리 종합 게시 |
-| `ai` | AI 채팅(RAG), 뉴스·데일리 포스트 초안 생성, 학습 문제 초안·AI 학생 질문, LLM/PgVector 설정 |
+| `board` | 게시글, 댓글, 좋아요, 조회수 |
+| `ai` | 학습 문제 초안·AI 학생 질문·꼬리질문, LLM 설정 |
 | `study` | 사용자 자료, 근거가 검증된 복습 문제, 간격 반복, 빈 페이지 정리, 가르치기, 학습 기록 |
 
 ## Gradle 의존성 규칙
@@ -100,7 +95,7 @@ modular monolith 선택 근거는 [ADR-003](../decisions/adr-003-modular-monolit
 | `core`의 `jackson-annotations`는 `api` | annotation이 public class metadata에 남는다. |
 | PostgreSQL driver와 JJWT codec은 `runtimeOnly` | compile-time contract가 아니라 런타임 구현체다. |
 | servlet API는 필요한 library에서 `compileOnly` | embedded container가 런타임에 제공한다. |
-| Spring Boot, Spring AI, AWS SDK는 BOM 사용 | 함께 동작하는 라이브러리의 version set을 맞춘다. |
+| Spring Boot, Spring AI는 BOM 사용 | 함께 동작하는 라이브러리의 version set을 맞춘다. |
 | test helper(slice test, spring-security-test)와 H2는 test configuration | production classpath에 포함할 이유가 없다. |
 
 ## 주요 연결 경계
@@ -108,12 +103,10 @@ modular monolith 선택 근거는 [ADR-003](../decisions/adr-003-modular-monolit
 | 경계 | 규칙 |
 |------|------|
 | `board` ↔ 인증 | `board`는 `auth` 구현 대신 `core`의 principal 계약만 참조한다. 상세 인증 경계는 [Authentication Architecture](./authentication.md)에 둔다. |
-| `ingest` ↔ AI | `ingest`는 `ai` 대신 `VectorStore` API와 `core`의 초안 생성 port를 사용한다. 실제 PgVector bean은 `ai`가 만든다. |
-| `ingest` ↔ 뉴스 수집 | `source`의 `NewsSourceClient` 경계를 호출하고, 결과를 문서 적재와 출시 뉴스 게시로 넘긴다. |
 | `study` ↔ AI | `study`는 `ai` 대신 `core`의 `StudyAssistant` port를 사용한다. LLM 출력의 근거 검증과 대체 경로는 `study`가 결정적으로 맡는다. |
 | `app` ↔ 실행 정책 | route/security/OpenAPI와 전체 runtime 조립만 담당한다. |
 
-세부 비즈니스 규칙은 [AI Cost Policy](../policy.md#ai-cost), [통합 API 명세의 Ingest](../api/README.md#ingest), [Use Case Data Policy](../policy.md)에 둔다. 이 문서에는 모듈 경계만 남긴다.
+세부 비즈니스 규칙은 [AI Cost Policy](../policy.md#ai-cost), [Use Case Data Policy](../policy.md)에 둔다. 이 문서에는 모듈 경계만 남긴다.
 
 ## 검증
 

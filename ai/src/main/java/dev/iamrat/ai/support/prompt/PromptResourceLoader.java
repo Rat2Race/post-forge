@@ -14,11 +14,6 @@ public class PromptResourceLoader {
     private static final String PROMPT_RESOURCE_NOT_FOUND = "프롬프트 리소스를 찾을 수 없습니다: ";
     private static final String FAILED_TO_LOAD_PROMPT_RESOURCE = "프롬프트 리소스를 불러오지 못했습니다: ";
     private static final List<String> PROMPT_RESOURCE_PATHS = List.of(
-        "prompts/chat-system.md",
-        "prompts/daily-digest-system.md",
-        "prompts/launch-news-draft-system.md",
-        "prompts/refusal-security.md",
-        "prompts/safety-policy.md",
         "prompts/study-follow-up-system.md",
         "prompts/study-question-system.md",
         "prompts/study-student-system.md"

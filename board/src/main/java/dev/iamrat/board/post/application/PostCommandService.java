@@ -2,7 +2,6 @@ package dev.iamrat.board.post.application;
 
 import dev.iamrat.board.post.domain.Post;
 import dev.iamrat.board.post.domain.PostPolicy;
-import dev.iamrat.board.post.domain.PostType;
 import dev.iamrat.board.post.presentation.PostSummaryResponse;
 import dev.iamrat.board.view.application.ViewCountService;
 import dev.iamrat.core.account.AccountProfileReader;
@@ -18,7 +17,6 @@ public class PostCommandService {
 
     private final PostStore postStore;
     private final PostReader postReader;
-    private final PostFileAppender postFileAppender;
     private final ViewCountService viewCountService;
     private final AccountProfileReader accountProfileReader;
     private final PostPolicy postPolicy = new PostPolicy();
@@ -28,24 +26,14 @@ public class PostCommandService {
         String title,
         String content,
         List<String> tags,
-        Long accountId,
-        List<Long> fileIds
+        Long accountId
     ) {
         postPolicy.validateAuthor(accountId);
         String nickname = accountProfileReader.getProfile(accountId).nickname();
 
-        Post newPost = Post.create(
-            title,
-            content,
-            null,
-            tags,
-            PostType.GENERAL,
-            accountId,
-            nickname
-        );
+        Post newPost = Post.create(title, content, tags, accountId, nickname);
 
         postStore.save(newPost);
-        postFileAppender.appendFiles(newPost, fileIds);
 
         return PostSummaryResponse.from(newPost);
     }
@@ -55,13 +43,11 @@ public class PostCommandService {
         Long postId,
         String title,
         String content,
-        List<String> tags,
-        List<Long> fileIds
+        List<String> tags
     ) {
         Post post = postReader.getById(postId);
 
         post.update(title, content, tags);
-        postFileAppender.replaceFiles(post, fileIds);
 
         return PostSummaryResponse.from(post);
     }
@@ -70,7 +56,6 @@ public class PostCommandService {
     public void deletePost(Long postId) {
         Post post = postReader.getById(postId);
 
-        postFileAppender.detachFiles(post);
         viewCountService.deleteViewCount(postId);
 
         postStore.delete(post);

@@ -186,31 +186,6 @@ class SecurityConfigRegressionTest {
     }
 
     @Test
-    @DisplayName("파일 API는 익명 사용자를 차단한다")
-    void fileApi_rejectsAnonymousAccess() throws Exception {
-        mockMvc.perform(get("/api/files/presigned-url"))
-            .andExpect(status().isUnauthorized());
-    }
-
-    @Test
-    @WithMockUser(roles = "USER")
-    @DisplayName("파일 API는 USER 권한이면 허용한다")
-    void fileApi_allowsUserRole() throws Exception {
-        mockMvc.perform(get("/api/files/presigned-url"))
-            .andExpect(status().isOk())
-            .andExpect(content().string("file"));
-    }
-
-    @Test
-    @WithMockUser(roles = "USER")
-    @DisplayName("파일 API S3 경로도 USER 권한이면 허용한다")
-    void fileApi_s3Path_allowsUserRole() throws Exception {
-        mockMvc.perform(get("/api/files/s3/presigned-url"))
-            .andExpect(status().isOk())
-            .andExpect(content().string("file"));
-    }
-
-    @Test
     @DisplayName("게시글 생성은 익명 사용자를 차단한다")
     void createPost_rejectsAnonymousAccess() throws Exception {
         mockMvc.perform(post("/api/posts")
@@ -259,13 +234,6 @@ class SecurityConfigRegressionTest {
     }
 
     @Test
-    @DisplayName("AI API는 익명 사용자를 차단한다")
-    void aiApi_rejectsAnonymousAccess() throws Exception {
-        mockMvc.perform(get("/api/ai/ping"))
-            .andExpect(status().isUnauthorized());
-    }
-
-    @Test
     @DisplayName("학습 API는 익명 사용자를 차단한다")
     void studyApi_rejectsAnonymousAccess() throws Exception {
         mockMvc.perform(get("/api/study/ping"))
@@ -293,47 +261,6 @@ class SecurityConfigRegressionTest {
     void studyPage_isPublic() throws Exception {
         mockMvc.perform(get("/study.html"))
             .andExpect(status().isOk());
-    }
-
-    @Test
-    @DisplayName("Ingest API는 익명 사용자를 차단한다")
-    void ingestApi_rejectsAnonymousAccess() throws Exception {
-        mockMvc.perform(get("/api/ingest/ping"))
-            .andExpect(status().isUnauthorized());
-    }
-
-    @Test
-    @WithMockUser(roles = "USER")
-    @DisplayName("Ingest API는 USER 권한을 차단한다")
-    void ingestApi_rejectsUserRole() throws Exception {
-        mockMvc.perform(get("/api/ingest/ping"))
-            .andExpect(status().isForbidden());
-    }
-
-    @Test
-    @WithMockUser(roles = "ADMIN")
-    @DisplayName("Ingest API는 ADMIN 권한이면 허용한다")
-    void ingestApi_allowsAdminRole() throws Exception {
-        mockMvc.perform(get("/api/ingest/ping"))
-            .andExpect(status().isOk())
-            .andExpect(content().string("ingest"));
-    }
-
-    @Test
-    @WithMockUser(roles = "USER")
-    @DisplayName("출시 뉴스 관리자 경로는 USER 권한을 차단한다")
-    void adminLaunchNews_rejectsUserRole() throws Exception {
-        mockMvc.perform(post("/api/admin/launch-news/manual"))
-            .andExpect(status().isForbidden());
-    }
-
-    @Test
-    @WithMockUser(roles = "ADMIN")
-    @DisplayName("출시 뉴스 관리자 경로는 ADMIN 권한이면 허용한다")
-    void adminLaunchNews_allowsAdminRole() throws Exception {
-        mockMvc.perform(post("/api/admin/launch-news/manual"))
-            .andExpect(status().isOk())
-            .andExpect(content().string("launch-news-posted"));
     }
 
     @Test
@@ -453,13 +380,9 @@ class SecurityConfigRegressionTest {
         DummyPostController.class,
         DummyCommentController.class,
         DummyAccountController.class,
-        DummyFileController.class,
-        DummyAiController.class,
         DummyStudyController.class,
-        DummyIngestController.class,
         DummyEmailVerificationController.class,
         DummyPublicAuthController.class,
-        DummyAdminLaunchNewsController.class,
         AccountAdminController.class
     })
     static class TestApp {
@@ -595,52 +518,12 @@ class SecurityConfigRegressionTest {
     }
 
     @RestController
-    @RequestMapping({"/api/files", "/api/files/s3"})
-    static class DummyFileController {
-
-        @GetMapping("/presigned-url")
-        String getPresignedUrl() {
-            return "file";
-        }
-    }
-
-    @RestController
-    @RequestMapping("/api/ai")
-    static class DummyAiController {
-
-        @GetMapping("/ping")
-        String ping() {
-            return "ai";
-        }
-    }
-
-    @RestController
     @RequestMapping("/api/study")
     static class DummyStudyController {
 
         @GetMapping("/ping")
         String ping() {
             return "study";
-        }
-    }
-
-    @RestController
-    @RequestMapping("/api/ingest")
-    static class DummyIngestController {
-
-        @GetMapping("/ping")
-        String ping() {
-            return "ingest";
-        }
-    }
-
-    @RestController
-    @RequestMapping("/api/admin/launch-news")
-    static class DummyAdminLaunchNewsController {
-
-        @PostMapping("/manual")
-        String postLaunchNews() {
-            return "launch-news-posted";
         }
     }
 

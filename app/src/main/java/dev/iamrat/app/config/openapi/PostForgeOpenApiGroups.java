@@ -42,22 +42,6 @@ public class PostForgeOpenApiGroups {
     }
 
     @Bean
-    public GroupedOpenApi aiApi() {
-        return GroupedOpenApi.builder()
-            .group("ai")
-            .pathsToMatch(PostForgeOpenApiRoutes.AI)
-            .build();
-    }
-
-    @Bean
-    public GroupedOpenApi ingestApi() {
-        return GroupedOpenApi.builder()
-            .group("ingest")
-            .pathsToMatch(PostForgeOpenApiRoutes.INGEST)
-            .build();
-    }
-
-    @Bean
     public GroupedOpenApi studyApi() {
         return GroupedOpenApi.builder()
             .group("study")
