@@ -151,9 +151,14 @@ public class StudySourceService {
         LocalDateTime now = now();
 
         transactionTemplate.executeWithoutResult(status -> {
+            // 원래 작업과 기동 직후 복구가 같은 자료를 함께 맡을 수 있다. 동시에 돌면 @Version이, 차례로 돌면 이 검사가 두 번째 저장을 막는다.
+            StudySource managed = sourceRepository.findById(source.getId()).orElseThrow();
+            if (managed.getQuestionStatus() != StudySource.QuestionStatus.GENERATING) {
+                return;
+            }
             chosen.forEach(draft -> questionRepository.save(
                 StudyQuestion.create(source, draft.question(), draft.evidence(), origin, now)));
-            sourceRepository.findById(source.getId()).orElseThrow().questionsReady(drafts.size(), discarded);
+            managed.questionsReady(drafts.size(), discarded);
         });
     }
 
