@@ -23,7 +23,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class StudyRecord {
 
-    public enum Kind { ANSWER, RECALL, TEACH, QUESTION }
+    public enum Kind { ANSWER, RECALL, TEACH, QUESTION, FOLLOW_UP }
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -68,6 +68,11 @@ public class StudyRecord {
 
     public static StudyRecord questionMade(StudySource source, StudyQuestion question, LocalDateTime now) {
         return of(Kind.QUESTION, source, question.getId(), question.getQuestion(), null, question.getEvidence(), now);
+    }
+
+    /** 꼬리질문 버튼으로 만든 문제. 앞 문제 문장을 결과에 남긴다. 학습 행동이 아니라 잔디에는 세지 않는다. */
+    public static StudyRecord followUp(StudySource source, StudyQuestion created, StudyQuestion parent, LocalDateTime now) {
+        return of(Kind.FOLLOW_UP, source, created.getId(), created.getQuestion(), null, parent.getQuestion(), now);
     }
 
     public static StudyRecord recall(StudySource source, String text, String result, LocalDateTime now) {

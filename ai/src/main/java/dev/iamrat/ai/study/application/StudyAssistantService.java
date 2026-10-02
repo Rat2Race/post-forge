@@ -26,6 +26,7 @@ public class StudyAssistantService implements StudyAssistant {
 
     private static final String QUESTION_PROMPT_PATH = "prompts/study-question-system.md";
     private static final String STUDENT_PROMPT_PATH = "prompts/study-student-system.md";
+    private static final String FOLLOW_UP_PROMPT_PATH = "prompts/study-follow-up-system.md";
     private static final ObjectMapper JSON = new ObjectMapper();
     // ponytail: 자료 앞부분만 보낸다. 로컬 8B 모델의 문맥과 응답 시간 안에 두려는 상한이며,
     // 긴 자료 전체에서 문제를 내려면 문단 묶음 단위로 나눠 여러 번 요청한다.
@@ -50,6 +51,15 @@ public class StudyAssistantService implements StudyAssistant {
             "[자료]\n" + clip(content) + "\n\n[설명]\n" + explanation
         );
         return parseArray(response, node -> node.isTextual() ? node.asText() : null);
+    }
+
+    @Override
+    public List<QuestionDraft> draftFollowUps(String context, String question, String evidence, int limit) {
+        String response = textGenerationClient.generate(
+            systemPrompt(FOLLOW_UP_PROMPT_PATH, limit),
+            "[자료 일부]\n" + clip(context) + "\n\n[앞 문제]\n" + question + "\n\n[앞 문제의 근거]\n" + evidence
+        );
+        return parseArray(response, node -> new QuestionDraft(text(node, "question"), text(node, "evidence")));
     }
 
     private String systemPrompt(String path, int limit) {

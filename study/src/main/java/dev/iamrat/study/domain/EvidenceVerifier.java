@@ -22,7 +22,7 @@ public final class EvidenceVerifier {
     }
 
     // 웹에서 붙여 넣은 NBSP·전각 공백과 자모가 분해된 한글(NFD)도 같은 글자로 본다.
-    private static String normalize(String text) {
+    public static String normalize(String text) {
         return Normalizer.normalize(text, Normalizer.Form.NFC).replaceAll("[\\s\\p{Z}]+", " ").strip();
     }
 }

@@ -1,7 +1,6 @@
 package dev.iamrat.study.application;
 
 import dev.iamrat.core.global.exception.CustomException;
-import dev.iamrat.core.study.StudyAssistant;
 import dev.iamrat.study.domain.GapFinder;
 import dev.iamrat.study.domain.KeyPointExtractor;
 import dev.iamrat.study.domain.RecallGrade;
@@ -31,12 +30,9 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class StudyPracticeService {
 
-    private static final int STUDENT_QUESTION_LIMIT = 3;
     private static final int TODAY_LIMIT = 20;
     // 빈 페이지는 몇 분짜리 글쓰기라 하루에 세 개까지만 섞는다.
     private static final int RECALL_LIMIT = 3;
-    // study_records.result 컬럼 길이
-    private static final int RESULT_MAX = 2000;
 
     public record TodayItem(String type, Long id, Long sourceId, String sourceTitle, String question, String evidence,
                             int box) {
@@ -67,7 +63,6 @@ public class StudyPracticeService {
     private final StudySourceRepository sourceRepository;
     private final StudyQuestionRepository questionRepository;
     private final StudyRecordRepository recordRepository;
-    private final StudyAssistant studyAssistant;
     private final Clock clock;
 
     @Transactional(readOnly = true)
@@ -146,19 +141,6 @@ public class StudyPracticeService {
         return GapFinder.mentionedIndexes(KeyPointExtractor.extract(source.getContent()), text);
     }
 
-    /** LLM을 기다리는 동안 트랜잭션을 열어 두지 않는다. */
-    public List<String> teach(Long ownerAccountId, Long sourceId, String explanation) {
-        StudySource source = sourceRepository.getOwned(sourceId, ownerAccountId);
-        List<String> asked = studyAssistant
-            .askAsStudent(source.getContent(), explanation, STUDENT_QUESTION_LIMIT).stream()
-            .filter(question -> question != null && !question.isBlank())
-            .limit(STUDENT_QUESTION_LIMIT)
-            .toList();
-        List<String> questions = asked.isEmpty() ? gapQuestions(source.getContent(), explanation) : asked;
-        recordRepository.save(StudyRecord.teaching(source, explanation, cut(String.join("\n", questions), RESULT_MAX), now()));
-        return questions;
-    }
-
     @Transactional(readOnly = true)
     public List<RecordView> records(Long ownerAccountId) {
         return recordRepository.findTop50ByOwnerAccountIdOrderByIdDesc(ownerAccountId).stream()
@@ -166,25 +148,6 @@ public class StudyPracticeService {
                 record.getSourceTitle(), record.getPrompt(), record.getUserText(), record.getResult(),
                 record.getReviewBox(), record.getCreatedAt()))
             .toList();
-    }
-
-    private static List<String> gapQuestions(String content, String explanation) {
-        List<String> gaps = GapFinder.missing(KeyPointExtractor.extract(content), explanation);
-        if (gaps.isEmpty()) {
-            return List.of("처음 듣는 사람에게 예시를 하나 들어 줄 수 있나요?");
-        }
-        return gaps.stream()
-            .limit(STUDENT_QUESTION_LIMIT)
-            .map(gap -> "'" + gap + "' 부분은 설명에 안 나왔어요. 어떤 뜻인가요?")
-            .toList();
-    }
-
-    private static String cut(String text, int max) {
-        if (text.length() <= max) {
-            return text;
-        }
-        int end = Character.isHighSurrogate(text.charAt(max - 1)) ? max - 1 : max;
-        return text.substring(0, end);
     }
 
     private LocalDateTime now() {

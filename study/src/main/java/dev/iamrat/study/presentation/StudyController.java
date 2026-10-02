@@ -1,6 +1,7 @@
 package dev.iamrat.study.presentation;
 
 import dev.iamrat.core.account.UserPrincipal;
+import dev.iamrat.study.application.StudyAiService;
 import dev.iamrat.study.application.StudyPracticeService;
 import dev.iamrat.study.application.StudyPracticeService.Today;
 import dev.iamrat.study.application.StudyPracticeService.RecallResult;
@@ -33,6 +34,7 @@ public class StudyController {
 
     private final StudySourceService sourceService;
     private final StudyPracticeService practiceService;
+    private final StudyAiService aiService;
 
     public record SourceRequest(
         @NotBlank(message = "제목은 필수입니다")
@@ -147,7 +149,7 @@ public class StudyController {
         @RequestBody @Valid TeachRequest request,
         @AuthenticationPrincipal UserPrincipal user
     ) {
-        return new TeachResponse(practiceService.teach(user.getAccountId(), sourceId, request.explanation()));
+        return new TeachResponse(aiService.teach(user.getAccountId(), sourceId, request.explanation()));
     }
 
     @GetMapping("/today")
@@ -162,6 +164,14 @@ public class StudyController {
         @AuthenticationPrincipal UserPrincipal user
     ) {
         return practiceService.review(user.getAccountId(), questionId, request.answer(), request.grade());
+    }
+
+    @PostMapping("/questions/{questionId:\\d+}/follow-ups")
+    public ResponseEntity<StudyAiService.FollowUp> followUp(
+        @PathVariable Long questionId,
+        @AuthenticationPrincipal UserPrincipal user
+    ) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(aiService.followUp(user.getAccountId(), questionId));
     }
 
     @GetMapping("/records")
