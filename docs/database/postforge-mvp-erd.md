@@ -114,13 +114,11 @@ erDiagram
         bigint id PK
         bigint post_id FK
         varchar keyword
-        varchar provider
         varchar canonical_url
         varchar original_url
         varchar source_name
         timestamp published_at
         varchar title_snapshot
-        varchar publish_origin
     }
 
     TRACKED_KEYWORDS {
@@ -152,6 +150,6 @@ erDiagram
 | 발행 출처 필터 | `posts(publish_origin)` |
 | 댓글 조회 | `comments(post_id, created_at)` |
 | 대댓글 조회 | `comments(parent_id)` |
-| 게시글별·provider별 뉴스 출처 조회 | `post_reference_links(post_id)`, `post_reference_links(provider)` |
+| 게시글별 뉴스 출처 조회 | `post_reference_links(post_id)` |
 | 기사 URL 중복 게시 방지 | `post_reference_links(canonical_url)` unique |
 | 중복 좋아요 방지 | `post_like(post_id, account_id)`, `comment_like(comment_id, account_id)` unique |

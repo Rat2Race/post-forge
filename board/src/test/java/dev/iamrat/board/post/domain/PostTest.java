@@ -1,7 +1,6 @@
 package dev.iamrat.board.post.domain;
 
-import dev.iamrat.core.board.post.BoardCategory;
-import dev.iamrat.core.board.post.PostCategory;
+import dev.iamrat.core.board.post.NewsSection;
 import dev.iamrat.core.board.post.PostPublishOrigin;
 import java.util.List;
 import org.junit.jupiter.api.DisplayName;
@@ -18,7 +17,7 @@ class PostTest {
 
         assertThat(post.getTitle()).isEqualTo("title");
         assertThat(post.getContent()).isEqualTo("content");
-        assertThat(post.getCategory()).isEqualTo(PostCategory.GENERAL);
+        assertThat(post.getCategory()).isEqualTo(PostType.GENERAL);
         assertThat(post.getPublishOrigin()).isEqualTo(PostPublishOrigin.USER);
         assertThat(post.getAccountId()).isEqualTo(1L);
         assertThat(post.getNickname()).isEqualTo("writer");
@@ -35,7 +34,7 @@ class PostTest {
             "AI content",
             "AI summary",
             tags,
-            PostCategory.DAILY_DIGEST,
+            PostType.DAILY_DIGEST,
             null,
             "AI 분석가"
         );
@@ -44,7 +43,7 @@ class PostTest {
         assertThat(post.getSummary()).isEqualTo("AI summary");
         assertThat(post.getTags()).containsExactly("ai", "news");
         assertThat(post.getTags()).isNotSameAs(tags);
-        assertThat(post.getCategory()).isEqualTo(PostCategory.DAILY_DIGEST);
+        assertThat(post.getCategory()).isEqualTo(PostType.DAILY_DIGEST);
         assertThat(post.getPublishOrigin()).isEqualTo(PostPublishOrigin.USER);
         assertThat(post.getAccountId()).isNull();
         assertThat(post.getNickname()).isEqualTo("AI 분석가");
@@ -55,7 +54,7 @@ class PostTest {
     void create_nullCategoryDefaultsToGeneral() {
         Post post = Post.create("title", "content", null, null, null, 1L, "writer");
 
-        assertThat(post.getCategory()).isEqualTo(PostCategory.GENERAL);
+        assertThat(post.getCategory()).isEqualTo(PostType.GENERAL);
         assertThat(post.getPublishOrigin()).isEqualTo(PostPublishOrigin.USER);
         assertThat(post.getTags()).isEmpty();
     }
@@ -68,13 +67,13 @@ class PostTest {
             "launch content",
             "launch summary",
             List.of("launch"),
-            PostCategory.PRODUCT_LAUNCH_NEWS,
+            PostType.PRODUCT_LAUNCH_NEWS,
             PostPublishOrigin.SYSTEM_BATCH,
             null,
             "system"
         );
 
-        assertThat(post.getCategory()).isEqualTo(PostCategory.PRODUCT_LAUNCH_NEWS);
+        assertThat(post.getCategory()).isEqualTo(PostType.PRODUCT_LAUNCH_NEWS);
         assertThat(post.getPublishOrigin()).isEqualTo(PostPublishOrigin.SYSTEM_BATCH);
     }
 
@@ -86,7 +85,7 @@ class PostTest {
             "old content",
             "summary",
             List.of("old"),
-            PostCategory.GENERAL,
+            PostType.GENERAL,
             1L,
             "writer"
         );
@@ -97,7 +96,7 @@ class PostTest {
         assertThat(post.getContent()).isEqualTo("new content");
         assertThat(post.getTags()).containsExactly("new");
         assertThat(post.getSummary()).isEqualTo("summary");
-        assertThat(post.getCategory()).isEqualTo(PostCategory.GENERAL);
+        assertThat(post.getCategory()).isEqualTo(PostType.GENERAL);
     }
 
     @Test
@@ -108,14 +107,14 @@ class PostTest {
             "launch content",
             "launch summary",
             List.of("launch"),
-            PostCategory.PRODUCT_LAUNCH_NEWS,
+            PostType.PRODUCT_LAUNCH_NEWS,
             1L,
             "writer"
         );
 
         post.update("edited title", "edited content", List.of("edited"));
 
-        assertThat(post.getCategory()).isEqualTo(PostCategory.PRODUCT_LAUNCH_NEWS);
+        assertThat(post.getCategory()).isEqualTo(PostType.PRODUCT_LAUNCH_NEWS);
     }
 
     @Test
@@ -126,14 +125,14 @@ class PostTest {
             "content",
             "summary",
             List.of("tag"),
-            PostCategory.GENERAL,
-            BoardCategory.TECHNOLOGY,
+            PostType.GENERAL,
+            NewsSection.TECHNOLOGY,
             PostPublishOrigin.USER,
             1L,
             "writer"
         );
 
-        assertThat(post.getBoardCategory()).isEqualTo(BoardCategory.TECHNOLOGY);
+        assertThat(post.getBoardCategory()).isEqualTo(NewsSection.TECHNOLOGY);
     }
 
     @Test
@@ -144,14 +143,14 @@ class PostTest {
             "content",
             "summary",
             List.of("tag"),
-            PostCategory.GENERAL,
+            PostType.GENERAL,
             null,
             PostPublishOrigin.USER,
             1L,
             "writer"
         );
 
-        assertThat(post.getBoardCategory()).isEqualTo(BoardCategory.GENERAL);
+        assertThat(post.getBoardCategory()).isEqualTo(NewsSection.GENERAL);
     }
 
     @Test
@@ -162,8 +161,8 @@ class PostTest {
             "content",
             "summary",
             List.of("tag"),
-            PostCategory.GENERAL,
-            BoardCategory.BUSINESS,
+            PostType.GENERAL,
+            NewsSection.BUSINESS,
             PostPublishOrigin.USER,
             1L,
             "writer"
@@ -171,7 +170,7 @@ class PostTest {
 
         post.update("new title", "new content", List.of("new"));
 
-        assertThat(post.getBoardCategory()).isEqualTo(BoardCategory.BUSINESS);
+        assertThat(post.getBoardCategory()).isEqualTo(NewsSection.BUSINESS);
     }
 
     @Test

@@ -3,8 +3,8 @@ package dev.iamrat.board.post.infrastructure.persistence;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import dev.iamrat.board.post.domain.Post;
-import dev.iamrat.core.board.post.BoardCategory;
-import dev.iamrat.core.board.post.PostCategory;
+import dev.iamrat.board.post.domain.PostType;
+import dev.iamrat.core.board.post.NewsSection;
 import dev.iamrat.core.board.post.PostPublishOrigin;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
@@ -40,14 +40,14 @@ class PostPersistenceAdapterFilterTest {
     @BeforeEach
     void setUp() {
         entityManager.persistAndFlush(post(
-            "Galaxy Book 출시", "신제품 소개", PostCategory.PRODUCT_LAUNCH_NEWS,
-            BoardCategory.TECHNOLOGY, PostPublishOrigin.SYSTEM_BATCH));
+            "Galaxy Book 출시", "신제품 소개", PostType.PRODUCT_LAUNCH_NEWS,
+            NewsSection.TECHNOLOGY, PostPublishOrigin.SYSTEM_BATCH));
         entityManager.persistAndFlush(post(
-            "일반 글", "galaxy book 사용 후기", PostCategory.GENERAL,
-            BoardCategory.GENERAL, PostPublishOrigin.USER));
+            "일반 글", "galaxy book 사용 후기", PostType.GENERAL,
+            NewsSection.GENERAL, PostPublishOrigin.USER));
         entityManager.persistAndFlush(post(
-            "무관한 글", "관계 없는 본문", PostCategory.DAILY_DIGEST,
-            BoardCategory.NATION, PostPublishOrigin.ADMIN_BACKFILL));
+            "무관한 글", "관계 없는 본문", PostType.DAILY_DIGEST,
+            NewsSection.NATION, PostPublishOrigin.ADMIN_BACKFILL));
     }
 
     @Test
@@ -61,7 +61,7 @@ class PostPersistenceAdapterFilterTest {
     @Test
     @DisplayName("category가 있으면 해당 category만 조회한다")
     void filtersByCategory() {
-        assertThat(adapter.findByFilters(null, PostCategory.PRODUCT_LAUNCH_NEWS, null, null, PageRequest.of(0, 10)))
+        assertThat(adapter.findByFilters(null, PostType.PRODUCT_LAUNCH_NEWS, null, null, PageRequest.of(0, 10)))
             .extracting(Post::getTitle)
             .containsExactly("Galaxy Book 출시");
     }
@@ -69,7 +69,7 @@ class PostPersistenceAdapterFilterTest {
     @Test
     @DisplayName("boardCategory가 있으면 해당 boardCategory만 조회한다")
     void filtersByBoardCategory() {
-        assertThat(adapter.findByFilters(null, null, BoardCategory.NATION, null, PageRequest.of(0, 10)))
+        assertThat(adapter.findByFilters(null, null, NewsSection.NATION, null, PageRequest.of(0, 10)))
             .extracting(Post::getTitle)
             .containsExactly("무관한 글");
     }
@@ -93,8 +93,8 @@ class PostPersistenceAdapterFilterTest {
     private static Post post(
         String title,
         String content,
-        PostCategory category,
-        BoardCategory boardCategory,
+        PostType category,
+        NewsSection boardCategory,
         PostPublishOrigin publishOrigin
     ) {
         return Post.create(title, content, null, null, category, boardCategory, publishOrigin, 1L, "writer");

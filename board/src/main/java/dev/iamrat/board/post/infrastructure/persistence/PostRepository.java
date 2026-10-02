@@ -1,8 +1,8 @@
 package dev.iamrat.board.post.infrastructure.persistence;
 
 import dev.iamrat.board.post.domain.Post;
-import dev.iamrat.core.board.post.BoardCategory;
-import dev.iamrat.core.board.post.PostCategory;
+import dev.iamrat.board.post.domain.PostType;
+import dev.iamrat.core.board.post.NewsSection;
 import java.time.LocalDateTime;
 import java.util.List;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -23,13 +23,13 @@ public interface PostRepository extends JpaRepository<Post, Long>, JpaSpecificat
           AND p.createdAt < :endExclusive
         """)
     List<Post> findAllByCategoryAndBoardCategoryInRange(
-        @Param("category") PostCategory category,
-        @Param("boardCategory") BoardCategory boardCategory,
+        @Param("category") PostType category,
+        @Param("boardCategory") NewsSection boardCategory,
         @Param("startInclusive") LocalDateTime startInclusive,
         @Param("endExclusive") LocalDateTime endExclusive
     );
 
-    boolean existsByCategoryAndBoardCategoryAndTitle(PostCategory category, BoardCategory boardCategory, String title);
+    boolean existsByCategoryAndBoardCategoryAndTitle(PostType category, NewsSection boardCategory, String title);
 
     @Modifying
     @Query("UPDATE Post p SET p.views = :views WHERE p.id = :id")

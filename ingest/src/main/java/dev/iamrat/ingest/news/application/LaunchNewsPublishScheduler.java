@@ -1,7 +1,10 @@
 package dev.iamrat.ingest.news.application;
 
-import dev.iamrat.core.board.post.BoardCategory;
+import dev.iamrat.core.board.post.NewsSection;
 import dev.iamrat.core.board.post.PostPublishOrigin;
+import dev.iamrat.ingest.news.application.LaunchNewsPublishResult.Skip;
+import dev.iamrat.ingest.news.application.LaunchNewsPublishResult.SkipReason;
+import java.util.EnumMap;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -10,6 +13,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import java.util.Arrays;
 import java.util.Locale;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Component
@@ -33,7 +37,7 @@ public class LaunchNewsPublishScheduler {
         this.sections = sections.stream().flatMap(value -> Arrays.stream(value.split(",")))
             .map(String::trim).filter(section -> !section.isEmpty())
             .map(section -> section.toUpperCase(Locale.ROOT)).distinct().toList();
-        this.sections.forEach(BoardCategory::valueOf); // 섹션 이름은 BoardCategory와 같아야 한다
+        this.sections.forEach(NewsSection::valueOf); // 섹션 이름은 NewsSection와 같아야 한다
         if (this.sections.isEmpty() || displayCount < 1 || displayCount > 100 || dailyCap < 1 || dailyCap > 20) {
             throw new IllegalArgumentException("수집 섹션과 1~100 범위의 수집 건수, 1~20 범위의 일일 상한이 필요합니다");
         }
@@ -50,14 +54,19 @@ public class LaunchNewsPublishScheduler {
                     displayCount,
                     dailyCap,
                     List.of(),
-                    BoardCategory.valueOf(section),
+                    NewsSection.valueOf(section),
                     PostPublishOrigin.SYSTEM_BATCH
                 ));
-                log.info("섹션 뉴스 게시 완료. section={}, published={}, skipped={}",
-                    section, result.publishedCount(), result.skippedCount());
+                log.info("섹션 뉴스 게시 완료. section={}, published={}, skips={}",
+                    section, result.publishedCount(), skipCounts(result));
             } catch (RuntimeException exception) {
                 log.warn("섹션 뉴스 게시 실패. section={}", section, exception);
             }
         }
+    }
+
+    private static EnumMap<SkipReason, Long> skipCounts(LaunchNewsPublishResult result) {
+        return result.skips().stream().collect(Collectors.groupingBy(
+            Skip::reason, () -> new EnumMap<>(SkipReason.class), Collectors.counting()));
     }
 }

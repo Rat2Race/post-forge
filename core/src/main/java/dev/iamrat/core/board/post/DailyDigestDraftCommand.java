@@ -4,7 +4,7 @@ import java.time.LocalDate;
 import java.util.List;
 
 public record DailyDigestDraftCommand(
-    BoardCategory category,
+    NewsSection category,
     LocalDate newsDate,
     List<DailyDigestSourceItem> items
 ) {

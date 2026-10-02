@@ -1,5 +1,7 @@
 package dev.iamrat.board.integration;
 
+import dev.iamrat.board.post.application.PostStore;
+import dev.iamrat.board.post.domain.Post;
 import dev.iamrat.board.support.error.BoardErrorCode;
 import dev.iamrat.board.post.application.PostCommandService;
 import dev.iamrat.board.post.application.PostQueryService;
@@ -10,11 +12,9 @@ import dev.iamrat.board.integration.security.WithMockAccount;
 import dev.iamrat.core.account.AccountProfile;
 import dev.iamrat.core.account.AccountProfileManager;
 import dev.iamrat.core.account.AccountProfileReader;
-import dev.iamrat.core.board.post.BoardCategory;
-import dev.iamrat.core.board.post.PostCategory;
+import dev.iamrat.core.board.post.NewsSection;
+import dev.iamrat.board.post.domain.PostType;
 import dev.iamrat.core.board.post.PostPublishOrigin;
-import dev.iamrat.core.board.post.PostWriteCommand;
-import dev.iamrat.core.board.post.PostWriter;
 import dev.iamrat.core.global.exception.CustomException;
 import jakarta.transaction.Transactional;
 import org.junit.jupiter.api.DisplayName;
@@ -49,7 +49,7 @@ class PostIntegrationTest {
     private PostQueryService postQueryService;
 
     @Autowired
-    private PostWriter postWriter;
+    private PostStore postStore;
 
     @MockitoBean
     private ViewCountService viewCountService;
@@ -106,28 +106,14 @@ class PostIntegrationTest {
     @DisplayName("분야 카테고리 필터는 해당 분야의 게시글만 반환한다")
     @Transactional
     void getPosts_filtersByBoardCategory() {
-        Long digitalPostId = postWriter.write(new PostWriteCommand(
-            "디지털 신제품",
-            "디지털 신제품 소식입니다.",
-            null,
-            null,
-            1L,
-            "테스터",
-            PostCategory.GENERAL,
-            BoardCategory.TECHNOLOGY,
-            PostPublishOrigin.USER
-        ));
-        Long livingPostId = postWriter.write(new PostWriteCommand(
-            "리빙 신제품",
-            "리빙 신제품 소식입니다.",
-            null,
-            null,
-            1L,
-            "테스터",
-            PostCategory.GENERAL,
-            BoardCategory.NATION,
-            PostPublishOrigin.USER
-        ));
+        Long digitalPostId = postStore.save(Post.create(
+            "디지털 신제품", "디지털 신제품 소식입니다.", null, null,
+            PostType.GENERAL, NewsSection.TECHNOLOGY, PostPublishOrigin.USER, 1L, "테스터"
+        )).getId();
+        Long livingPostId = postStore.save(Post.create(
+            "리빙 신제품", "리빙 신제품 소식입니다.", null, null,
+            PostType.GENERAL, NewsSection.NATION, PostPublishOrigin.USER, 1L, "테스터"
+        )).getId();
         given(viewCountService.getViewCounts(anyList()))
             .willReturn(Map.of(digitalPostId, 0L, livingPostId, 0L));
 
@@ -135,7 +121,7 @@ class PostIntegrationTest {
         Page<PostDetailResponse> posts = postQueryService.getPosts(
             null,
             null,
-            BoardCategory.TECHNOLOGY,
+            NewsSection.TECHNOLOGY,
             null,
             pageable,
             1L

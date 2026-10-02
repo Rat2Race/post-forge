@@ -19,7 +19,7 @@ presentation -> application -> domain
 
 ## Ingest
 
-`ingest`는 전체 뉴스 처리 순서를 조율한다. 뉴스 검색은 `source`, 초안 생성은 `core`의 generator port 구현인 `ai`, 게시글 저장은 `core`의 `PostWriter` 구현인 `board`가 맡는다.
+`ingest`는 전체 뉴스 처리 순서를 조율한다. 뉴스 검색은 `source`, 초안 생성은 `core`의 generator port 구현인 `ai`, 뉴스 글의 조회·게시는 `core`의 `NewsPostPort` 구현인 `board`가 맡는다. 글 종류(`PostType`)와 봇 작성자는 `board`가 정하므로 `ingest`는 알지 못한다.
 
 ### 뉴스 수집과 자동 게시
 
@@ -37,11 +37,11 @@ presentation -> application -> domain
 1. `IngestProductNewsUseCase`가 키워드(또는 섹션 이름)와 요청에 준 주제를 조합해 검색하고 결과를 RAG용 `vector_store`에 적재한다. 이때 `LaunchNewsEligibilityPolicy.isAdvertising`으로 판촉성 기사를 먼저 걸러낸다. 게시 gate는 적재 뒤에 실행되므로, 여기서 거르지 않으면 게시가 막힌 기사가 코퍼스에 남아 3번의 관련 문서 검색으로 되돌아온다. 수동 문서 적재는 여기서 끝나며 게시글을 만들지 않는다.
 2. `PublishLaunchNewsUseCase`가 canonical URL 중복, 광고성 문구, 출처, 출시 표현 포함 여부, 키워드별 일일 상한을 순서대로 검사한다. 광고 판정은 1번에서 이미 적재를 막았고 여기서는 게시를 막는다. 이 gate는 LLM 호출 전에 실행되어 불필요한 비용을 막는다.
 3. 통과한 기사만 `LaunchNewsPostDraftGenerator`로 초안을 만든다. 기존 벡터 문서는 보조 자료이며 주 기사의 날짜·출처와 구분한다.
-4. `LaunchNewsPostRecorder`가 짧은 트랜잭션에서 `PRODUCT_LAUNCH_NEWS` 게시글과 출처 링크를 함께 저장한다. 링크 없이 글만 남아 다음 실행에서 재게시되는 상태를 막기 위해 둘을 같은 트랜잭션으로 묶는다.
+4. `NewsPostPort.publishLaunchNews`가 board 안의 한 트랜잭션에서 `PRODUCT_LAUNCH_NEWS` 게시글과 출처 링크를 함께 저장한다. 링크 없이 글만 남아 다음 실행에서 재게시되는 상태를 막는 불변식이라 board가 직접 보장한다.
 
 분야는 LLM이 판정하지 않는다. 수동 요청의 `category`가 게시글의 `boardCategory`로 전달되며 값이 없으면 `GENERAL`, scheduler 게시는 섹션 이름이 그대로 분야가 된다. 분야 값은 Google 뉴스 한국판 섹션과 같다.
 
-후보의 중복, AI 초안 생성 실패, 저장 시 `DataIntegrityViolationException`은 skip으로 기록하고 나머지 후보를 처리한다. 그 밖의 수집·적재·저장 예외는 해당 키워드 실행을 중단할 수 있으며, scheduler는 키워드 단위로 예외를 격리해 다음 키워드를 처리한다. 저장된 미게시 기사를 나중에 꺼내는 영속 초안 큐나 독립 예약 발행 기능은 없으며, 스케줄 실행 때 수집·초안 생성·게시가 한 흐름으로 진행된다.
+후보의 중복, AI 초안 생성 실패, 저장 시 `DataIntegrityViolationException`은 skip으로 기록하고 나머지 후보를 처리한다. scheduler는 섹션마다 skip 사유별 건수를 로그로 남긴다. 그 밖의 수집·적재·저장 예외는 해당 키워드 실행을 중단할 수 있으며, scheduler는 키워드 단위로 예외를 격리해 다음 키워드를 처리한다. 저장된 미게시 기사를 나중에 꺼내는 영속 초안 큐나 독립 예약 발행 기능은 없으며, 스케줄 실행 때 수집·초안 생성·게시가 한 흐름으로 진행된다.
 
 ### 데일리 포스트
 
@@ -53,9 +53,9 @@ presentation -> application -> domain
   -> DAILY_DIGEST 게시
 ```
 
-`PublishDailyDigestUseCase`는 모든 `BoardCategory`를 순회한다. 입력은 수집 원문 전체가 아니라 전날 실제 게시된 출시 뉴스의 `title`과 `summary`다. 분야별 입력이 없으면 건너뛰고, 결정적인 제목(`[분야] 데일리 브리핑 - 날짜`)으로 재실행 중복을 막는다. AI 실패는 해당 분야만 건너뛰며 다른 분야는 계속 처리한다.
+`PublishDailyDigestUseCase`는 모든 `NewsSection`을 순회한다. 입력은 수집 원문 전체가 아니라 전날 실제 게시된 출시 뉴스의 `title`과 `summary`다. 분야별 입력이 없으면 건너뛰고, board가 분야·날짜로 만드는 결정적인 제목(`[분야] 데일리 브리핑 - 날짜`)으로 재실행 중복을 막는다. 제목 생성과 중복 확인이 같은 board 클래스에 있다. AI 실패는 해당 분야만 건너뛰며 다른 분야는 계속 처리한다.
 
-`DailyDigestScheduler`는 활성화된 경우 서울 시간 매일 06:00에 전날 뉴스를 처리한다. 활성 조건과 전체 스케줄 값은 [자동 게시 스케줄](../api/README.md#자동-게시-스케줄)을 따른다.
+`DailyDigestScheduler`는 활성화된 경우 서울 시간 매일 06:00에 전날 뉴스를 처리하고, 게시 건수와 분야별 skip 사유를 로그로 남긴다. 활성 조건과 전체 스케줄 값은 [자동 게시 스케줄](../api/README.md#자동-게시-스케줄)을 따른다.
 
 ## AI
 

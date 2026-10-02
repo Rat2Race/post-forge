@@ -2,24 +2,20 @@ package dev.iamrat.ingest.news.application;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
-import dev.iamrat.core.board.post.BoardCategory;
 import dev.iamrat.core.board.post.DailyDigestDraft;
 import dev.iamrat.core.board.post.DailyDigestDraftCommand;
 import dev.iamrat.core.board.post.DailyDigestDraftGenerator;
 import dev.iamrat.core.board.post.DailyDigestSourceItem;
-import dev.iamrat.core.board.post.DailyDigestSourceReader;
-import dev.iamrat.core.board.post.PostCategory;
-import dev.iamrat.core.board.post.PostPublishOrigin;
-import dev.iamrat.core.board.post.PostWriteCommand;
-import dev.iamrat.core.board.post.PostWriter;
+import dev.iamrat.core.board.post.NewsPostPort;
+import dev.iamrat.core.board.post.NewsSection;
+import dev.iamrat.ingest.news.application.DailyDigestPublishResult.SkipReason;
 import java.time.LocalDate;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -30,163 +26,113 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
-import static org.mockito.ArgumentMatchers.argThat;
 
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
 class PublishDailyDigestUseCaseTest {
 
     private static final LocalDate NEWS_DATE = LocalDate.of(2026, 8, 20);
-    private static final String TECHNOLOGY_TITLE = "[과학/기술] 데일리 브리핑 - 2026-08-20";
 
     @Mock
-    private DailyDigestSourceReader sourceReader;
+    private NewsPostPort newsPosts;
 
     @Mock
     private DailyDigestDraftGenerator draftGenerator;
-
-    @Mock
-    private PostWriter postWriter;
 
     @InjectMocks
     private PublishDailyDigestUseCase useCase;
 
     @Test
     @DisplayName("출시 뉴스가 없는 분야는 NO_SOURCE로 건너뛴다")
-    void publish_skipsCategoriesWithoutSource() {
-        given(sourceReader.findLaunchNews(any(), any())).willReturn(List.of());
+    void publish_skipsSectionsWithoutSource() {
+        given(newsPosts.findLaunchNews(any(), any())).willReturn(List.of());
 
         DailyDigestPublishResult result = useCase.publish(NEWS_DATE);
 
         assertThat(result.createdPostIds()).isEmpty();
-        assertThat(result.skips()).hasSize(BoardCategory.values().length);
+        assertThat(result.skips()).hasSize(NewsSection.values().length);
         assertThat(result.skips())
-            .allSatisfy((category, reason) -> assertThat(reason).isEqualTo(DailyDigestSkipReason.NO_SOURCE));
+            .allSatisfy((section, reason) -> assertThat(reason).isEqualTo(SkipReason.NO_SOURCE));
         verify(draftGenerator, never()).generate(any());
-        verify(postWriter, never()).write(any());
+        verify(newsPosts, never()).publishDailyDigest(any(), any(), any());
     }
 
     @Test
     @DisplayName("이미 게시된 분야는 ALREADY_PUBLISHED로 건너뛰고 generator를 호출하지 않는다")
-    void publish_skipsAlreadyPublishedCategoryWithoutCallingGenerator() {
-        given(sourceReader.findLaunchNews(any(), any())).willReturn(List.of());
-        given(sourceReader.findLaunchNews(BoardCategory.TECHNOLOGY, NEWS_DATE))
+    void publish_skipsAlreadyPublishedSectionWithoutCallingGenerator() {
+        given(newsPosts.findLaunchNews(any(), any())).willReturn(List.of());
+        given(newsPosts.findLaunchNews(NewsSection.TECHNOLOGY, NEWS_DATE))
             .willReturn(List.of(new DailyDigestSourceItem("갤럭시북 출시", "요약")));
-        given(sourceReader.digestExists(BoardCategory.TECHNOLOGY, TECHNOLOGY_TITLE)).willReturn(true);
+        given(newsPosts.digestExists(NewsSection.TECHNOLOGY, NEWS_DATE)).willReturn(true);
 
         DailyDigestPublishResult result = useCase.publish(NEWS_DATE);
 
-        assertThat(result.skips()).containsEntry(BoardCategory.TECHNOLOGY, DailyDigestSkipReason.ALREADY_PUBLISHED);
+        assertThat(result.skips()).containsEntry(NewsSection.TECHNOLOGY, SkipReason.ALREADY_PUBLISHED);
         assertThat(result.createdPostIds()).isEmpty();
         verify(draftGenerator, never()).generate(any());
-        verify(postWriter, never()).write(any());
+        verify(newsPosts, never()).publishDailyDigest(any(), any(), any());
     }
 
     @Test
     @DisplayName("generator가 empty를 반환한 분야만 건너뛰고 다음 분야는 계속 진행한다")
-    void publish_generatorFailureSkipsOnlyThatCategory() {
-        given(sourceReader.findLaunchNews(any(), any())).willReturn(List.of());
-        given(sourceReader.findLaunchNews(BoardCategory.TECHNOLOGY, NEWS_DATE))
+    void publish_generatorFailureSkipsOnlyThatSection() {
+        given(newsPosts.findLaunchNews(any(), any())).willReturn(List.of());
+        given(newsPosts.findLaunchNews(NewsSection.TECHNOLOGY, NEWS_DATE))
             .willReturn(List.of(new DailyDigestSourceItem("갤럭시북 출시", "요약")));
-        given(sourceReader.findLaunchNews(BoardCategory.BUSINESS, NEWS_DATE))
+        given(newsPosts.findLaunchNews(NewsSection.BUSINESS, NEWS_DATE))
             .willReturn(List.of(new DailyDigestSourceItem("공기청정기 출시", "요약")));
         given(draftGenerator.generate(any())).willReturn(Optional.empty());
-        given(draftGenerator.generate(argThatCategory(BoardCategory.BUSINESS)))
+        given(draftGenerator.generate(argThatSection(NewsSection.BUSINESS)))
             .willReturn(Optional.of(new DailyDigestDraft("가전 브리핑 본문", List.of("가전"))));
-        given(postWriter.write(any())).willReturn(42L);
+        given(newsPosts.publishDailyDigest(any(), any(), any())).willReturn(42L);
 
         DailyDigestPublishResult result = useCase.publish(NEWS_DATE);
 
-        assertThat(result.skips()).containsEntry(BoardCategory.TECHNOLOGY, DailyDigestSkipReason.AI_GENERATION_FAILED);
+        assertThat(result.skips()).containsEntry(NewsSection.TECHNOLOGY, SkipReason.AI_GENERATION_FAILED);
         assertThat(result.createdPostIds()).containsExactly(42L);
     }
 
     @Test
-    @DisplayName("게시 커맨드에 데일리 브리핑 카테고리, 분야, 시스템 배치 출처, 제목 형식이 실린다")
-    void publish_writesSystemBatchDailyDigestCommand() {
-        given(sourceReader.findLaunchNews(any(), any())).willReturn(List.of());
+    @DisplayName("분야의 출시 뉴스로 초안을 만들어 그 분야·날짜의 데일리 브리핑으로 게시한다")
+    void publish_draftsFromSectionNewsAndPublishesDigestForThatSectionAndDate() {
+        given(newsPosts.findLaunchNews(any(), any())).willReturn(List.of());
         List<DailyDigestSourceItem> items = List.of(new DailyDigestSourceItem("갤럭시북 출시", "요약"));
-        given(sourceReader.findLaunchNews(BoardCategory.TECHNOLOGY, NEWS_DATE)).willReturn(items);
-        given(draftGenerator.generate(any()))
-            .willReturn(Optional.of(new DailyDigestDraft("디지털  브리핑\n본문", List.of("디지털", "출시"))));
-        given(postWriter.write(any())).willReturn(7L);
+        given(newsPosts.findLaunchNews(NewsSection.TECHNOLOGY, NEWS_DATE)).willReturn(items);
+        DailyDigestDraft draft = new DailyDigestDraft("디지털 브리핑 본문", List.of("디지털", "출시"));
+        given(draftGenerator.generate(any())).willReturn(Optional.of(draft));
+        given(newsPosts.publishDailyDigest(any(), any(), any())).willReturn(7L);
 
-        useCase.publish(NEWS_DATE);
+        DailyDigestPublishResult result = useCase.publish(NEWS_DATE);
 
         ArgumentCaptor<DailyDigestDraftCommand> draftCaptor = ArgumentCaptor.forClass(DailyDigestDraftCommand.class);
         verify(draftGenerator).generate(draftCaptor.capture());
-        assertThat(draftCaptor.getValue()).isEqualTo(new DailyDigestDraftCommand(BoardCategory.TECHNOLOGY, NEWS_DATE, items));
-
-        ArgumentCaptor<PostWriteCommand> captor = ArgumentCaptor.forClass(PostWriteCommand.class);
-        verify(postWriter).write(captor.capture());
-        PostWriteCommand command = captor.getValue();
-        assertThat(command.title()).isEqualTo(TECHNOLOGY_TITLE);
-        assertThat(command.content()).isEqualTo("디지털  브리핑\n본문");
-        assertThat(command.summary()).isEqualTo("디지털 브리핑 본문");
-        assertThat(command.tags()).containsExactly("디지털", "출시");
-        assertThat(command.accountId()).isEqualTo(0L);
-        assertThat(command.nickname()).isEqualTo("PostForge News Bot");
-        assertThat(command.category()).isEqualTo(PostCategory.DAILY_DIGEST);
-        assertThat(command.boardCategory()).isEqualTo(BoardCategory.TECHNOLOGY);
-        assertThat(command.publishOrigin()).isEqualTo(PostPublishOrigin.SYSTEM_BATCH);
-    }
-
-    @Test
-    @DisplayName("본문이 500자를 넘으면 summary를 500자로 자른다")
-    void publish_abbreviatesSummaryTo500Chars() {
-        given(sourceReader.findLaunchNews(any(), any())).willReturn(List.of());
-        given(sourceReader.findLaunchNews(BoardCategory.TECHNOLOGY, NEWS_DATE))
-            .willReturn(List.of(new DailyDigestSourceItem("갤럭시북 출시", "요약")));
-        given(draftGenerator.generate(any()))
-            .willReturn(Optional.of(new DailyDigestDraft("가".repeat(700), List.of())));
-        given(postWriter.write(any())).willReturn(7L);
-
-        useCase.publish(NEWS_DATE);
-
-        ArgumentCaptor<PostWriteCommand> captor = ArgumentCaptor.forClass(PostWriteCommand.class);
-        verify(postWriter).write(captor.capture());
-        assertThat(captor.getValue().summary()).hasSize(500).isEqualTo("가".repeat(500));
-    }
-
-    @Test
-    @DisplayName("summary를 자를 때 surrogate pair를 분리하지 않는다")
-    void publish_doesNotSplitSurrogatePairInSummary() {
-        given(sourceReader.findLaunchNews(any(), any())).willReturn(List.of());
-        given(sourceReader.findLaunchNews(BoardCategory.TECHNOLOGY, NEWS_DATE))
-            .willReturn(List.of(new DailyDigestSourceItem("갤럭시북 출시", "요약")));
-        given(draftGenerator.generate(any()))
-            .willReturn(Optional.of(new DailyDigestDraft("가".repeat(499) + "😀나", List.of())));
-        given(postWriter.write(any())).willReturn(7L);
-
-        useCase.publish(NEWS_DATE);
-
-        ArgumentCaptor<PostWriteCommand> captor = ArgumentCaptor.forClass(PostWriteCommand.class);
-        verify(postWriter).write(captor.capture());
-        assertThat(captor.getValue().summary()).isEqualTo("가".repeat(499));
+        assertThat(draftCaptor.getValue()).isEqualTo(new DailyDigestDraftCommand(NewsSection.TECHNOLOGY, NEWS_DATE, items));
+        verify(newsPosts).publishDailyDigest(NewsSection.TECHNOLOGY, NEWS_DATE, draft);
+        assertThat(result.createdPostIds()).containsExactly(7L);
     }
 
     @Test
     @DisplayName("한 분야 성공과 다른 분야 실패가 한 결과에 함께 담긴다")
     void publish_mixesSuccessAndSkipInOneResult() {
-        given(sourceReader.findLaunchNews(any(), any())).willReturn(List.of());
-        given(sourceReader.findLaunchNews(BoardCategory.TECHNOLOGY, NEWS_DATE))
+        given(newsPosts.findLaunchNews(any(), any())).willReturn(List.of());
+        given(newsPosts.findLaunchNews(NewsSection.TECHNOLOGY, NEWS_DATE))
             .willReturn(List.of(new DailyDigestSourceItem("갤럭시북 출시", "요약")));
-        given(sourceReader.findLaunchNews(BoardCategory.BUSINESS, NEWS_DATE))
+        given(newsPosts.findLaunchNews(NewsSection.BUSINESS, NEWS_DATE))
             .willReturn(List.of(new DailyDigestSourceItem("공기청정기 출시", "요약")));
-        given(sourceReader.digestExists(eq(BoardCategory.BUSINESS), any())).willReturn(true);
+        given(newsPosts.digestExists(NewsSection.BUSINESS, NEWS_DATE)).willReturn(true);
         given(draftGenerator.generate(any()))
             .willReturn(Optional.of(new DailyDigestDraft("디지털 브리핑 본문", List.of())));
-        given(postWriter.write(any())).willReturn(11L);
+        given(newsPosts.publishDailyDigest(any(), any(), any())).willReturn(11L);
 
         DailyDigestPublishResult result = useCase.publish(NEWS_DATE);
 
         assertThat(result.createdPostIds()).containsExactly(11L);
-        assertThat(result.skips()).containsEntry(BoardCategory.BUSINESS, DailyDigestSkipReason.ALREADY_PUBLISHED);
-        assertThat(result.skips()).doesNotContainKey(BoardCategory.TECHNOLOGY);
+        assertThat(result.skips()).containsEntry(NewsSection.BUSINESS, SkipReason.ALREADY_PUBLISHED);
+        assertThat(result.skips()).doesNotContainKey(NewsSection.TECHNOLOGY);
         assertThat(result.newsDate()).isEqualTo(NEWS_DATE);
     }
 
-    private DailyDigestDraftCommand argThatCategory(BoardCategory category) {
-        return argThat(command -> command != null && command.category() == category);
+    private DailyDigestDraftCommand argThatSection(NewsSection section) {
+        return argThat(command -> command != null && command.category() == section);
     }
 }

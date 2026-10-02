@@ -7,17 +7,15 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
-import dev.iamrat.core.board.post.BoardCategory;
+import dev.iamrat.core.board.post.LaunchNewsPost;
 import dev.iamrat.core.board.post.LaunchNewsPostDraft;
 import dev.iamrat.core.board.post.LaunchNewsPostDraftCommand;
 import dev.iamrat.core.board.post.LaunchNewsPostDraftGenerator;
-import dev.iamrat.core.board.post.PostCategory;
+import dev.iamrat.core.board.post.NewsPostPort;
+import dev.iamrat.core.board.post.NewsSection;
 import dev.iamrat.core.board.post.PostPublishOrigin;
-import dev.iamrat.core.board.post.PostReferenceLinkCommand;
-import dev.iamrat.core.board.post.PostReferenceLinkReader;
-import dev.iamrat.core.board.post.PostReferenceLinkWriter;
-import dev.iamrat.core.board.post.PostWriteCommand;
-import dev.iamrat.core.board.post.PostWriter;
+import dev.iamrat.ingest.news.application.LaunchNewsPublishResult.Skip;
+import dev.iamrat.ingest.news.application.LaunchNewsPublishResult.SkipReason;
 import dev.iamrat.source.news.application.NewsSourceItem;
 import java.time.Clock;
 import java.time.Instant;
@@ -45,13 +43,7 @@ class PublishLaunchNewsUseCaseTest {
     private LaunchNewsPostDraftGenerator draftGenerator;
 
     @Mock
-    private PostWriter postWriter;
-
-    @Mock
-    private PostReferenceLinkReader referenceLinkReader;
-
-    @Mock
-    private PostReferenceLinkWriter referenceLinkWriter;
+    private NewsPostPort newsPosts;
 
     private PublishLaunchNewsUseCase useCase;
 
@@ -62,23 +54,22 @@ class PublishLaunchNewsUseCaseTest {
             ingestProductNewsUseCase,
             new LaunchNewsEligibilityPolicy(),
             draftGenerator,
-            referenceLinkReader,
-            new LaunchNewsPostRecorder(postWriter, referenceLinkWriter, clock),
+            newsPosts,
             clock
         );
     }
 
     @Test
-    @DisplayName("모든 게이트를 통과한 뒤에만 게시글과 참조 링크를 저장한다")
-    void writesBoardPostAndReferenceOnlyAfterAllGatesPass() {
+    @DisplayName("모든 게이트를 통과한 뒤에만 출시 뉴스를 게시한다")
+    void publishesLaunchNewsOnlyAfterAllGatesPass() {
         givenCollected(List.of(validItem()));
-        given(referenceLinkReader.existsByCanonicalUrl("https://n.news.naver.com/article/001/1")).willReturn(false);
-        given(referenceLinkReader.countByKeywordOnDate("갤럭시북", LocalDate.of(2026, 6, 21)))
+        given(newsPosts.isPublished("https://n.news.naver.com/article/001/1")).willReturn(false);
+        given(newsPosts.countPublished("갤럭시북", LocalDate.of(2026, 6, 21)))
             .willReturn(0L);
         given(draftGenerator.generate(any(LaunchNewsPostDraftCommand.class))).willReturn(Optional.of(
             new LaunchNewsPostDraft("갤럭시북 신제품 출시", "본문", "요약", List.of("갤럭시북", "launch-news"))
         ));
-        given(postWriter.write(any(PostWriteCommand.class))).willReturn(42L);
+        given(newsPosts.publishLaunchNews(any(LaunchNewsPost.class))).willReturn(42L);
 
         LaunchNewsPublishResult result = useCase.publish(command(3));
 
@@ -86,67 +77,62 @@ class PublishLaunchNewsUseCaseTest {
         assertThat(result.skippedCount()).isZero();
         assertThat(result.createdPostIds()).containsExactly(42L);
 
-        ArgumentCaptor<PostWriteCommand> postCommand = ArgumentCaptor.forClass(PostWriteCommand.class);
-        verify(postWriter).write(postCommand.capture());
-        assertThat(postCommand.getValue().category()).isEqualTo(PostCategory.PRODUCT_LAUNCH_NEWS);
-        assertThat(postCommand.getValue().publishOrigin()).isEqualTo(PostPublishOrigin.SYSTEM_BATCH);
-
-        ArgumentCaptor<PostReferenceLinkCommand> referenceCommand =
-            ArgumentCaptor.forClass(PostReferenceLinkCommand.class);
-        verify(referenceLinkWriter).write(referenceCommand.capture());
-        assertThat(referenceCommand.getValue().postId()).isEqualTo(42L);
-        assertThat(referenceCommand.getValue().keyword()).isEqualTo("갤럭시북");
-        assertThat(referenceCommand.getValue().canonicalUrl())
-            .isEqualTo("https://n.news.naver.com/article/001/1");
-        assertThat(referenceCommand.getValue().publishOrigin()).isEqualTo(PostPublishOrigin.SYSTEM_BATCH);
+        LaunchNewsPost published = capturePublished();
+        assertThat(published.draft().title()).isEqualTo("갤럭시북 신제품 출시");
+        assertThat(published.publishOrigin()).isEqualTo(PostPublishOrigin.SYSTEM_BATCH);
+        assertThat(published.keyword()).isEqualTo("갤럭시북");
+        assertThat(published.sourceTitle()).isEqualTo("갤럭시북 신제품 출시");
+        assertThat(published.canonicalUrl()).isEqualTo("https://n.news.naver.com/article/001/1");
+        assertThat(published.originalUrl()).isEqualTo("https://n.news.naver.com/article/001/1?utm=1");
+        assertThat(published.sourceName()).isEqualTo("n.news.naver.com");
+        assertThat(published.publishedAt()).isEqualTo(LocalDateTime.of(2026, 6, 21, 10, 0));
     }
 
     @Test
     @DisplayName("중복 기사면 AI 생성 전에 건너뛴다")
     void rejectsDuplicateArticleBeforeAiGeneration() {
         givenCollected(List.of(validItem()));
-        given(referenceLinkReader.existsByCanonicalUrl("https://n.news.naver.com/article/001/1")).willReturn(true);
+        given(newsPosts.isPublished("https://n.news.naver.com/article/001/1")).willReturn(true);
 
         LaunchNewsPublishResult result = useCase.publish(command(3));
 
         assertThat(result.publishedCount()).isZero();
-        assertThat(result.skips()).extracting(LaunchNewsSkip::reason)
-            .containsExactly(LaunchNewsSkipReason.DUPLICATE_ARTICLE);
+        assertThat(result.skips()).extracting(Skip::reason)
+            .containsExactly(SkipReason.DUPLICATE_ARTICLE);
         verify(draftGenerator, never()).generate(any());
-        verify(postWriter, never()).write(any());
+        verify(newsPosts, never()).publishLaunchNews(any());
     }
 
     @Test
     @DisplayName("AI 생성이 실패하면 후보를 건너뛴다")
     void skipsCandidateWhenAiGenerationFails() {
         givenCollected(List.of(validItem()));
-        given(referenceLinkReader.existsByCanonicalUrl("https://n.news.naver.com/article/001/1")).willReturn(false);
-        given(referenceLinkReader.countByKeywordOnDate("갤럭시북", LocalDate.of(2026, 6, 21)))
+        given(newsPosts.isPublished("https://n.news.naver.com/article/001/1")).willReturn(false);
+        given(newsPosts.countPublished("갤럭시북", LocalDate.of(2026, 6, 21)))
             .willReturn(0L);
         given(draftGenerator.generate(any(LaunchNewsPostDraftCommand.class))).willReturn(Optional.empty());
 
         LaunchNewsPublishResult result = useCase.publish(command(3));
 
         assertThat(result.publishedCount()).isZero();
-        assertThat(result.skips()).extracting(LaunchNewsSkip::reason)
-            .containsExactly(LaunchNewsSkipReason.AI_GENERATION_FAILED);
-        verify(postWriter, never()).write(any());
-        verify(referenceLinkWriter, never()).write(any());
+        assertThat(result.skips()).extracting(Skip::reason)
+            .containsExactly(SkipReason.AI_GENERATION_FAILED);
+        verify(newsPosts, never()).publishLaunchNews(any());
     }
 
     @Test
     @DisplayName("일일 한도를 초과하면 AI 생성 전에 건너뛴다")
     void skipsWhenDailyCapExceededBeforeAiGeneration() {
         givenCollected(List.of(validItem()));
-        given(referenceLinkReader.existsByCanonicalUrl("https://n.news.naver.com/article/001/1")).willReturn(false);
-        given(referenceLinkReader.countByKeywordOnDate("갤럭시북", LocalDate.of(2026, 6, 21)))
+        given(newsPosts.isPublished("https://n.news.naver.com/article/001/1")).willReturn(false);
+        given(newsPosts.countPublished("갤럭시북", LocalDate.of(2026, 6, 21)))
             .willReturn(3L);
 
         LaunchNewsPublishResult result = useCase.publish(command(3));
 
         assertThat(result.publishedCount()).isZero();
-        assertThat(result.skips()).extracting(LaunchNewsSkip::reason)
-            .containsExactly(LaunchNewsSkipReason.DAILY_CAP_EXCEEDED);
+        assertThat(result.skips()).extracting(Skip::reason)
+            .containsExactly(SkipReason.DAILY_CAP_EXCEEDED);
         verify(draftGenerator, never()).generate(any());
     }
 
@@ -154,119 +140,109 @@ class PublishLaunchNewsUseCaseTest {
     @DisplayName("같은 배치 중복은 기계가 읽을 수 있는 skip으로 기록한다")
     void recordsSameBatchDuplicateAsMachineReadableSkip() {
         givenCollected(List.of(validItem(), validItem()));
-        given(referenceLinkReader.existsByCanonicalUrl("https://n.news.naver.com/article/001/1")).willReturn(false);
-        given(referenceLinkReader.countByKeywordOnDate("갤럭시북", LocalDate.of(2026, 6, 21)))
+        given(newsPosts.isPublished("https://n.news.naver.com/article/001/1")).willReturn(false);
+        given(newsPosts.countPublished("갤럭시북", LocalDate.of(2026, 6, 21)))
             .willReturn(0L);
         given(draftGenerator.generate(any(LaunchNewsPostDraftCommand.class))).willReturn(Optional.of(
             new LaunchNewsPostDraft("갤럭시북 신제품 출시", "본문", "요약", List.of("갤럭시북", "launch-news"))
         ));
-        given(postWriter.write(any(PostWriteCommand.class))).willReturn(42L);
+        given(newsPosts.publishLaunchNews(any(LaunchNewsPost.class))).willReturn(42L);
 
         LaunchNewsPublishResult result = useCase.publish(command(3));
 
         assertThat(result.publishedCount()).isEqualTo(1);
         assertThat(result.skippedCount()).isEqualTo(1);
-        assertThat(result.skips()).extracting(LaunchNewsSkip::reason)
-            .containsExactly(LaunchNewsSkipReason.DUPLICATE_ARTICLE);
-        verify(referenceLinkReader, times(1)).existsByCanonicalUrl("https://n.news.naver.com/article/001/1");
+        assertThat(result.skips()).extracting(Skip::reason)
+            .containsExactly(SkipReason.DUPLICATE_ARTICLE);
+        verify(newsPosts, times(1)).isPublished("https://n.news.naver.com/article/001/1");
         verify(draftGenerator, times(1)).generate(any());
-        verify(postWriter, times(1)).write(any());
+        verify(newsPosts, times(1)).publishLaunchNews(any());
     }
 
     @Test
     @DisplayName("원본 발행 시간을 파싱할 수 없으면 처리 시간을 저장한다")
     void storesProcessingTimeWhenSourcePublishedAtCannotBeParsed() {
         givenCollected(List.of(itemWithInvalidPublishedAt()));
-        given(referenceLinkReader.existsByCanonicalUrl("https://n.news.naver.com/article/001/1")).willReturn(false);
-        given(referenceLinkReader.countByKeywordOnDate("갤럭시북", LocalDate.of(2026, 6, 21)))
+        given(newsPosts.isPublished("https://n.news.naver.com/article/001/1")).willReturn(false);
+        given(newsPosts.countPublished("갤럭시북", LocalDate.of(2026, 6, 21)))
             .willReturn(0L);
         given(draftGenerator.generate(any(LaunchNewsPostDraftCommand.class))).willReturn(Optional.of(
             new LaunchNewsPostDraft("갤럭시북 신제품 출시", "본문", "요약", List.of("갤럭시북", "launch-news"))
         ));
-        given(postWriter.write(any(PostWriteCommand.class))).willReturn(42L);
+        given(newsPosts.publishLaunchNews(any(LaunchNewsPost.class))).willReturn(42L);
 
         useCase.publish(command(3));
 
-        ArgumentCaptor<PostReferenceLinkCommand> referenceCommand =
-            ArgumentCaptor.forClass(PostReferenceLinkCommand.class);
-        verify(referenceLinkWriter).write(referenceCommand.capture());
-        assertThat(referenceCommand.getValue().publishedAt())
-            .isEqualTo(LocalDateTime.of(2026, 6, 21, 9, 0));
+        assertThat(capturePublished().publishedAt()).isEqualTo(LocalDateTime.of(2026, 6, 21, 9, 0));
     }
 
     @Test
     @DisplayName("해외 원본 발행 시간을 서비스 타임존으로 변환한다")
     void convertsSourcePublishedAtToServiceTimeZone() {
         givenCollected(List.of(itemWithOverseasPublishedAt()));
-        given(referenceLinkReader.existsByCanonicalUrl("https://n.news.naver.com/article/001/1")).willReturn(false);
-        given(referenceLinkReader.countByKeywordOnDate("갤럭시북", LocalDate.of(2026, 6, 22)))
+        given(newsPosts.isPublished("https://n.news.naver.com/article/001/1")).willReturn(false);
+        given(newsPosts.countPublished("갤럭시북", LocalDate.of(2026, 6, 22)))
             .willReturn(0L);
         given(draftGenerator.generate(any(LaunchNewsPostDraftCommand.class))).willReturn(Optional.of(
             new LaunchNewsPostDraft("갤럭시북 신제품 출시", "본문", "요약", List.of("갤럭시북", "launch-news"))
         ));
-        given(postWriter.write(any(PostWriteCommand.class))).willReturn(42L);
+        given(newsPosts.publishLaunchNews(any(LaunchNewsPost.class))).willReturn(42L);
 
         useCase.publish(command(3));
 
-        ArgumentCaptor<PostReferenceLinkCommand> referenceCommand =
-            ArgumentCaptor.forClass(PostReferenceLinkCommand.class);
-        verify(referenceLinkWriter).write(referenceCommand.capture());
-        assertThat(referenceCommand.getValue().publishedAt())
-            .isEqualTo(LocalDateTime.of(2026, 6, 22, 9, 0));
+        assertThat(capturePublished().publishedAt()).isEqualTo(LocalDateTime.of(2026, 6, 22, 9, 0));
     }
 
     @Test
     @DisplayName("저장 중 유니크 제약 충돌은 해당 기사만 중복 skip으로 격리한다")
     void isolatesUniqueConstraintViolationAsDuplicateSkipForThatArticleOnly() {
         givenCollected(List.of(validItem(), secondValidItem()));
-        given(referenceLinkReader.existsByCanonicalUrl(any())).willReturn(false);
-        given(referenceLinkReader.countByKeywordOnDate("갤럭시북", LocalDate.of(2026, 6, 21)))
+        given(newsPosts.isPublished(any())).willReturn(false);
+        given(newsPosts.countPublished("갤럭시북", LocalDate.of(2026, 6, 21)))
             .willReturn(0L);
         given(draftGenerator.generate(any(LaunchNewsPostDraftCommand.class))).willReturn(Optional.of(
             new LaunchNewsPostDraft("갤럭시북 신제품 출시", "본문", "요약", List.of("갤럭시북", "launch-news"))
         ));
-        given(postWriter.write(any(PostWriteCommand.class)))
+        given(newsPosts.publishLaunchNews(any(LaunchNewsPost.class)))
             .willReturn(42L)
             .willThrow(new DataIntegrityViolationException("duplicate canonical_url"));
 
         LaunchNewsPublishResult result = useCase.publish(command(3));
 
         assertThat(result.createdPostIds()).containsExactly(42L);
-        assertThat(result.skips()).extracting(LaunchNewsSkip::reason)
-            .containsExactly(LaunchNewsSkipReason.DUPLICATE_ARTICLE);
+        assertThat(result.skips()).extracting(Skip::reason)
+            .containsExactly(SkipReason.DUPLICATE_ARTICLE);
     }
 
     @Test
-    @DisplayName("커맨드의 분야 카테고리가 게시글 작성 커맨드에 실린다")
-    void carriesCommandCategoryIntoPostWriteCommand() {
+    @DisplayName("커맨드의 분야가 게시 요청에 실린다")
+    void carriesCommandSectionIntoPublishedNews() {
         givenCollected(List.of(validItem()));
-        given(referenceLinkReader.existsByCanonicalUrl("https://n.news.naver.com/article/001/1")).willReturn(false);
-        given(referenceLinkReader.countByKeywordOnDate("갤럭시북", LocalDate.of(2026, 6, 21)))
+        given(newsPosts.isPublished("https://n.news.naver.com/article/001/1")).willReturn(false);
+        given(newsPosts.countPublished("갤럭시북", LocalDate.of(2026, 6, 21)))
             .willReturn(0L);
         given(draftGenerator.generate(any(LaunchNewsPostDraftCommand.class))).willReturn(Optional.of(
             new LaunchNewsPostDraft("갤럭시북 신제품 출시", "본문", "요약", List.of("갤럭시북", "launch-news"))
         ));
-        given(postWriter.write(any(PostWriteCommand.class))).willReturn(42L);
+        given(newsPosts.publishLaunchNews(any(LaunchNewsPost.class))).willReturn(42L);
 
         useCase.publish(new LaunchNewsPublishCommand(
             "갤럭시북",
             5,
             3,
             List.of("출시"),
-            BoardCategory.TECHNOLOGY,
+            NewsSection.TECHNOLOGY,
             PostPublishOrigin.SYSTEM_BATCH
         ));
 
-        ArgumentCaptor<PostWriteCommand> postCommand = ArgumentCaptor.forClass(PostWriteCommand.class);
-        verify(postWriter).write(postCommand.capture());
-        assertThat(postCommand.getValue().boardCategory()).isEqualTo(BoardCategory.TECHNOLOGY);
+        assertThat(capturePublished().section()).isEqualTo(NewsSection.TECHNOLOGY);
     }
 
     @Test
     @DisplayName("URL을 URI로 파싱할 수 없으면 query string만 잘라내고 출처 호스트는 빈 값으로 처리한다")
     void fallsBackToQueryStrippedUrlAndBlankHostWhenUrlIsUnparseable() {
         givenCollected(List.of(itemWithUnparseableUrl()));
-        given(referenceLinkReader.existsByCanonicalUrl("https://n.news.naver.com/article/001/1 launch"))
+        given(newsPosts.isPublished("https://n.news.naver.com/article/001/1 launch"))
             .willReturn(false);
 
         LaunchNewsPublishResult result = useCase.publish(command(3));
@@ -275,7 +251,7 @@ class PublishLaunchNewsUseCaseTest {
         assertThat(result.skips()).hasSize(1);
         assertThat(result.skips().getFirst().url())
             .isEqualTo("https://n.news.naver.com/article/001/1 launch");
-        assertThat(result.skips().getFirst().reason()).isEqualTo(LaunchNewsSkipReason.UNKNOWN_SOURCE);
+        assertThat(result.skips().getFirst().reason()).isEqualTo(SkipReason.UNKNOWN_SOURCE);
         verify(draftGenerator, never()).generate(any());
     }
 
@@ -309,13 +285,13 @@ class PublishLaunchNewsUseCaseTest {
                 pressItemWithQueryId("20260611000123"),
                 pressItemWithQueryId("20260611000999")
             ));
-        given(referenceLinkReader.existsByCanonicalUrl(any())).willReturn(false);
-        given(referenceLinkReader.countByKeywordOnDate("갤럭시북", LocalDate.of(2026, 6, 21)))
+        given(newsPosts.isPublished(any())).willReturn(false);
+        given(newsPosts.countPublished("갤럭시북", LocalDate.of(2026, 6, 21)))
             .willReturn(0L);
         given(draftGenerator.generate(any(LaunchNewsPostDraftCommand.class))).willReturn(Optional.of(
             new LaunchNewsPostDraft("갤럭시북 신제품 출시", "본문", "요약", List.of("갤럭시북", "launch-news"))
         ));
-        given(postWriter.write(any(PostWriteCommand.class))).willReturn(42L, 43L);
+        given(newsPosts.publishLaunchNews(any(LaunchNewsPost.class))).willReturn(42L, 43L);
 
         LaunchNewsPublishResult result = useCase.publish(command(3));
 
@@ -330,19 +306,19 @@ class PublishLaunchNewsUseCaseTest {
                 pressItemWithQueryId("20260611000123"),
                 pressItem("https://www.etnews.com/news/article.html?id=20260611000123&utm_source=naver")
             ));
-        given(referenceLinkReader.existsByCanonicalUrl(any())).willReturn(false);
-        given(referenceLinkReader.countByKeywordOnDate("갤럭시북", LocalDate.of(2026, 6, 21)))
+        given(newsPosts.isPublished(any())).willReturn(false);
+        given(newsPosts.countPublished("갤럭시북", LocalDate.of(2026, 6, 21)))
             .willReturn(0L);
         given(draftGenerator.generate(any(LaunchNewsPostDraftCommand.class))).willReturn(Optional.of(
             new LaunchNewsPostDraft("갤럭시북 신제품 출시", "본문", "요약", List.of("갤럭시북", "launch-news"))
         ));
-        given(postWriter.write(any(PostWriteCommand.class))).willReturn(42L);
+        given(newsPosts.publishLaunchNews(any(LaunchNewsPost.class))).willReturn(42L);
 
         LaunchNewsPublishResult result = useCase.publish(command(3));
 
         assertThat(result.publishedCount()).isEqualTo(1);
-        assertThat(result.skips()).extracting(LaunchNewsSkip::reason)
-            .containsExactly(LaunchNewsSkipReason.DUPLICATE_ARTICLE);
+        assertThat(result.skips()).extracting(Skip::reason)
+            .containsExactly(SkipReason.DUPLICATE_ARTICLE);
         assertThat(result.skips().getFirst().url())
             .isEqualTo("https://www.etnews.com/news/article.html?id=20260611000123");
     }
@@ -354,19 +330,19 @@ class PublishLaunchNewsUseCaseTest {
                 pressItem("https://www.etnews.com/news/article.html?cid=7&id=123"),
                 pressItem("https://www.etnews.com/news/article.html?id=123&cid=7")
             ));
-        given(referenceLinkReader.existsByCanonicalUrl(any())).willReturn(false);
-        given(referenceLinkReader.countByKeywordOnDate("갤럭시북", LocalDate.of(2026, 6, 21)))
+        given(newsPosts.isPublished(any())).willReturn(false);
+        given(newsPosts.countPublished("갤럭시북", LocalDate.of(2026, 6, 21)))
             .willReturn(0L);
         given(draftGenerator.generate(any(LaunchNewsPostDraftCommand.class))).willReturn(Optional.of(
             new LaunchNewsPostDraft("갤럭시북 신제품 출시", "본문", "요약", List.of("갤럭시북", "launch-news"))
         ));
-        given(postWriter.write(any(PostWriteCommand.class))).willReturn(42L);
+        given(newsPosts.publishLaunchNews(any(LaunchNewsPost.class))).willReturn(42L);
 
         LaunchNewsPublishResult result = useCase.publish(command(3));
 
         assertThat(result.publishedCount()).isEqualTo(1);
-        assertThat(result.skips()).extracting(LaunchNewsSkip::reason)
-            .containsExactly(LaunchNewsSkipReason.DUPLICATE_ARTICLE);
+        assertThat(result.skips()).extracting(Skip::reason)
+            .containsExactly(SkipReason.DUPLICATE_ARTICLE);
     }
 
     @Test
@@ -376,18 +352,24 @@ class PublishLaunchNewsUseCaseTest {
                 pressItem("https://www.etnews.com/a.html?id=1|x&utm_source=naver"),
                 pressItem("https://www.etnews.com/a.html?id=2|x&utm_source=naver")
             ));
-        given(referenceLinkReader.existsByCanonicalUrl(any())).willReturn(false);
-        given(referenceLinkReader.countByKeywordOnDate("갤럭시북", LocalDate.of(2026, 6, 21)))
+        given(newsPosts.isPublished(any())).willReturn(false);
+        given(newsPosts.countPublished("갤럭시북", LocalDate.of(2026, 6, 21)))
             .willReturn(0L);
         given(draftGenerator.generate(any(LaunchNewsPostDraftCommand.class))).willReturn(Optional.of(
             new LaunchNewsPostDraft("갤럭시북 신제품 출시", "본문", "요약", List.of("갤럭시북", "launch-news"))
         ));
-        given(postWriter.write(any(PostWriteCommand.class))).willReturn(42L, 43L);
+        given(newsPosts.publishLaunchNews(any(LaunchNewsPost.class))).willReturn(42L, 43L);
 
         LaunchNewsPublishResult result = useCase.publish(command(3));
 
         assertThat(result.publishedCount()).isEqualTo(2);
         assertThat(result.skips()).isEmpty();
+    }
+
+    private LaunchNewsPost capturePublished() {
+        ArgumentCaptor<LaunchNewsPost> captor = ArgumentCaptor.forClass(LaunchNewsPost.class);
+        verify(newsPosts).publishLaunchNews(captor.capture());
+        return captor.getValue();
     }
 
     private NewsSourceItem pressItemWithQueryId(String articleId) {

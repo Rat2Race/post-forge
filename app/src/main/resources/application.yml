@@ -135,7 +135,7 @@ source:
     country: ${GOOGLE_NEWS_COUNTRY:KR}
     connect-timeout: ${GOOGLE_NEWS_CONNECT_TIMEOUT:3s}
     read-timeout: ${GOOGLE_NEWS_READ_TIMEOUT:10s}
-    sections:   # 키는 BoardCategory 이름, 값은 Google 뉴스 한국판(hl=ko, gl=KR) 섹션의 topics 식별자
+    sections:   # 키는 NewsSection 이름, 값은 Google 뉴스 한국판(hl=ko, gl=KR) 섹션의 topics 식별자
       NATION: CAAqIQgKIhtDQkFTRGdvSUwyMHZNRFp4WkRNU0FtdHZLQUFQAQ
       WORLD: CAAqJggKIiBDQkFTRWdvSUwyMHZNRGx1YlY4U0FtdHZHZ0pMVWlnQVAB
       BUSINESS: CAAqJggKIiBDQkFTRWdvSUwyMHZNRGx6TVdZU0FtdHZHZ0pMVWlnQVAB
