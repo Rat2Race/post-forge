@@ -17,6 +17,8 @@ import java.util.List;
 import java.util.concurrent.Executor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -76,11 +78,27 @@ public class StudySourceService {
     /**
      * 자료 저장은 바로 커밋하고, 느린 LLM 질문 생성은 뒤로 넘긴다.
      * 이 메서드에 트랜잭션을 걸면 생성 작업이 커밋 전 데이터를 못 볼 수 있다.
-     * ponytail: 메모리 실행기라 재시작하면 진행 중이던 생성이 사라지고 GENERATING에 머문다.
-     * 잃으면 안 될 때 DB 작업 큐(SKIP LOCKED 선점 + 재시도)로 옮긴다.
      */
     public Long create(Long ownerAccountId, String title, String content) {
         StudySource source = sourceRepository.save(StudySource.create(ownerAccountId, title, content, now()));
+        submit(source);
+        return source.getId();
+    }
+
+    /**
+     * 메모리 실행기는 재시작하면 맡긴 생성을 잃어 자료가 GENERATING에 머문다. 기동 직후 다시 맡긴다.
+     * ponytail: 인스턴스 하나를 전제한다. 여럿이면 같은 자료를 두 번 생성하니 DB 작업 큐(SKIP LOCKED 선점 + 재시도)로 옮긴다.
+     */
+    @EventListener(ApplicationReadyEvent.class)
+    public void resumeGenerating() {
+        List<StudySource> stuck = sourceRepository.findByQuestionStatus(StudySource.QuestionStatus.GENERATING);
+        if (!stuck.isEmpty()) {
+            log.info("study question generation resumed. count={}", stuck.size());
+        }
+        stuck.forEach(this::submit);
+    }
+
+    private void submit(StudySource source) {
         executor.execute(() -> {
             try {
                 generateQuestions(source);
@@ -88,7 +106,6 @@ public class StudySourceService {
                 log.error("study question generation failed. sourceId={}", source.getId(), e);
             }
         });
-        return source.getId();
     }
 
     @Transactional(readOnly = true)

@@ -11,7 +11,10 @@ import dev.iamrat.study.application.StudyPracticeService.RecallResult;
 import dev.iamrat.study.application.StudyPracticeService.RecordView;
 import dev.iamrat.study.application.StudySourceService.SourceDetail;
 import dev.iamrat.study.domain.ReviewGrade;
+import dev.iamrat.study.domain.StudySource;
+import dev.iamrat.study.domain.StudySourceRepository;
 import dev.iamrat.study.support.error.StudyErrorCode;
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.List;
@@ -26,8 +29,11 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.context.ActiveProfiles;
@@ -71,6 +77,8 @@ class StudyFlowTest {
     @Autowired private StudyStatsService stats;
     @Autowired private FakeStudyAssistant assistant;
     @Autowired private MutableClock clock;
+    @Autowired private StudySourceRepository sourceRepository;
+    @Autowired private ConfigurableApplicationContext context;
 
     private long me;
 
@@ -480,6 +488,20 @@ class StudyFlowTest {
         assertThat(practice.today(me).items()).extracting(TodayItem::type).doesNotContain("RECALL");
         clock.advance(java.time.Duration.ofDays(1));
         assertThat(practice.today(me).items()).filteredOn(item -> item.type().equals("RECALL")).hasSize(3);
+    }
+
+    @Test
+    @DisplayName("재시작으로 생성이 끊겨 GENERATING에 머문 자료는 기동 직후 다시 생성한다")
+    void resumesStuckGenerationWhenApplicationIsReady() {
+        assistant.drafts = List.of(new QuestionDraft("무엇을 읽나요?", "커밋된 데이터만 읽는다"));
+        Long sourceId = sourceRepository.save(StudySource.create(me, "끊긴 자료", CONTENT, NOW)).getId();
+        assertThat(sources.get(me, sourceId).questionStatus()).isEqualTo("GENERATING");
+
+        context.publishEvent(new ApplicationReadyEvent(new SpringApplication(), new String[0], context, Duration.ZERO));
+
+        SourceDetail detail = sources.get(me, sourceId);
+        assertThat(detail.questionStatus()).isEqualTo("READY");
+        assertThat(detail.questions()).extracting(StudySourceService.QuestionView::question).containsExactly("무엇을 읽나요?");
     }
 
     @Test
