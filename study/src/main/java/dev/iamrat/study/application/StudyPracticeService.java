@@ -31,7 +31,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class StudyPracticeService {
 
     private static final int TODAY_LIMIT = 20;
-    // 빈 페이지는 몇 분짜리 글쓰기라 하루에 세 개까지만 섞는다.
+    // 빈 페이지는 몇 분짜리 글쓰기라 하루에 세 개까지만 섞는다. 자료 화면에서 직접 한 정리도 그날 몫에서 뺀다.
     private static final int RECALL_LIMIT = 3;
 
     public record TodayItem(String type, Long id, Long sourceId, String sourceTitle, String question, String evidence,
@@ -69,6 +69,8 @@ public class StudyPracticeService {
     public Today today(Long ownerAccountId) {
         LocalDateTime now = now();
         LocalDateTime tomorrow = now.toLocalDate().plusDays(1).atStartOfDay();
+        long recalledToday = recordRepository.countByOwnerAccountIdAndKindAndCreatedAtGreaterThanEqual(
+            ownerAccountId, StudyRecord.Kind.RECALL, now.toLocalDate().atStartOfDay());
         Map<Long, StudyQuestion> questions = questionRepository
             .findTop200ByOwnerAccountIdAndDueAtLessThanOrderByDueAtAscIdAsc(ownerAccountId, tomorrow).stream()
             .filter(question -> question.isDue(now))
@@ -84,7 +86,7 @@ public class StudyPracticeService {
             recallSources.values().stream()
                 .map(s -> new TodayPlan.Due(TodayPlan.Kind.RECALL, s.getId(), s.getId(), s.getRecallDueAt()))
                 .toList(),
-            TODAY_LIMIT, RECALL_LIMIT);
+            TODAY_LIMIT, (int) Math.max(0, RECALL_LIMIT - recalledToday));
 
         Map<Long, String> titles = sourceRepository
             .findAllById(plan.items().stream().map(TodayPlan.Due::sourceId).distinct().toList()).stream()
