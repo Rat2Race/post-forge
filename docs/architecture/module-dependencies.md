@@ -68,7 +68,7 @@ JPA 저장소(Spring Data repository)는 `domain`에 두고 `application` 서비
 | `core` | 공통 DTO·예외·principal/API metadata와 모듈 간 port 계약 |
 | `support` | Redis guard primitive, JPA auditing, request logging, MVC 예외 응답 |
 | `auth` | 계정, 로그인, JWT, OAuth2, 이메일 인증, 인증/인가 오류 응답 |
-| `board` | 게시글, 댓글, 좋아요, 조회수 |
+| `board` | 게시글, 댓글, 좋아요, 조회수, 내 프로필 API(`/api/user/profile`, 조회·변경은 `core`의 `AccountProfileManager`로 `auth`에 맡김) |
 | `ai` | 학습 문제 초안·AI 학생 질문·꼬리질문, LLM 설정 |
 | `study` | 사용자 자료, 근거가 검증된 복습 문제, 간격 반복, 빈 페이지 정리, 가르치기, 학습 기록 |
 
@@ -106,7 +106,7 @@ JPA 저장소(Spring Data repository)는 `domain`에 두고 `application` 서비
 
 | 경계 | 규칙 |
 |------|------|
-| `board` ↔ 인증 | `board`는 `auth` 구현 대신 `core`의 principal 계약만 참조한다. 상세 인증 경계는 [Authentication Architecture](./authentication.md)에 둔다. |
+| `board` ↔ 인증 | `board`는 `auth` 구현 대신 `core` 계약만 참조한다. 로그인 사용자는 `UserPrincipal`로 받고, 작성자 닉네임은 `AccountProfileReader`로 읽고, 내 프로필 조회와 닉네임·비밀번호 변경은 `AccountProfileManager`에 맡긴다. 두 port는 `auth`가 구현한다. 상세 인증 경계는 [Authentication Architecture](./authentication.md)에 둔다. |
 | `study` ↔ AI | `study`는 `ai` 대신 `core`의 `StudyAssistant` port를 사용한다. LLM 출력의 근거 검증과 대체 경로는 `study`가 결정적으로 맡는다. |
 | `app` ↔ 실행 정책 | route/security/OpenAPI와 전체 runtime 조립만 담당한다. |
 

@@ -1,7 +1,7 @@
 # PostForge MVP ERD
 
 > Current status: 현재 구현을 시각화한 derived document다.
-> Table ownership과 물리 schema의 기준은 [DB Schema Ownership](./schema-ownership.md)이다.
+> Table ownership의 기준은 [DB Schema Ownership](./schema-ownership.md)이고, 물리 schema의 기준은 `app/src/main/resources/db/migration/`의 Flyway SQL이다.
 
 이 문서는 현재 relational schema의 관계, 컬럼, index를 ERD 관점으로 보여준다. 학습(`study_*`) 표는 [DB Schema Ownership](./schema-ownership.md)에 있다.
 

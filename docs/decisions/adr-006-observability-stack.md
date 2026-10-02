@@ -62,7 +62,7 @@
 ## 영향
 
 - 앱은 `spring-boot-starter-actuator`와 `micrometer-registry-prometheus`만 의존한다. 관측 도구를 바꿔도 앱 코드는 바뀌지 않는다.
-- 지표 이름과 태그가 앱 코드 밖의 계약이 된다. `application-monitoring.yml`의 히스토그램·SLO 설정, [성능 문서](../performance/README.md)의 지표 표, Grafana 패널이 모두 이 이름에 의존한다. 이름을 바꾸면 세 곳이 함께 깨진다. `GoogleNewsRssSourceClientTest`가 미터 이름과 태그를 단언해 이 계약을 고정한다.
+- 지표 이름과 태그가 앱 코드 밖의 계약이 된다. `application-monitoring.yml`의 히스토그램·SLO 설정, [성능 문서](../performance/README.md)의 지표 표, Grafana 패널이 모두 이 이름에 의존한다. 이름을 바꾸면 세 곳이 함께 깨진다. `LlmTextGenerationAdapterTest`가 `ai_text_generation` 미터 이름과 `provider` 태그를 단언해 이 계약을 고정한다.
 - 보존 기간이 Prometheus 기본값 15일이다. 그보다 오래된 원본 데이터는 자동 삭제되므로, 장기 비교가 필요한 측정은 요약을 문서로 따로 남긴다.
 - 액추에이터 엔드포인트가 인증 뒤에 있으므로 스크레이프 설정에 자격증명이 필요하다.
 
@@ -85,5 +85,5 @@
 ## 관련 문서
 
 - 계측 항목과 용도: [성능 측정 기준](../performance/README.md)
-- 실패 격리와 스케줄 동작: [Ingest 흐름](../architecture/flows.md)
+- LLM 장애 시 동작: [요청 흐름의 AI](../architecture/flows.md#ai)
 - 모놀리스 선택과 서비스 분리 경로: [ADR-003](./adr-003-modular-monolith.md)

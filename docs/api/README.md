@@ -11,7 +11,7 @@
 | 표기 | 호출 조건 |
 | --- | --- |
 | `PUBLIC` | 인증 없이 호출 가능. 일부 조회는 JWT가 있으면 개인화하며 엔드포인트 설명에 별도 표기 |
-| `USER` | access token이 필요한 사용자 영역. 실제 `ROLE_USER` 전용, `ROLE_USER/ROLE_ADMIN` 공용, 소유자/ADMIN 조건은 각 엔드포인트 설명에 별도 표기 |
+| `USER` | access token이 필요한 사용자 영역. `ROLE_USER` 전용(`ROLE_ADMIN`만 있는 토큰은 `403 ACCESS_DENIED`)과 소유자/ADMIN 조건은 각 엔드포인트 설명에 별도 표기하고, 표기가 없으면 `ROLE_USER/ROLE_ADMIN` 공용 |
 | `ADMIN` | `ROLE_ADMIN` 필요 |
 
 인증이 필요한 요청은 `Authorization: Bearer {accessToken}`을 사용한다. 이 값은 서버가 계정 ID와 역할을 복원해 소유권·권한·개인화 상태를 판단하는 데 필요하다.
@@ -112,7 +112,7 @@ Spring pageable resolver는 일부 잘못된 `page`/`size` 값을 `0`, 엔드포
 | --- | --- | --- |
 | `SendEmailRequest.email` | 필수, email 형식; trim·lowercase 정규화 | 인증 링크의 수신자이자 verified-email key |
 | `RegisterRequest.username` | 필수, 4~20자 영문·숫자 | local 로그인 식별자 |
-| `RegisterRequest.password` | 필수, 최소 8자, 대·소문자·숫자·`@$!%*?&` 포함 | local 계정 자격 증명 강도 보장 |
+| `RegisterRequest.password` | 필수, 최소 8자, 영문 대·소문자·숫자·`@$!%*?&`만 쓸 수 있고 각각 1자 이상 포함. 그 밖의 문자(`#`, 공백, 한글 등)가 있으면 `400 VALIDATION_ERROR` | local 계정 자격 증명 강도 보장 |
 | `RegisterRequest.email` | 필수, email 형식 | 사전 인증 완료 여부와 계정 연락처 확인 |
 | `RegisterRequest.nickname` | 필수, 2~20자 한글·영문·숫자·`_` | 게시글·댓글에 노출할 고유 표시명 |
 | `LoginRequest.username` | 필수, 4~20자 영문·숫자 | 인증할 local 계정 조회 |
@@ -139,18 +139,18 @@ Spring pageable resolver는 일부 잘못된 `page`/`size` 값을 `0`, 엔드포
 | Endpoint | Auth | Parameters — 필요한 이유 | Success | Fail |
 | --- | --- | --- | --- | --- |
 | `GET /api/posts` | PUBLIC | `keyword?` 제목·본문 검색, pageable 기본 `size=20`, `sort=createdAt,DESC`; 선택 JWT는 `isLiked` 계산에 사용 | `200 PageResponse<PostDetail>` | 지원하지 않는 sort property·내부 조회 오류 `500` |
-| `POST /api/posts` | USER | body `PostRequest` — 일반 게시글 본문·태그 지정; JWT account ID는 작성자 | `201 PostSummary` | `400 VALIDATION_ERROR`; 인증·계정 상태 `401/403`; 작성자 `404 USER_NOT_FOUND`; 충돌 `409` |
-| `GET /api/posts/{postId}` | PUBLIC | path `postId` — 조회할 게시글 식별. 선택 JWT가 있으면 개인화 및 사용자별 조회수 증가 | `200 PostDetail` | `404 POST_NOT_FOUND`; 숫자가 아닌 경로 `404 RESOURCE_NOT_FOUND` |
+| `POST /api/posts` | USER | body `PostRequest` — 일반 게시글 본문·태그 지정; JWT account ID는 작성자. `ROLE_USER` 전용 | `201 PostSummary` | `400 VALIDATION_ERROR`; 인증·계정 상태 `401/403`; 작성자 `404 USER_NOT_FOUND`; 충돌 `409` |
+| `GET /api/posts/{postId}` | PUBLIC | path `postId` — 조회할 게시글 식별. 선택 JWT가 있으면 개인화 및 사용자별 조회수 증가 | `200 PostDetail` | `404 POST_NOT_FOUND`; 숫자가 아닌 경로는 인증이 없으면 `401 UNAUTHORIZED`, 인증되면 `404 RESOURCE_NOT_FOUND` |
 | `PUT /api/posts/{postId}` | USER | path `postId` 대상 식별, body `PostRequest` 새 상태. 작성자 또는 ADMIN만 허용 | `200 PostSummary` | `400 VALIDATION_ERROR`; 인증·소유권 `401/403`; `404 POST_NOT_FOUND` |
 | `DELETE /api/posts/{postId}` | USER | path `postId` — 삭제할 게시글과 조회수 정리 대상 식별. 작성자 또는 ADMIN만 허용 | `204 No Content` | 인증·소유권 `401/403`; `404 POST_NOT_FOUND` |
-| `POST /api/posts/{postId}/like` | USER | path `postId` 대상, JWT account ID 중복 방지·개인 상태 | `200 LikeResult` | 인증 `401/403`; `404 POST_NOT_FOUND`; cooldown·분당 한도·guard 장애 `429 TOO_MANY_REQUESTS` |
-| `DELETE /api/posts/{postId}/like` | USER | path `postId` 대상, JWT account ID의 좋아요만 제거 | `200 LikeResult` | 인증 `401/403`; `404 POST_NOT_FOUND`; 요청 보호 `429 TOO_MANY_REQUESTS` |
+| `POST /api/posts/{postId}/like` | USER | path `postId` 대상, JWT account ID 중복 방지·개인 상태. `ROLE_USER` 전용 | `200 LikeResult` | 인증 `401/403`; `404 POST_NOT_FOUND`; cooldown·분당 한도·guard 장애 `429 TOO_MANY_REQUESTS` |
+| `DELETE /api/posts/{postId}/like` | USER | path `postId` 대상, JWT account ID의 좋아요만 제거. `ROLE_USER` 전용 | `200 LikeResult` | 인증 `401/403`; `404 POST_NOT_FOUND`; 요청 보호 `429 TOO_MANY_REQUESTS` |
 | `GET /api/posts/{postId}/comments` | PUBLIC | path `postId` 댓글 묶음, pageable 기본 `size=50`, `sort=createdAt,ASC`; 선택 JWT는 `isLiked` 계산 | `200 PageResponse<CommentDetail>`; 댓글이 없으면 빈 page | 지원하지 않는 sort property·내부 조회 오류 `500` |
-| `POST /api/posts/{postId}/comments` | USER | path `postId` 작성 대상, body `CommentRequest`, JWT account ID 작성자 | `201 CommentSummary` | `400 VALIDATION_ERROR/INVALID_COMMENT_PARENT/MAX_COMMENT_DEPTH_EXCEEDED`; 인증·계정 `401/403`; `404 POST_NOT_FOUND/COMMENT_NOT_FOUND` |
+| `POST /api/posts/{postId}/comments` | USER | path `postId` 작성 대상, body `CommentRequest`, JWT account ID 작성자. `ROLE_USER` 전용 | `201 CommentSummary` | `400 VALIDATION_ERROR/INVALID_COMMENT_PARENT/MAX_COMMENT_DEPTH_EXCEEDED`; 인증·계정 `401/403`; `404 POST_NOT_FOUND/COMMENT_NOT_FOUND` |
 | `PUT /api/posts/{postId}/comments/{commentId}` | USER | `postId`는 중첩 URI 문맥, `commentId`가 실제 수정 대상, body `CommentRequest`의 `content` 사용. 작성자 또는 ADMIN만 허용 | `200 CommentSummary` | `400 VALIDATION_ERROR`; 인증·소유권 `401/403`; `404 COMMENT_NOT_FOUND` |
 | `DELETE /api/posts/{postId}/comments/{commentId}` | USER | `postId`는 중첩 URI 문맥, `commentId`가 실제 삭제 대상. 작성자 또는 ADMIN만 허용 | `204 No Content` | 인증·소유권 `401/403`; `404 COMMENT_NOT_FOUND` |
-| `POST /api/posts/{postId}/comments/{commentId}/like` | USER | `postId`는 URI 문맥, `commentId` 대상, JWT account ID 개인 상태 | `200 LikeResult` | 인증 `401/403`; `404 COMMENT_NOT_FOUND`; 요청 보호 `429 TOO_MANY_REQUESTS` |
-| `DELETE /api/posts/{postId}/comments/{commentId}/like` | USER | `postId`는 URI 문맥, `commentId` 대상, JWT account ID의 좋아요 제거 | `200 LikeResult` | 인증 `401/403`; `404 COMMENT_NOT_FOUND`; 요청 보호 `429 TOO_MANY_REQUESTS` |
+| `POST /api/posts/{postId}/comments/{commentId}/like` | USER | `postId`는 URI 문맥, `commentId` 대상, JWT account ID 개인 상태. `ROLE_USER` 전용 | `200 LikeResult` | 인증 `401/403`; `404 COMMENT_NOT_FOUND`; 요청 보호 `429 TOO_MANY_REQUESTS` |
+| `DELETE /api/posts/{postId}/comments/{commentId}/like` | USER | `postId`는 URI 문맥, `commentId` 대상, JWT account ID의 좋아요 제거. `ROLE_USER` 전용 | `200 LikeResult` | 인증 `401/403`; `404 COMMENT_NOT_FOUND`; 요청 보호 `429 TOO_MANY_REQUESTS` |
 | `GET /api/user/profile` | USER | body 없음. JWT account ID로 상세 프로필 조회 | `200 ProfileResponse` | 인증·비활성 `401/403`; `404 USER_NOT_FOUND` |
 | `PATCH /api/user/profile/nickname` | USER | body `ProfileNicknameUpdateRequest` — 새 공개 닉네임 | `204 No Content` | `400 VALIDATION_ERROR`; 인증·비활성 `401/403`; `404 USER_NOT_FOUND`; `409 DUPLICATE_NICKNAME` |
 | `PATCH /api/user/profile/password` | USER | body `ProfilePasswordUpdateRequest` — 현재 비밀번호 확인 후 변경 | `204 No Content`; refresh token 폐기 | `400 VALIDATION_ERROR/INVALID_PASSWORD/OAUTH_PASSWORD_UPDATE_NOT_ALLOWED`; 인증·비활성 `401/403`; `404 USER_NOT_FOUND` |
@@ -159,9 +159,9 @@ Spring pageable resolver는 일부 잘못된 `page`/`size` 값을 `0`, 엔드포
 
 | Method | 의미 | 이 프로젝트의 예 |
 | --- | --- | --- |
-| `POST` | 대상 collection이나 처리기에 payload를 맡긴다. 보통 서버가 새 ID를 정하며 같은 요청을 반복하면 새 결과가 생길 수 있다 | `POST /api/posts`, 로그인, 수동 수집 |
+| `POST` | 대상 collection이나 처리기에 payload를 맡긴다. 보통 서버가 새 ID를 정하며 같은 요청을 반복하면 새 결과가 생길 수 있다 | `POST /api/posts`, 로그인, 학습 자료 등록 |
 | `PUT` | client가 수정 권한을 가진 target 표현의 원하는 전체 상태를 설정한다. 같은 요청을 반복해도 최종 상태가 같아야 한다 | 게시글 편집 상태 설정 |
-| `PATCH` | 기존 target에 변경분만 적용한다. 요청에 없는 속성을 보존하도록 서버가 merge해야 하며 method 자체가 이를 자동 보장하지 않는다 | nickname 변경, 고정 상태 전이 |
+| `PATCH` | 기존 target에 변경분만 적용한다. 요청에 없는 속성을 보존하도록 서버가 merge해야 하며 method 자체가 이를 자동 보장하지 않는다 | nickname 변경, 비밀번호 변경 |
 | `DELETE` | target resource 또는 관계를 제거한다 | 게시글 삭제, 좋아요 관계 삭제 |
 
 `/api/posts`와 중첩 `/comments`는 collection URI다. `GET`은 collection 조회, `POST`는 그 안에 단일 resource 생성이므로 `/posts/create`처럼 동사까지 넣으면 `POST`와 URI가 모두 `create`를 말하는 의미 중복이 생긴다. 요청이 두 번 실행된다는 뜻은 아니다.
@@ -178,7 +178,7 @@ PUT/PATCH의 기준은 ID·작성자·생성일 같은 서버 관리 필드를 �
 
 현재 `PUT /api/posts/{postId}`는 client가 편집 가능한 `title`, `content`, `tags` 묶음을 교체한다. `tags`를 생략하면 빈 목록이 되므로 edit client는 세 필드를 전체 전송해야 한다. 댓글 `PUT`도 생성용 `CommentRequest`를 재사용해 `parentId`를 받지만 수정에서는 무시하고 `content`만 바꾼다. 댓글 수정에는 `content`만 가진 별도 DTO를 쓰는 것이 현재 의도에 맞다.
 
-Board의 게시글·댓글 path ID는 `\d+` 경로만 매핑한다. 숫자가 아니면 controller에 도달하지 않고 `404 RESOURCE_NOT_FOUND`다. `PUT/DELETE` 댓글 경로의 `postId`는 현재 서비스 계층에서 `commentId`와의 소속 관계 검증에 사용되지 않는다. 호출자는 실제 댓글의 게시글 ID를 넣어야 한다.
+Board의 게시글·댓글 path ID는 `\d+` 경로만 매핑한다. 숫자가 아니면 controller에 도달하지 않는다. 보안 규칙도 숫자 경로만 공개하므로 인증 없이 부르면 `401 UNAUTHORIZED`, 인증된 요청은 `404 RESOURCE_NOT_FOUND`다. `PUT/DELETE` 댓글 경로의 `postId`는 현재 서비스 계층에서 `commentId`와의 소속 관계 검증에 사용되지 않는다. 호출자는 실제 댓글의 게시글 ID를 넣어야 한다.
 
 ### 요청 DTO와 파라미터 이유
 
@@ -247,7 +247,7 @@ Board의 게시글·댓글 path ID는 `\d+` 경로만 매핑한다. 숫자가 �
 | --- | --- |
 | `IdResponse` | `id` |
 | `SourceSummary` | `id`, `title`, `questionStatus`, `createdAt` |
-| `SourceDetail` | `id`, `title`, `content`, `questionStatus`, `draftedQuestionCount`(LLM이 낸 문제 초안 수, 꼬리질문 초안 포함), `discardedQuestionCount`(근거가 자료에 그대로 없어 버린 LLM 문제 수. 근거는 맞지만 문제·근거 길이 상한을 넘어 못 쓴 초안은 세지 않는다), `keyPoints`, `questions`, `emptyReason`(문제가 0개일 때 이유와 자료를 고치는 방법, 그 밖에는 null), `createdAt` |
+| `SourceDetail` | `id`, `title`, `content`, `questionStatus`, `draftedQuestionCount`(LLM이 낸 문제 초안 수, 꼬리질문 초안 포함), `discardedQuestionCount`(근거가 자료에 그대로 없어 버린 LLM 문제 수. 근거는 맞지만 문제·근거 길이 상한을 넘어 못 쓴 초안은 세지 않는다), `keyPoints`, `questions`, `emptyReason`(생성이 끝나 `READY`인데 문제가 0개일 때 이유와 자료를 고치는 방법, 생성 중이거나 문제가 있으면 null), `createdAt` |
 | `QuestionView` | `id`, `question`, `evidence`, `origin`, `box`, `dueAt` |
 | `Today` | `items`(`TodayItem` 목록), `remaining`(상한 때문에 빠진 수) |
 | `TodayItem` | `type`(`QUESTION`·`RECALL`), `id`(문제 id, 빈 페이지면 자료 id), `sourceId`, `sourceTitle`, `question`·`evidence`(빈 페이지면 null), `box`(빈 페이지면 빈 페이지 상자) |

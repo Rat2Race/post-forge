@@ -77,7 +77,7 @@ PostForge 계정 정책은 회원가입, 로그인, 프로필, 닉네임 변경,
 ### Current: Profile
 
 - 회원은 본인 프로필만 조회할 수 있다.
-- 프로필 응답 필드 집합의 정본은 [API 명세 Auth](./api/README.md#auth)의 `AccountResponse`·`ProfileResponse`다.
+- 프로필 응답 필드 집합의 정본은 [API 명세 Auth](./api/README.md#auth)의 `AccountResponse`와 [Board](./api/README.md#board)의 `ProfileResponse`다.
 - 비밀번호 해시, refresh token, provider access token 같은 민감 정보는 응답하지 않는다.
 - 로그에는 요청 값(비밀번호 등), 이메일·닉네임, 인증 토큰과 그 URL을 남기지 않는다. 검증 실패는 필드 이름과 위반 코드만, 경로 변수 변환 실패는 변수 이름과 기대 타입만, 무결성 위반은 SQLState와 제약 이름만, 메일 발송 실패는 예외 종류만 남긴다.
 
@@ -85,7 +85,7 @@ PostForge 계정 정책은 회원가입, 로그인, 프로필, 닉네임 변경,
 
 - 회원은 본인 닉네임을 변경할 수 있다.
 - 닉네임은 전체 계정에서 중복될 수 없다.
-- 닉네임 변경은 이후 계정 응답과 새 토큰 발급에 반영한다.
+- 닉네임 변경은 이후 계정·프로필 응답과 새로 쓰는 게시글·댓글에 반영한다. 토큰에는 닉네임이 없다.
 - 기존 게시글과 댓글에 저장된 작성자 닉네임 스냅샷은 변경하지 않는다.
 - 닉네임은 표시 이름이며 권한 판단 기준이 아니다.
 
@@ -145,7 +145,7 @@ PostForge 삭제 정책은 일반 사용자에게 리소스를 더 이상 노출
 
 ## AI Cost
 
-> Current: 학습 문제 생성·가르치기·꼬리질문, public read path AI 호출 금지, deterministic pre-gate, shared `TextGenerationClient` metric/log.
+> Current: 학습 문제 생성·가르치기·꼬리질문, public read path AI 호출 금지, LLM 결과의 근거 검증(문제·꼬리질문)과 규칙 대체(LLM 없이 결정적으로 처리), shared `TextGenerationClient` metric/log.
 
 PostForge의 AI 정책은 기능보다 비용 통제를 우선한다. AI는 모든 요청의 기본 동작이 아니라 명시적으로 실행되는 작업이다.
 

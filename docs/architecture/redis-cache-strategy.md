@@ -14,7 +14,7 @@ Redis를 **조회수 버퍼**로 사용한다.
 
 | 키 패턴 | 타입 | 예시 | 설명 |
 |---------|------|------|------|
-| `post:views:{postId}` | String | `post:views:5` = `"142"` | 게시글 조회수 버퍼. DB 값을 캐싱하고 increment로 증가 |
+| `post:views:{postId}` | String | `post:views:5` = `"142"` | 게시글 조회수 버퍼. DB 값을 캐싱하고 increment로 증가. 24시간 TTL. 캐시 적재 때 걸고 증가·상세 조회 때 다시 24시간으로 건다(목록 조회는 이미 있는 키의 TTL을 늘리지 않는다) |
 | `post:viewed:{postId}:{accountId}` | String | `post:viewed:5:42` = `"Viewed"` | 중복 조회 방지 가드키. 24시간 TTL |
 | `post:views:dirty` | SET | `{ "5", "12", "30" }` | 조회수가 변경된 postId 목록. 스케줄러가 이 목록만 동기화 |
 
@@ -50,7 +50,7 @@ Redis를 **조회수 버퍼**로 사용한다.
 좋아요는 Redis에 상태를 저장하지 않는다.
 
 - **원본 데이터**: `post_like`, `comment_like` 테이블. `(대상, 계정)` 유니크 제약으로 한 계정의 좋아요는 하나다.
-- **넣기·지우기**: `INSERT … ON CONFLICT DO NOTHING`과 한 문장 `DELETE`가 바뀐 행 수(0 또는 1)를 돌려준다. 이미 그 상태인 요청은 아무것도 바꾸지 않고 성공한다(멱등).
+- **넣기·지우기**: `INSERT … ON CONFLICT DO NOTHING`과 한 문장 `DELETE`가 바뀐 행 수(0 또는 1)를 돌려준다. 이미 그 상태인 요청은 아무것도 바꾸지 않고 성공한다(멱등). 다만 같은 대상에 같은 동작을 1초 안에 다시 보내거나 계정당 60초 창에 30회를 넘으면 넣기·지우기 전에 가드가 `429`로 막는다.
 - **카운터**: 행을 실제로 바꾼 요청만 `like_count = like_count ± 1`을 한 문장으로 실행한다. 읽은 값을 다시 쓰지 않으므로 동시 요청이 서로의 갱신을 덮지 않는다.
 - **조회 방식**: 응답·상세·목록의 좋아요 수는 좋아요 행을 센 값(COUNT)이다. `like_count` 열은 아직 읽지 않는다.
 - **정합성 기준**: Redis 장애와 무관하게 좋아요 상태는 DB 기준으로 유지
@@ -81,10 +81,10 @@ Redis를 **조회수 버퍼**로 사용한다.
 | 이벤트 | 생성되는 키 | 삭제되는 키 |
 |--------|------------|------------|
 | 게시글 조회 | `post:views:{id}`, `post:viewed:{id}:{accountId}`, dirty SET에 추가 | - |
-| 좋아요 토글 | DB의 like row / likeCount 갱신 | - |
+| 좋아요·취소 요청 | `like:cooldown:{post·comment}:{like·unlike}:{id}:{accountId}` (1초 TTL), `like:rate:{accountId}` (60초 창, 30회 초과 시 `429`) | - (TTL 만료) |
 | 게시글 삭제 | - | `post:views:{id}` |
 | 댓글 삭제 | - | - |
-| 24시간 경과 | - | `post:viewed:{id}:{accountId}` (TTL 만료) |
+| 24시간 경과 | - | `post:viewed:{id}:{accountId}` (TTL 만료), `post:views:{id}` (마지막 캐시 적재·증가·상세 조회 뒤 TTL 만료) |
 | 스케줄러 실행 | `dirty:processing` (임시) | DB 반영에 성공한 ID |
 
 ---
