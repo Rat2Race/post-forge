@@ -9,7 +9,7 @@ PostForge는 뉴스 수집·분류·LLM 초안 작성·스케줄 자동 게시�
 
 | 목적 | 읽는 순서 |
 | --- | --- |
-| 프로젝트 전체 파악 | [루트 README](../README.md) → [제품 범위와 향후 계획](./decisions/adr-005-subscription-information-service.md) |
+| 프로젝트 전체 파악 | [루트 README](../README.md) → [제품 방향 전환](./decisions/adr-008-switch-to-learning-platform.md) |
 | 뉴스·데일리 자동 게시 | [처리 흐름](./architecture/flows.md#ingest) → [스케줄 설정](./api/README.md#자동-게시-스케줄) |
 | API 사용 | [API 명세](./api/README.md) → 실행 중 Swagger UI |
 | 요청 내부 흐름 | [요청 흐름](./architecture/flows.md) |
