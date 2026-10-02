@@ -1,8 +1,9 @@
 name: APP-CI
 
 on:
+  workflow_dispatch:
   push:
-    branches: [ refactor/postforge-ddd, release/postforge ]
+    branches: [ release/postforge ]
     paths-ignore:
       - 'docs/**'
       - 'README.md'
@@ -66,7 +67,7 @@ jobs:
     name: Build and push image
     runs-on: ubuntu-latest
     needs: test
-    if: github.event_name == 'push' && github.ref == 'refs/heads/release/postforge'
+    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/release/postforge'
 
     concurrency:
       group: build-${{ github.workflow }}-${{ github.ref }}
