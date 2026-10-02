@@ -1,6 +1,7 @@
 package dev.iamrat.study.presentation;
 
 import dev.iamrat.core.account.UserPrincipal;
+import dev.iamrat.core.openapi.OpenApiSecurityPolicy;
 import dev.iamrat.study.application.StudyAiService;
 import dev.iamrat.study.application.StudyPracticeService;
 import dev.iamrat.study.application.StudyStatsService;
@@ -30,6 +31,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/study")
+@OpenApiSecurityPolicy(OpenApiSecurityPolicy.Scheme.JWT)
 @RequiredArgsConstructor
 public class StudyController {
 
