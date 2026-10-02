@@ -1,9 +1,14 @@
 package dev.iamrat.auth.login.application;
 
+import static org.mockito.BDDMockito.willThrow;
+import static org.mockito.ArgumentMatchers.any;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
 
+import org.springframework.boot.test.system.OutputCaptureExtension;
+import org.springframework.boot.test.system.CapturedOutput;
 import dev.iamrat.core.global.error.CommonErrorCode;
 import dev.iamrat.core.global.exception.CustomException;
 import org.junit.jupiter.api.BeforeEach;
@@ -15,7 +20,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @Tag("unit")
-@ExtendWith(MockitoExtension.class)
+@ExtendWith({MockitoExtension.class, OutputCaptureExtension.class})
 class LoginAttemptGuardTest {
 
     @Mock
@@ -89,5 +94,22 @@ class LoginAttemptGuardTest {
             .isEqualTo(CommonErrorCode.TOO_MANY_REQUESTS);
 
         verify(loginAttemptLimiter).evaluate(evaluation);
+    }
+
+    @Test
+    @DisplayName("저장소 장애 로그에는 로그인 아이디와 IP를 남기지 않는다")
+    void storeFailureLogs_doNotContainUsernameOrIp(CapturedOutput output) {
+        given(loginAttemptLimiter.evaluate(any())).willThrow(new RuntimeException("redis down"));
+        given(loginAttemptLimiter.recordFailure(any())).willThrow(new RuntimeException("redis down"));
+        willThrow(new RuntimeException("redis down")).given(loginAttemptLimiter).clearFailure(any());
+
+        assertThatThrownBy(() -> loginAttemptGuard.guard("leaky-user", "203.0.113.7")).isInstanceOf(CustomException.class);
+        assertThatThrownBy(() -> loginAttemptGuard.recordFailure("leaky-user")).isInstanceOf(CustomException.class);
+        loginAttemptGuard.clearFailure("leaky-user");
+
+        assertThat(output.getAll())
+            .contains("로그인 요청 가드 저장소 장애", "로그인 실패 기록 저장소 장애", "실패 기록 초기화 실패")
+            .doesNotContain("leaky-user")
+            .doesNotContain("203.0.113.7");
     }
 }
