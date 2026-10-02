@@ -6,7 +6,7 @@ import static org.assertj.core.api.Assertions.tuple;
 
 import dev.iamrat.core.global.exception.CustomException;
 import dev.iamrat.core.study.QuestionDraft;
-import dev.iamrat.study.application.StudyPracticeService.DueQuestion;
+import dev.iamrat.study.application.StudyPracticeService.TodayItem;
 import dev.iamrat.study.application.StudyPracticeService.RecallResult;
 import dev.iamrat.study.application.StudyPracticeService.RecordView;
 import dev.iamrat.study.application.StudySourceService.SourceDetail;
@@ -93,8 +93,8 @@ class StudyFlowTest {
         SourceDetail detail = sources.get(me, sourceId);
         assertThat(detail.questionStatus()).isEqualTo("READY");
         assertThat(detail.discardedQuestionCount()).isEqualTo(1);
-        assertThat(practice.today(me))
-            .extracting(DueQuestion::question, DueQuestion::sourceTitle)
+        assertThat(practice.today(me).items())
+            .extracting(TodayItem::question, TodayItem::sourceTitle)
             .containsExactly(tuple("READ COMMITTED는 어떤 데이터를 읽나요?", "격리 수준"));
     }
 
@@ -103,10 +103,10 @@ class StudyFlowTest {
     void fallsBackToRuleQuestionsWhenLlmGivesNothing() {
         sources.create(me, "격리 수준", CONTENT);
 
-        assertThat(practice.today(me))
+        assertThat(practice.today(me).items())
             .hasSize(4)
             .first()
-            .extracting(DueQuestion::question)
+            .extracting(TodayItem::question)
             .isEqualTo("'트랜잭션 격리 수준'에 대해 설명해 보세요.");
     }
 
@@ -145,10 +145,10 @@ class StudyFlowTest {
     @DisplayName("남의 자료와 문제는 없는 것처럼 다룬다")
     void hidesOtherAccountsData() {
         Long sourceId = sources.create(me, "격리 수준", CONTENT);
-        Long questionId = practice.today(me).get(0).id();
+        Long questionId = practice.today(me).items().get(0).id();
         long other = ACCOUNTS.incrementAndGet();
 
-        assertThat(practice.today(other)).isEmpty();
+        assertThat(practice.today(other).items()).isEmpty();
         assertThatThrownBy(() -> sources.get(other, sourceId))
             .extracting(e -> ((CustomException) e).getErrorCode())
             .isEqualTo(StudyErrorCode.SOURCE_NOT_FOUND);
@@ -168,7 +168,7 @@ class StudyFlowTest {
 
         Long questionId = sources.addQuestion(me, sourceId, "팬텀 리드는 언제 생기나요?", "팬텀 리드가 생길 수 있다");
 
-        assertThat(practice.today(me)).extracting(DueQuestion::id).contains(questionId);
+        assertThat(practice.today(me).items()).extracting(TodayItem::id).contains(questionId);
         assertThat(practice.records(me))
             .extracting(RecordView::kind, RecordView::prompt)
             .containsExactly(tuple("QUESTION", "팬텀 리드는 언제 생기나요?"));
@@ -179,11 +179,11 @@ class StudyFlowTest {
     void reviewReschedulesAndRecordsAnswer() {
         assistant.drafts = List.of(new QuestionDraft("무엇을 읽나요?", "커밋된 데이터만 읽는다"));
         sources.create(me, "격리 수준", CONTENT);
-        Long questionId = practice.today(me).get(0).id();
+        Long questionId = practice.today(me).items().get(0).id();
 
         practice.review(me, questionId, "커밋된 것만", ReviewGrade.GOOD);
 
-        assertThat(practice.today(me)).isEmpty();
+        assertThat(practice.today(me).items()).isEmpty();
         assertThat(practice.records(me))
             .extracting(RecordView::kind, RecordView::prompt, RecordView::userText, RecordView::result)
             .containsExactly(tuple("ANSWER", "무엇을 읽나요?", "커밋된 것만", "GOOD"));
@@ -194,7 +194,7 @@ class StudyFlowTest {
     void answerRecordKeepsTheBoxBeforeReview() {
         assistant.drafts = List.of(new QuestionDraft("무엇을 읽나요?", "커밋된 데이터만 읽는다"));
         sources.create(me, "격리 수준", CONTENT);
-        Long questionId = practice.today(me).get(0).id();
+        Long questionId = practice.today(me).items().get(0).id();
 
         practice.review(me, questionId, "커밋된 것만", ReviewGrade.GOOD);
         clock.advance(java.time.Duration.ofDays(1));
@@ -226,7 +226,7 @@ class StudyFlowTest {
     void concurrentDuplicateReviewIsAppliedOnce() throws Exception {
         assistant.drafts = List.of(new QuestionDraft("무엇을 읽나요?", "커밋된 데이터만 읽는다"));
         sources.create(me, "격리 수준", CONTENT);
-        Long questionId = practice.today(me).get(0).id();
+        Long questionId = practice.today(me).items().get(0).id();
         CountDownLatch start = new CountDownLatch(1);
         Callable<Boolean> submit = () -> {
             start.await();
@@ -252,6 +252,83 @@ class StudyFlowTest {
         assertThat(sources.get(me, practice.records(me).get(0).sourceId()).questions())
             .singleElement()
             .satisfies(question -> assertThat(question.box()).isEqualTo(1));
+    }
+
+    @Test
+    @DisplayName("새 자료의 빈 페이지 정리는 다음 날 오늘 할 것에 올라오고, 그 자료의 문제보다 먼저 나온다")
+    void recallJoinsTodayFromNextDayBeforeItsQuestions() {
+        assistant.drafts = List.of(new QuestionDraft("무엇을 읽나요?", "커밋된 데이터만 읽는다"));
+        Long sourceId = sources.create(me, "격리 수준", CONTENT);
+        assertThat(practice.today(me).items()).extracting(TodayItem::type).containsExactly("QUESTION");
+
+        clock.advance(java.time.Duration.ofDays(1));
+
+        assertThat(practice.today(me).items())
+            .extracting(TodayItem::type, TodayItem::sourceId)
+            .containsExactly(tuple("RECALL", sourceId), tuple("QUESTION", sourceId));
+    }
+
+    @Test
+    @DisplayName("예정된 빈 페이지에서 80% 이상 떠올리면 다음 빈 페이지가 3일 뒤로 미뤄진다")
+    void wellRecalledPageMovesThreeDaysLater() {
+        Long sourceId = sources.create(me, "격리 수준", CONTENT);
+        clock.advance(java.time.Duration.ofDays(1));
+
+        RecallResult result = practice.recall(me, sourceId, "전부 기억나요", List.of(0, 1, 2, 3));
+
+        assertThat(result.nextRecallAt()).isEqualTo(NOW.plusDays(1).plusDays(3));
+        assertThat(practice.today(me).items()).extracting(TodayItem::type).doesNotContain("RECALL");
+    }
+
+    @Test
+    @DisplayName("예정된 빈 페이지에서 절반도 못 떠올리면 다음 날 다시 올라온다")
+    void poorlyRecalledPageComesBackNextDay() {
+        Long sourceId = sources.create(me, "격리 수준", CONTENT);
+        clock.advance(java.time.Duration.ofDays(1));
+
+        RecallResult result = practice.recall(me, sourceId, "하나만 기억나요", List.of(0));
+
+        assertThat(result.nextRecallAt()).isEqualTo(NOW.plusDays(2));
+    }
+
+    @Test
+    @DisplayName("예정 전에 한 빈 페이지 정리는 기록만 남기고 일정은 바꾸지 않는다")
+    void earlyRecallKeepsTheSchedule() {
+        Long sourceId = sources.create(me, "격리 수준", CONTENT);
+
+        RecallResult result = practice.recall(me, sourceId, "전부 기억나요", List.of(0, 1, 2, 3));
+
+        assertThat(result.nextRecallAt()).isEqualTo(NOW.plusDays(1));
+        assertThat(practice.records(me)).extracting(RecordView::kind).containsExactly("RECALL");
+    }
+
+    @Test
+    @DisplayName("하루 이상 간격 문제는 예정 시각 전이라도 그날이 되면 오늘 할 것에 나오고 채점된다")
+    void dayIntervalQuestionIsDueForTheWholeDay() {
+        assistant.drafts = List.of(new QuestionDraft("무엇을 읽나요?", "커밋된 데이터만 읽는다"));
+        sources.create(me, "격리 수준", CONTENT);
+        Long questionId = practice.today(me).items().get(0).id();
+        practice.review(me, questionId, "답", ReviewGrade.GOOD);
+
+        clock.set(NOW.plusDays(1).withHour(7).atZone(SEOUL).toInstant());
+
+        assertThat(practice.today(me).items()).extracting(TodayItem::id).contains(questionId);
+        practice.review(me, questionId, "답", ReviewGrade.GOOD);
+    }
+
+    @Test
+    @DisplayName("10분 간격(첫 칸) 문제는 10분이 지나야 다시 나온다")
+    void tenMinuteQuestionWaitsForTheExactTime() {
+        assistant.drafts = List.of(new QuestionDraft("무엇을 읽나요?", "커밋된 데이터만 읽는다"));
+        sources.create(me, "격리 수준", CONTENT);
+        Long questionId = practice.today(me).items().get(0).id();
+        practice.review(me, questionId, "답", ReviewGrade.AGAIN);
+
+        clock.advance(java.time.Duration.ofMinutes(5));
+        assertThat(practice.today(me).items()).isEmpty();
+
+        clock.advance(java.time.Duration.ofMinutes(6));
+        assertThat(practice.today(me).items()).extracting(TodayItem::id).containsExactly(questionId);
     }
 
     @Test

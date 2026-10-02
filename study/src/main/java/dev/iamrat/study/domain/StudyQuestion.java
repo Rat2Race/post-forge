@@ -76,8 +76,19 @@ public class StudyQuestion {
         return created;
     }
 
+    /**
+     * 첫 칸(10분)은 정확한 시각이 지나야 하고, 하루 이상 간격은 예정일이 되면 그날 내내 풀 수 있다.
+     * 저녁에 맞힌 문제가 다음 날 아침 목록에서 빠지지 않게 하려는 날짜 기준이다.
+     */
+    public boolean isDue(LocalDateTime now) {
+        if (!dueAt.isAfter(now)) {
+            return true;
+        }
+        return box >= 1 && !dueAt.toLocalDate().isAfter(now.toLocalDate());
+    }
+
     public void review(ReviewGrade grade, LocalDateTime now) {
-        if (dueAt.isAfter(now)) {
+        if (!isDue(now)) {
             throw new CustomException(StudyErrorCode.NOT_DUE_YET);
         }
         ReviewScheduler.Next next = ReviewScheduler.next(box, grade, now);

@@ -39,4 +39,15 @@ class ReviewSchedulerTest {
         assertThat(ReviewScheduler.next(4, ReviewGrade.AGAIN, NOW))
             .isEqualTo(new ReviewScheduler.Next(0, LocalDateTime.of(2026, 10, 1, 9, 10)));
     }
+
+    @Test
+    @DisplayName("빈 페이지는 10분 단계 없이 1·3·7·14·30일 간격으로 돌아온다")
+    void recallUsesDayIntervalsWithoutTenMinuteStep() {
+        assertThat(ReviewScheduler.nextRecall(0, ReviewGrade.GOOD, NOW))
+            .isEqualTo(new ReviewScheduler.Next(1, LocalDateTime.of(2026, 10, 4, 9, 0)));
+        assertThat(ReviewScheduler.nextRecall(3, ReviewGrade.AGAIN, NOW))
+            .isEqualTo(new ReviewScheduler.Next(0, LocalDateTime.of(2026, 10, 2, 9, 0)));
+        assertThat(ReviewScheduler.nextRecall(4, ReviewGrade.GOOD, NOW))
+            .isEqualTo(new ReviewScheduler.Next(4, LocalDateTime.of(2026, 10, 31, 9, 0)));
+    }
 }

@@ -180,8 +180,8 @@ function route(){
       <button class="btn primary" onclick="loginDlg.showModal()">로그인</button></div>`;
     return;
   }
-  const m = h.match(/^#\/sources\/(\d+)$/);
-  if (m) return viewSource(+m[1]);
+  const m = h.match(/^#\/sources\/(\d+)(?:\?act=(\w+))?$/);
+  if (m) return viewSource(+m[1], m[2]);
   if (h.startsWith('#/sources')) return viewSources();
   if (h.startsWith('#/records')) return viewRecords();
   return viewToday();
@@ -189,22 +189,44 @@ function route(){
 document.querySelectorAll('#mainnav button').forEach(b => b.onclick = () => { location.hash = b.dataset.r; });
 window.addEventListener('hashchange', route);
 
-/* ---------- 오늘 할 것: 답하기 → 근거 확인 → 자가 평가 ---------- */
-let queue = [];
+/* ---------- 오늘 할 것: 빈 페이지 정리 · 답하기 → 근거 확인 → 자가 평가 ---------- */
+let queue = [], remaining = 0;
+async function loadToday(){
+  const t = await api('/api/study/today');
+  queue = t.items; remaining = t.remaining;
+}
 async function viewToday(){
   $('#app').innerHTML = '<div class="loading">LOADING…</div>';
-  try { queue = await api('/api/study/today'); } catch(e){ $('#app').innerHTML = `<div class="empty">${esc(e.message)}</div>`; return; }
+  try { await loadToday(); } catch(e){ $('#app').innerHTML = `<div class="empty">${esc(e.message)}</div>`; return; }
+  showCard();
+}
+// 받아 온 목록을 다 풀면 다시 받는다. 그사이 10분 간격으로 돌아온 문제와 상한 밖의 것을 놓치지 않는다.
+async function nextCard(){
+  queue.shift();
+  if (!queue.length) {
+    try { await loadToday(); } catch(e){ toast(e.message); }
+  }
   showCard();
 }
 function showCard(){
   const app = $('#app');
   if (!queue.length) {
-    app.innerHTML = `<div class="empty">지금 복습할 문제가 없어요.<br><a href="#/sources">자료를 올리거나</a> 자료에서 빈 페이지 정리·가르치기를 해 보세요.</div>`;
+    app.innerHTML = `<div class="empty">지금 할 것이 없어요.<br><a href="#/sources">자료를 올리거나</a> 자료에서 빈 페이지 정리·가르치기를 해 보세요.</div>`;
     return;
   }
   const q = queue[0];
-  app.innerHTML = `<section class="panel">
-    <div class="row"><span class="label">${esc(q.sourceTitle)}</span><span class="spacer"></span><span class="muted">남은 문제 ${queue.length}</span></div>
+  const head = `<div class="row"><span class="label">${esc(q.sourceTitle)}</span><span class="spacer"></span><span class="muted">남은 것 ${queue.length + remaining}</span></div>`;
+  if (q.type === 'RECALL') {
+    app.innerHTML = `<section class="panel">${head}
+      <p class="q">빈 페이지 정리</p>
+      <p class="muted">원문을 보지 말고 이 자료에서 기억나는 것을 전부 적어 보세요. 다 쓴 뒤 핵심 항목과 대조합니다.</p>
+      <div class="row"><button class="btn primary" id="startRecall">시작</button><button class="btn" id="skipRecall">나중에</button></div>
+    </section>`;
+    $('#startRecall').onclick = () => { location.hash = `#/sources/${q.sourceId}?act=recall`; };
+    $('#skipRecall').onclick = () => nextCard();
+    return;
+  }
+  app.innerHTML = `<section class="panel">${head}
     <p class="q">${esc(q.question)}</p>
     <textarea id="answer" rows="4" placeholder="자료를 보지 말고 내 말로 답해 보세요"></textarea>
     <div class="row" style="margin-top:.6rem"><button class="btn primary" id="reveal">근거 확인</button></div>
@@ -227,7 +249,7 @@ function showCard(){
       app.querySelectorAll('[data-g]').forEach(x => x.disabled = false);
       return;
     }
-    queue.shift(); showCard();
+    nextCard();
   });
 }
 
@@ -267,7 +289,7 @@ async function viewSources(){
 
 /* ---------- 자료 상세: 문제 · 빈 페이지 정리 · 가르치기 · 문제 만들기 ---------- */
 let pollT;
-async function viewSource(id){
+async function viewSource(id, act){
   clearTimeout(pollT);
   let s;
   try { s = await api(`/api/study/sources/${id}`); } catch(e){ $('#app').innerHTML = `<div class="empty">${esc(e.message)}</div>`; return; }
@@ -287,9 +309,12 @@ async function viewSource(id){
     acts[b.dataset.a](s);
   });
   renderBadges(s);
-  actQuestions(s);
+  const first = act && acts[act] ? act : 'questions';
+  document.querySelectorAll('#acts button').forEach(x => x.classList.toggle('on', x.dataset.a === first));
+  acts[first](s);
+  const here = () => (location.hash.match(/^#\/sources\/(\d+)/) || [])[1] === String(id);
   const poll = async () => {
-    if (location.hash !== `#/sources/${id}`) return;
+    if (!here()) return;
     const next = await api(`/api/study/sources/${id}`).catch(() => null);
     if (!next || next.questionStatus === 'GENERATING') { pollT = setTimeout(poll, 2000); return; }
     Object.assign(s, next);
@@ -356,7 +381,8 @@ function actRecall(s){
       btn.hidden = true;
       $('#recallResult').innerHTML = `<p><b>${r.total}개 중 ${r.recalled}개</b>를 떠올렸어요.</p>` + (r.missed.length
         ? `<div class="label">다시 볼 것</div><ul>${r.missed.map(m => `<li>${esc(m)}</li>`).join('')}</ul>`
-        : '<p>전부 떠올렸어요.</p>');
+        : '<p>전부 떠올렸어요.</p>')
+        + (r.nextRecallAt ? `<p class="muted">다음 빈 페이지 정리 ${dt(r.nextRecallAt)}</p>` : '');
     } catch(e){ toast(e.message); btn.disabled = false; }
   };
 }

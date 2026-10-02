@@ -2,7 +2,7 @@ package dev.iamrat.study.presentation;
 
 import dev.iamrat.core.account.UserPrincipal;
 import dev.iamrat.study.application.StudyPracticeService;
-import dev.iamrat.study.application.StudyPracticeService.DueQuestion;
+import dev.iamrat.study.application.StudyPracticeService.Today;
 import dev.iamrat.study.application.StudyPracticeService.RecallResult;
 import dev.iamrat.study.application.StudyPracticeService.RecordView;
 import dev.iamrat.study.application.StudyPracticeService.ReviewResult;
@@ -151,7 +151,7 @@ public class StudyController {
     }
 
     @GetMapping("/today")
-    public List<DueQuestion> getToday(@AuthenticationPrincipal UserPrincipal user) {
+    public Today getToday(@AuthenticationPrincipal UserPrincipal user) {
         return practiceService.today(user.getAccountId());
     }
 
