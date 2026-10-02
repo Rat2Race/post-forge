@@ -305,6 +305,12 @@ function actQuestions(s){
     el.innerHTML = '<div class="loading">AI가 자료를 읽고 문제를 만드는 중… 근거 문장이 자료에 그대로 있는 문제만 남깁니다.</div>';
     return;
   }
+  if (!s.questions.length) {
+    el.innerHTML = `<div class="empty">${esc(s.emptyReason || '아직 문제가 없어요.')}<br><br>
+      근거 문장을 골라 <button class="btn" id="toMake">문제 만들기</button>를 할 수도 있어요.</div>`;
+    $('#toMake').onclick = () => $('#acts [data-a="make"]').click();
+    return;
+  }
   el.innerHTML = `<div class="cards">${s.questions.map(q => `<div class="card">
       <div class="badges"><span class="badge">${ORIGIN[q.origin]}</span><span class="muted">다음 복습 ${later(q.dueAt)}</span></div>
       <h3>${esc(q.question)}</h3><div class="evidence">${esc(q.evidence)}</div></div>`).join('')}</div>

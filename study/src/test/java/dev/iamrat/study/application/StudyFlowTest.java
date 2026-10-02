@@ -111,6 +111,37 @@ class StudyFlowTest {
     }
 
     @Test
+    @DisplayName("근거로 쓸 문장이 없는 짧은 자료는 문제 0개와 함께 이유를 알려 준다")
+    void shortSourceExplainsWhyThereAreNoQuestions() {
+        Long sourceId = sources.create(me, "메모", "짧은 메모");
+
+        SourceDetail detail = sources.get(me, sourceId);
+        assertThat(detail.questions()).isEmpty();
+        assertThat(detail.emptyReason()).isNotBlank();
+    }
+
+    @Test
+    @DisplayName("LLM 문제를 모두 버려서 0개가 되면 이유에 버린 수가 나온다")
+    void emptyReasonMentionsDiscardedDrafts() {
+        assistant.drafts = List.of(
+            new QuestionDraft("지어낸 문제", "자료에 없는 문장입니다"),
+            new QuestionDraft("또 지어낸 문제", "이것도 자료에 없는 문장")
+        );
+
+        Long sourceId = sources.create(me, "메모", "짧은 메모");
+
+        assertThat(sources.get(me, sourceId).emptyReason()).contains("2");
+    }
+
+    @Test
+    @DisplayName("문제가 하나라도 있으면 0개 사유는 비어 있다")
+    void noEmptyReasonWhenQuestionsExist() {
+        Long sourceId = sources.create(me, "격리 수준", CONTENT);
+
+        assertThat(sources.get(me, sourceId).emptyReason()).isNull();
+    }
+
+    @Test
     @DisplayName("남의 자료와 문제는 없는 것처럼 다룬다")
     void hidesOtherAccountsData() {
         Long sourceId = sources.create(me, "격리 수준", CONTENT);
