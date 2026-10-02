@@ -18,7 +18,7 @@ public record PostSummaryResponse(
         return new PostSummaryResponse(
             post.getId(),
             post.getTitle(),
-            post.getTags(),
+            List.copyOf(post.getTags()),
             post.getAccountId(),
             post.getNickname(),
             post.getCreatedAt(),
