@@ -3,12 +3,17 @@ package dev.iamrat.ai.support.infrastructure.llm;
 import com.sun.net.httpserver.HttpServer;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.ai.openai.OpenAiChatModel;
+import org.springframework.ai.retry.TransientAiException;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertTimeoutPreemptively;
 
 class LlmConfigTest {
 
@@ -86,6 +91,38 @@ class LlmConfigTest {
             assertThat(bodies).hasSize(2);
             assertThat(bodies.poll()).doesNotContain("reasoning_effort");
             assertThat(bodies).allSatisfy(body -> assertThat(body).contains("\"reasoning_effort\":\"none\""));
+        } finally {
+            server.stop(0);
+        }
+    }
+
+    @Test
+    @DisplayName("게이트웨이가 503을 돌려주면 모델이 스스로 다시 보내지 않고 한 번만 보낸 뒤 바로 실패한다")
+    void gatewayFailure_isNotRetriedByModel() throws Exception {
+        AtomicInteger hits = new AtomicInteger();
+        HttpServer server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
+        server.createContext("/v1/chat/completions", exchange -> {
+            hits.incrementAndGet();
+            exchange.getRequestBody().readAllBytes();
+            byte[] response = "{\"detail\":\"llm gateway busy\"}".getBytes(StandardCharsets.UTF_8);
+            exchange.getResponseHeaders().set("Content-Type", "application/json");
+            exchange.sendResponseHeaders(503, response.length);
+            try (var output = exchange.getResponseBody()) {
+                output.write(response);
+            }
+        });
+        server.start();
+        try {
+            LlmProperties properties = new LlmProperties();
+            properties.getChat().setBaseUrl("http://127.0.0.1:" + server.getAddress().getPort());
+            properties.getChat().getOptions().setModel("chat-model");
+            LlmConfig config = new LlmConfig(properties);
+            OpenAiChatModel chatModel = config.llmChatModel(config.llmChatApi());
+
+            // Spring AI 기본 RetryTemplate은 2초부터 간격을 늘려 10번까지 다시 보낸다. 5초 안에 끝나지 않으면 재시도가 켜져 있다.
+            assertTimeoutPreemptively(Duration.ofSeconds(5), () ->
+                assertThatThrownBy(() -> chatModel.call("test")).isInstanceOf(TransientAiException.class));
+            assertThat(hits).hasValue(1);
         } finally {
             server.stop(0);
         }
