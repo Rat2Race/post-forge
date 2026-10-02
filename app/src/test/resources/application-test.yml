@@ -5,6 +5,8 @@ spring:
     username: test
     password: test
   jpa:
+    # 운영과 같게 OSIV를 끈다. 지연 로딩은 서비스 트랜잭션 안에서만 한다.
+    open-in-view: false
     hibernate:
       ddl-auto: validate
   mail:

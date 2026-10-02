@@ -27,7 +27,7 @@ public record PostDetailResponse(
             post.getId(),
             post.getTitle(),
             post.getContent(),
-            post.getTags(),
+            List.copyOf(post.getTags()),
             post.getAccountId(),
             post.getNickname(),
             views,

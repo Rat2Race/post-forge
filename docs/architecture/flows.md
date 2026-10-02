@@ -12,6 +12,7 @@ presentation -> application -> domain
 ```
 
 - application service가 트랜잭션 경계를 소유하고, LLM 호출은 긴 DB 트랜잭션 밖에서 실행한다.
+- OSIV(`spring.jpa.open-in-view`)는 끈다. 영속성 컨텍스트와 DB 커넥션은 서비스 트랜잭션이 끝나면 닫힌다. 응답 DTO는 트랜잭션 안에서 지연 컬렉션까지 복사해 만든다. 읽기 API 전체를 `ReadEndpointSmokeTest`가 OSIV 없이 호출한다.
 - 모듈 간 구현 결합이 필요한 경계는 `core` port로 분리한다. 허용 의존성은 [Module Dependency Policy](./module-dependencies.md)를 따른다.
 - 인증과 소유권은 `accountId`를 기준으로 판단한다. 세부 경계는 [Authentication Architecture](./authentication.md)를 따른다.
 - Redis에는 인증 보호, token, 좋아요 보호, 조회수처럼 복구 가능한 보조 상태만 둔다.
