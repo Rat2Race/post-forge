@@ -11,6 +11,8 @@ import dev.iamrat.study.application.StudyPracticeService.RecallResult;
 import dev.iamrat.study.application.StudyPracticeService.RecordView;
 import dev.iamrat.study.application.StudySourceService.SourceDetail;
 import dev.iamrat.study.domain.ReviewGrade;
+import dev.iamrat.study.domain.StudyQuestionRepository;
+import dev.iamrat.study.domain.StudyRecordRepository;
 import dev.iamrat.study.domain.StudySource;
 import dev.iamrat.study.domain.StudySourceRepository;
 import dev.iamrat.study.support.error.StudyErrorCode;
@@ -18,6 +20,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
@@ -38,6 +41,7 @@ import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.transaction.support.TransactionTemplate;
 
 @SpringBootTest
 @ActiveProfiles("test")
@@ -79,6 +83,9 @@ class StudyFlowTest {
     @Autowired private FakeStudyAssistant assistant;
     @Autowired private MutableClock clock;
     @Autowired private StudySourceRepository sourceRepository;
+    @Autowired private StudyQuestionRepository questionRepository;
+    @Autowired private StudyRecordRepository recordRepository;
+    @Autowired private TransactionTemplate transactionTemplate;
     @Autowired private ConfigurableApplicationContext context;
 
     private long me;
@@ -564,6 +571,22 @@ class StudyFlowTest {
         SourceDetail detail = sources.get(me, sourceId);
         assertThat(detail.questionStatus()).isEqualTo("READY");
         assertThat(detail.questions()).extracting(StudySourceService.QuestionView::question).containsExactly("무엇을 읽나요?");
+    }
+
+    @Test
+    @DisplayName("같은 자료의 생성이 두 번 맡겨져 차례로 돌아도(원래 작업과 기동 직후 복구) 문제는 한 번만 저장된다")
+    void duplicateGenerationJobsSaveQuestionsOnce() {
+        assistant.drafts = List.of(new QuestionDraft("무엇을 읽나요?", "커밋된 데이터만 읽는다"));
+        List<Runnable> queued = new ArrayList<>();
+        StudySourceService queuedSources = new StudySourceService(
+            sourceRepository, questionRepository, recordRepository, assistant, transactionTemplate, queued::add, clock);
+        Long sourceId = queuedSources.create(me, "격리 수준", CONTENT);
+        queuedSources.resumeGenerating();
+
+        queued.forEach(Runnable::run);
+
+        assertThat(sources.get(me, sourceId).questions()).extracting(StudySourceService.QuestionView::question)
+            .containsExactly("무엇을 읽나요?");
     }
 
     @Test
