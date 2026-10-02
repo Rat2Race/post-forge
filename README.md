@@ -15,7 +15,7 @@ PostForge는 사용자가 올린 자료(마크다운·텍스트)에서 근거 �
 | AI / RAG | Spring AI, OpenAI-compatible LLM, PgVector 문서 검색, 적재 문서에 대한 RAG 채팅 |
 | 운영 기반 | Flyway baseline, Docker layered jar, 구조화 로그, Prometheus/Grafana |
 
-뉴스 수집·자동 게시·데일리 종합은 ADR-008에 따라 지웠습니다. 그 시절의 초안 생성기·RAG 채팅·문서 적재·첨부파일도 같은 ADR의 삭제 목록에 따라 지우는 중입니다.
+뉴스 수집·자동 게시·데일리 종합은 ADR-008에 따라 지웠습니다. 그 시절의 RAG 채팅·문서 적재·첨부파일도 같은 ADR의 삭제 목록에 따라 지우는 중입니다.
 
 ## Architecture
 

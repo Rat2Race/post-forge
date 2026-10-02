@@ -54,7 +54,6 @@ public class LlmProperties {
 
         private static final Duration DEFAULT_CONNECT_TIMEOUT = Duration.ofSeconds(3);
         private static final Duration DEFAULT_READ_TIMEOUT = Duration.ofSeconds(60);
-        private static final Duration DEFAULT_PUBLISHING_READ_TIMEOUT = Duration.ofSeconds(210);
 
         @NotBlank
         private String baseUrl;
@@ -65,8 +64,6 @@ public class LlmProperties {
 
         private Duration readTimeout = DEFAULT_READ_TIMEOUT;
 
-        private Duration publishingReadTimeout = DEFAULT_PUBLISHING_READ_TIMEOUT;
-
         @Valid
         private ChatOptions options = new ChatOptions();
 
@@ -76,10 +73,6 @@ public class LlmProperties {
 
         public void setReadTimeout(Duration readTimeout) {
             this.readTimeout = positiveOrDefault(readTimeout, DEFAULT_READ_TIMEOUT);
-        }
-
-        public void setPublishingReadTimeout(Duration publishingReadTimeout) {
-            this.publishingReadTimeout = positiveOrDefault(publishingReadTimeout, DEFAULT_PUBLISHING_READ_TIMEOUT);
         }
     }
 

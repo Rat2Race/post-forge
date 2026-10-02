@@ -18,27 +18,19 @@ import org.springframework.stereotype.Component;
 public class LlmTextGenerationAdapter implements TextGenerationClient {
 
     private final ChatModel chatModel;
-    private final ChatModel publishingChatModel;
     private final LlmTextGenerationMetrics metrics;
 
     public LlmTextGenerationAdapter(
         @Qualifier("llmChatModel") ChatModel chatModel,
-        @Qualifier("llmPublishingChatModel") ChatModel publishingChatModel,
         LlmTextGenerationMetrics metrics
     ) {
         this.chatModel = chatModel;
-        this.publishingChatModel = publishingChatModel;
         this.metrics = metrics;
     }
 
     @Override
     public String generate(String systemPrompt, String userPrompt) {
         return generate(chatModel, systemPrompt, userPrompt);
-    }
-
-    @Override
-    public String generateForPublishing(String systemPrompt, String userPrompt) {
-        return generate(publishingChatModel, systemPrompt, userPrompt);
     }
 
     private String generate(ChatModel model, String systemPrompt, String userPrompt) {

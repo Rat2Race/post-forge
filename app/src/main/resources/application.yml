@@ -22,7 +22,6 @@ app:
       api-key: ${LLM_CHAT_API_KEY:${LLM_GATEWAY_TOKEN:}}
       connect-timeout: ${LLM_CHAT_CONNECT_TIMEOUT:3s}
       read-timeout: ${LLM_CHAT_READ_TIMEOUT:60s}
-      publishing-read-timeout: ${LLM_PUBLISHING_READ_TIMEOUT:210s}
       options:
         model: ${LLM_CHAT_MODEL}
     embedding:
