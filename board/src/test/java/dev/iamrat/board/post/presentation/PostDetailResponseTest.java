@@ -4,7 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import dev.iamrat.board.file.domain.PostFile;
 import dev.iamrat.board.post.domain.Post;
-import dev.iamrat.core.board.post.BoardCategory;
+import dev.iamrat.core.board.post.NewsSection;
 import dev.iamrat.core.board.post.PostPublishOrigin;
 import java.util.List;
 import org.junit.jupiter.api.DisplayName;
@@ -41,7 +41,7 @@ class PostDetailResponseTest {
             "summary",
             List.of("tag"),
             null,
-            BoardCategory.BEAUTY,
+            NewsSection.ENTERTAINMENT,
             PostPublishOrigin.USER,
             1L,
             "writer"
@@ -49,6 +49,6 @@ class PostDetailResponseTest {
 
         PostDetailResponse response = PostDetailResponse.from(post, false, 0L, 0, 0L);
 
-        assertThat(response.boardCategory()).isEqualTo(BoardCategory.BEAUTY);
+        assertThat(response.boardCategory()).isEqualTo(NewsSection.ENTERTAINMENT);
     }
 }

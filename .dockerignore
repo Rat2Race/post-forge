@@ -19,23 +19,26 @@ logs/
 
 # Docker
 Dockerfile*
-docker-compose-local.yml
-docker-compose*.yml
+
+# prod 전용 — 이미지에 넣지 않는다. 배포 호스트가 컨테이너에 마운트한다.
+docker-compose.prod.yml
+**/application-prod.yml
+
+# env — 값이 든 env 파일은 전부 제외한다.
+.env
+.env.*
+*.env
 
 # DOCS
 docs/
 
 # TEST
-script/
+scripts/
 **/src/test/
 
-# YAML
-**/src/main/resources/application-local.yml
-
 # LOCAL/UNUSED APP BUILD CONTEXT
-.env
-.env.*
 .omx/
+.omc/
 .github/
 setup/
 loadtest/

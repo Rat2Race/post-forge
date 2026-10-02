@@ -1,6 +1,6 @@
 package dev.iamrat.ingest.news.application;
 
-import dev.iamrat.core.board.post.BoardCategory;
+import dev.iamrat.core.board.post.NewsSection;
 import dev.iamrat.core.board.post.PostPublishOrigin;
 import java.util.List;
 
@@ -9,7 +9,7 @@ public record LaunchNewsPublishCommand(
     Integer displayCount,
     Integer dailyCap,
     List<String> topics,
-    BoardCategory category,
+    NewsSection category,
     PostPublishOrigin publishOrigin
 ) {
     public LaunchNewsPublishCommand {
@@ -19,7 +19,7 @@ public record LaunchNewsPublishCommand(
         keyword = keyword.trim();
         displayCount = displayCount == null ? 10 : Math.clamp(displayCount, 1, 100);
         dailyCap = dailyCap == null ? 3 : Math.clamp(dailyCap, 1, 20);
-        category = category == null ? BoardCategory.GENERAL : category;
+        category = category == null ? NewsSection.GENERAL : category;
         topics = topics == null ? List.of() : topics.stream()
             .filter(topic -> topic != null && !topic.isBlank())
             .map(String::trim)

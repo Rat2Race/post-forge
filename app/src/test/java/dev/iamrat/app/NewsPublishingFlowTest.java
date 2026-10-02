@@ -10,16 +10,11 @@ import static org.mockito.Mockito.when;
 
 import dev.iamrat.ai.search.application.SearchPort;
 import dev.iamrat.ai.support.application.TextGenerationClient;
-import dev.iamrat.core.board.post.BoardCategory;
 import dev.iamrat.core.board.post.DailyDigestSourceItem;
-import dev.iamrat.core.board.post.DailyDigestSourceReader;
-import dev.iamrat.core.board.post.PostCategory;
+import dev.iamrat.core.board.post.LaunchNewsPost;
+import dev.iamrat.core.board.post.NewsPostPort;
+import dev.iamrat.core.board.post.NewsSection;
 import dev.iamrat.core.board.post.PostPublishOrigin;
-import dev.iamrat.core.board.post.PostReferenceLinkCommand;
-import dev.iamrat.core.board.post.PostReferenceLinkReader;
-import dev.iamrat.core.board.post.PostReferenceLinkWriter;
-import dev.iamrat.core.board.post.PostWriteCommand;
-import dev.iamrat.core.board.post.PostWriter;
 import dev.iamrat.core.ingest.document.SourceDocumentCommand;
 import dev.iamrat.ingest.document.application.DocumentIngestResult;
 import dev.iamrat.ingest.document.application.IngestDocumentsUseCase;
@@ -52,17 +47,14 @@ class NewsPublishingFlowTest {
     @MockitoBean private IngestDocumentsUseCase store;
     @MockitoBean private SearchPort search;
     @MockitoBean private TextGenerationClient model;
-    @MockitoBean private PostWriter posts;
-    @MockitoBean private PostReferenceLinkReader references;
-    @MockitoBean private PostReferenceLinkWriter referenceWriter;
-    @MockitoBean private DailyDigestSourceReader digestSources;
+    @MockitoBean private NewsPostPort newsPosts;
 
     @Test
     @DisplayName("적재한 뉴스를 검색해 게시하고 게시글만 데일리로 요약하며 재실행은 중복 게시하지 않는다")
     void ingestsBeforeRagAndPublishesBeforeDailyDigest() {
         List<SourceDocumentCommand> stored = new ArrayList<>();
-        List<PostWriteCommand> written = new ArrayList<>();
-        Set<String> publishedUrls = new HashSet<>();
+        List<LaunchNewsPost> launchNews = new ArrayList<>();
+        Set<String> digests = new HashSet<>();
         when(source.search(any())).thenReturn(List.of(new NewsSourceItem(
             "갤럭시북 신제품 출시", "신제품에 새 프로세서가 탑재됐다.",
             "https://news.example.com/article/1", "https://news.example.com/article/1",
@@ -77,48 +69,44 @@ class NewsPublishingFlowTest {
             assertThat(stored).isNotEmpty();
             return stored.stream().map(SourceDocumentCommand::content).toList();
         });
-        when(model.generate(anyString(), anyString())).thenReturn("갤럭시북 신제품 출시 소식입니다.");
-        when(posts.write(any())).thenAnswer(call -> {
-            written.add(call.getArgument(0));
-            return (long) written.size();
+        when(model.generateForPublishing(anyString(), anyString())).thenReturn("갤럭시북 신제품 출시 소식입니다.");
+        when(newsPosts.publishLaunchNews(any())).thenAnswer(call -> {
+            launchNews.add(call.getArgument(0));
+            return (long) launchNews.size();
         });
-        when(references.existsByCanonicalUrl(anyString()))
-            .thenAnswer(call -> publishedUrls.contains(call.getArgument(0)));
-        when(referenceWriter.write(any())).thenAnswer(call -> {
-            PostReferenceLinkCommand reference = call.getArgument(0);
-            publishedUrls.add(reference.canonicalUrl());
-            return reference.postId();
-        });
-        when(digestSources.findLaunchNews(any(), any())).thenAnswer(call -> written.stream()
-            .filter(post -> post.category() == PostCategory.PRODUCT_LAUNCH_NEWS)
-            .filter(post -> post.boardCategory() == call.getArgument(0))
-            .map(post -> new DailyDigestSourceItem(post.title(), post.summary()))
+        when(newsPosts.isPublished(anyString())).thenAnswer(call -> launchNews.stream()
+            .anyMatch(news -> news.canonicalUrl().equals(call.getArgument(0))));
+        when(newsPosts.findLaunchNews(any(), any())).thenAnswer(call -> launchNews.stream()
+            .filter(news -> news.section() == call.getArgument(0))
+            .map(news -> new DailyDigestSourceItem(news.draft().title(), news.draft().summary()))
             .toList());
-        when(digestSources.digestExists(any(), anyString())).thenAnswer(call -> written.stream()
-            .anyMatch(post -> post.category() == PostCategory.DAILY_DIGEST
-                && post.boardCategory() == call.getArgument(0) && post.title().equals(call.getArgument(1))));
+        when(newsPosts.digestExists(any(), any()))
+            .thenAnswer(call -> digests.contains(call.getArgument(0) + "/" + call.getArgument(1)));
+        when(newsPosts.publishDailyDigest(any(), any(), any())).thenAnswer(call -> {
+            digests.add(call.getArgument(0) + "/" + call.getArgument(1));
+            return 100L + digests.size();
+        });
 
         LaunchNewsPublishCommand command = new LaunchNewsPublishCommand(
-            "갤럭시북", 5, 3, List.of("출시"), BoardCategory.DIGITAL, PostPublishOrigin.SYSTEM_BATCH
+            "갤럭시북", 5, 3, List.of("출시"), NewsSection.TECHNOLOGY, PostPublishOrigin.SYSTEM_BATCH
         );
         publisher.publish(command);
 
         ArgumentCaptor<String> prompt = ArgumentCaptor.forClass(String.class);
-        verify(model).generate(anyString(), prompt.capture());
+        verify(model).generateForPublishing(anyString(), prompt.capture());
         assertThat(prompt.getValue()).contains(stored.getFirst().content());
         verify(source).search(any(NewsSourceQuery.class));
-        assertThat(written).extracting(PostWriteCommand::category)
-            .containsExactly(PostCategory.PRODUCT_LAUNCH_NEWS);
+        assertThat(launchNews).extracting(LaunchNewsPost::section).containsExactly(NewsSection.TECHNOLOGY);
 
         digestPublisher.publish(LocalDate.of(2026, 9, 8));
         verify(source).search(any(NewsSourceQuery.class));
         verify(search).searchSimilar(anyString(), anyInt());
-        assertThat(written).extracting(PostWriteCommand::category)
-            .containsExactly(PostCategory.PRODUCT_LAUNCH_NEWS, PostCategory.DAILY_DIGEST);
+        verify(newsPosts).publishDailyDigest(any(), any(), any());
 
         publisher.publish(command);
         digestPublisher.publish(LocalDate.of(2026, 9, 8));
-        assertThat(written).hasSize(2);
-        verify(model, times(2)).generate(anyString(), anyString());
+        assertThat(launchNews).hasSize(1);
+        verify(newsPosts).publishDailyDigest(any(), any(), any());
+        verify(model, times(2)).generateForPublishing(anyString(), anyString());
     }
 }

@@ -17,7 +17,7 @@ Gradle modular monolith. 의존성 허용 표와 새 코드 배치 기준은 [mo
 | `board` | 게시글·댓글·좋아요·조회수·파일 |
 | `ai` | `chat`·`search`(RAG), `draft`(뉴스·데일리 포스트 초안 생성) |
 | `ingest` | `document`(pgvector 적재), `news`(뉴스 수집·선별·스케줄 게시·데일리 종합) |
-| `source` | 외부 뉴스 source adapter (Naver API HUB News) |
+| `source` | 외부 뉴스 source adapter (Google News RSS, 실험용) |
 
 이전 제품 기능을 제거한 배경은 [ADR-004](docs/decisions/adr-004-scope-reduction.md)에 이력으로 보존한다. 새 작업의 범위는 현재 제품 정의와 실제 코드에서 판단한다.
 
@@ -34,11 +34,11 @@ Gradle modular monolith. 의존성 허용 표와 새 코드 배치 기준은 [mo
 ### 플러그인
 
 ```bash
-claude plugin marketplace add anthropics/claude-plugins-official && claude plugin marketplace add upstash/context7 && claude plugin marketplace add obra/superpowers-marketplace && claude plugin marketplace add Egonex-AI/Understand-Anything && claude plugin marketplace add DietrichGebert/ponytail && claude plugin marketplace add Yeachan-Heo/oh-my-claudecode
+claude plugin marketplace add anthropics/claude-plugins-official && claude plugin marketplace add upstash/context7 && claude plugin marketplace add obra/superpowers-marketplace && claude plugin marketplace add Egonex-AI/Understand-Anything && claude plugin marketplace add DietrichGebert/ponytail && claude plugin marketplace add Yeachan-Heo/oh-my-claudecode && claude plugin marketplace add anthropics/claude-plugins-community
 ```
 
 ```bash
-claude plugin install learning-output-style@claude-plugins-official && claude plugin install context7@context7-marketplace && claude plugin install superpowers@superpowers-marketplace && claude plugin install understand-anything@understand-anything && claude plugin install ponytail@ponytail && claude plugin install oh-my-claudecode@omc
+claude plugin install learning-output-style@claude-plugins-official && claude plugin install context7@context7-marketplace && claude plugin install superpowers@superpowers-marketplace && claude plugin install understand-anything@understand-anything && claude plugin install ponytail@ponytail && claude plugin install oh-my-claudecode@omc && claude plugin install eli5@claude-community
 ```
 
 | 플러그인 | 마켓플레이스 repo | 역할 |
@@ -49,6 +49,7 @@ claude plugin install learning-output-style@claude-plugins-official && claude pl
 | `understand-anything` | `Egonex-AI/Understand-Anything` | 코드베이스 지식 그래프 |
 | `context7` | `upstash/context7` | 라이브러리 최신 문서 조회 |
 | `learning-output-style` | `anthropics/claude-plugins-official` | 학습형 출력 스타일 |
+| `eli5` | `anthropics/claude-plugins-community` | `/eli5 <주제>` — 그림 위주 HTML 설명서 생성 |
 
 ### 개인 스킬 (`~/.claude/skills/`)
 

@@ -1,5 +1,6 @@
 package dev.iamrat.ingest.news.application;
 
+import dev.iamrat.ingest.news.application.LaunchNewsPublishResult.SkipReason;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
@@ -42,17 +43,16 @@ public class LaunchNewsEligibilityPolicy {
         return containsAny(normalize(title + " " + description), AD_MARKERS);
     }
 
-    public Optional<LaunchNewsSkipReason> evaluate(LaunchNewsCandidate candidate) {
+    public Optional<SkipReason> evaluate(LaunchNewsCandidate candidate) {
         String searchableText = normalize(candidate.title() + " " + candidate.description());
         if (containsAny(searchableText, AD_MARKERS)) {
-            return Optional.of(LaunchNewsSkipReason.ADVERTISING);
+            return Optional.of(SkipReason.ADVERTISING);
         }
         if (!isTrustedSource(candidate.sourceName())) {
-            return Optional.of(LaunchNewsSkipReason.UNKNOWN_SOURCE);
+            return Optional.of(SkipReason.UNKNOWN_SOURCE);
         }
-        if (!searchableText.contains(normalize(candidate.keyword()))
-            || !containsAny(searchableText, LAUNCH_KEYWORDS)) {
-            return Optional.of(LaunchNewsSkipReason.MISSING_LAUNCH_KEYWORD);
+        if (!containsAny(searchableText, LAUNCH_KEYWORDS)) {
+            return Optional.of(SkipReason.MISSING_LAUNCH_KEYWORD);
         }
         return Optional.empty();
     }

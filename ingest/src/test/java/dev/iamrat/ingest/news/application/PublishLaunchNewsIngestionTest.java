@@ -9,16 +9,16 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
+import dev.iamrat.core.board.post.LaunchNewsPost;
 import dev.iamrat.core.board.post.LaunchNewsPostDraft;
 import dev.iamrat.core.board.post.LaunchNewsPostDraftCommand;
 import dev.iamrat.core.board.post.LaunchNewsPostDraftGenerator;
+import dev.iamrat.core.board.post.NewsPostPort;
 import dev.iamrat.core.board.post.PostPublishOrigin;
-import dev.iamrat.core.board.post.PostReferenceLinkReader;
-import dev.iamrat.core.board.post.PostReferenceLinkWriter;
-import dev.iamrat.core.board.post.PostWriteCommand;
-import dev.iamrat.core.board.post.PostWriter;
 import dev.iamrat.ingest.document.application.DocumentIngestResult;
 import dev.iamrat.ingest.document.application.IngestDocumentsUseCase;
+import dev.iamrat.ingest.news.application.LaunchNewsPublishResult.Skip;
+import dev.iamrat.ingest.news.application.LaunchNewsPublishResult.SkipReason;
 import dev.iamrat.source.news.application.NewsSourceClient;
 import dev.iamrat.source.news.application.NewsSourceItem;
 import dev.iamrat.source.news.application.NewsSourceQuery;
@@ -43,9 +43,7 @@ class PublishLaunchNewsIngestionTest {
     @Mock private NewsSourceClient newsSourceClient;
     @Mock private IngestDocumentsUseCase ingestDocumentsUseCase;
     @Mock private LaunchNewsPostDraftGenerator draftGenerator;
-    @Mock private PostReferenceLinkReader referenceLinkReader;
-    @Mock private PostWriter postWriter;
-    @Mock private PostReferenceLinkWriter referenceLinkWriter;
+    @Mock private NewsPostPort newsPosts;
 
     private PublishLaunchNewsUseCase useCase;
 
@@ -61,8 +59,7 @@ class PublishLaunchNewsIngestionTest {
             ingestProductNewsUseCase,
             new LaunchNewsEligibilityPolicy(),
             draftGenerator,
-            referenceLinkReader,
-            new LaunchNewsPostRecorder(postWriter, referenceLinkWriter, clock),
+            newsPosts,
             clock
         );
     }
@@ -72,16 +69,16 @@ class PublishLaunchNewsIngestionTest {
     void persistsCollectedArticleBeforeDraftingWithoutFetchingTwice() {
         given(newsSourceClient.search(any())).willReturn(List.of(item(), item()));
         given(ingestDocumentsUseCase.ingest(any())).willReturn(new DocumentIngestResult(1, 1));
-        given(referenceLinkReader.existsByCanonicalUrl(any())).willReturn(false);
-        given(referenceLinkReader.countByKeywordOnDate("갤럭시북", LocalDate.of(2026, 6, 21))).willReturn(0L);
+        given(newsPosts.isPublished(any())).willReturn(false);
+        given(newsPosts.countPublished("갤럭시북", LocalDate.of(2026, 6, 21))).willReturn(0L);
         given(draftGenerator.generate(any())).willReturn(Optional.of(draft()));
-        given(postWriter.write(any(PostWriteCommand.class))).willReturn(42L);
+        given(newsPosts.publishLaunchNews(any(LaunchNewsPost.class))).willReturn(42L);
 
         LaunchNewsPublishResult result = useCase.publish(command());
 
         assertThat(result.createdPostIds()).containsExactly(42L);
-        assertThat(result.skips()).extracting(LaunchNewsSkip::reason)
-            .containsExactly(LaunchNewsSkipReason.DUPLICATE_ARTICLE);
+        assertThat(result.skips()).extracting(Skip::reason)
+            .containsExactly(SkipReason.DUPLICATE_ARTICLE);
         InOrder order = inOrder(ingestDocumentsUseCase, draftGenerator);
         order.verify(ingestDocumentsUseCase).ingest(any());
         order.verify(draftGenerator).generate(any(LaunchNewsPostDraftCommand.class));
@@ -98,7 +95,7 @@ class PublishLaunchNewsIngestionTest {
             .isInstanceOf(IllegalStateException.class)
             .hasMessage("vector store unavailable");
         verify(draftGenerator, never()).generate(any());
-        verify(postWriter, never()).write(any());
+        verify(newsPosts, never()).publishLaunchNews(any());
     }
 
     @Test
@@ -106,19 +103,19 @@ class PublishLaunchNewsIngestionTest {
     void rerunAfterDraftFailurePublishesUnrecordedArticle() {
         given(newsSourceClient.search(any())).willReturn(List.of(item()));
         given(ingestDocumentsUseCase.ingest(any())).willReturn(new DocumentIngestResult(1, 1));
-        given(referenceLinkReader.existsByCanonicalUrl(any())).willReturn(false);
-        given(referenceLinkReader.countByKeywordOnDate("갤럭시북", LocalDate.of(2026, 6, 21))).willReturn(0L);
+        given(newsPosts.isPublished(any())).willReturn(false);
+        given(newsPosts.countPublished("갤럭시북", LocalDate.of(2026, 6, 21))).willReturn(0L);
         given(draftGenerator.generate(any()))
             .willReturn(Optional.empty())
             .willReturn(Optional.of(draft()));
-        given(postWriter.write(any(PostWriteCommand.class))).willReturn(42L);
+        given(newsPosts.publishLaunchNews(any(LaunchNewsPost.class))).willReturn(42L);
 
         LaunchNewsPublishResult first = useCase.publish(command());
         LaunchNewsPublishResult second = useCase.publish(command());
 
         assertThat(first.createdPostIds()).isEmpty();
         assertThat(second.createdPostIds()).containsExactly(42L);
-        verify(referenceLinkWriter, times(1)).write(any());
+        verify(newsPosts, times(1)).publishLaunchNews(any());
     }
 
     @Test
@@ -126,17 +123,17 @@ class PublishLaunchNewsIngestionTest {
     void repeatRunSkipsAlreadyPublishedUrl() {
         given(newsSourceClient.search(any())).willReturn(List.of(item()));
         given(ingestDocumentsUseCase.ingest(any())).willReturn(new DocumentIngestResult(1, 1));
-        given(referenceLinkReader.existsByCanonicalUrl(any())).willReturn(false, true);
-        given(referenceLinkReader.countByKeywordOnDate("갤럭시북", LocalDate.of(2026, 6, 21))).willReturn(0L);
+        given(newsPosts.isPublished(any())).willReturn(false, true);
+        given(newsPosts.countPublished("갤럭시북", LocalDate.of(2026, 6, 21))).willReturn(0L);
         given(draftGenerator.generate(any())).willReturn(Optional.of(draft()));
-        given(postWriter.write(any(PostWriteCommand.class))).willReturn(42L);
+        given(newsPosts.publishLaunchNews(any(LaunchNewsPost.class))).willReturn(42L);
 
         useCase.publish(command());
         LaunchNewsPublishResult repeated = useCase.publish(command());
 
         assertThat(repeated.createdPostIds()).isEmpty();
-        assertThat(repeated.skips()).extracting(LaunchNewsSkip::reason)
-            .containsExactly(LaunchNewsSkipReason.DUPLICATE_ARTICLE);
+        assertThat(repeated.skips()).extracting(Skip::reason)
+            .containsExactly(SkipReason.DUPLICATE_ARTICLE);
         verify(draftGenerator, times(1)).generate(any());
     }
 

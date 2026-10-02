@@ -3,7 +3,6 @@ package dev.iamrat.board.file.presentation;
 import dev.iamrat.board.file.application.FileReader;
 import dev.iamrat.board.file.application.FileUploadResult;
 import dev.iamrat.board.file.application.FileUploadService;
-import dev.iamrat.core.global.dto.UrlResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -29,6 +28,6 @@ public class FileController {
     @GetMapping("/{fileId}/download-url")
     public ResponseEntity<UrlResponse> getDownloadUrl(@PathVariable Long fileId) {
         String downloadUrl = fileReader.createDownloadUrl(fileId);
-        return ResponseEntity.ok(UrlResponse.of(downloadUrl));
+        return ResponseEntity.ok(new UrlResponse(downloadUrl));
     }
 }

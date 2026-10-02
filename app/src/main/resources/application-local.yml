@@ -1,0 +1,30 @@
+# local 프로필 — 운영과 값이 달라야 하는 항목만 둔다. 나머지는 application.yml.
+# 환경변수는 루트의 .env.local 에서 읽는다. bootRun 은 루트에서, IDE 는 app/ 에서 실행되므로 두 경로를 둔다.
+spring:
+  config:
+    import: optional:file:.env.local[.properties],optional:file:../.env.local[.properties]
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/${POSTGRES_DB}
+
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+
+  # docker-compose.local.yml 의 Mailpit. 인증·TLS 없이 받고, 받은 메일은 http://localhost:8025 에서 본다.
+  mail:
+    host: localhost
+    port: 1025
+    username: postforge@localhost   # 발신 주소로만 쓰인다 (JavaMailEmailSender)
+
+app:
+  llm:
+    # 게이트웨이 없이 호스트의 Ollama 를 직접 호출한다: ollama pull qwen3:8b && ollama pull bge-m3
+    chat:
+      base-url: ${LLM_CHAT_BASE_URL:${LLM_GATEWAY_BASE_URL:http://localhost:11434}}
+      options:
+        model: ${LLM_CHAT_MODEL:qwen3:8b}
+    embedding:
+      base-url: ${LLM_EMBEDDING_BASE_URL:${LLM_GATEWAY_BASE_URL:http://localhost:11434}}
+      options:
+        model: ${LLM_EMBEDDING_MODEL:bge-m3}

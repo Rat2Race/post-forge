@@ -6,7 +6,7 @@ import dev.iamrat.board.comment.domain.Comment;
 import dev.iamrat.board.like.domain.CommentLike;
 import dev.iamrat.board.like.domain.PostLike;
 import dev.iamrat.board.post.domain.Post;
-import dev.iamrat.core.board.post.PostCategory;
+import dev.iamrat.board.post.domain.PostType;
 import jakarta.persistence.PersistenceException;
 import java.util.List;
 import java.util.Optional;
@@ -185,7 +185,7 @@ class BoardConstraintTest {
         return Post.builder()
             .title("title")
             .content("content")
-            .category(PostCategory.GENERAL)
+            .category(PostType.GENERAL)
             .accountId(1L)
             .nickname("writer");
     }

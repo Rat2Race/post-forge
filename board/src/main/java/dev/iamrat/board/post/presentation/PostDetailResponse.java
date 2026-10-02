@@ -2,8 +2,8 @@ package dev.iamrat.board.post.presentation;
 
 import dev.iamrat.board.post.domain.Post;
 import dev.iamrat.board.post.domain.PostReferenceLink;
-import dev.iamrat.core.board.post.BoardCategory;
-import dev.iamrat.core.board.post.PostCategory;
+import dev.iamrat.board.post.domain.PostType;
+import dev.iamrat.core.board.post.NewsSection;
 import dev.iamrat.core.board.post.PostPublishOrigin;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -14,8 +14,8 @@ public record PostDetailResponse(
     String content,
     String summary,
     List<String> tags,
-    PostCategory category,
-    BoardCategory boardCategory,
+    PostType category,
+    NewsSection boardCategory,
     PostPublishOrigin publishOrigin,
     Long accountId,
     String nickname,

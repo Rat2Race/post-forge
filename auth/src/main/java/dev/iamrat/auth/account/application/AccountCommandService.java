@@ -2,11 +2,13 @@ package dev.iamrat.auth.account.application;
 
 import dev.iamrat.auth.account.domain.Account;
 import dev.iamrat.auth.account.domain.AccountPolicy;
+import dev.iamrat.auth.account.domain.AccountRole;
 import dev.iamrat.auth.account.domain.AccountStatus;
 import dev.iamrat.auth.support.error.AuthErrorCode;
 import dev.iamrat.auth.support.normalizer.EmailNormalizer;
 import dev.iamrat.auth.token.application.RefreshTokenStore;
 import dev.iamrat.core.global.exception.CustomException;
+import dev.iamrat.core.global.error.CommonErrorCode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -79,6 +81,26 @@ public class AccountCommandService {
 
         Account account = findWithRolesById(accountId);
         account.updateStatus(status);
+    }
+
+    @Transactional
+    public void grantAdminRole(Long actorId, Long targetId) {
+        if (actorId == null || targetId == null || targetId <= 0 || actorId.equals(targetId)) {
+            throw new CustomException(CommonErrorCode.ACCESS_DENIED);
+        }
+
+        Account actor = accountQueryService.findWithRolesById(actorId)
+            .orElseThrow(() -> new CustomException(CommonErrorCode.ACCESS_DENIED));
+        if (!actor.isActive() || !actor.getRoles().contains(AccountRole.ADMIN)) {
+            throw new CustomException(CommonErrorCode.ACCESS_DENIED);
+        }
+
+        Account target = findWithRolesById(targetId);
+        accountPolicy.requireActive(target);
+        if (!target.getRoles().contains(AccountRole.ADMIN)) {
+            target.addRole(AccountRole.ADMIN);
+            accountStore.flush();
+        }
     }
 
     private Account findWithRolesById(Long accountId) {

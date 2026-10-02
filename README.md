@@ -10,7 +10,7 @@ PostForge는 외부 뉴스를 수집하고 분야별로 선별한 뒤, LLM으로
 
 | 영역 | 현재 구현 |
 | --- | --- |
-| 뉴스 수집·자동 게시 | Naver API HUB News 수집, 중복·광고·출시 관련성 검사, LLM 초안 생성 후 게시 |
+| 뉴스 수집·자동 게시 | Google News RSS 검색 피드 수집(실험용), 중복·광고·출시 관련성 검사, LLM 초안 생성 후 게시 |
 | 분야 분류 | 수집 키워드 또는 수동 요청의 분야를 게시글에 적용하고 분야별로 조회 |
 | 데일리 포스트 | 전날 게시된 출시뉴스의 제목·요약을 LLM으로 종합해 분야별 게시글 생성 |
 | 인증 | JWT, Redis refresh token rotation, OAuth2, 이메일 인증, 로그인 보호 |
@@ -18,6 +18,7 @@ PostForge는 외부 뉴스를 수집하고 분야별로 선별한 뒤, LLM으로
 | AI / RAG | Spring AI, OpenAI-compatible LLM, PgVector 문서 검색, 수집 자료에 대한 RAG 채팅 |
 | 운영 기반 | Flyway baseline, Docker layered jar, 구조화 로그, Prometheus/Grafana |
 
+이 브랜치의 수집원은 Google News RSS다. 스케줄러는 설정된 섹션(기본 `TECHNOLOGY,BUSINESS`)의 주제 피드를 키워드 없이 읽고, 게시글 분야는 Google 뉴스 한국판 섹션(대한민국·세계·비즈니스·과학/기술·엔터테인먼트·스포츠·건강)과 같다. 수동 게시는 키워드 검색 피드를 읽는다. 피드 자체가 개인·비상업 용도로 제한된다고 명시하므로 파이프라인 검증용이며 배포 소스가 아니다.
 현재 수집·게시 정책은 신제품 출시뉴스를 대상으로 하며, 뉴스 글은 `PRODUCT_LAUNCH_NEWS`, 데일리 글은 `DAILY_DIGEST`로 저장합니다.
 분야는 수집 설정에서 결정하고 LLM은 초안을 작성합니다. 스케줄 실행 안에서 수집부터 게시까지 처리하며, 초안을 별도 예약 대기열에 저장하지는 않습니다.
 뉴스 자동 게시는 기본 매시 30분, 데일리는 매일 06:00이고 두 스케줄러는 기본 비활성입니다.
@@ -62,44 +63,58 @@ PostForge는 외부 뉴스를 수집하고 분야별로 선별한 뒤, LLM으로
 테이블·Redis key·S3 object 소유권은 [DB Schema Ownership](./docs/database/schema-ownership.md)이 정본입니다.
 관계 시각화는 [MVP ERD](./docs/database/postforge-mvp-erd.md)를 봅니다.
 
-신규 DB는 Flyway `V0000__baseline_schema.sql` 이후 증분 migration을 적용합니다.
-운영 환경은 `ddl-auto=validate`로 entity와 schema의 일치만 검증합니다.
+신규 DB는 Flyway `V0000__baseline_schema.sql` 하나로 만듭니다. 2026-09-30 뉴스 도메인을 떠나는 시점([ADR-007](./docs/decisions/adr-007-remove-naver-news-source.md))에 이력을 리셋했으므로,
+옛 이력이 적용된 DB는 고쳐 쓰지 않고 DB를 지우고 다시 만듭니다. 로컬은 `docker exec postforge-db sh -c 'psql -U "$POSTGRES_USER" -d postgres -c "drop database postforge" -c "create database postforge"'` 뒤 재기동, 계정·게시글은 `scripts/local-demo-seed.sql`로 다시 넣습니다.
+모든 프로필은 `ddl-auto=validate`로 entity와 schema의 일치만 검증합니다.
 
 Endpoint, DTO, status, 인증 조건의 정본은 [API 명세](./docs/api/README.md)입니다.
+관리자 권한은 기존 ADMIN이 `PUT /api/admin/accounts/{accountId}/roles/admin`으로 다른 활성 계정에 부여할 수 있습니다.
+최초 ADMIN은 DB에서 지정해야 하며, 승격된 계정은 다시 로그인하거나 토큰을 재발급받아야 합니다.
 실행 중에는 [Swagger UI](http://localhost:8080/swagger-ui.html)에서 현재 OpenAPI schema를 확인할 수 있습니다.
 
 ## Local Run
 
-필수 도구는 Java 21+와 Docker Compose입니다. credential 없이 바로 부팅되는 로컬 템플릿을 사용합니다.
+필수 도구는 Java 21+, Docker Compose, [Ollama](https://ollama.com)입니다.
+
+설정은 세 층입니다. `application.yml`은 공통이고, `application-local.yml`·`application-prod.yml`에는 환경마다 값이
+달라야 하는 항목(DB·Redis 호스트, LLM 주소·모델 기본값, 메일 서버, 프록시 헤더)만 둡니다. 프로필을 지정하지 않으면
+`local`이며, 운영은 `SPRING_PROFILES_ACTIVE=prod`로 바꿉니다.
+
+| | local | prod |
+| --- | --- | --- |
+| 프로필 설정 | `application-local.yml` (커밋) | `application-prod.yml` (커밋 안 함, 배포 호스트에서 컨테이너에 마운트) |
+| 환경변수 | `.env.local` (커밋 안 함) | `.env` (커밋 안 함, compose `env_file`) |
+| compose | `docker-compose.local.yml` (커밋) | `docker-compose.prod.yml` (커밋 안 함) |
+
+[`.env.example`](./.env.example)은 두 환경에서 쓰는 변수명만 값 없이 나열합니다. 로컬은 주소·DB 계정·JWT·소셜 로그인·S3·
+모니터링 값만 채우면 됩니다. Google News RSS는 키가 없고 `GOOGLE_NEWS_ENABLED=true`로 켭니다. LLM 주소·모델, Redis 호스트, 메일 서버는 `application-local.yml` 기본값
+(Ollama `localhost:11434`의 `qwen3:8b`·`bge-m3`, Redis `localhost`, Mailpit `localhost:1025`)을 쓰므로 비워 둡니다.
 
 ```bash
-cp .env.local.example .env
-docker compose -f docker-compose.local.yml up -d
-./gradlew :app:bootRun
+cp .env.example .env.local                                               # 값 채우기
+ollama pull qwen3:8b && ollama pull bge-m3
+docker compose --env-file .env.local -f docker-compose.local.yml up -d   # PostgreSQL(pgvector), Redis, Mailpit
+./gradlew :app:bootRun                                                   # 프로필 local, 루트의 .env.local 을 읽음
 ```
 
-첫 부팅 시 Flyway가 `db/migration`의 baseline(V0000)을 적용해 스키마를 만들고, Hibernate는 `validate`로
+첫 부팅 시 Flyway가 `db/migration`의 baseline(V0000)부터 적용해 스키마를 만들고, Hibernate는 `validate`로
 엔티티와 스키마가 일치하는지만 검사합니다. 부팅 확인은 `curl localhost:8080/actuator/health`.
+인증 메일은 실제로 발송되지 않고 [Mailpit](http://localhost:8025)에 쌓입니다. 데모 계정과 게시글은 `scripts/local-demo-seed.sql`로 넣습니다.
 
-[`.env.local.example`](./.env.local.example)은 dummy credential로 부팅까지 보장하는 로컬 템플릿이고,
-외부 연동(소셜 로그인, 메일 발송, S3 업로드, 뉴스 수집)을 실제로 쓰려면 해당 키만 진짜 값으로 바꿉니다.
-전체 환경변수 목록의 정본은 [`.env.example`](./.env.example)입니다.
-실제 secret이 든 `.env`는 커밋하지 않습니다. `bootRun`은 루트 `.env`를 자동으로 읽습니다.
-
-로컬 LLM을 사용할 때 채팅과 임베딩 모두 OpenAI-compatible gateway를 거쳐 Ollama를 호출합니다.
-`LLM_CHAT_BASE_URL`과 `LLM_EMBEDDING_BASE_URL`을 동일한 gateway 주소(예: `http://10.0.0.1:8088`)로 설정합니다.
-`LLM_GATEWAY_TOKEN`은 두 요청의 인증에 공통으로 사용합니다. 개별 키가 필요할 때만 `LLM_CHAT_API_KEY` 또는
-`LLM_EMBEDDING_API_KEY`를 지정하고, 공용 토큰을 사용할 때는 이 두 항목을 빈 값으로 선언하지 말고 생략합니다.
-게이트웨이에 `/v1/embeddings`를 지원하는 버전을 먼저 배포해야 합니다. 채팅 모델 `qwen3:8b`,
-임베딩 모델 `bge-m3`, 임베딩 차원 `1024`는 유지합니다.
-별도 임베딩 제공자로 전환할 때는 임베딩 주소·모델·`LLM_EMBEDDING_API_KEY`를 함께 지정합니다.
+LLM은 로컬에서 Ollama를 직접 호출하고 운영에서는 OpenAI-compatible gateway를 거칩니다. 두 환경 모두 공용 주소
+`LLM_GATEWAY_BASE_URL`/`LLM_GATEWAY_TOKEN`과, 그보다 우선하는 개별 주소 `LLM_CHAT_BASE_URL`/`LLM_CHAT_API_KEY`,
+`LLM_EMBEDDING_BASE_URL`/`LLM_EMBEDDING_API_KEY`로 덮어쓸 수 있습니다. 운영은 기본값이 없어 `LLM_GATEWAY_BASE_URL`,
+`LLM_CHAT_MODEL`, `LLM_EMBEDDING_MODEL`이 빠지면 기동에 실패합니다. 임베딩 차원 `1024`는 `vector_store` 스키마와 묶여 있으므로 유지합니다.
 
 ```text
-PostForge app
--> OpenAI-compatible LLM gateway
--> Ollama
--> Qwen (chat) / bge-m3 (embedding)
+local: PostForge app -> Ollama(localhost:11434) -> qwen3:8b (chat) / bge-m3 (embedding)
+prod:  PostForge app -> OpenAI-compatible LLM gateway -> Ollama -> qwen3:8b / bge-m3
 ```
+
+운영 배포 호스트에는 `docker-compose.prod.yml`, `.env`, `application-prod.yml`을 같은 디렉터리에 둡니다. compose가
+`application-prod.yml`을 `/app/config/`에 마운트하므로 이미지를 다시 만들지 않고 설정을 바꿀 수 있습니다.
+`.env`는 예제가 바뀌어도 자동 갱신되지 않으므로 배포 시 새 항목만 병합하고 기존 비밀키는 유지합니다.
+두 파일을 바꾼 뒤에는 앱 컨테이너를 재생성해야 반영됩니다.
 
 ## Test
 
@@ -119,12 +134,13 @@ PostForge app
 
 ## Docker And Deployment
 
-`release/postforge` 브랜치의 CI가 테스트 성공 후 Spring Boot layered jar 기반 runtime image를 만들고,
-Docker Hub에 `latest`와 commit SHA tag로 게시합니다. `Dockerfile.runtime`은 non-root 사용자로 실행하며
+이미지 빌드·게시는 수동 실행만 합니다. `release/postforge`에서 Actions의 APP-CI를 `workflow_dispatch`로 실행하면
+테스트 성공 후 Spring Boot layered jar 기반 runtime image를 만들어 Docker Hub에 `latest`와 commit SHA tag로 게시합니다.
+`release/postforge` push와 PR은 테스트만 돌리고 이미지를 만들지 않습니다. `Dockerfile.runtime`은 non-root 사용자로 실행하며
 dependency와 application layer를 분리해 registry cache 효율을 높입니다.
 
 ```text
-GitHub push
+workflow_dispatch (release/postforge)
 -> ./gradlew check -PexcludeTags=integration
 -> ./gradlew :app:bootJar
 -> Dockerfile.runtime
@@ -144,3 +160,4 @@ GitHub push
 ## License
 
 No license file is currently included. Reuse and distribution are controlled by the repository owner.
+

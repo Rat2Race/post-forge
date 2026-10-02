@@ -5,10 +5,10 @@ import dev.iamrat.board.like.application.LikeResult;
 import dev.iamrat.board.like.application.PostLikeService;
 import dev.iamrat.board.post.domain.Post;
 import dev.iamrat.board.post.domain.PostReferenceLink;
+import dev.iamrat.board.post.domain.PostType;
 import dev.iamrat.board.post.presentation.PostDetailResponse;
 import dev.iamrat.board.view.application.ViewCountService;
-import dev.iamrat.core.board.post.BoardCategory;
-import dev.iamrat.core.board.post.PostCategory;
+import dev.iamrat.core.board.post.NewsSection;
 import dev.iamrat.core.board.post.PostPublishOrigin;
 import java.util.List;
 import java.util.Map;
@@ -35,8 +35,8 @@ public class PostQueryService {
 
     public Page<PostDetailResponse> getPosts(
         String keyword,
-        PostCategory category,
-        BoardCategory boardCategory,
+        PostType category,
+        NewsSection boardCategory,
         PostPublishOrigin publishOrigin,
         Pageable pageable,
         Long accountId

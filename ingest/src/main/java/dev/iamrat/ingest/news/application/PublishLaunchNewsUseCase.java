@@ -1,9 +1,12 @@
 package dev.iamrat.ingest.news.application;
 
+import dev.iamrat.core.board.post.LaunchNewsPost;
 import dev.iamrat.core.board.post.LaunchNewsPostDraft;
 import dev.iamrat.core.board.post.LaunchNewsPostDraftCommand;
 import dev.iamrat.core.board.post.LaunchNewsPostDraftGenerator;
-import dev.iamrat.core.board.post.PostReferenceLinkReader;
+import dev.iamrat.core.board.post.NewsPostPort;
+import dev.iamrat.ingest.news.application.LaunchNewsPublishResult.Skip;
+import dev.iamrat.ingest.news.application.LaunchNewsPublishResult.SkipReason;
 import dev.iamrat.source.news.application.NewsSourceItem;
 import java.net.URI;
 import java.time.Clock;
@@ -23,49 +26,34 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
+import lombok.RequiredArgsConstructor;
 
 @Service
+@RequiredArgsConstructor
 public class PublishLaunchNewsUseCase {
 
-    private static final List<String> DEFAULT_TOPICS = List.of("신제품", "출시", "공개", "사전예약");
     private static final Set<String> TRACKING_PARAM_NAMES = Set.of("utm", "ntype", "sid", "fbclid", "gclid");
     private final IngestProductNewsUseCase ingestProductNewsUseCase;
     private final LaunchNewsEligibilityPolicy launchNewsEligibilityPolicy;
     private final LaunchNewsPostDraftGenerator draftGenerator;
-    private final PostReferenceLinkReader referenceLinkReader;
-    private final LaunchNewsPostRecorder launchNewsPostRecorder;
+    private final NewsPostPort newsPosts;
     private final Clock clock;
 
-    public PublishLaunchNewsUseCase(
-        IngestProductNewsUseCase ingestProductNewsUseCase,
-        LaunchNewsEligibilityPolicy launchNewsEligibilityPolicy,
-        LaunchNewsPostDraftGenerator draftGenerator,
-        PostReferenceLinkReader referenceLinkReader,
-        LaunchNewsPostRecorder launchNewsPostRecorder,
-        Clock clock
-    ) {
-        this.ingestProductNewsUseCase = ingestProductNewsUseCase;
-        this.launchNewsEligibilityPolicy = launchNewsEligibilityPolicy;
-        this.draftGenerator = draftGenerator;
-        this.referenceLinkReader = referenceLinkReader;
-        this.launchNewsPostRecorder = launchNewsPostRecorder;
-        this.clock = clock;
-    }
 
     public LaunchNewsPublishResult publish(LaunchNewsPublishCommand command) {
         List<LaunchNewsCandidate> candidates = collectCandidates(command);
         List<Long> createdPostIds = new ArrayList<>();
-        List<LaunchNewsSkip> skips = new ArrayList<>();
+        List<Skip> skips = new ArrayList<>();
         Set<String> seenCanonicalUrls = new HashSet<>();
         Map<DailyCapKey, Long> dailyCounts = new HashMap<>();
 
         for (LaunchNewsCandidate candidate : candidates) {
             if (!seenCanonicalUrls.add(candidate.canonicalUrl())) {
-                skips.add(skip(candidate, LaunchNewsSkipReason.DUPLICATE_ARTICLE));
+                skips.add(skip(candidate, SkipReason.DUPLICATE_ARTICLE));
                 continue;
             }
-            if (referenceLinkReader.existsByCanonicalUrl(candidate.canonicalUrl())) {
-                skips.add(skip(candidate, LaunchNewsSkipReason.DUPLICATE_ARTICLE));
+            if (newsPosts.isPublished(candidate.canonicalUrl())) {
+                skips.add(skip(candidate, SkipReason.DUPLICATE_ARTICLE));
                 continue;
             }
 
@@ -76,23 +64,23 @@ public class PublishLaunchNewsUseCase {
             }
 
             if (dailyCapExceeded(candidate, command.dailyCap(), dailyCounts)) {
-                skips.add(skip(candidate, LaunchNewsSkipReason.DAILY_CAP_EXCEEDED));
+                skips.add(skip(candidate, SkipReason.DAILY_CAP_EXCEEDED));
                 continue;
             }
 
             LaunchNewsPostDraft draft = draftGenerator.generate(toDraftCommand(candidate))
                 .orElse(null);
             if (draft == null) {
-                skips.add(skip(candidate, LaunchNewsSkipReason.AI_GENERATION_FAILED));
+                skips.add(skip(candidate, SkipReason.AI_GENERATION_FAILED));
                 continue;
             }
 
             try {
-                Long postId = launchNewsPostRecorder.record(draft, candidate, command.publishOrigin());
+                Long postId = newsPosts.publishLaunchNews(toLaunchNewsPost(draft, candidate, command));
                 incrementDailyCount(candidate, dailyCounts);
                 createdPostIds.add(postId);
             } catch (DataIntegrityViolationException ignored) {
-                skips.add(skip(candidate, LaunchNewsSkipReason.DUPLICATE_ARTICLE));
+                skips.add(skip(candidate, SkipReason.DUPLICATE_ARTICLE));
             }
         }
 
@@ -104,8 +92,7 @@ public class PublishLaunchNewsUseCase {
     }
 
     private List<LaunchNewsCandidate> collectCandidates(LaunchNewsPublishCommand command) {
-        List<String> topics = command.topics().isEmpty() ? DEFAULT_TOPICS : command.topics();
-        return ingestProductNewsUseCase.collectAndIngest(command.keyword(), command.displayCount(), topics)
+        return ingestProductNewsUseCase.collectAndIngest(command.keyword(), command.displayCount(), command.topics())
             .items()
             .stream()
             .map(item -> toCandidate(command, item))
@@ -132,7 +119,7 @@ public class PublishLaunchNewsUseCase {
         Map<DailyCapKey, Long> dailyCounts
     ) {
         DailyCapKey key = dailyCapKey(candidate);
-        long count = dailyCounts.computeIfAbsent(key, ignored -> referenceLinkReader.countByKeywordOnDate(
+        long count = dailyCounts.computeIfAbsent(key, ignored -> newsPosts.countPublished(
             key.keyword(),
             key.publishedDate()
         ));
@@ -145,10 +132,27 @@ public class PublishLaunchNewsUseCase {
     }
 
     private DailyCapKey dailyCapKey(LaunchNewsCandidate candidate) {
-        LocalDate fallback = LocalDate.now(clock);
         return new DailyCapKey(
             candidate.keyword().toLowerCase(Locale.ROOT),
-            candidate.publishedDate(fallback)
+            candidate.publishedAt().toLocalDate()
+        );
+    }
+
+    private LaunchNewsPost toLaunchNewsPost(
+        LaunchNewsPostDraft draft,
+        LaunchNewsCandidate candidate,
+        LaunchNewsPublishCommand command
+    ) {
+        return new LaunchNewsPost(
+            draft,
+            candidate.category(),
+            command.publishOrigin(),
+            candidate.keyword(),
+            candidate.title(),
+            candidate.canonicalUrl(),
+            candidate.originalUrl(),
+            candidate.sourceName(),
+            candidate.publishedAt()
         );
     }
 
@@ -163,21 +167,22 @@ public class PublishLaunchNewsUseCase {
         );
     }
 
-    private LaunchNewsSkip skip(LaunchNewsCandidate candidate, LaunchNewsSkipReason reason) {
-        return new LaunchNewsSkip(candidate.canonicalUrl(), reason);
+    private Skip skip(LaunchNewsCandidate candidate, SkipReason reason) {
+        return new Skip(candidate.canonicalUrl(), reason);
     }
 
+    // 발행 시각을 읽을 수 없으면 처리 시각으로 대신한다. 일일 상한 날짜와 저장 시각이 같은 값을 쓴다.
     private LocalDateTime parsePublishedAt(String value) {
         String normalized = firstNonBlank(value, null);
         if (normalized == null) {
-            return null;
+            return LocalDateTime.now(clock);
         }
         try {
             return ZonedDateTime.parse(normalized, DateTimeFormatter.RFC_1123_DATE_TIME)
                 .withZoneSameInstant(clock.getZone())
                 .toLocalDateTime();
         } catch (DateTimeParseException ignored) {
-            return null;
+            return LocalDateTime.now(clock);
         }
     }
 

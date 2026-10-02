@@ -46,8 +46,7 @@ class EmailVerificationControllerTest {
                     .content("""
                         {"email":" Tester@Test.COM "}
                         """))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.message").value("인증 메일이 발송되었습니다."));
+                .andExpect(status().isNoContent());
 
             verify(emailVerificationService).sendVerificationEmail("tester@test.com");
         }

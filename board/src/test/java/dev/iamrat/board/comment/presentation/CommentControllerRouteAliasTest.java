@@ -44,6 +44,7 @@ import org.springframework.web.context.request.NativeWebRequest;
 import org.springframework.web.method.support.HandlerMethodArgumentResolver;
 import org.springframework.web.method.support.ModelAndViewContainer;
 import org.springframework.web.servlet.NoHandlerFoundException;
+import org.springframework.web.bind.support.WebDataBinderFactory;
 
 @ExtendWith(MockitoExtension.class)
 class CommentControllerRouteAliasTest {
@@ -124,8 +125,7 @@ class CommentControllerRouteAliasTest {
     @DisplayName("DELETE /api/posts/{postId}/comments/{commentId} 는 댓글을 삭제한다")
     void deleteComment_apiRoute_deletesComment() throws Exception {
         mockMvc.perform(delete("/api/posts/1/comments/2").with(user(9L)))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$.message").value("댓글 삭제 완료"));
+            .andExpect(status().isNoContent());
 
         verify(commentCommandService).deleteComment(2L);
     }
@@ -217,7 +217,7 @@ class CommentControllerRouteAliasTest {
             MethodParameter parameter,
             ModelAndViewContainer mavContainer,
             NativeWebRequest webRequest,
-            org.springframework.web.bind.support.WebDataBinderFactory binderFactory
+            WebDataBinderFactory binderFactory
         ) {
             HttpServletRequest request = webRequest.getNativeRequest(HttpServletRequest.class);
             if (request == null || request.getSession(false) == null) {

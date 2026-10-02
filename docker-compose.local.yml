@@ -1,3 +1,5 @@
+# 로컬 인프라만 띄운다. 앱은 호스트에서 ./gradlew :app:bootRun (프로필 기본값 local).
+#   docker compose --env-file .env.local -f docker-compose.local.yml up -d
 services:
   postgres:
     image: pgvector/pgvector:0.8.2-pg18-trixie
@@ -10,9 +12,7 @@ services:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     volumes:
-      - postgres_data_pg18_parent:/var/lib/postgresql
-    networks:
-      - postforge-network
+      - pgdata:/var/lib/postgresql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
       interval: 10s
@@ -25,17 +25,21 @@ services:
     ports:
       - "6379:6379"
     restart: unless-stopped
-    networks:
-      - postforge-network
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
       timeout: 3s
       retries: 5
 
-volumes:
-  postgres_data_pg18_parent:
+  # 로컬 메일 수신함. 앱은 SMTP localhost:1025 로 보내고, 받은 메일은 http://localhost:8025 에서 본다.
+  mailpit:
+    image: axllent/mailpit:v1.31.2
+    container_name: postforge-mailpit
+    ports:
+      - "1025:1025"
+      - "8025:8025"
+    restart: unless-stopped
 
-networks:
-  postforge-network:
-    driver: bridge
+volumes:
+  # 이전 볼륨(postgres_data_pg18_parent)은 Flyway 이전 스키마라 새 볼륨을 쓴다.
+  pgdata:
