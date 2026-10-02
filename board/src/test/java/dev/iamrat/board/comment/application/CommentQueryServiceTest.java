@@ -1,5 +1,6 @@
 package dev.iamrat.board.comment.application;
 
+import dev.iamrat.board.comment.domain.CommentRepository;
 import dev.iamrat.board.comment.domain.Comment;
 import dev.iamrat.board.like.application.CommentLikeService;
 import dev.iamrat.board.post.domain.Post;
@@ -23,7 +24,7 @@ import static org.mockito.BDDMockito.given;
 class CommentQueryServiceTest {
 
     @Mock
-    private CommentStore commentStore;
+    private CommentRepository commentRepository;
 
     @Mock
     private CommentLikeService commentLikeService;
@@ -36,7 +37,7 @@ class CommentQueryServiceTest {
     void getCommentsByPost_combinesLikeState() {
         PageRequest pageable = PageRequest.of(0, 10);
         Comment comment = comment(10L);
-        given(commentStore.findByPostId(1L, pageable))
+        given(commentRepository.findByPostId(1L, pageable))
             .willReturn(new PageImpl<>(List.of(comment), pageable, 1));
         given(commentLikeService.getLikeCounts(List.of(10L))).willReturn(Map.of(10L, 3L));
         given(commentLikeService.getLikedCommentIds(List.of(10L), 2L)).willReturn(Set.of(10L));
@@ -52,7 +53,7 @@ class CommentQueryServiceTest {
     @Test
     @DisplayName("게시글별 댓글 수 집계를 맵으로 변환한다")
     void getCommentCounts_returnsCountMap() {
-        given(commentStore.countByPostIds(List.of(1L, 2L))).willReturn(List.of(
+        given(commentRepository.countByPostIds(List.of(1L, 2L))).willReturn(List.of(
             new Object[]{1L, 2L},
             new Object[]{2L, 4L}
         ));

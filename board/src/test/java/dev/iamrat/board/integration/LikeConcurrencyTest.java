@@ -5,7 +5,7 @@ import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 
-import dev.iamrat.board.comment.application.CommentStore;
+import dev.iamrat.board.comment.domain.CommentRepository;
 import dev.iamrat.board.comment.domain.Comment;
 import dev.iamrat.board.like.application.CommentLikeService;
 import dev.iamrat.board.like.application.CommentLikeStore;
@@ -14,7 +14,7 @@ import dev.iamrat.board.like.application.PostLikeService;
 import dev.iamrat.board.like.application.PostLikeStore;
 import dev.iamrat.board.like.infrastructure.persistence.CommentLikePersistenceAdapter;
 import dev.iamrat.board.like.infrastructure.persistence.PostLikePersistenceAdapter;
-import dev.iamrat.board.post.application.PostStore;
+import dev.iamrat.board.post.domain.PostRepository;
 import dev.iamrat.board.post.domain.Post;
 import dev.iamrat.board.view.application.ViewCountService;
 import dev.iamrat.core.account.AccountProfileManager;
@@ -59,10 +59,10 @@ class LikeConcurrencyTest {
     private CommentLikeService commentLikeService;
 
     @Autowired
-    private PostStore postStore;
+    private PostRepository postRepository;
 
     @Autowired
-    private CommentStore commentStore;
+    private CommentRepository commentRepository;
 
     @Autowired
     private JdbcTemplate jdbcTemplate;
@@ -80,7 +80,7 @@ class LikeConcurrencyTest {
 
     @BeforeEach
     void createPost() {
-        post = postStore.save(Post.create("좋아요 동시성", "본문", null, 1L, "writer"));
+        post = postRepository.save(Post.create("좋아요 동시성", "본문", null, 1L, "writer"));
     }
 
     @AfterEach
@@ -105,7 +105,7 @@ class LikeConcurrencyTest {
     @Test
     @DisplayName("같은 계정의 댓글 좋아요 두 개가 함께 '아직 없음'을 봐도 늦은 쪽도 성공하고 좋아요는 하나다")
     void duplicateCommentLikeAfterStaleCheckSucceeds() {
-        Long commentId = commentStore.save(Comment.create(post, null, "댓글", 2L, "commenter")).getId();
+        Long commentId = commentRepository.save(Comment.create(post, null, "댓글", 2L, "commenter")).getId();
         commentLikeService.like(commentId, 7L);
 
         LikeResult late = commentLikeService.like(commentId, 7L);

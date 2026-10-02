@@ -30,6 +30,8 @@ modular monolith 선택 근거는 [ADR-003](../decisions/adr-003-modular-monolit
 
 모듈 안에서는 `domain`이 `presentation`·`infrastructure`에, `application`이 `presentation`에 의존하지 않는다. 예외는 없다. 응답으로 그대로 나가는 조회 결과(`PostDetail`, `CommentDetail`, study의 `SourceDetail` 등)는 `application` record로 두고 컨트롤러가 그대로 반환한다. 필드가 같은 Response를 하나 더 만들어 옮겨 담지 않는다.
 
+JPA 저장소(Spring Data repository)는 `domain`에 두고 `application` 서비스가 직접 쓴다. 저장소를 1:1로 감싸기만 하는 Store 인터페이스와 어댑터는 만들지 않는다. Store 인터페이스(`application`)와 구현(`infrastructure`)을 나누는 경우는 둘이다: Redis처럼 JPA가 아닌 저장소를 감쌀 때, 그리고 구현이 값을 채울 때다(좋아요의 네이티브 `INSERT … ON CONFLICT`가 감사 열의 시각·작성자를 넣는 `PostLikeStore`·`CommentLikeStore`).
+
 ## 코드 배치 기준
 
 새 코드는 다음 순서로 위치를 결정한다.

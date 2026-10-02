@@ -6,7 +6,7 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
-import dev.iamrat.board.post.application.PostStore;
+import dev.iamrat.board.post.domain.PostRepository;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.DisplayName;
@@ -25,7 +25,7 @@ class PostLikeServiceTest {
     private PostLikeStore postLikeStore;
 
     @Mock
-    private PostStore postStore;
+    private PostRepository postRepository;
 
     @InjectMocks
     private PostLikeService postLikeService;
@@ -39,7 +39,7 @@ class PostLikeServiceTest {
         LikeResult response = postLikeService.like(2L, 2L);
 
         assertThat(response).isEqualTo(new LikeResult(true, 5L));
-        verify(postStore).addLikeCount(2L, 1L);
+        verify(postRepository).addLikeCount(2L, 1L);
     }
 
     @Test
@@ -51,7 +51,7 @@ class PostLikeServiceTest {
         LikeResult response = postLikeService.like(1L, 1L);
 
         assertThat(response).isEqualTo(new LikeResult(true, 4L));
-        verify(postStore, never()).addLikeCount(anyLong(), anyLong());
+        verify(postRepository, never()).addLikeCount(anyLong(), anyLong());
     }
 
     @Test
@@ -63,7 +63,7 @@ class PostLikeServiceTest {
         LikeResult response = postLikeService.unlike(9L, 9L);
 
         assertThat(response).isEqualTo(new LikeResult(false, 2L));
-        verify(postStore).addLikeCount(9L, -1L);
+        verify(postRepository).addLikeCount(9L, -1L);
     }
 
     @Test
@@ -75,7 +75,7 @@ class PostLikeServiceTest {
         LikeResult response = postLikeService.unlike(9L, 9L);
 
         assertThat(response).isEqualTo(new LikeResult(false, 2L));
-        verify(postStore, never()).addLikeCount(anyLong(), anyLong());
+        verify(postRepository, never()).addLikeCount(anyLong(), anyLong());
     }
 
     @Test

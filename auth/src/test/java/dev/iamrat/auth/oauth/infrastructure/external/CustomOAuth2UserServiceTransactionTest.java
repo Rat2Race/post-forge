@@ -6,10 +6,8 @@ import static org.mockito.Mockito.mock;
 
 import dev.iamrat.auth.account.application.AccountCommandService;
 import dev.iamrat.auth.account.application.AccountQueryService;
-import dev.iamrat.auth.account.application.AccountStore;
+import dev.iamrat.auth.account.domain.AccountRepository;
 import dev.iamrat.auth.account.domain.Account;
-import dev.iamrat.auth.account.infrastructure.persistence.AccountPersistenceAdapter;
-import dev.iamrat.auth.account.infrastructure.persistence.AccountRepository;
 import dev.iamrat.auth.oauth.application.OAuth2AccountService;
 import dev.iamrat.auth.security.infrastructure.principal.CustomOAuth2User;
 import dev.iamrat.auth.token.application.RefreshTokenStore;
@@ -47,7 +45,6 @@ import org.springframework.transaction.annotation.Transactional;
 @ActiveProfiles("test")
 @Transactional(propagation = Propagation.NOT_SUPPORTED)
 @Import({
-    AccountPersistenceAdapter.class,
     AccountCommandService.class,
     OAuth2AccountService.class,
     CustomOAuth2UserServiceTransactionTest.Config.class
@@ -104,9 +101,9 @@ class CustomOAuth2UserServiceTransactionTest {
 
         // 다른 요청이 첫 조회와 가입 사이에 같은 계정을 만든 순간을 고정한다: 첫 조회만 계정이 없다고 본다.
         @Bean
-        AccountQueryService accountQueryService(AccountStore accountStore) {
+        AccountQueryService accountQueryService(AccountRepository accountRepository) {
             AtomicBoolean firstLookup = new AtomicBoolean(true);
-            return new AccountQueryService(accountStore) {
+            return new AccountQueryService(accountRepository) {
                 @Override
                 public Optional<Account> findByProviderAndProviderId(String provider, String providerId) {
                     return firstLookup.getAndSet(false) ? Optional.empty() : super.findByProviderAndProviderId(provider, providerId);

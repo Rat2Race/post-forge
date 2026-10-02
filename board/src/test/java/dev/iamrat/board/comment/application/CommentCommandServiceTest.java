@@ -1,5 +1,6 @@
 package dev.iamrat.board.comment.application;
 
+import dev.iamrat.board.comment.domain.CommentRepository;
 import dev.iamrat.board.comment.domain.Comment;
 import dev.iamrat.board.post.application.PostReader;
 import dev.iamrat.board.post.domain.Post;
@@ -26,7 +27,7 @@ import static org.mockito.Mockito.verify;
 class CommentCommandServiceTest {
 
     @Mock
-    private CommentStore commentStore;
+    private CommentRepository commentRepository;
 
     @Mock
     private CommentReader commentReader;
@@ -42,7 +43,7 @@ class CommentCommandServiceTest {
     @BeforeEach
     void setUp() {
         commentCommandService = new CommentCommandService(
-            commentStore,
+            commentRepository,
             commentReader,
             postReader,
             accountProfileReader
@@ -70,7 +71,7 @@ class CommentCommandServiceTest {
         );
 
         ArgumentCaptor<Comment> commentCaptor = ArgumentCaptor.forClass(Comment.class);
-        verify(commentStore).save(commentCaptor.capture());
+        verify(commentRepository).save(commentCaptor.capture());
         assertThat(commentCaptor.getValue().getNickname()).isEqualTo("댓글러");
         assertThat(response.nickname()).isEqualTo("댓글러");
     }
@@ -99,7 +100,7 @@ class CommentCommandServiceTest {
         commentCommandService.saveComment(1L, 5L, "답글 본문", 2L);
 
         ArgumentCaptor<Comment> commentCaptor = ArgumentCaptor.forClass(Comment.class);
-        verify(commentStore).save(commentCaptor.capture());
+        verify(commentRepository).save(commentCaptor.capture());
         Comment saved = commentCaptor.getValue();
         assertThat(saved.getParent()).isEqualTo(parent);
         assertThat(parent.getReplies()).contains(saved);
@@ -137,6 +138,6 @@ class CommentCommandServiceTest {
             .isInstanceOf(CustomException.class)
             .extracting(ex -> ((CustomException) ex).getErrorCode())
             .isEqualTo(BoardErrorCode.INVALID_COMMENT_PARENT);
-        verify(commentStore, never()).save(any(Comment.class));
+        verify(commentRepository, never()).save(any(Comment.class));
     }
 }

@@ -1,5 +1,6 @@
 package dev.iamrat.auth.account.application;
 
+import dev.iamrat.auth.account.domain.AccountRepository;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
@@ -30,7 +31,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 class AccountCommandServiceTest {
 
     @Mock
-    private AccountStore accountStore;
+    private AccountRepository accountRepository;
 
     @Mock
     private AccountQueryService accountQueryService;
@@ -46,7 +47,7 @@ class AccountCommandServiceTest {
     @BeforeEach
     void setUp() {
         accountCommandService = new AccountCommandService(
-            accountStore,
+            accountRepository,
             accountQueryService,
             passwordEncoder,
             refreshTokenStore
@@ -57,12 +58,12 @@ class AccountCommandServiceTest {
     @DisplayName("일반 계정은 LOCAL 제공자와 인코딩된 비밀번호로 생성한다")
     void createGeneralAccount_setsLocalAccountFields() {
         given(passwordEncoder.encode("Test1234!")).willReturn("encoded-password");
-        given(accountStore.saveAndFlush(any(Account.class))).willAnswer(invocation -> invocation.getArgument(0));
+        given(accountRepository.saveAndFlush(any(Account.class))).willAnswer(invocation -> invocation.getArgument(0));
 
         Account result = accountCommandService.createGeneralAccount("testuser1", "Test1234!", " Test@Example.COM ", "길동이");
 
         ArgumentCaptor<Account> accountCaptor = ArgumentCaptor.forClass(Account.class);
-        verify(accountStore).saveAndFlush(accountCaptor.capture());
+        verify(accountRepository).saveAndFlush(accountCaptor.capture());
         Account saved = accountCaptor.getValue();
 
         assertThat(result).isSameAs(saved);
@@ -79,12 +80,12 @@ class AccountCommandServiceTest {
     @Test
     @DisplayName("OAuth 계정은 제공자 식별자와 비밀번호 없음으로 생성한다")
     void createOAuthAccount_setsOAuthAccountFields() {
-        given(accountStore.saveAndFlush(any(Account.class))).willAnswer(invocation -> invocation.getArgument(0));
+        given(accountRepository.saveAndFlush(any(Account.class))).willAnswer(invocation -> invocation.getArgument(0));
 
         Account result = accountCommandService.createOAuthAccount("GOOGLE", "google-user-123", " Test@Gmail.COM ", "oauthUser");
 
         ArgumentCaptor<Account> accountCaptor = ArgumentCaptor.forClass(Account.class);
-        verify(accountStore).saveAndFlush(accountCaptor.capture());
+        verify(accountRepository).saveAndFlush(accountCaptor.capture());
         verify(passwordEncoder, never()).encode(any());
 
         Account saved = accountCaptor.getValue();
@@ -120,7 +121,7 @@ class AccountCommandServiceTest {
         Account account = account(AccountStatus.ACTIVE, "LOCAL", "encoded-password");
 
         given(accountQueryService.findWithRolesById(1L)).willReturn(Optional.of(account));
-        given(accountStore.existsByNickname("newNick")).willReturn(true);
+        given(accountRepository.existsByNickname("newNick")).willReturn(true);
 
         assertThatThrownBy(() -> accountCommandService.updateNickname(1L, "newNick"))
             .isInstanceOf(CustomException.class)
@@ -128,7 +129,7 @@ class AccountCommandServiceTest {
                 .isEqualTo(AuthErrorCode.DUPLICATE_NICKNAME));
 
         assertThat(account.getNickname()).isEqualTo("tester");
-        verify(accountStore, never()).flush();
+        verify(accountRepository, never()).flush();
     }
 
     @Test
@@ -208,7 +209,7 @@ class AccountCommandServiceTest {
         accountCommandService.grantAdminRole(1L, 2L);
 
         assertThat(target.getRoles()).containsExactlyInAnyOrder(AccountRole.USER, AccountRole.ADMIN);
-        verify(accountStore).flush();
+        verify(accountRepository).flush();
     }
 
     @Test

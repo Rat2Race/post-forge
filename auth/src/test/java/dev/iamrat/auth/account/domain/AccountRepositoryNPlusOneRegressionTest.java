@@ -1,9 +1,7 @@
-package dev.iamrat.auth.account.infrastructure.persistence;
+package dev.iamrat.auth.account.domain;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import dev.iamrat.auth.account.domain.Account;
-import dev.iamrat.auth.account.domain.AccountRole;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
 import java.util.Optional;

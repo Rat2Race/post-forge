@@ -1,9 +1,8 @@
-package dev.iamrat.auth.account.infrastructure.persistence;
+package dev.iamrat.auth.account.domain;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-import dev.iamrat.auth.account.domain.Account;
 import jakarta.persistence.OptimisticLockException;
 import java.util.Optional;
 import org.junit.jupiter.api.DisplayName;

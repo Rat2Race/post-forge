@@ -7,7 +7,6 @@ import dev.iamrat.auth.account.domain.AccountStatus;
 import dev.iamrat.auth.account.domain.AccountRole;
 import dev.iamrat.auth.account.application.AccountQueryService;
 import dev.iamrat.auth.security.infrastructure.principal.AuthenticatedAccount;
-import dev.iamrat.auth.token.application.TokenIssueResult;
 import dev.iamrat.core.account.UserPrincipal;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;

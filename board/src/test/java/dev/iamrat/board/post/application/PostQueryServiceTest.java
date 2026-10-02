@@ -1,5 +1,6 @@
 package dev.iamrat.board.post.application;
 
+import dev.iamrat.board.post.domain.PostRepository;
 import dev.iamrat.board.comment.application.CommentQueryService;
 import dev.iamrat.board.like.application.LikeResult;
 import dev.iamrat.board.like.application.PostLikeService;
@@ -26,7 +27,7 @@ import java.util.Set;
 class PostQueryServiceTest {
 
     @Mock
-    private PostStore postStore;
+    private PostRepository postRepository;
 
     @Mock
     private PostReader postReader;
@@ -78,7 +79,7 @@ class PostQueryServiceTest {
             .accountId(1L)
             .nickname("writer")
             .build();
-        given(postStore.findByKeyword(null, Pageable.unpaged())).willReturn(new PageImpl<>(List.of(post)));
+        given(postRepository.findByKeyword(null, Pageable.unpaged())).willReturn(new PageImpl<>(List.of(post)));
         given(postLikeService.getLikedPostIds(List.of(3L), null)).willReturn(Set.of());
         given(viewCountService.getViewCounts(List.of(3L))).willReturn(Map.of(3L, 5L));
         given(postLikeService.getLikeCounts(List.of(3L))).willReturn(Map.of(3L, 0L));
@@ -94,10 +95,10 @@ class PostQueryServiceTest {
     @DisplayName("게시글 목록 조회는 앞뒤 공백을 지운 검색어를 store에 넘긴다")
     void getPosts_trimsKeywordBeforeDelegating() {
         Pageable pageable = Pageable.unpaged();
-        given(postStore.findByKeyword("격리 수준", pageable)).willReturn(new PageImpl<>(List.of()));
+        given(postRepository.findByKeyword("격리 수준", pageable)).willReturn(new PageImpl<>(List.of()));
 
         postQueryService.getPosts("  격리 수준  ", pageable, null);
 
-        verify(postStore).findByKeyword("격리 수준", pageable);
+        verify(postRepository).findByKeyword("격리 수준", pageable);
     }
 }
