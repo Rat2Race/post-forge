@@ -359,27 +359,31 @@ function actRecall(s){
       <button class="btn primary" id="saveRecall">기록하기</button>
       <div id="recallResult"></div>
     </div></section>`;
-  $('#compare').onclick = async () => {
-    const text = $('#recallText').value;
+  // 응답을 기다리는 사이 다른 탭으로 가면 #act가 새 화면으로 바뀐다. 이 화면의 노드를 잡아 두고, 아직 붙어 있을 때만 고친다.
+  const compareBtn = $('#compare'), area = $('#recallText'), kp = $('#kp'), saveBtn = $('#saveRecall'), resultEl = $('#recallResult');
+  compareBtn.onclick = async () => {
+    const text = area.value;
     if (!text.trim()) { toast('먼저 기억나는 것을 적어 주세요'); return; }
-    $('#compare').disabled = true;
+    compareBtn.disabled = true;
     let mentioned = [];
     try { mentioned = (await post(`/api/study/sources/${s.id}/recalls/suggestions`, { text })).mentionedIndexes; } catch(e){}
-    el.querySelectorAll('.keypoints input').forEach(c => {
+    if (!compareBtn.isConnected) return;
+    kp.querySelectorAll('.keypoints input').forEach(c => {
       c.checked = mentioned.includes(+c.value);
       if (c.checked) c.closest('label').insertAdjacentHTML('beforeend', '<span class="badge cat">언급한 것 같아요</span>');
     });
-    $('#kp').hidden = false; $('#compare').hidden = true; $('#recallText').readOnly = true;
+    kp.hidden = false; compareBtn.hidden = true; area.readOnly = true;
   };
-  $('#saveRecall').onclick = async () => {
-    const btn = $('#saveRecall');
+  saveBtn.onclick = async () => {
+    const btn = saveBtn;
     if (btn.disabled) return;
     btn.disabled = true;
-    const recalledIndexes = [...el.querySelectorAll('.keypoints input:checked')].map(c => +c.value);
+    const recalledIndexes = [...kp.querySelectorAll('.keypoints input:checked')].map(c => +c.value);
     try {
-      const r = await post(`/api/study/sources/${s.id}/recalls`, { text: $('#recallText').value, recalledIndexes });
+      const r = await post(`/api/study/sources/${s.id}/recalls`, { text: area.value, recalledIndexes });
+      if (!btn.isConnected) return;
       btn.hidden = true;
-      $('#recallResult').innerHTML = `<p><b>${r.total}개 중 ${r.recalled}개</b>를 떠올렸어요.</p>` + (r.missed.length
+      resultEl.innerHTML = `<p><b>${r.total}개 중 ${r.recalled}개</b>를 떠올렸어요.</p>` + (r.missed.length
         ? `<div class="label">다시 볼 것</div><ul>${r.missed.map(m => `<li>${esc(m)}</li>`).join('')}</ul>`
         : '<p>전부 떠올렸어요.</p>')
         + (r.nextRecallAt ? `<p class="muted">다음 빈 페이지 정리 ${dt(r.nextRecallAt)}</p>` : '');
@@ -393,17 +397,19 @@ function actTeach(s){
     <textarea id="explain" rows="9" placeholder="설명…"></textarea>
     <div class="row" style="margin-top:.6rem"><button class="btn primary" id="ask">설명하기</button></div>
     <div id="studentQs"></div></section>`;
-  $('#ask').onclick = async () => {
-    if (!$('#explain').value.trim()) { toast('설명을 적어 주세요'); return; }
-    $('#ask').disabled = true;
-    $('#studentQs').innerHTML = '<div class="loading">학생이 설명을 듣고 생각하는 중…</div>';
+  const askBtn = $('#ask'), explain = $('#explain'), box = $('#studentQs');
+  askBtn.onclick = async () => {
+    if (!explain.value.trim()) { toast('설명을 적어 주세요'); return; }
+    askBtn.disabled = true;
+    box.innerHTML = '<div class="loading">학생이 설명을 듣고 생각하는 중…</div>';
     try {
-      const r = await post(`/api/study/sources/${s.id}/teachings`, { explanation: $('#explain').value });
-      $('#studentQs').innerHTML = `<div class="label" style="margin-top:1rem">AI 학생의 질문</div>`
+      const r = await post(`/api/study/sources/${s.id}/teachings`, { explanation: explain.value });
+      if (!askBtn.isConnected) return;
+      box.innerHTML = `<div class="label" style="margin-top:1rem">AI 학생의 질문</div>`
         + r.questions.map(q => `<div class="student"><b>Q</b>${esc(q)}</div>`).join('')
         + '<p class="muted">바로 답할 수 있는지 스스로 확인해 보세요. 막히는 곳이 다시 볼 곳입니다.</p>';
-    } catch(e){ $('#studentQs').innerHTML = ''; toast(e.message); }
-    $('#ask').disabled = false;
+    } catch(e){ box.innerHTML = ''; toast(e.message); }
+    askBtn.disabled = false;
   };
 }
 function actMake(s){
