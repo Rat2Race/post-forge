@@ -18,7 +18,14 @@ public final class ReviewScheduler {
         Duration.ofDays(14),
         Duration.ofDays(30)
     );
-    private static final int TOP_BOX = INTERVALS.size() - 1;
+    // 빈 페이지는 몇 분짜리 글쓰기라 10분 단계가 없다.
+    private static final List<Duration> RECALL_INTERVALS = List.of(
+        Duration.ofDays(1),
+        Duration.ofDays(3),
+        Duration.ofDays(7),
+        Duration.ofDays(14),
+        Duration.ofDays(30)
+    );
 
     public record Next(int box, LocalDateTime dueAt) {
     }
@@ -27,11 +34,24 @@ public final class ReviewScheduler {
     }
 
     public static Next next(int box, ReviewGrade grade, LocalDateTime now) {
+        return step(INTERVALS, box, grade, now);
+    }
+
+    public static Next nextRecall(int box, ReviewGrade grade, LocalDateTime now) {
+        return step(RECALL_INTERVALS, box, grade, now);
+    }
+
+    public static LocalDateTime firstRecallAt(LocalDateTime now) {
+        return now.plus(RECALL_INTERVALS.get(0));
+    }
+
+    private static Next step(List<Duration> intervals, int box, ReviewGrade grade, LocalDateTime now) {
+        int top = intervals.size() - 1;
         int nextBox = switch (grade) {
             case AGAIN -> 0;
-            case HARD -> box;
-            case GOOD -> Math.min(box + 1, TOP_BOX);
+            case HARD -> Math.min(box, top);
+            case GOOD -> Math.min(box + 1, top);
         };
-        return new Next(nextBox, now.plus(INTERVALS.get(nextBox)));
+        return new Next(nextBox, now.plus(intervals.get(nextBox)));
     }
 }

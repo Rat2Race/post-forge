@@ -335,8 +335,8 @@ Google News source가 비활성이면 두 news endpoint 호출은 현재 `500 IN
 | `POST /api/study/sources/{sourceId}/recalls` | USER | body `RecallRequest` — 빈 페이지에 쓴 글과 사용자가 직접 체크한 핵심 항목 번호 | `200 RecallResult` | 없는 항목 번호 `400 INVALID_KEY_POINT`; `404 SOURCE_NOT_FOUND` |
 | `POST /api/study/sources/{sourceId}/recalls/suggestions` | USER | body `SuggestRequest` — 빈 페이지에 쓴 글 | `200 SuggestResponse`; '언급한 것 같아요' 후보 번호. 기록하지 않고 LLM을 쓰지 않는다 | `400 VALIDATION_ERROR`; `404 SOURCE_NOT_FOUND` |
 | `POST /api/study/sources/{sourceId}/teachings` | USER | body `TeachRequest` — 자료를 설명한 글 | `200 TeachResponse`; LLM이 실패하면 설명에 빠진 핵심 항목을 되묻는 질문으로 대체 | `404 SOURCE_NOT_FOUND` |
-| `GET /api/study/today` | USER | 없음 | `200 List<DueQuestion>`; 복습 시각이 지난 내 문제 최대 20개, 오래된 순 | 인증 `401/403` |
-| `POST /api/study/questions/{questionId}/reviews` | USER | body `ReviewRequest` — 내 답과 자가 평가 | `200 ReviewResult`; 다음 상자와 복습 시각 | 아직 복습 시각 전(중복 제출 포함) `409 NOT_DUE_YET`; 동시 제출의 패자 `409 CONCURRENT_MODIFICATION`; `404 QUESTION_NOT_FOUND` |
+| `GET /api/study/today` | USER | 없음 | `200 Today`; 오늘 할 빈 페이지 정리와 문제를 섞은 최대 20개와 남은 수(아래 규칙) | 인증 `401/403` |
+| `POST /api/study/questions/{questionId}/reviews` | USER | body `ReviewRequest` — 내 답과 자가 평가 | `200 ReviewResult`; 다음 상자와 복습 시각 | 아직 예정 전(중복 제출 포함, 아래 규칙) `409 NOT_DUE_YET`; 동시 제출의 패자 `409 CONCURRENT_MODIFICATION`; `404 QUESTION_NOT_FOUND` |
 | `GET /api/study/records` | USER | 없음 | `200 List<RecordView>` 최신순 50개 | 인증 `401/403` |
 
 ### 요청 DTO와 파라미터 이유
@@ -362,9 +362,10 @@ Google News source가 비활성이면 두 news endpoint 호출은 현재 `500 IN
 | `SourceSummary` | `id`, `title`, `questionStatus`, `createdAt` |
 | `SourceDetail` | `id`, `title`, `content`, `questionStatus`, `draftedQuestionCount`(LLM이 낸 문제 초안 수), `discardedQuestionCount`(근거 검증·길이 검사에서 버린 LLM 문제 수), `keyPoints`, `questions`, `emptyReason`(문제가 0개일 때 이유와 자료를 고치는 방법, 그 밖에는 null), `createdAt` |
 | `QuestionView` | `id`, `question`, `evidence`, `origin`, `box`, `dueAt` |
-| `DueQuestion` | `id`, `sourceId`, `sourceTitle`, `question`, `evidence`, `box` |
+| `Today` | `items`(`TodayItem` 목록), `remaining`(상한 때문에 빠진 수) |
+| `TodayItem` | `type`(`QUESTION`·`RECALL`), `id`(문제 id, 빈 페이지면 자료 id), `sourceId`, `sourceTitle`, `question`·`evidence`(빈 페이지면 null), `box`(빈 페이지면 빈 페이지 상자) |
 | `ReviewResult` | `box`, `dueAt` |
-| `RecallResult` | `recalled`, `total`, `missed` |
+| `RecallResult` | `recalled`, `total`, `missed`, `nextRecallAt`(이 자료의 다음 빈 페이지 예정 시각) |
 | `TeachResponse` | `questions` |
 | `SuggestResponse` | `mentionedIndexes` — `SourceDetail.keyPoints` 번호 |
 | `RecordView` | `id`, `kind`, `sourceId`, `sourceTitle`, `prompt`, `userText`, `result`, `reviewBox`(복습 기록일 때 복습 직전 상자, 그 밖에는 null), `createdAt` |
@@ -375,6 +376,9 @@ Google News source가 비활성이면 두 news endpoint 호출은 현재 `500 IN
 | --- | --- |
 | 문제 생성 | 자료 저장을 커밋한 뒤 메모리 실행기에서 LLM을 부른다. LLM 문제 중 근거가 자료에 그대로 없는 것은 버리고 수를 남긴다. 하나도 남지 않으면 마크다운 제목·목록(없으면 문단 첫 문장)으로 규칙 문제를 만든다. 규칙 문제도 문제 500자·근거 1000자 상한과 근거 검증을 똑같이 거친다. 재시작하면 진행 중이던 생성은 사라지고 `GENERATING`에 머문다 |
 | 간격 반복 | 라이트너 상자 0~5, 간격 10분·1일·3일·7일·14일·30일. `GOOD`은 한 칸 위, `HARD`는 제자리, `AGAIN`은 0칸 |
+| 예정 판단 | 첫 칸(10분)은 예정 시각이 지나야 하고, 하루 이상 간격은 예정일이 되면 그날 내내 오늘 할 것에 나오고 채점된다(Asia/Seoul 날짜) |
+| 빈 페이지 일정 | 자료마다 따로 간격 반복한다. 올린 다음 날 처음 예정되고, 간격은 1일·3일·7일·14일·30일(10분 단계 없음). 예정된 빈 페이지에서 체크한 핵심 항목이 80% 이상이면 한 칸 위, 50% 이상이면 제자리, 그 아래면 첫 칸. 예정 전에 한 정리는 기록만 남고 일정은 그대로다 |
+| 오늘 할 것 섞기 | 빈 페이지는 하루 3개까지, 예정이 이른 자료부터 넣고 같은 자료의 문제보다 먼저 둔다(문제를 먼저 풀면 단서가 생겨 자유 회상이 오염된다). 빈 페이지 묶음과 나머지 문제를 가장 이른 예정 시각 순으로 놓고 전체 20개로 자른다 |
 | 중복·동시 제출 | 복습 시각 전 문제는 받지 않는다. 동시에 들어온 두 제출은 `@Version`으로 한 번만 반영하고, 기록도 하나만 남는다 |
 | 빈 페이지 제안 | 핵심 항목마다 두 글자 조각의 절반 이상이 글에 나오면 '언급한 것 같아요' 후보로 낸다. 화면은 후보를 미리 체크해 보여 주고, 기록되는 것은 사용자가 최종 체크한 번호다 |
 | 가르치기 | LLM 호출은 트랜잭션 밖에서 한다. 학생 질문은 최대 3개이며 판정·정답 제시는 하지 않는다. 기록에는 질문을 2000자까지만 남긴다 |

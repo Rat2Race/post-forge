@@ -4,6 +4,7 @@ import dev.iamrat.core.global.exception.CustomException;
 import dev.iamrat.core.study.StudyAssistant;
 import dev.iamrat.study.domain.GapFinder;
 import dev.iamrat.study.domain.KeyPointExtractor;
+import dev.iamrat.study.domain.RecallGrade;
 import dev.iamrat.study.domain.ReviewGrade;
 import dev.iamrat.study.domain.StudyQuestion;
 import dev.iamrat.study.domain.StudyQuestionRepository;
@@ -11,10 +12,12 @@ import dev.iamrat.study.domain.StudyRecord;
 import dev.iamrat.study.domain.StudyRecordRepository;
 import dev.iamrat.study.domain.StudySource;
 import dev.iamrat.study.domain.StudySourceRepository;
+import dev.iamrat.study.domain.TodayPlan;
 import dev.iamrat.study.support.error.StudyErrorCode;
 import java.time.Clock;
 import java.time.LocalDateTime;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -29,16 +32,23 @@ import org.springframework.transaction.annotation.Transactional;
 public class StudyPracticeService {
 
     private static final int STUDENT_QUESTION_LIMIT = 3;
+    private static final int TODAY_LIMIT = 20;
+    // 빈 페이지는 몇 분짜리 글쓰기라 하루에 세 개까지만 섞는다.
+    private static final int RECALL_LIMIT = 3;
     // study_records.result 컬럼 길이
     private static final int RESULT_MAX = 2000;
 
-    public record DueQuestion(Long id, Long sourceId, String sourceTitle, String question, String evidence, int box) {
+    public record TodayItem(String type, Long id, Long sourceId, String sourceTitle, String question, String evidence,
+                            int box) {
+    }
+
+    public record Today(List<TodayItem> items, int remaining) {
     }
 
     public record ReviewResult(int box, LocalDateTime dueAt) {
     }
 
-    public record RecallResult(int recalled, int total, List<String> missed) {
+    public record RecallResult(int recalled, int total, List<String> missed, LocalDateTime nextRecallAt) {
     }
 
     public record RecordView(
@@ -61,16 +71,41 @@ public class StudyPracticeService {
     private final Clock clock;
 
     @Transactional(readOnly = true)
-    public List<DueQuestion> today(Long ownerAccountId) {
-        List<StudyQuestion> due = questionRepository
-            .findTop20ByOwnerAccountIdAndDueAtLessThanEqualOrderByDueAtAscIdAsc(ownerAccountId, now());
+    public Today today(Long ownerAccountId) {
+        LocalDateTime now = now();
+        LocalDateTime tomorrow = now.toLocalDate().plusDays(1).atStartOfDay();
+        Map<Long, StudyQuestion> questions = questionRepository
+            .findTop200ByOwnerAccountIdAndDueAtLessThanOrderByDueAtAscIdAsc(ownerAccountId, tomorrow).stream()
+            .filter(question -> question.isDue(now))
+            .collect(Collectors.toMap(StudyQuestion::getId, question -> question, (a, b) -> a, LinkedHashMap::new));
+        Map<Long, StudySource> recallSources = sourceRepository
+            .findByOwnerAccountIdAndRecallDueAtLessThanOrderByRecallDueAtAscIdAsc(ownerAccountId, tomorrow).stream()
+            .collect(Collectors.toMap(StudySource::getId, source -> source, (a, b) -> a, LinkedHashMap::new));
+
+        TodayPlan.Plan plan = TodayPlan.of(
+            questions.values().stream()
+                .map(q -> new TodayPlan.Due(TodayPlan.Kind.QUESTION, q.getId(), q.getSourceId(), q.getDueAt()))
+                .toList(),
+            recallSources.values().stream()
+                .map(s -> new TodayPlan.Due(TodayPlan.Kind.RECALL, s.getId(), s.getId(), s.getRecallDueAt()))
+                .toList(),
+            TODAY_LIMIT, RECALL_LIMIT);
+
         Map<Long, String> titles = sourceRepository
-            .findAllById(due.stream().map(StudyQuestion::getSourceId).distinct().toList()).stream()
+            .findAllById(plan.items().stream().map(TodayPlan.Due::sourceId).distinct().toList()).stream()
             .collect(Collectors.toMap(StudySource::getId, StudySource::getTitle));
-        return due.stream()
-            .map(question -> new DueQuestion(question.getId(), question.getSourceId(),
-                titles.get(question.getSourceId()), question.getQuestion(), question.getEvidence(), question.getBox()))
+        List<TodayItem> items = plan.items().stream()
+            .map(due -> due.kind() == TodayPlan.Kind.RECALL
+                ? new TodayItem("RECALL", due.id(), due.sourceId(), titles.get(due.sourceId()), null, null,
+                    recallSources.get(due.id()).getRecallBox())
+                : toItem(questions.get(due.id()), titles.get(due.sourceId())))
             .toList();
+        return new Today(items, plan.remaining());
+    }
+
+    private static TodayItem toItem(StudyQuestion question, String sourceTitle) {
+        return new TodayItem("QUESTION", question.getId(), question.getSourceId(), sourceTitle, question.getQuestion(),
+            question.getEvidence(), question.getBox());
     }
 
     @Transactional
@@ -98,8 +133,10 @@ public class StudyPracticeService {
             .filter(index -> !recalled.contains(index))
             .mapToObj(keyPoints::get)
             .toList();
-        recordRepository.save(StudyRecord.recall(source, text, recalled.size() + "/" + keyPoints.size(), now()));
-        return new RecallResult(recalled.size(), keyPoints.size(), missed);
+        LocalDateTime now = now();
+        source.recalled(RecallGrade.of(recalled.size(), keyPoints.size()), now);
+        recordRepository.save(StudyRecord.recall(source, text, recalled.size() + "/" + keyPoints.size(), now));
+        return new RecallResult(recalled.size(), keyPoints.size(), missed, source.getRecallDueAt());
     }
 
     /** 빈 페이지 글에서 언급한 것 같은 핵심 항목 번호를 제안한다. LLM을 쓰지 않고 기록도 남기지 않는다. */

@@ -8,6 +8,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import jakarta.persistence.Version;
 import java.time.LocalDateTime;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -45,6 +46,18 @@ public class StudySource {
     @Column(nullable = false)
     private int discardedQuestionCount;
 
+    // 자료마다 빈 페이지 정리를 따로 간격 반복한다.
+    @Column(nullable = false)
+    private int recallBox;
+
+    @Column(nullable = false)
+    private LocalDateTime recallDueAt;
+
+    // 문제 생성 완료와 빈 페이지 일정 갱신이 겹쳐도 한쪽 변경이 덮이지 않게 한다.
+    @Version
+    @Column(nullable = false)
+    private Long version;
+
     @Column(nullable = false)
     private LocalDateTime createdAt;
 
@@ -54,8 +67,25 @@ public class StudySource {
         source.title = title;
         source.content = content;
         source.questionStatus = QuestionStatus.GENERATING;
+        source.recallBox = 0;
+        source.recallDueAt = ReviewScheduler.firstRecallAt(now);
         source.createdAt = now;
         return source;
+    }
+
+    /** 하루 이상 간격이라 예정일이 되면 그날 내내 할 수 있다. */
+    public boolean isRecallDue(LocalDateTime now) {
+        return !recallDueAt.toLocalDate().isAfter(now.toLocalDate());
+    }
+
+    /** 예정된 빈 페이지일 때만 일정을 옮긴다. 예정 전에 한 정리는 기록만 남는다. */
+    public void recalled(ReviewGrade grade, LocalDateTime now) {
+        if (!isRecallDue(now)) {
+            return;
+        }
+        ReviewScheduler.Next next = ReviewScheduler.nextRecall(recallBox, grade, now);
+        this.recallBox = next.box();
+        this.recallDueAt = next.dueAt();
     }
 
     public void questionsReady(int draftedQuestionCount, int discardedQuestionCount) {
