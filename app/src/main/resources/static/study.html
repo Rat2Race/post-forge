@@ -121,16 +121,12 @@ dialog form{display:flex;flex-direction:column;gap:.6rem}
 </dialog>
 <div id="toast" role="status"></div>
 
+<script src="/auth.js"></script>
 <script>
 'use strict';
 const KIND = { ANSWER:'답하기', RECALL:'빈 페이지 정리', TEACH:'가르치기', QUESTION:'문제 만들기', FOLLOW_UP:'꼬리질문' };
 const GRADE = { AGAIN:'몰랐음', HARD:'애매함', GOOD:'알았음' };
 const ORIGIN = { LLM:'AI 출제', RULE:'핵심 항목', USER:'내가 만듦' };
-const token  = () => localStorage.getItem('pf.token');
-const meName = () => localStorage.getItem('pf.name');
-// 로그인마다 새로 정하고 로그아웃 때 지우는 세션 표식. 재발급은 같은 세션 안의 일이라 바꾸지 않는다.
-// 요청을 보낼 때의 표식과 지금 표식이 다르면 다른 로그인이 끼어든 것이다. 탭끼리 localStorage를 함께 쓰므로 다른 탭의 로그인도 잡는다.
-const session = () => localStorage.getItem('pf.session');
 
 /* ---------- 유틸 ---------- */
 const $ = (s,el=document)=>el.querySelector(s);
@@ -146,56 +142,13 @@ function later(iso){
 let toastT;
 function toast(msg){ const t=$('#toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(toastT); toastT=setTimeout(()=>t.classList.remove('show'),2600); }
 
-// access token이 만료되면 refresh cookie(경로 /api/auth)로 한 번 재발급받아 같은 요청을 다시 보낸다.
-// 같은 세션의 401은 재발급 하나를 기다린다. refresh token이 회전하므로 따로 재발급하면 늦은 쪽은 이미 바뀐 토큰을 내밀어 거절된다.
-let reissuing = null;
-function reissue(sess){
-  if (reissuing?.sess !== sess) {
-    const p = fetch('/api/auth/token/reissue', { method: 'POST' })
-      .then(res => res.ok ? res.json() : null)
-      // 기다리는 사이 로그아웃하거나 다른 계정으로 로그인했으면 늦게 온 이전 세션의 토큰을 버린다.
-      .then(b => { if (b?.accessToken && session() === sess) localStorage.setItem('pf.token', b.accessToken); })
-      .catch(() => {})
-      .finally(() => { if (reissuing?.p === p) reissuing = null; });
-    reissuing = { sess, p };
-  }
-  return reissuing.p;
-}
-async function api(path, opt={}, retried=false){
-  const headers = { ...(opt.headers||{}) };
-  const sent = token(), sess = session();
-  if (opt.body) headers['Content-Type'] = 'application/json';
-  if (sent) headers['Authorization'] = 'Bearer ' + sent;
-  const res = await fetch(path, { ...opt, headers });
-  if (res.status === 401 && sent) {
-    // 이전 세션의 요청을 새 계정의 토큰으로 다시 보내면 남의 계정에 쓰게 된다. 다시 보내지도, 새 세션의 토큰을 지우지도 않는다.
-    if (session() !== sess) throw new Error('로그인이 바뀌어 이전 요청을 보내지 않았어요');
-    if (!retried) {
-      if (token() === sent) await reissue(sess);
-      // 이 요청이나 다른 요청·다른 탭이 새 토큰을 받았으면 그 토큰으로 다시 보낸다.
-      if (session() === sess && token() !== sent) return api(path, opt, true);
-    }
-    if (session() === sess && token() === sent) { localStorage.removeItem('pf.token'); renderAuth(); }
-  }
-  if (!res.ok) {
-    let msg = res.status + ' 오류';
-    try { const b = await res.json(); msg = b.message || msg; } catch(e){}
-    throw new Error(msg);
-  }
-  return res.status === 204 ? null : res.json();
-}
-const post = (path, body) => api(path, { method:'POST', body: JSON.stringify(body) });
 
 /* ---------- 인증 ---------- */
 function renderAuth(){
   const el = $('#authbox');
   if (token()) {
     el.innerHTML = `<span class="me">${esc(meName()||'회원')}님</span><button class="btn" id="logoutBtn">로그아웃</button>`;
-    // 서버의 refresh token도 지운다. 재발급을 쓰므로 남겨 두면 로그아웃 뒤에도 세션이 살아난다.
-    $('#logoutBtn').onclick = async ()=>{
-      await api('/api/auth/logout', { method:'POST' }).catch(() => {});
-      ['pf.token', 'pf.name', 'pf.session'].forEach(k => localStorage.removeItem(k)); renderAuth(); route();
-    };
+    $('#logoutBtn').onclick = () => logout();
   } else {
     el.innerHTML = `<button class="btn primary" id="loginBtn">로그인</button>`;
     $('#loginBtn').onclick = ()=>loginDlg.showModal();
@@ -204,13 +157,12 @@ function renderAuth(){
 $('#loginForm').addEventListener('submit', async e=>{
   e.preventDefault();
   try {
-    const r = await post('/api/auth/login', { username:$('#loginU').value, password:$('#loginP').value });
-    localStorage.setItem('pf.session', Date.now().toString(36) + Math.random().toString(36).slice(2));
-    localStorage.setItem('pf.token', r.accessToken);
-    localStorage.setItem('pf.name', $('#loginU').value);
-    loginDlg.close(); renderAuth(); route(); toast('로그인되었습니다');
+    await login($('#loginU').value, $('#loginP').value);
+    loginDlg.close(); toast('로그인되었습니다');
   } catch(err){ toast(err.message); }
 });
+// 로그인·로그아웃이나 만료로 인증이 바뀌면 다시 그린다(auth.js).
+window.addEventListener('pf-auth', () => { renderAuth(); route(); });
 
 /* ---------- 라우팅 ---------- */
 function route(){
