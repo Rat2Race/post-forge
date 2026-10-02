@@ -28,6 +28,16 @@ class RuleQuestionGeneratorTest {
     }
 
     @Test
+    @DisplayName("문제(500자)나 근거(1000자) 칸에 들어가지 않는 긴 항목으로는 문제를 만들지 않는다")
+    void skipsKeyPointsTooLongForQuestionOrEvidenceColumns() {
+        String longItem = "가".repeat(600);
+        String content = "- " + longItem + "\n- 커밋된 데이터만 읽는다\n";
+
+        assertThat(RuleQuestionGenerator.generate(content, 10))
+            .containsExactly(new QuestionDraft("'커밋된 데이터만 읽는다'에 대해 설명해 보세요.", "커밋된 데이터만 읽는다"));
+    }
+
+    @Test
     @DisplayName("규칙으로 만든 질문의 근거는 언제나 원문 검증을 통과한다")
     void evidenceAlwaysPassesVerification() {
         assertThat(RuleQuestionGenerator.generate(CONTENT, 10))

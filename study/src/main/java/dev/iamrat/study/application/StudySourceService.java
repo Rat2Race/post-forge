@@ -138,7 +138,7 @@ public class StudySourceService {
     }
 
     // 길이 상한은 study_questions 컬럼 길이와 같다.
-    private static boolean isUsable(String content, QuestionDraft draft) {
+    static boolean isUsable(String content, QuestionDraft draft) {
         return draft.question() != null && !draft.question().isBlank() && draft.question().length() <= 500
             && draft.evidence() != null && draft.evidence().length() <= 1000
             && EvidenceVerifier.isQuoted(content, draft.evidence());

@@ -223,6 +223,29 @@ class StudyFlowTest {
     }
 
     @Test
+    @DisplayName("AI 학생 질문이 길어도 가르치기 기록은 저장된다")
+    void teachingRecordFitsColumnEvenWithLongStudentQuestions() {
+        assistant.studentQuestions = List.of("가".repeat(900), "나".repeat(900), "다".repeat(900));
+        Long sourceId = sources.create(me, "격리 수준", CONTENT);
+
+        practice.teach(me, sourceId, "설명");
+
+        assertThat(practice.records(me))
+            .singleElement()
+            .satisfies(record -> assertThat(record.result()).hasSizeLessThanOrEqualTo(2000));
+    }
+
+    @Test
+    @DisplayName("빈 페이지 체크 번호에 null이 섞이면 잘못된 항목으로 거절한다")
+    void recallRejectsNullIndex() {
+        Long sourceId = sources.create(me, "격리 수준", CONTENT);
+
+        assertThatThrownBy(() -> practice.recall(me, sourceId, "글", java.util.Arrays.asList(0, null)))
+            .extracting(e -> ((CustomException) e).getErrorCode())
+            .isEqualTo(StudyErrorCode.INVALID_KEY_POINT);
+    }
+
+    @Test
     @DisplayName("AI 학생이 답하지 못하면 설명에 빠진 핵심 항목을 되묻는다")
     void teachingFallsBackToGapQuestions() {
         Long sourceId = sources.create(me, "격리 수준", CONTENT);
