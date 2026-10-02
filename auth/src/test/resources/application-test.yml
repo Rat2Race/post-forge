@@ -3,19 +3,10 @@ spring:
   datasource:
     url: jdbc:tc:pgvector:0.8.2-pg18-trixie:///postforge
   flyway:
-    locations: filesystem:../app/src/main/resources/db/migration,classpath:db/testdata
+    locations: filesystem:../app/src/main/resources/db/migration
   jpa:
     hibernate:
       ddl-auto: validate
   test:
     database:
       replace: none
-  data:
-    redis:
-      host: localhost
-      port: 6379
-
-
-logging:
-  level:
-    org.springframework.web: DEBUG
