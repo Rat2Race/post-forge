@@ -15,6 +15,8 @@ public interface StudySourceRepository extends JpaRepository<StudySource, Long> 
 
     List<StudySource> findByOwnerAccountIdOrderByIdDesc(Long ownerAccountId);
 
+    List<StudySource> findByQuestionStatus(StudySource.QuestionStatus questionStatus);
+
     List<StudySource> findByOwnerAccountIdAndRecallDueAtLessThanOrderByRecallDueAtAscIdAsc(
         Long ownerAccountId, LocalDateTime before);
 
