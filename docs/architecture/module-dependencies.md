@@ -39,7 +39,7 @@ modular monolith 선택 근거는 [ADR-003](../decisions/adr-003-modular-monolit
 |------|------|
 | 여러 모듈이 컴파일할 때 알아야 하는 계약인가? | `core` |
 | Spring 실행 시 공통으로 등록할 bean/config/advice인가? | `support` |
-| 특정 기능의 비즈니스 규칙이나 구현인가? | `auth`, `board`, `source`, `ingest`, `ai` |
+| 특정 기능의 비즈니스 규칙이나 구현인가? | `auth`, `board`, `source`, `ingest`, `ai`, `study` |
 | 여러 기능 모듈을 최종 실행 형태로 조립하는가? | `app` |
 | 특정 외부 시스템을 실제로 사용하는가? | 그 기능을 소유한 모듈의 adapter |
 | 로컬 운영·테스트만을 위한 도구인가? | 별도 모듈 또는 외부 스크립트 |
