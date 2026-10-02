@@ -125,7 +125,8 @@ public class StudySourceService {
         String content = source.getContent();
         List<QuestionDraft> drafts = studyAssistant.draftQuestions(content, QUESTION_LIMIT);
         List<QuestionDraft> verified = drafts.stream().filter(draft -> isUsable(content, draft)).toList();
-        int discarded = drafts.size() - verified.size();
+        // 버린 수는 근거 실패만 센다. 근거는 맞는데 문제가 길어 못 쓴 초안까지 세면 근거 검증 통과율(ADR-008 게이트)이 낮게 잡힌다.
+        int discarded = (int) drafts.stream().filter(draft -> !EvidenceVerifier.isQuoted(content, draft.evidence())).count();
         Origin origin = verified.isEmpty() ? Origin.RULE : Origin.LLM;
         List<QuestionDraft> chosen = verified.isEmpty()
             ? RuleQuestionGenerator.generate(content, QUESTION_LIMIT)
