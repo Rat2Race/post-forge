@@ -345,7 +345,7 @@ Google News source가 비활성이면 두 news endpoint 호출은 현재 `500 IN
 | `SourceRequest.title` | 필수, 100자 이하 | 목록과 기록에 표시 |
 | `SourceRequest.content` | 필수, 20000자 이하 | 문제·핵심 항목·근거 검증의 원문. LLM에는 앞 4000자만 보낸다 |
 | `QuestionRequest.question` | 필수, 500자 이하 | 문제를 직접 만드는 활동(생성 효과) |
-| `QuestionRequest.evidence` | 필수, 1000자 이하, 공백(줄바꿈 없는 공백·전각 공백 포함)과 한글 조합형(NFC/NFD) 차이를 빼고 자료에 그대로 있어야 함 | 어디서 온 문제든 근거가 자료에 있어야 복습 목록에 들어간다 |
+| `QuestionRequest.evidence` | 필수, 1000자 이하, 공백을 정리한 뒤 8자 이상, 공백(줄바꿈 없는 공백·전각 공백 포함)과 한글 조합형(NFC/NFD) 차이를 빼고 자료에 그대로 있어야 함. 8자 미만은 자료 어디에나 걸려 근거가 되지 못하므로 `400 EVIDENCE_NOT_IN_SOURCE` | 어디서 온 문제든 근거가 자료에 있어야 복습 목록에 들어간다 |
 | `ReviewRequest.answer` | 10000자 이하, 선택 | 근거를 보기 전에 쓴 내 답을 기록 |
 | `ReviewRequest.grade` | 필수, `AGAIN`·`HARD`·`GOOD` | 시스템이 아니라 학습자가 판단한다 |
 | `RecallRequest.text` | 필수, 10000자 이하 | 빈 페이지에 떠올린 내용 |

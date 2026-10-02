@@ -221,7 +221,12 @@ function showCard(){
     try {
       const r = await post(`/api/study/questions/${q.id}/reviews`, { answer: $('#answer').value, grade: b.dataset.g });
       toast(`${GRADE[b.dataset.g]} · 다음 복습 ${later(r.dueAt)}`);
-    } catch(e){ toast(e.message); }
+    } catch(e){
+      // 실패하면 쓴 답을 지우지 않고 그대로 다시 고를 수 있게 둔다.
+      toast(e.message);
+      app.querySelectorAll('[data-g]').forEach(x => x.disabled = false);
+      return;
+    }
     queue.shift(); showCard();
   });
 }
