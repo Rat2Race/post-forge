@@ -31,7 +31,7 @@ PostForge의 현재 제품 정의는 다음과 같다.
 3. LLM이 통과한 뉴스의 글 초안을 만들고 `posts.category=PRODUCT_LAUNCH_NEWS`로 자동 게시한다. 개별 뉴스 게시글의 원문 출처는 `post_reference_links`에 함께 저장한다.
 4. 매일 06:00(Asia/Seoul)에 전날 게시된 `PRODUCT_LAUNCH_NEWS`의 제목·요약을 분야별로 종합해 `posts.category=DAILY_DIGEST`로 자동 게시한다.
 
-기본 실행 시각은 `ingest.news.digest.cron`의 `0 0 6 * * *`이며 스케줄 시간대는 `Asia/Seoul`이다. 수동·backfill 경로와 정확한 API 계약은 [API 명세의 자동 게시 스케줄](../api/README.md#자동-게시-스케줄)을 따른다.
+기본 실행 시각은 `ingest.news.digest.cron`의 `0 0 6 * * *`이며 스케줄 시간대는 `Asia/Seoul`이다. 수동·backfill 경로와 API 계약은 2026-10-02 뉴스 기능과 함께 지웠다. 당시 계약은 커밋 30ba8a3e 이전 API 명세의 Ingest 절에 있다.
 
 `LaunchNewsEligibilityPolicy`의 광고성 표현 필터(특가·쿠폰·할인·최저가·공동구매)는 가격 기능이 아니다. 광고성 기사를 정보 게시물에서 제외하기 위한 현재 수집 정책이므로 유지한다.
 

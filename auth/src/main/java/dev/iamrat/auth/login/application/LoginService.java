@@ -34,10 +34,11 @@ public class LoginService {
         }
 
         loginAttemptGuard.clearFailure(username);
-        log.info("사용자 로그인: {}", authentication.getName());
-        
+
         CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
-        
+        log.info("사용자 로그인: accountId={}", userDetails.accountId());
+
+
         return tokenService.createToken(userDetails.accountId(), authentication.getAuthorities());
     }
     

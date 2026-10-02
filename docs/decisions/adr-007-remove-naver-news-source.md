@@ -1,10 +1,10 @@
 # ADR-007 Naver 뉴스 수집원 제거
 
-상태: **Accepted** (2026-09-30). ADR-005의 "뉴스를 수집해 LLM으로 가공한 초안을 자동 게시"하는 현재 구현을 중단한다. 후속 수집원은 별도 ADR로 정한다.
+상태: **Accepted** (2026-09-30). 2026-10-02 [ADR-008](./adr-008-switch-to-learning-platform.md)로 뉴스 기능이 끝나 Naver 수집원 제거·Flyway 리셋만 유효하다(아래 변경 기록). ADR-005의 "뉴스를 수집해 LLM으로 가공한 초안을 자동 게시"하는 현재 구현을 중단한다. 후속 수집원은 별도 ADR로 정한다.
 
 ## 변경 기록
 
-- **2026-10-02**: 후속 결정은 [ADR-008](./adr-008-switch-to-learning-platform.md)이다. 다른 뉴스 수집원은 찾지 않는다. Google News RSS는 피드 고지(개인 피드 리더 외 사용 금지)와 robots.txt(`/rss/` 봇 불허)를 다시 확인해 배포 소스에서 뺀다.
+- **2026-10-02**: 후속 결정은 [ADR-008](./adr-008-switch-to-learning-platform.md)이다. 다른 뉴스 수집원은 찾지 않는다. Google News RSS는 피드 고지(개인 피드 리더 외 사용 금지)와 robots.txt(`/rss/` 봇 불허)를 다시 확인해 배포 소스에서 뺀다. 이 ADR이 남겨 둔 뉴스 계약과 수집·게시 흐름, Google News RSS 수집원(`source` 모듈), `PostReferenceProvider`, `BoardCategory`를 지웠다. Naver 수집원 제거, Flyway 리셋, 네이버 OAuth 로그인 유지는 지금도 유효하다.
 
 ## 배경
 

@@ -28,7 +28,7 @@ modular monolith 선택 근거는 [ADR-003](../decisions/adr-003-modular-monolit
 - `study` → `ai`
 - `core` → 다른 프로젝트 모듈
 
-모듈 안에서는 `domain`이 `presentation`·`infrastructure`에, `application`이 `presentation`에 의존하지 않는다. 예외는 없다. 응답으로 그대로 나가는 조회 결과(`PostDetail`, `CommentDetail`, study의 `SourceDetail` 등)는 `application` record로 두고 컨트롤러가 그대로 반환한다. 필드가 같은 Response를 하나 더 만들어 옮겨 담지 않는다.
+모듈 안에서는 `domain`이 `presentation`·`infrastructure`에, `application`이 `presentation`에 의존하지 않는다. 예외는 없다. 응답으로 그대로 나가는 조회 결과(`PostDetail`, `CommentDetail`, study의 `SourceDetail` 등)는 `application` record로 두고 컨트롤러가 그대로 반환한다. 필드가 같은 Response를 하나 더 만들어 옮겨 담지 않는다. 예외는 모듈 간 계약이다. `core`의 record를 HTTP 응답으로 그대로 내보내지 않아, 계약을 바꿀 때 API가 함께 바뀌지 않게 한다. 그래서 board의 `ProfileResponse`는 `core`의 `AccountProfileDetails`와 필드가 같아도 따로 둔다.
 
 JPA 저장소(Spring Data repository)는 `domain`에 두고 `application` 서비스가 직접 쓴다. 저장소를 1:1로 감싸기만 하는 Store 인터페이스와 어댑터는 만들지 않는다. Store 인터페이스(`application`)와 구현(`infrastructure`)을 나누는 경우는 둘이다: Redis처럼 JPA가 아닌 저장소를 감쌀 때, 그리고 구현이 값을 채울 때다(좋아요의 네이티브 `INSERT … ON CONFLICT`가 감사 열의 시각·작성자를 넣는 `PostLikeStore`·`CommentLikeStore`).
 
@@ -68,7 +68,7 @@ JPA 저장소(Spring Data repository)는 `domain`에 두고 `application` 서비
 | `core` | 공통 DTO·예외·principal/API metadata와 모듈 간 port 계약 |
 | `support` | Redis guard primitive, JPA auditing, request logging, MVC 예외 응답 |
 | `auth` | 계정, 로그인, JWT, OAuth2, 이메일 인증, 인증/인가 오류 응답 |
-| `board` | 게시글, 댓글, 좋아요, 조회수 |
+| `board` | 게시글, 댓글, 좋아요, 조회수, 내 프로필 API(`/api/user/profile`, 조회·변경은 `core`의 `AccountProfileManager`로 `auth`에 맡김) |
 | `ai` | 학습 문제 초안·AI 학생 질문·꼬리질문, LLM 설정 |
 | `study` | 사용자 자료, 근거가 검증된 복습 문제, 간격 반복, 빈 페이지 정리, 가르치기, 학습 기록 |
 
@@ -106,7 +106,7 @@ JPA 저장소(Spring Data repository)는 `domain`에 두고 `application` 서비
 
 | 경계 | 규칙 |
 |------|------|
-| `board` ↔ 인증 | `board`는 `auth` 구현 대신 `core`의 principal 계약만 참조한다. 상세 인증 경계는 [Authentication Architecture](./authentication.md)에 둔다. |
+| `board` ↔ 인증 | `board`는 `auth` 구현 대신 `core` 계약만 참조한다. 로그인 사용자는 `UserPrincipal`로 받고, 작성자 닉네임은 `AccountProfileReader`로 읽고, 내 프로필 조회와 닉네임·비밀번호 변경은 `AccountProfileManager`에 맡긴다. 두 port는 `auth`가 구현한다. 상세 인증 경계는 [Authentication Architecture](./authentication.md)에 둔다. |
 | `study` ↔ AI | `study`는 `ai` 대신 `core`의 `StudyAssistant` port를 사용한다. LLM 출력의 근거 검증과 대체 경로는 `study`가 결정적으로 맡는다. |
 | `app` ↔ 실행 정책 | route/security/OpenAPI와 전체 runtime 조립만 담당한다. |
 
