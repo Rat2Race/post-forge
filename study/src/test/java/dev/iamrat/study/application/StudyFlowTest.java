@@ -14,6 +14,7 @@ import dev.iamrat.study.domain.ReviewGrade;
 import dev.iamrat.study.domain.StudySource;
 import dev.iamrat.study.domain.StudySourceRepository;
 import dev.iamrat.study.support.error.StudyErrorCode;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -432,6 +433,67 @@ class StudyFlowTest {
     }
 
     @Test
+    @DisplayName("꼬리질문 초안이 앞 문제를 되풀이하면(공백 차이 무시) 버리고 규칙 문제로 대신한다")
+    void followUpDiscardsRepeatOfParentQuestion() {
+        assistant.drafts = List.of(new QuestionDraft("무엇을 읽나요?", "커밋된 데이터만 읽는다"));
+        sources.create(me, "격리 수준", CONTENT);
+        Long parentId = practice.today(me).items().get(0).id();
+        assistant.followUps = List.of(new QuestionDraft(" 무엇을  읽나요? ", "커밋된 데이터만 읽는다"));
+
+        StudyAiService.FollowUp followUp = ai.followUp(me, parentId);
+
+        assertThat(followUp.origin()).isEqualTo("RULE");
+        assertThat(followUp.question()).isNotEqualTo("무엇을 읽나요?");
+    }
+
+    @Test
+    @DisplayName("규칙 꼬리질문을 다시 앞 문제로 삼아도 같은 문장을 되풀이하지 않고, 더 만들 문장이 없으면 409로 알린다")
+    void ruleFollowUpsNeverRepeatAlongTheChain() {
+        assistant.drafts = List.of(new QuestionDraft("무엇을 읽나요?", "커밋된 데이터만 읽는다"));
+        sources.create(me, "격리 수준", CONTENT);
+        Long parentId = practice.today(me).items().get(0).id();
+
+        StudyAiService.FollowUp first = ai.followUp(me, parentId);
+        StudyAiService.FollowUp second = ai.followUp(me, first.id());
+
+        assertThat(first.origin()).isEqualTo("RULE");
+        assertThat(second.origin()).isEqualTo("RULE");
+        assertThat(second.question()).isNotEqualTo(first.question());
+        assertThatThrownBy(() -> ai.followUp(me, second.id()))
+            .extracting(e -> ((CustomException) e).getErrorCode())
+            .isEqualTo(StudyErrorCode.NO_NEW_FOLLOW_UP);
+    }
+
+    @Test
+    @DisplayName("규칙 꼬리질문은 긴 근거를 줄일 때 이모지(서로게이트 쌍)를 반으로 자르지 않는다")
+    void ruleFollowUpKeepsSurrogatePairsWhenQuotingLongEvidence() {
+        String evidence = "가".repeat(99) + "😀" + "나";
+        assistant.drafts = List.of(new QuestionDraft("이모지 문제", evidence));
+        sources.create(me, "이모지", "# 이모지\n- " + evidence + "\n");
+        Long parentId = practice.today(me).items().get(0).id();
+
+        String question = ai.followUp(me, parentId).question();
+
+        assertThat(question).isEqualTo(new String(question.getBytes(StandardCharsets.UTF_8), StandardCharsets.UTF_8));
+    }
+
+    @Test
+    @DisplayName("꼬리질문 초안도 자료의 LLM 초안 수와 근거 실패 수에 더해 게이트 통과율에 들어간다")
+    void followUpDraftsCountTowardEvidencePassRate() {
+        assistant.drafts = List.of(new QuestionDraft("무엇을 읽나요?", "커밋된 데이터만 읽는다"));
+        Long sourceId = sources.create(me, "격리 수준", CONTENT);
+        Long parentId = practice.today(me).items().get(0).id();
+        assistant.followUps = List.of(new QuestionDraft("지어낸 꼬리질문", "자료에 없는 문장입니다"));
+
+        ai.followUp(me, parentId);
+
+        SourceDetail detail = sources.get(me, sourceId);
+        assertThat(detail.draftedQuestionCount()).isEqualTo(2);
+        assertThat(detail.discardedQuestionCount()).isEqualTo(1);
+        assertThat(stats.of(me).evidencePass()).isEqualTo(new StudyStatsService.Rate(1, 2));
+    }
+
+    @Test
     @DisplayName("꼬리질문은 남의 문제에 만들 수 없다")
     void followUpRejectsOthersQuestion() {
         sources.create(me, "격리 수준", CONTENT);
@@ -470,7 +532,7 @@ class StudyFlowTest {
         assertThat(result.unknown()).isEqualTo(new StudyStatsService.Rate(0, 2));
         assertThat(result.retentionOneDay()).isEqualTo(new StudyStatsService.Rate(1, 1));
         assertThat(result.retentionSevenDay()).isEqualTo(new StudyStatsService.Rate(0, 0));
-        assertThat(result.evidencePass()).isEqualTo(new StudyStatsService.Rate(1, 2));
+        assertThat(result.evidencePass()).isEqualTo(new StudyStatsService.Rate(2, 3));
     }
 
     @Test

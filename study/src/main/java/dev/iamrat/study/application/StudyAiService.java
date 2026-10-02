@@ -17,6 +17,8 @@ import dev.iamrat.study.support.error.StudyErrorCode;
 import java.time.Clock;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -36,6 +38,10 @@ public class StudyAiService {
     private static final int CONTEXT_RADIUS = 1500;
     // 규칙 꼬리질문에 옮겨 적는 근거 길이. 문제 칸(500자)에 들어가게 줄인다.
     private static final int EXAMPLE_QUOTE_MAX = 100;
+    // 앞 근거로 묻는 규칙 꼬리질문. 같은 근거로 꼬리를 물면 다음 문장을 쓴다.
+    private static final List<String> RULE_FOLLOW_UPS = List.of(
+        "'%s' 부분을 예를 들어 설명해 보세요.",
+        "'%s' 부분은 왜 그런지 설명해 보세요.");
 
     public record FollowUp(Long id, String question, String evidence, String origin) {
     }
@@ -61,7 +67,8 @@ public class StudyAiService {
 
     /**
      * 앞 문제를 한 단계 더 파고드는 문제를 하나 만들어 바로 복습 목록에 올린다. LLM은 한 번만 부른다.
-     * 근거가 자료에 그대로 없으면 버리고, 앞 문제의 근거로 예를 묻는 규칙 문제로 대신한다.
+     * 근거가 자료에 그대로 없거나 같은 자료에 이미 있는 문제면 버리고, 앞 문제의 근거로 묻는 규칙 문제로 대신한다.
+     * 규칙 문장까지 모두 있으면 만들지 않고 409로 알린다.
      * 사용자의 답은 보내지 않는다. LLM이 채점할 거리를 주지 않는다.
      */
     public FollowUp followUp(Long ownerAccountId, Long questionId) {
@@ -69,20 +76,34 @@ public class StudyAiService {
             .orElseThrow(() -> new CustomException(StudyErrorCode.QUESTION_NOT_FOUND));
         StudySource source = sourceRepository.getOwned(parent.getSourceId(), ownerAccountId);
         String content = source.getContent();
-        QuestionDraft drafted = studyAssistant
-            .draftFollowUps(around(content, parent.getEvidence()), parent.getQuestion(), parent.getEvidence(), 1).stream()
+        List<QuestionDraft> drafts = studyAssistant
+            .draftFollowUps(around(content, parent.getEvidence()), parent.getQuestion(), parent.getEvidence(), 1);
+        // 버린 수는 근거 실패만 센다. 문제 생성과 같은 기준이라야 게이트 통과율(ADR-008)에 함께 더할 수 있다.
+        int discarded = (int) drafts.stream().filter(draft -> !EvidenceVerifier.isQuoted(content, draft.evidence())).count();
+        Set<String> existing = questionRepository.findBySourceIdOrderById(source.getId()).stream()
+            .map(question -> EvidenceVerifier.normalize(question.getQuestion()))
+            .collect(Collectors.toSet());
+        QuestionDraft drafted = drafts.stream()
             .filter(draft -> StudySourceService.isUsable(content, draft))
+            .filter(draft -> !existing.contains(EvidenceVerifier.normalize(draft.question())))
             .findFirst()
             .orElse(null);
         Origin origin = drafted == null ? Origin.RULE : Origin.LLM;
-        QuestionDraft chosen = drafted != null ? drafted : exampleQuestion(parent.getEvidence());
+        QuestionDraft chosen = drafted != null ? drafted : ruleFollowUp(parent.getEvidence(), existing);
         LocalDateTime now = now();
         StudyQuestion created = transactionTemplate.execute(status -> {
+            sourceRepository.findById(source.getId()).orElseThrow().followUpDrafted(drafts.size(), discarded);
+            if (chosen == null) {
+                return null;
+            }
             StudyQuestion saved = questionRepository.save(
                 StudyQuestion.create(source, chosen.question(), chosen.evidence(), origin, now));
             recordRepository.save(StudyRecord.followUp(source, saved, parent, now));
             return saved;
         });
+        if (created == null) {
+            throw new CustomException(StudyErrorCode.NO_NEW_FOLLOW_UP);
+        }
         return new FollowUp(created.getId(), created.getQuestion(), created.getEvidence(), origin.name());
     }
 
@@ -98,9 +119,15 @@ public class StudyAiService {
         return text.substring(from, to);
     }
 
-    private static QuestionDraft exampleQuestion(String evidence) {
-        String quote = evidence.length() <= EXAMPLE_QUOTE_MAX ? evidence : evidence.substring(0, EXAMPLE_QUOTE_MAX) + "…";
-        return new QuestionDraft("'" + quote + "' 부분을 예를 들어 설명해 보세요.", evidence);
+    /** 같은 자료에 아직 없는 첫 규칙 문장. 모두 있으면 null이다. */
+    private static QuestionDraft ruleFollowUp(String evidence, Set<String> existing) {
+        String quote = evidence.length() <= EXAMPLE_QUOTE_MAX ? evidence : cut(evidence, EXAMPLE_QUOTE_MAX) + "…";
+        return RULE_FOLLOW_UPS.stream()
+            .map(template -> template.formatted(quote))
+            .filter(question -> !existing.contains(EvidenceVerifier.normalize(question)))
+            .findFirst()
+            .map(question -> new QuestionDraft(question, evidence))
+            .orElse(null);
     }
 
     private static List<String> gapQuestions(String content, String explanation) {
