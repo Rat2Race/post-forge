@@ -2,8 +2,6 @@ package dev.iamrat.app;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import dev.iamrat.ai.search.infrastructure.vector.PgVectorProperties;
-import dev.iamrat.ai.support.infrastructure.llm.LlmProperties;
 import dev.iamrat.core.study.StudyAssistant;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -23,16 +21,5 @@ class ApplicationContextLoadTest {
     @DisplayName("외부 호출 없이 학습 LLM 경로를 조립한다")
     void contextLoads() {
         assertThat(context.getBean(StudyAssistant.class)).isNotNull();
-    }
-
-    @Test
-    @DisplayName("임베딩 요청 차원과 vector_store 차원이 같은 값으로 묶여 provider를 바꿔도 어긋나지 않는다")
-    void embeddingDimensionsAreBoundToVectorStoreDimensions() {
-        Integer requestDimensions = context.getBean(LlmProperties.class)
-            .getEmbedding().getOptions().getDimensions();
-
-        assertThat(requestDimensions)
-            .as("app.llm.embedding.options.dimensions 바인딩이 빠지면 상용 provider가 다른 차원을 돌려준다")
-            .isEqualTo(context.getBean(PgVectorProperties.class).getDimensions());
     }
 }

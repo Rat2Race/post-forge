@@ -77,22 +77,17 @@ docs/performance/runs/YYYYMMDD-HHMMSS-<target>-<scenario>/
 - Grafana screenshot, k6 summary JSON 같은 artifact 링크
 - 다음 조치
 
-## 외부 Source / LLM 계측
+## LLM 계측
 
-LLM 처리 비용은 HTTP latency만으로 판단하지 않는다. 앱 내부 metric으로 벡터 적재, RAG 검색, LLM 생성을 분리해 남긴다. 스택 선택 근거와 대안 비교는 [ADR-006](../decisions/adr-006-observability-stack.md)에 둔다.
+LLM 처리 비용은 HTTP latency만으로 판단하지 않는다. 앱 내부 metric으로 LLM 생성 호출 시간과 토큰을 남긴다. 스택 선택 근거와 대안 비교는 [ADR-006](../decisions/adr-006-observability-stack.md)에 둔다.
 
 | Metric | 용도 |
 |---|---|
-| `ingest_documents_embeddings_stored_total` | 벡터 저장에 성공한 청크 수 |
-| `ingest_documents_embeddings_failed_total` | 벡터 저장에 실패한 청크 수 |
-| `ai_vector_search_success_total` | RAG 검색 성공 횟수 |
-| `ai_vector_search_degraded_total` | RAG 검색 실패 횟수 |
-| `external_source_db_persist_seconds` | source 결과를 DB/vector store에 반영하는 시간 |
 | `ai_text_generation_seconds` | LLM 생성 호출 시간 |
 | `ai_text_generation_prompt_tokens` | LLM input token 처리량 계산 |
 | `ai_text_generation_completion_tokens` | LLM output TPS 계산 |
 
-적재·검색·생성 지표는 같은 시간 구간에서 비교한다. 위 표는 계측 항목이며 실측 수치가 아니다. LLM을 호출하지 않는 테스트와 LLM 실호출 성능 측정을 구분한다.
+위 표는 계측 항목이며 실측 수치가 아니다. LLM을 호출하지 않는 테스트와 LLM 실호출 성능 측정을 구분한다.
 
 ## 제외할 값
 

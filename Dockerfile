@@ -7,7 +7,6 @@ COPY build.gradle settings.gradle ./
 COPY gradle ./gradle
 
 COPY ai/build.gradle ./ai/
-COPY ingest/build.gradle ./ingest/
 COPY app/build.gradle ./app/
 COPY auth/build.gradle ./auth/
 COPY board/build.gradle ./board/
@@ -19,7 +18,6 @@ RUN --mount=type=cache,target=/home/gradle/.gradle \
     gradle :app:dependencies --configuration runtimeClasspath --no-daemon
 
 COPY ai/src ./ai/src
-COPY ingest/src ./ingest/src
 COPY app/src ./app/src
 COPY auth/src ./auth/src
 COPY board/src ./board/src

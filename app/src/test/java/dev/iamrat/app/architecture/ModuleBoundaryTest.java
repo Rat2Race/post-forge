@@ -16,17 +16,15 @@ class ModuleBoundaryTest {
     private static final String BASE = "dev.iamrat";
 
     private static final List<String> MODULES = List.of(
-        "app", "core", "support", "auth", "board",
-        "ingest", "ai", "study"
+        "app", "core", "support", "auth", "board", "ai", "study"
     );
 
     private static final Map<String, Set<String>> ALLOWED_MODULE_DEPENDENCIES = Map.ofEntries(
-        Map.entry("app", Set.of("core", "support", "auth", "board", "ingest", "ai", "study")),
+        Map.entry("app", Set.of("core", "support", "auth", "board", "ai", "study")),
         Map.entry("core", Set.of()),
         Map.entry("support", Set.of("core")),
         Map.entry("auth", Set.of("core", "support")),
         Map.entry("board", Set.of("core", "support")),
-        Map.entry("ingest", Set.of("core")),
         Map.entry("ai", Set.of("core")),
         Map.entry("study", Set.of("core"))
     );

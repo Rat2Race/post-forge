@@ -114,7 +114,6 @@ hikaricp_connections_active
 hikaricp_connections_pending
 http_server_requests_seconds_count
 http_server_requests_seconds_sum
-external_source_db_persist_seconds_count
 ai_text_generation_seconds_count
 ai_text_generation_completion_tokens_sum
 ```

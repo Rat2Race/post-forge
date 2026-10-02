@@ -13,12 +13,11 @@ modular monolith 선택 근거는 [ADR-003](../decisions/adr-003-modular-monolit
 
 | 모듈 | 직접 참조할 수 있는 모듈 |
 |------|--------------------------|
-| `app` | `core`, `support`, `auth`, `board`, `ingest`, `ai`, `study` |
+| `app` | `core`, `support`, `auth`, `board`, `ai`, `study` |
 | `core` | 없음 |
 | `support` | `core` |
 | `auth` | `core`, `support` |
 | `board` | `core`, `support` |
-| `ingest` | `core` |
 | `ai` | `core` |
 | `study` | `core` |
 
@@ -26,7 +25,6 @@ modular monolith 선택 근거는 [ADR-003](../decisions/adr-003-modular-monolit
 
 - 기능 모듈 → `app`
 - `board` → `auth`
-- `ingest` → `ai`
 - `study` → `ai`
 - `core` → 다른 프로젝트 모듈
 
@@ -38,7 +36,7 @@ modular monolith 선택 근거는 [ADR-003](../decisions/adr-003-modular-monolit
 |------|------|
 | 여러 모듈이 컴파일할 때 알아야 하는 계약인가? | `core` |
 | Spring 실행 시 공통으로 등록할 bean/config/advice인가? | `support` |
-| 특정 기능의 비즈니스 규칙이나 구현인가? | `auth`, `board`, `ingest`, `ai`, `study` |
+| 특정 기능의 비즈니스 규칙이나 구현인가? | `auth`, `board`, `ai`, `study` |
 | 여러 기능 모듈을 최종 실행 형태로 조립하는가? | `app` |
 | 특정 외부 시스템을 실제로 사용하는가? | 그 기능을 소유한 모듈의 adapter |
 | 로컬 운영·테스트만을 위한 도구인가? | 별도 모듈 또는 외부 스크립트 |
@@ -54,7 +52,7 @@ modular monolith 선택 근거는 [ADR-003](../decisions/adr-003-modular-monolit
 | 들어가면 안 되는 것 | Redis/OpenAPI/S3/OpenAI/JPA 구현, feature service | 도메인 계약·규칙, feature service |
 | 참조 방식 | 기능 모듈이 컴파일 시 참조 | `app`이 조립하고 필요한 기능 모듈만 참조 |
 
-예를 들어 `StudyAssistant`와 `SourceDocumentCommand`는 모듈 간 약속이므로 `core`에 둔다. Redis TTL primitive와 MVC 예외 응답 변환은 공통 Spring 구현이므로 `support`에 둔다.
+예를 들어 `StudyAssistant`는 모듈 간 약속이므로 `core`에 둔다. Redis TTL primitive와 MVC 예외 응답 변환은 공통 Spring 구현이므로 `support`에 둔다.
 
 기능 모듈 내부의 `auth.support.error`, `board.support.error` 같은 패키지는 전역 `support` 모듈과 무관한 module-local namespace다. 다른 모듈도 알아야 하는 계약은 이 패키지에 두지 않고 `core`로 올린다.
 
@@ -67,8 +65,7 @@ modular monolith 선택 근거는 [ADR-003](../decisions/adr-003-modular-monolit
 | `support` | Redis guard primitive, JPA auditing, request logging, MVC 예외 응답 |
 | `auth` | 계정, 로그인, JWT, OAuth2, 이메일 인증, 인증/인가 오류 응답 |
 | `board` | 게시글, 댓글, 좋아요, 파일/S3, 조회수 |
-| `ingest` | 운영자 문서의 chunk·embedding 적재 |
-| `ai` | AI 채팅(RAG), 학습 문제 초안·AI 학생 질문·꼬리질문, LLM/PgVector 설정 |
+| `ai` | 학습 문제 초안·AI 학생 질문·꼬리질문, LLM 설정 |
 | `study` | 사용자 자료, 근거가 검증된 복습 문제, 간격 반복, 빈 페이지 정리, 가르치기, 학습 기록 |
 
 ## Gradle 의존성 규칙
@@ -106,11 +103,10 @@ modular monolith 선택 근거는 [ADR-003](../decisions/adr-003-modular-monolit
 | 경계 | 규칙 |
 |------|------|
 | `board` ↔ 인증 | `board`는 `auth` 구현 대신 `core`의 principal 계약만 참조한다. 상세 인증 경계는 [Authentication Architecture](./authentication.md)에 둔다. |
-| `ingest` ↔ AI | `ingest`는 `ai` 대신 `VectorStore` API를 사용한다. 실제 PgVector bean은 `ai`가 만든다. |
 | `study` ↔ AI | `study`는 `ai` 대신 `core`의 `StudyAssistant` port를 사용한다. LLM 출력의 근거 검증과 대체 경로는 `study`가 결정적으로 맡는다. |
 | `app` ↔ 실행 정책 | route/security/OpenAPI와 전체 runtime 조립만 담당한다. |
 
-세부 비즈니스 규칙은 [AI Cost Policy](../policy.md#ai-cost), [통합 API 명세의 Ingest](../api/README.md#ingest), [Use Case Data Policy](../policy.md)에 둔다. 이 문서에는 모듈 경계만 남긴다.
+세부 비즈니스 규칙은 [AI Cost Policy](../policy.md#ai-cost), [Use Case Data Policy](../policy.md)에 둔다. 이 문서에는 모듈 경계만 남긴다.
 
 ## 검증
 

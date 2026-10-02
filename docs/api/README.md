@@ -4,8 +4,6 @@
 
 제품은 사용자가 올린 자료로 학습하는 서비스다([ADR-008](../decisions/adr-008-switch-to-learning-platform.md)). 학습 API는 [Study](#study), 화면은 `/study.html`이다. 뉴스 수집·자동 게시·데일리 종합 API는 지웠다.
 
-- AI 채팅 실행 예시: [ai-chat-smoke.http](./ai-chat-smoke.http)
-
 ## 공통 계약
 
 ### 인증 표기
@@ -35,7 +33,7 @@
 | `size` | 한 페이지의 항목 수를 제한하기 위해 필요 |
 | `sort=field,direction` | 동일한 필터에서도 결과 순서를 재현하기 위해 필요. 컨트롤러 기본값이 있으면 아래 엔드포인트 표에 표기 |
 
-`PageResponse<T>`는 Board 전용이 아니라 `core`에 둔 공용 페이지 응답이다. Board·Ingest의 pageable 조회가 `content`, `page`, `size`, `totalElements`, `totalPages`, `numberOfElements`, `first`, `last`, `empty`를 같은 형태로 반환한다.
+`PageResponse<T>`는 Board 전용이 아니라 `core`에 둔 공용 페이지 응답이다. Board의 pageable 조회가 `content`, `page`, `size`, `totalElements`, `totalPages`, `numberOfElements`, `first`, `last`, `empty`를 같은 형태로 반환한다.
 
 Spring pageable resolver는 일부 잘못된 `page`/`size` 값을 `0`, 엔드포인트 기본값 또는 최대값으로 보정한다. 반면 지원하지 않는 `sort` property는 현재 repository 단계에서 `500`이 될 수 있다.
 
@@ -70,32 +68,8 @@ Spring pageable resolver는 일부 잘못된 `page`/`size` 값을 `0`, 엔드포
 | `409` | `DATA_INTEGRITY_VIOLATION`, `CONCURRENT_MODIFICATION` 또는 중복 코드 | unique 제약이나 동시 수정 충돌 |
 | `429` | `TOO_MANY_REQUESTS` | 이메일·로그인·좋아요 요청 보호 한도 초과 또는 보호 저장소 장애 시 fail-closed |
 | `500` | `INTERNAL_SERVER_ERROR` 또는 모듈별 오류 | 처리되지 않은 내부·외부 연동 오류 |
-| `503` | `EXTERNAL_SERVICE_UNAVAILABLE`, `DOCUMENT_STORE_UNAVAILABLE` | AI vector 검색 장애, 문서 vector store 장애 |
 
 각 엔드포인트의 `Fail`에는 공통 인증 실패를 반복해서 쓰지 않는다. 인증 표기가 `PUBLIC`이 아니면 `401`, 역할·소유권 조건이 있으면 `403`이 함께 적용된다.
-
-<a id="ai"></a>
-## AI
-
-### 엔드포인트
-
-| Endpoint | Auth | Parameters — 필요한 이유 | Success | Fail |
-| --- | --- | --- | --- | --- |
-| `POST /api/ai/chat` | USER | body `ChatRequest` — 질문, 안전 검사, 유사 문서 검색, LLM 입력에 사용 | `200 ChatResponse`; 안전 정책 거절은 `answer`에 담긴 정상 응답 | `400 VALIDATION_ERROR/INVALID_INPUT`; vector 검색 장애와 LLM 생성 장애 `503 EXTERNAL_SERVICE_UNAVAILABLE`; 인증 `401/403` |
-
-### 요청 DTO와 파라미터 이유
-
-| DTO.field | 제약 | 필요한 이유 |
-| --- | --- | --- |
-| `ChatRequest.message` | 필수, blank 불가 | 사용자의 질문이자 안전 검사·검색·생성의 원문 |
-
-### 응답 DTO
-
-| DTO | 필드 |
-| --- | --- |
-| `ChatResponse` | `answer` |
-
-클라이언트가 직접 호출하는 AI endpoint는 이 RAG 채팅 하나다. 별도 검색 endpoint는 없고, `ChatService`가 내부적으로 vector 유사 문서 검색을 수행한다.
 
 <a id="auth"></a>
 ## Auth
@@ -233,28 +207,6 @@ Board의 게시글·댓글 path ID는 `\d+` 경로만 매핑한다. 숫자가 �
 | `ProfileResponse` | `accountId`, `username`, `email`, `nickname`, `provider`, `isOAuthUser`, `roles`, `createdAt`, `updatedAt` |
 | `FileUploadResponse` | `fileId`, `savedName`, `url` |
 | `UrlResponse` | `url` |
-
-## Ingest
-
-### 엔드포인트
-
-| Endpoint | Auth | Parameters — 필요한 이유 | Success | Fail |
-| --- | --- | --- | --- | --- |
-| `POST /api/ingest/documents` | ADMIN | body `List<DocumentIngestRequest>` — 여러 원문을 공용 RAG 저장소에 chunk·embedding 저장. 사용자별 소유권·격리가 없어 운영자만 허용 | `200 DocumentIngestResult`; 빈 배열 금지 제약은 없고 vector store 저장 성공 시 0건 | `400 VALIDATION_ERROR/INVALID_INPUT`; 인증 `401/403`; vector store `503 DOCUMENT_STORE_UNAVAILABLE` |
-
-### 요청 DTO와 파라미터 이유
-
-| DTO.field | 제약·기본값 | 필요한 이유 |
-| --- | --- | --- |
-| `DocumentIngestRequest.content` | DTO는 필수·non-blank 선언. 현재 controller의 list element cascade 검증은 별도 보장 없음 | chunk와 embedding을 만들 원문 |
-| `DocumentIngestRequest.source` | 선택 | 각 chunk의 `source` metadata로 원문 출처 보존 |
-| `DocumentIngestRequest.metadata` | 선택, `Map<String,String>` | news URL 등 검색·추적용 부가 정보 보존. `source` key가 있으면 별도 `source` 값을 덮어씀 |
-
-### 응답 DTO
-
-| DTO | 필드 |
-| --- | --- |
-| `DocumentIngestResult` | `documentCount`, `chunkCount` |
 
 <a id="study"></a>
 ## Study

@@ -3,12 +3,9 @@ package dev.iamrat.ai.support.infrastructure.llm;
 import java.net.http.HttpClient;
 import java.time.Duration;
 import lombok.RequiredArgsConstructor;
-import org.springframework.ai.document.MetadataMode;
 import org.springframework.ai.model.NoopApiKey;
 import org.springframework.ai.openai.OpenAiChatModel;
 import org.springframework.ai.openai.OpenAiChatOptions;
-import org.springframework.ai.openai.OpenAiEmbeddingModel;
-import org.springframework.ai.openai.OpenAiEmbeddingOptions;
 import org.springframework.ai.openai.api.OpenAiApi;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -39,17 +36,6 @@ public class LlmConfig {
     }
 
     @Bean
-    @Qualifier("llmEmbeddingApi")
-    public OpenAiApi llmEmbeddingApi() {
-        return compatibleApi(
-            llmProperties.getEmbedding().getBaseUrl(),
-            llmProperties.embeddingApiKey(),
-            llmProperties.getEmbedding().getConnectTimeout(),
-            llmProperties.getEmbedding().getReadTimeout()
-        );
-    }
-
-    @Bean
     @Primary
     public OpenAiChatModel llmChatModel(@Qualifier("llmChatApi") OpenAiApi compatibleApi) {
         return OpenAiChatModel.builder()
@@ -65,15 +51,6 @@ public class LlmConfig {
             .model(options.getModel())
             .reasoningEffort(StringUtils.hasText(reasoningEffort) ? reasoningEffort : null)
             .build();
-    }
-
-    @Bean
-    public OpenAiEmbeddingModel llmEmbeddingModel(@Qualifier("llmEmbeddingApi") OpenAiApi compatibleApi) {
-        OpenAiEmbeddingOptions embeddingOptions = OpenAiEmbeddingOptions.builder()
-            .model(llmProperties.getEmbedding().getOptions().getModel())
-            .dimensions(llmProperties.getEmbedding().getOptions().getDimensions())
-            .build();
-        return new OpenAiEmbeddingModel(compatibleApi, MetadataMode.EMBED, embeddingOptions);
     }
 
     private OpenAiApi compatibleApi(String baseUrl, String apiKey, Duration connectTimeout, Duration readTimeout) {

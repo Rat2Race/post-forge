@@ -2,7 +2,6 @@ package dev.iamrat.ai.support.infrastructure.llm;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Positive;
 import java.time.Duration;
 import lombok.Getter;
 import lombok.Setter;
@@ -23,15 +22,8 @@ public class LlmProperties {
     @Valid
     private Chat chat = new Chat();
 
-    @Valid
-    private Embedding embedding = new Embedding();
-
     public String chatApiKey() {
         return firstNonBlank(chat.getApiKey(), apiKey);
-    }
-
-    public String embeddingApiKey() {
-        return firstNonBlank(embedding.getApiKey(), apiKey);
     }
 
     private String firstNonBlank(String first, String second) {
@@ -85,44 +77,5 @@ public class LlmProperties {
 
         // 비우면 보내지 않는다. 로컬 qwen3:8b는 none이면 생각 단계를 건너뛰어 같은 요청이 34s에서 13s로 준다.
         private String reasoningEffort;
-    }
-
-    @Getter
-    @Setter
-    public static class Embedding {
-
-        private static final Duration DEFAULT_CONNECT_TIMEOUT = Duration.ofSeconds(3);
-        private static final Duration DEFAULT_READ_TIMEOUT = Duration.ofSeconds(30);
-
-        @NotBlank
-        private String baseUrl;
-
-        private String apiKey = "";
-
-        private Duration connectTimeout = DEFAULT_CONNECT_TIMEOUT;
-
-        private Duration readTimeout = DEFAULT_READ_TIMEOUT;
-
-        @Valid
-        private EmbeddingOptions options = new EmbeddingOptions();
-
-        public void setConnectTimeout(Duration connectTimeout) {
-            this.connectTimeout = positiveOrDefault(connectTimeout, DEFAULT_CONNECT_TIMEOUT);
-        }
-
-        public void setReadTimeout(Duration readTimeout) {
-            this.readTimeout = positiveOrDefault(readTimeout, DEFAULT_READ_TIMEOUT);
-        }
-    }
-
-    @Getter
-    @Setter
-    public static class EmbeddingOptions {
-
-        @NotBlank
-        private String model;
-
-        @Positive
-        private Integer dimensions;
     }
 }
