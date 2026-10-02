@@ -13,7 +13,7 @@ modular monolith 선택 근거는 [ADR-003](../decisions/adr-003-modular-monolit
 
 | 모듈 | 직접 참조할 수 있는 모듈 |
 |------|--------------------------|
-| `app` | `core`, `support`, `auth`, `board`, `source`, `ingest`, `ai` |
+| `app` | `core`, `support`, `auth`, `board`, `source`, `ingest`, `ai`, `study` |
 | `core` | 없음 |
 | `support` | `core` |
 | `auth` | `core`, `support` |
@@ -21,12 +21,14 @@ modular monolith 선택 근거는 [ADR-003](../decisions/adr-003-modular-monolit
 | `source` | 없음 |
 | `ingest` | `core`, `source` |
 | `ai` | `core` |
+| `study` | `core` |
 
 이 규칙은 [ModuleBoundaryTest](../../app/src/test/java/dev/iamrat/app/architecture/ModuleBoundaryTest.java)가 검사한다. 특히 다음 역방향 의존은 만들지 않는다.
 
 - 기능 모듈 → `app`
 - `board` → `auth`
 - `ingest` → `ai`
+- `study` → `ai`
 - `core` → 다른 프로젝트 모듈
 
 ## 코드 배치 기준
@@ -37,7 +39,7 @@ modular monolith 선택 근거는 [ADR-003](../decisions/adr-003-modular-monolit
 |------|------|
 | 여러 모듈이 컴파일할 때 알아야 하는 계약인가? | `core` |
 | Spring 실행 시 공통으로 등록할 bean/config/advice인가? | `support` |
-| 특정 기능의 비즈니스 규칙이나 구현인가? | `auth`, `board`, `source`, `ingest`, `ai` |
+| 특정 기능의 비즈니스 규칙이나 구현인가? | `auth`, `board`, `source`, `ingest`, `ai`, `study` |
 | 여러 기능 모듈을 최종 실행 형태로 조립하는가? | `app` |
 | 특정 외부 시스템을 실제로 사용하는가? | 그 기능을 소유한 모듈의 adapter |
 | 로컬 운영·테스트만을 위한 도구인가? | 별도 모듈 또는 외부 스크립트 |
@@ -68,7 +70,8 @@ modular monolith 선택 근거는 [ADR-003](../decisions/adr-003-modular-monolit
 | `board` | 게시글, 댓글, 좋아요, 파일/S3, 조회수 |
 | `source` | 외부 뉴스 source adapter |
 | `ingest` | 문서 적재, 뉴스 수집·분야별 선별, tracked keyword, 뉴스 스케줄 게시, 전날 뉴스의 데일리 종합 게시 |
-| `ai` | AI 채팅(RAG), 뉴스·데일리 포스트 초안 생성, LLM/PgVector 설정 |
+| `ai` | AI 채팅(RAG), 뉴스·데일리 포스트 초안 생성, 학습 문제 초안·AI 학생 질문, LLM/PgVector 설정 |
+| `study` | 사용자 자료, 근거가 검증된 복습 문제, 간격 반복, 빈 페이지 정리, 가르치기, 학습 기록 |
 
 ## Gradle 의존성 규칙
 
@@ -107,6 +110,7 @@ modular monolith 선택 근거는 [ADR-003](../decisions/adr-003-modular-monolit
 | `board` ↔ 인증 | `board`는 `auth` 구현 대신 `core`의 principal 계약만 참조한다. 상세 인증 경계는 [Authentication Architecture](./authentication.md)에 둔다. |
 | `ingest` ↔ AI | `ingest`는 `ai` 대신 `VectorStore` API와 `core`의 초안 생성 port를 사용한다. 실제 PgVector bean은 `ai`가 만든다. |
 | `ingest` ↔ 뉴스 수집 | `source`의 `NewsSourceClient` 경계를 호출하고, 결과를 문서 적재와 출시 뉴스 게시로 넘긴다. |
+| `study` ↔ AI | `study`는 `ai` 대신 `core`의 `StudyAssistant` port를 사용한다. LLM 출력의 근거 검증과 대체 경로는 `study`가 결정적으로 맡는다. |
 | `app` ↔ 실행 정책 | route/security/OpenAPI와 전체 runtime 조립만 담당한다. |
 
 세부 비즈니스 규칙은 [AI Cost Policy](../policy.md#ai-cost), [통합 API 명세의 Ingest](../api/README.md#ingest), [Use Case Data Policy](../policy.md)에 둔다. 이 문서에는 모듈 경계만 남긴다.
