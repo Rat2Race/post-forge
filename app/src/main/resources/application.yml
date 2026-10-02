@@ -53,6 +53,9 @@ spring:
   data:
     redis:
       port: ${REDIS_PORT:6379}
+      # 지정하지 않으면 Lettuce 기본 60초를 기다린다. 장애 중 로그인·좋아요 요청이 스레드를 붙잡지 않게 짧게 끊는다.
+      timeout: 2s
+      connect-timeout: 1s
 
   jpa:
     database-platform: org.hibernate.dialect.PostgreSQLDialect
