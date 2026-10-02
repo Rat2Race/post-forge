@@ -37,8 +37,7 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
             throw oauth2AuthenticationException(AuthErrorCode.ACCOUNT_NOT_ACTIVE);
         }
         
-        log.info("OAuth2 로그인: provider={}, providerId={}, email={}, nickname={}",
-            account.getProvider(), account.getId(), account.getEmail(), account.getNickname());
+        log.info("OAuth2 로그인: provider={}, accountId={}", account.getProvider(), account.getId());
         
         return new CustomOAuth2User(
             account.getId(),

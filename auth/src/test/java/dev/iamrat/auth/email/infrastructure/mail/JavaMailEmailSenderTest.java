@@ -8,6 +8,12 @@ import jakarta.mail.internet.MimeMessage;
 import java.util.Properties;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.slf4j.LoggerFactory;
+import org.springframework.boot.test.system.CapturedOutput;
+import org.springframework.boot.test.system.OutputCaptureExtension;
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.Logger;
 import org.springframework.mail.javamail.JavaMailSender;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -15,6 +21,7 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
+@ExtendWith(OutputCaptureExtension.class)
 class JavaMailEmailSenderTest {
 
     private final JavaMailSender mailSender = mock(JavaMailSender.class);
@@ -45,6 +52,27 @@ class JavaMailEmailSenderTest {
         assertThat(recipient.getAddress()).isEqualTo("tester@example.com");
         assertThat(messageContent(message))
             .contains("https://front.example/email/verify?token=email-token");
+    }
+
+    @Test
+    @DisplayName("메일 발송 로그에는 수신자 주소와 일회용 인증 토큰을 남기지 않는다")
+    void sendVerificationEmail_doesNotLogRecipientOrToken(CapturedOutput output) {
+        EmailVerificationProperties emailVerificationProperties = new EmailVerificationProperties();
+        emailVerificationProperties.setVerificationBaseUrl("https://front.example/email/verify");
+        MailSenderProperties mailSenderProperties = new MailSenderProperties();
+        mailSenderProperties.setUsername("noreply@example.com");
+        JavaMailEmailSender emailSender = new JavaMailEmailSender(mailSender, emailVerificationProperties, mailSenderProperties);
+        given(mailSender.createMimeMessage()).willReturn(new MimeMessage(Session.getInstance(new Properties())));
+        Logger logger = (Logger) LoggerFactory.getLogger(JavaMailEmailSender.class);
+        Level previous = logger.getLevel();
+        logger.setLevel(Level.DEBUG);
+        try {
+            emailSender.sendVerificationEmail("leak@example.com", "leak-token-123");
+        } finally {
+            logger.setLevel(previous);
+        }
+
+        assertThat(output.getAll()).doesNotContain("leak@example.com").doesNotContain("leak-token-123");
     }
 
     private String messageContent(MimeMessage message) throws Exception {
