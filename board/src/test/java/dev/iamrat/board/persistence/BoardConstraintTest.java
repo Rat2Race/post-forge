@@ -6,7 +6,6 @@ import dev.iamrat.board.comment.domain.Comment;
 import dev.iamrat.board.like.domain.CommentLike;
 import dev.iamrat.board.like.domain.PostLike;
 import dev.iamrat.board.post.domain.Post;
-import dev.iamrat.board.post.domain.PostType;
 import jakarta.persistence.PersistenceException;
 import java.util.List;
 import java.util.Optional;
@@ -119,17 +118,6 @@ class BoardConstraintTest {
     }
 
     @Test
-    @DisplayName("post.summary는 500자를 초과할 수 없다")
-    void postSummaryMustNotExceed500Characters() {
-        Post post = postBuilder()
-            .summary(repeat("s", 501))
-            .build();
-
-        assertThatThrownBy(() -> entityManager.persistAndFlush(post))
-            .isInstanceOfAny(DataIntegrityViolationException.class, PersistenceException.class);
-    }
-
-    @Test
     @DisplayName("post tag는 50자를 초과할 수 없다")
     void postTagMustNotExceed50Characters() {
         Post post = postBuilder()
@@ -185,7 +173,6 @@ class BoardConstraintTest {
         return Post.builder()
             .title("title")
             .content("content")
-            .category(PostType.GENERAL)
             .accountId(1L)
             .nickname("writer");
     }

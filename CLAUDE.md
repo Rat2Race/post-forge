@@ -1,10 +1,8 @@
 # PostForge
 
-외부 뉴스를 수집·분류하고 LLM으로 초안을 작성해 스케줄에 맞춰 자동 게시하는 서비스. 매일 06:00(Asia/Seoul)에 전날 게시된 뉴스를 분야별로 종합한 데일리 포스트도 자동 게시한다. 메일 구독은 향후 계획이며 아직 구현되지 않았다.
+사용자가 올린 자료로 학습하는 서비스. 자료에서 근거 문장이 그대로 있는 복습 문제를 만들고, 간격 반복·빈 페이지 정리·가르치기·꼬리질문으로 기억을 다진다. 채점은 학습자가 하고, LLM은 버튼을 누를 때만 부른다. 전환 근거·원칙·게이트 기준은 [ADR-008](docs/decisions/adr-008-switch-to-learning-platform.md), 학습 API와 규칙은 [API 명세](docs/api/README.md#study)를 따른다.
 
-현재 자동 게시 대상은 신제품 출시뉴스다. 분야는 수집 키워드 또는 수동 요청에서 정하고, LLM은 본문·요약·태그 초안을 만든다. 스케줄과 활성화 조건은 [API 명세](docs/api/README.md#자동-게시-스케줄), 제품 범위와 메일 구독 계획은 [ADR-005](docs/decisions/adr-005-subscription-information-service.md)를 따른다.
-
-2026-10-02 [ADR-008](docs/decisions/adr-008-switch-to-learning-platform.md)로 사용자 자료 기반 학습 플랫폼 전환을 결정했다. 뉴스 코드는 뉴스 퇴역 작업 전까지 그대로 동작한다.
+뉴스 수집·자동 게시·데일리 종합과 그 시절의 초안 생성기·RAG 채팅·문서 적재·첨부파일은 ADR-008에 따라 지웠다. 게시판과 로그인은 유지한다.
 
 ## 모듈 경계
 
@@ -16,11 +14,9 @@ Gradle modular monolith. 의존성 허용 표와 새 코드 배치 기준은 [mo
 | `support` | 공통 Spring 인프라 (`@Configuration`, advice, redis/persistence helper) |
 | `app` | 조립 + 실행 |
 | `auth` | 로그인, refresh token rotation |
-| `board` | 게시글·댓글·좋아요·조회수·파일 |
-| `ai` | `chat`·`search`(RAG), `draft`(뉴스·데일리 포스트 초안 생성), `study`(학습 문제 초안·AI 학생 질문) |
-| `ingest` | `document`(pgvector 적재), `news`(뉴스 수집·선별·스케줄 게시·데일리 종합) |
-| `source` | 외부 뉴스 source adapter (Google News RSS, 실험용) |
-| `study` | 사용자 자료 학습 프로토타입: 근거가 검증된 복습 문제·간격 반복·빈 페이지 정리·가르치기·기록 (`/study.html`) |
+| `board` | 게시글·댓글·좋아요·조회수 |
+| `ai` | LLM 호출(`TextGenerationClient`, 프롬프트)과 `study`(학습 문제 초안·AI 학생 질문·꼬리질문) |
+| `study` | 사용자 자료 학습: 근거가 검증된 복습 문제·간격 반복·빈 페이지 정리·가르치기·꼬리질문·잔디·게이트 지표 (`/study.html`) |
 
 이전 제품 기능을 제거한 배경은 [ADR-004](docs/decisions/adr-004-scope-reduction.md)에 이력으로 보존한다. 새 작업의 범위는 현재 제품 정의와 실제 코드에서 판단한다.
 

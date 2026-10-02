@@ -19,13 +19,9 @@ spring:
 
 app:
   llm:
-    # 게이트웨이 없이 호스트의 Ollama 를 직접 호출한다: ollama pull qwen3:8b && ollama pull bge-m3
+    # 게이트웨이 없이 호스트의 Ollama 를 직접 호출한다: ollama pull qwen3:8b
     chat:
       base-url: ${LLM_CHAT_BASE_URL:${LLM_GATEWAY_BASE_URL:http://localhost:11434}}
       options:
         model: ${LLM_CHAT_MODEL:qwen3:8b}
         reasoning-effort: ${LLM_REASONING_EFFORT:none}   # qwen3 생각 단계를 끈다. 비우면 보내지 않는다
-    embedding:
-      base-url: ${LLM_EMBEDDING_BASE_URL:${LLM_GATEWAY_BASE_URL:http://localhost:11434}}
-      options:
-        model: ${LLM_EMBEDDING_MODEL:bge-m3}

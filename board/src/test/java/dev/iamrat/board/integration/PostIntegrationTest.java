@@ -12,9 +12,6 @@ import dev.iamrat.board.integration.security.WithMockAccount;
 import dev.iamrat.core.account.AccountProfile;
 import dev.iamrat.core.account.AccountProfileManager;
 import dev.iamrat.core.account.AccountProfileReader;
-import dev.iamrat.core.board.post.NewsSection;
-import dev.iamrat.board.post.domain.PostType;
-import dev.iamrat.core.board.post.PostPublishOrigin;
 import dev.iamrat.core.global.exception.CustomException;
 import jakarta.transaction.Transactional;
 import org.junit.jupiter.api.DisplayName;
@@ -70,8 +67,7 @@ class PostIntegrationTest {
             "테스트 제목",
             "테스트 내용입니다. 10자 이상.",
             null,
-            1L,
-            List.of()
+            1L
         );
         given(viewCountService.getViewCount(saved.id())).willReturn(0L);
         given(viewCountService.getViewCounts(anyList())).willReturn(Map.of(saved.id(), 0L));
@@ -85,14 +81,7 @@ class PostIntegrationTest {
         assertThat(detail.nickname()).isEqualTo("테스터");
 
         Pageable pageable = PageRequest.of(0, 20, Sort.by(Sort.Direction.DESC, "createdAt"));
-        Page<PostDetailResponse> posts = postQueryService.getPosts(
-            null,
-            null,
-            null,
-            null,
-            pageable,
-            1L
-        );
+        Page<PostDetailResponse> posts = postQueryService.getPosts(null, pageable, 1L);
 
         assertThat(posts.getNumber()).isZero();
         assertThat(posts.getSize()).isEqualTo(20);
@@ -103,34 +92,25 @@ class PostIntegrationTest {
 
     @Test
     @WithMockAccount
-    @DisplayName("분야 카테고리 필터는 해당 분야의 게시글만 반환한다")
+    @DisplayName("검색어 필터는 제목이나 본문에 검색어가 있는 게시글만 반환한다")
     @Transactional
-    void getPosts_filtersByBoardCategory() {
-        Long digitalPostId = postStore.save(Post.create(
-            "디지털 신제품", "디지털 신제품 소식입니다.", null, null,
-            PostType.GENERAL, NewsSection.TECHNOLOGY, PostPublishOrigin.USER, 1L, "테스터"
+    void getPosts_filtersByKeyword() {
+        Long matchingPostId = postStore.save(Post.create(
+            "격리 수준 정리", "READ COMMITTED와 REPEATABLE READ", null, 1L, "테스터"
         )).getId();
-        Long livingPostId = postStore.save(Post.create(
-            "리빙 신제품", "리빙 신제품 소식입니다.", null, null,
-            PostType.GENERAL, NewsSection.NATION, PostPublishOrigin.USER, 1L, "테스터"
+        Long otherPostId = postStore.save(Post.create(
+            "인덱스 정리", "B-tree 인덱스", null, 1L, "테스터"
         )).getId();
         given(viewCountService.getViewCounts(anyList()))
-            .willReturn(Map.of(digitalPostId, 0L, livingPostId, 0L));
+            .willReturn(Map.of(matchingPostId, 0L, otherPostId, 0L));
 
         Pageable pageable = PageRequest.of(0, 20, Sort.by(Sort.Direction.DESC, "createdAt"));
-        Page<PostDetailResponse> posts = postQueryService.getPosts(
-            null,
-            null,
-            NewsSection.TECHNOLOGY,
-            null,
-            pageable,
-            1L
-        );
+        Page<PostDetailResponse> posts = postQueryService.getPosts("격리", pageable, 1L);
 
         assertThat(posts.getContent())
             .extracting(PostDetailResponse::id)
-            .containsExactly(digitalPostId)
-            .doesNotContain(livingPostId);
+            .containsExactly(matchingPostId)
+            .doesNotContain(otherPostId);
     }
 
     @Test
@@ -143,8 +123,7 @@ class PostIntegrationTest {
             "수정 전 제목",
             "수정 전 게시글 내용입니다.",
             null,
-            1L,
-            List.of()
+            1L
         );
         given(viewCountService.getViewCount(saved.id())).willReturn(0L);
 
@@ -152,8 +131,7 @@ class PostIntegrationTest {
             saved.id(),
             "수정 후 제목",
             "수정 후 게시글 내용입니다.",
-            null,
-            List.of()
+            null
         );
         PostDetailResponse detail = postQueryService.getPost(saved.id(), 1L);
 
@@ -173,8 +151,7 @@ class PostIntegrationTest {
             "삭제 대상 제목",
             "삭제 대상 게시글 내용입니다.",
             null,
-            1L,
-            List.of()
+            1L
         );
 
         postCommandService.deletePost(saved.id());

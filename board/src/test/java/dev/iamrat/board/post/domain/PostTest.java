@@ -1,7 +1,5 @@
 package dev.iamrat.board.post.domain;
 
-import dev.iamrat.core.board.post.NewsSection;
-import dev.iamrat.core.board.post.PostPublishOrigin;
 import java.util.List;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -17,160 +15,32 @@ class PostTest {
 
         assertThat(post.getTitle()).isEqualTo("title");
         assertThat(post.getContent()).isEqualTo("content");
-        assertThat(post.getCategory()).isEqualTo(PostType.GENERAL);
-        assertThat(post.getPublishOrigin()).isEqualTo(PostPublishOrigin.USER);
         assertThat(post.getAccountId()).isEqualTo(1L);
         assertThat(post.getNickname()).isEqualTo("writer");
         assertThat(post.getTags()).isEmpty();
     }
 
     @Test
-    @DisplayName("게시글 생성 시 태그를 복사하고 명시한 카테고리를 사용한다")
-    void create_copiesTagsAndUsesExplicitCategory() {
-        List<String> tags = List.of("ai", "news");
+    @DisplayName("게시글 생성 시 태그를 복사한다")
+    void create_copiesTags() {
+        List<String> tags = List.of("db", "isolation");
 
-        Post post = Post.create(
-            "AI title",
-            "AI content",
-            "AI summary",
-            tags,
-            PostType.DAILY_DIGEST,
-            null,
-            "AI 분석가"
-        );
+        Post post = Post.create("title", "content", tags, 1L, "writer");
 
-        assertThat(post.getTitle()).isEqualTo("AI title");
-        assertThat(post.getSummary()).isEqualTo("AI summary");
-        assertThat(post.getTags()).containsExactly("ai", "news");
+        assertThat(post.getTags()).containsExactly("db", "isolation");
         assertThat(post.getTags()).isNotSameAs(tags);
-        assertThat(post.getCategory()).isEqualTo(PostType.DAILY_DIGEST);
-        assertThat(post.getPublishOrigin()).isEqualTo(PostPublishOrigin.USER);
-        assertThat(post.getAccountId()).isNull();
-        assertThat(post.getNickname()).isEqualTo("AI 분석가");
     }
 
     @Test
-    @DisplayName("카테고리가 null이면 일반 카테고리를 기본값으로 사용한다")
-    void create_nullCategoryDefaultsToGeneral() {
-        Post post = Post.create("title", "content", null, null, null, 1L, "writer");
-
-        assertThat(post.getCategory()).isEqualTo(PostType.GENERAL);
-        assertThat(post.getPublishOrigin()).isEqualTo(PostPublishOrigin.USER);
-        assertThat(post.getTags()).isEmpty();
-    }
-
-    @Test
-    @DisplayName("출시 뉴스 게시글은 명시한 발행 출처를 사용한다")
-    void create_usesExplicitPublishOriginForLaunchNews() {
-        Post post = Post.create(
-            "launch title",
-            "launch content",
-            "launch summary",
-            List.of("launch"),
-            PostType.PRODUCT_LAUNCH_NEWS,
-            PostPublishOrigin.SYSTEM_BATCH,
-            null,
-            "system"
-        );
-
-        assertThat(post.getCategory()).isEqualTo(PostType.PRODUCT_LAUNCH_NEWS);
-        assertThat(post.getPublishOrigin()).isEqualTo(PostPublishOrigin.SYSTEM_BATCH);
-    }
-
-    @Test
-    @DisplayName("게시글 수정은 제목·내용·태그만 바꾸고 요약과 카테고리는 유지한다")
-    void update_changesTitleContentTagsOnly() {
-        Post post = Post.create(
-            "old title",
-            "old content",
-            "summary",
-            List.of("old"),
-            PostType.GENERAL,
-            1L,
-            "writer"
-        );
+    @DisplayName("게시글 수정은 제목·내용·태그를 바꾼다")
+    void update_changesTitleContentTags() {
+        Post post = Post.create("old title", "old content", List.of("old"), 1L, "writer");
 
         post.update("new title", "new content", List.of("new"));
 
         assertThat(post.getTitle()).isEqualTo("new title");
         assertThat(post.getContent()).isEqualTo("new content");
         assertThat(post.getTags()).containsExactly("new");
-        assertThat(post.getSummary()).isEqualTo("summary");
-        assertThat(post.getCategory()).isEqualTo(PostType.GENERAL);
-    }
-
-    @Test
-    @DisplayName("출시 뉴스 게시글을 수정해도 카테고리가 유지된다")
-    void update_preservesLaunchNewsCategory() {
-        Post post = Post.create(
-            "launch title",
-            "launch content",
-            "launch summary",
-            List.of("launch"),
-            PostType.PRODUCT_LAUNCH_NEWS,
-            1L,
-            "writer"
-        );
-
-        post.update("edited title", "edited content", List.of("edited"));
-
-        assertThat(post.getCategory()).isEqualTo(PostType.PRODUCT_LAUNCH_NEWS);
-    }
-
-    @Test
-    @DisplayName("게시글 생성 시 명시한 분야 카테고리를 사용한다")
-    void create_usesExplicitBoardCategory() {
-        Post post = Post.create(
-            "title",
-            "content",
-            "summary",
-            List.of("tag"),
-            PostType.GENERAL,
-            NewsSection.TECHNOLOGY,
-            PostPublishOrigin.USER,
-            1L,
-            "writer"
-        );
-
-        assertThat(post.getBoardCategory()).isEqualTo(NewsSection.TECHNOLOGY);
-    }
-
-    @Test
-    @DisplayName("분야 카테고리가 null이면 GENERAL을 기본값으로 사용한다")
-    void create_nullBoardCategoryDefaultsToGeneral() {
-        Post post = Post.create(
-            "title",
-            "content",
-            "summary",
-            List.of("tag"),
-            PostType.GENERAL,
-            null,
-            PostPublishOrigin.USER,
-            1L,
-            "writer"
-        );
-
-        assertThat(post.getBoardCategory()).isEqualTo(NewsSection.GENERAL);
-    }
-
-    @Test
-    @DisplayName("게시글 수정은 분야 카테고리를 유지한다")
-    void update_preservesBoardCategory() {
-        Post post = Post.create(
-            "title",
-            "content",
-            "summary",
-            List.of("tag"),
-            PostType.GENERAL,
-            NewsSection.BUSINESS,
-            PostPublishOrigin.USER,
-            1L,
-            "writer"
-        );
-
-        post.update("new title", "new content", List.of("new"));
-
-        assertThat(post.getBoardCategory()).isEqualTo(NewsSection.BUSINESS);
     }
 
     @Test

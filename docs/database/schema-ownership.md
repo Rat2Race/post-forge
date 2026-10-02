@@ -27,17 +27,14 @@
 | --- | --- | --- | --- |
 | `auth` | `accounts` | `auth/account/domain/Account.java` | 계정 identity, OAuth provider identity, account fields, optimistic lock version |
 | `auth` | `account_roles` | `Account.roles` `@CollectionTable` | account role set; `accounts` lifecycle에 종속 |
-| `board` | `posts` | `board/post/domain/Post.java` | 게시글 본문, summary/tags/category/board_category/publish_origin, 조회수, like count, 작성자 account id와 nickname snapshot; 자동 수집 뉴스는 `PRODUCT_LAUNCH_NEWS`, 전날 뉴스의 분야별 요약은 `DAILY_DIGEST`로 저장 |
+| `board` | `posts` | `board/post/domain/Post.java` | 게시글 본문, tags, 조회수, like count, 작성자 account id와 nickname snapshot |
 | `board` | `post_tags` | `Post.tags` `@CollectionTable` | 게시글 tag collection; `posts` lifecycle에 종속 |
 | `board` | `comments` | `board/comment/domain/Comment.java` | 댓글/대댓글 tree; 작성자는 `accounts.id` 값을 `account_id` scalar로 보관 |
 | `board` | `post_like` | `board/like/domain/PostLike.java` | 게시글 좋아요 uniqueness: `(post_id, account_id)` |
 | `board` | `comment_like` | `board/like/domain/CommentLike.java` | 댓글 좋아요 uniqueness: `(comment_id, account_id)` |
-| `board` | `post_file` | `board/file/domain/PostFile.java` | S3 object metadata and post attachment relation |
-| `board` | `post_reference_links` | `board/post/domain/PostReferenceLink.java` | 자동 게시 뉴스의 출처, canonical URL 중복 기준, keyword 일일 한도 metadata. 발행 출처는 `posts.publish_origin`에만 둔다 |
-| `study` | `study_sources` | `study/domain/StudySource.java` | 사용자가 올린 학습 자료, 문제 생성 상태, LLM 문제 초안 수와 버린 수(근거 검증 통과율 기준), 빈 페이지 상자와 다음 예정 시각, 낙관적 잠금 `version`; 브랜치 마이그레이션 `V20261002_1` |
+| `study` | `study_sources` | `study/domain/StudySource.java` | 사용자가 올린 학습 자료, 문제 생성 상태, LLM 문제 초안 수와 버린 수(근거 검증 통과율 기준), 빈 페이지 상자와 다음 예정 시각, 낙관적 잠금 `version` |
 | `study` | `study_questions` | `study/domain/StudyQuestion.java` | 근거가 자료에 그대로 있는 복습 문제, 출처(LLM/RULE/USER), 라이트너 상자와 다음 복습 시각, 동시 채점용 `version` |
 | `study` | `study_records` | `study/domain/StudyRecord.java` | 덧붙이기만 하는 학습 기록. 자료 제목·질문 문장은 그때 모습으로 복사해 둔다. 복습 기록은 복습 직전 상자(`review_box`)를 남겨 간격별 유지율을 계산한다 |
-| `ai` | `vector_store` | Spring AI PgVector mapping | RAG embeddings; 테이블(1024차원)과 HNSW 인덱스는 Flyway `V0000` baseline에 포함된다. Spring AI의 `initialize-schema: true`도 설정되어 있다. **1024는 provider 교체와 무관한 고정 계약이다** — `LLM_EMBEDDING_DIMENSIONS`가 pgvector와 임베딩 요청 양쪽에 같은 값으로 들어가므로, 로컬 `bge-m3`와 상용 `text-embedding-3-small/large` 모두 1024를 내도록 맞춰 쓴다. 차원 자체를 바꾸려면 새 migration과 전체 재적재가 필요하다 |
 
 ## Non-Relational Storage
 
@@ -50,18 +47,11 @@
 | `auth` | `auth:login:rate:user:*`, `auth:login:rate:ip:*`, `auth:login:fail:*`, `auth:login:lock:*` | `auth/login/infrastructure/redis/RedisLoginAttemptLimiter.java` | login abuse guard |
 | `board` | `post:views:*`, `post:viewed:*`, view dirty/processing keys | `board/view/infrastructure/redis/ViewCountRedisKeys.java` | view count cache, dedupe, sync queue |
 | `board` | `like:cooldown:*`, `like:rate:*` | `board/like/infrastructure/redis/LikeRequestRedisRepository.java` | like abuse guard |
-| `board` | S3 bucket objects | `board/file/infrastructure/storage/S3FileStorageAdapter.java` | `post_file` stores metadata; object lifecycle belongs to board file domain |
-
-## PgVector Decision
-
-Decision:
-- The Spring AI PgVector table, `vector_store`, is owned by `ai`/RAG.
-- `ingest` may submit documents during the current monolith phase, but it does not own PgVector schema, index, dimensions, or embedding model decisions.
 
 ## 마이그레이션 규칙
 
 런타임 마이그레이션은 `app/src/main/resources/db/migration/`의 `VNNNN__description.sql`에 둔다.
-현재 이력은 `V0000` 하나다(2026-09-30 재베이스라인, ADR-007). 이후 스키마 변경은 `V0001`부터 증분으로 쌓고, 브랜치 작업 중에는 번호 충돌을 피해 `V20260930_1__...` 같은 타임스탬프 버전을 쓴다. 신규 빈 DB는 `V0000` baseline부터 실행하고, production-like 환경은 Flyway 적용 후 Hibernate `validate`로 mapping 불일치를 잡는다.
+현재 이력은 `V0000` 하나다(2026-09-30 재베이스라인, ADR-007). 2026-10-02 뉴스 퇴역(ADR-008) 끝에 학습 표를 합쳐 동결했다. 이후 스키마 변경은 `V0001`부터 순번으로 쌓는다. 단독 개발이라 브랜치 사이 번호 충돌을 따로 막지 않는다. 신규 빈 DB는 `V0000` baseline부터 실행하고, production-like 환경은 Flyway 적용 후 Hibernate `validate`로 mapping 불일치를 잡는다.
 로컬 개발도 `application.yml` 기준으로 Flyway가 기본 활성화되고 Hibernate는 `validate`를 사용한다. 기존 non-empty DB 편입만 아래의 1회성 baseline 절차를 따른다.
 
 각 migration은 primary owner 하나를 갖고 다음 header에 호환성, rollback, 검증 방법을 남긴다.

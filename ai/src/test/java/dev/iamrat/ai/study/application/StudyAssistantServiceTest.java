@@ -77,10 +77,5 @@ class StudyAssistantServiceTest {
             lastUserPrompt = userPrompt;
             return response;
         }
-
-        @Override
-        public String generateForPublishing(String systemPrompt, String userPrompt) {
-            return generate(systemPrompt, userPrompt);
-        }
     }
 }

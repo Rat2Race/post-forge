@@ -18,14 +18,11 @@ import org.springframework.mock.env.MockEnvironment;
 class LlmGatewayConfigurationTest {
 
     @Test
-    void localProfileDefaultsToOllamaForBothModels() throws IOException {
+    void localProfileDefaultsToOllama() throws IOException {
         MockEnvironment env = load("application-local.yml");
 
         assertThat(env.getProperty("app.llm.chat.base-url")).isEqualTo("http://localhost:11434");
-        assertThat(env.getProperty("app.llm.embedding.base-url")).isEqualTo("http://localhost:11434");
         assertThat(env.getProperty("app.llm.chat.options.model")).isEqualTo("qwen3:8b");
-        assertThat(env.getProperty("app.llm.embedding.options.model")).isEqualTo("bge-m3");
-        assertThat(env.getProperty("app.llm.embedding.options.dimensions")).isEqualTo("1024");
     }
 
     @Test
@@ -37,43 +34,22 @@ class LlmGatewayConfigurationTest {
             .hasMessageContaining("LLM_GATEWAY_BASE_URL");
         assertThatThrownBy(() -> env.getProperty("app.llm.chat.options.model"))
             .hasMessageContaining("LLM_CHAT_MODEL");
-        assertThatThrownBy(() -> env.getProperty("app.llm.embedding.options.model"))
-            .hasMessageContaining("LLM_EMBEDDING_MODEL");
     }
 
     @ParameterizedTest
     @ValueSource(strings = {"application.yml", "application-local.yml"})
-    void gatewayIsSharedAndEmbeddingOverridesWin(String topmost) throws IOException {
+    void gatewayAppliesToChatAndChatOverridesWin(String topmost) throws IOException {
         MockEnvironment env = load(topmost)
             .withProperty("LLM_GATEWAY_BASE_URL", "http://10.0.0.1:8088")
-            .withProperty("LLM_GATEWAY_TOKEN", "test-gateway-token")
-            .withProperty("OPENAI_API_KEY", "test-openai-key");
+            .withProperty("LLM_GATEWAY_TOKEN", "test-gateway-token");
 
         assertThat(env.getProperty("app.llm.chat.base-url")).isEqualTo("http://10.0.0.1:8088");
-        assertThat(env.getProperty("app.llm.embedding.base-url")).isEqualTo("http://10.0.0.1:8088");
         assertThat(env.getProperty("app.llm.chat.api-key")).isEqualTo("test-gateway-token");
-        assertThat(env.getProperty("app.llm.embedding.api-key")).isEqualTo("test-gateway-token");
 
-        env.withProperty("LLM_EMBEDDING_API_KEY", "test-embedding-key")
-            .withProperty("LLM_EMBEDDING_BASE_URL", "https://api.openai.com");
-        assertThat(env.getProperty("app.llm.chat.base-url")).isEqualTo("http://10.0.0.1:8088");
-        assertThat(env.getProperty("app.llm.embedding.base-url")).isEqualTo("https://api.openai.com");
-        assertThat(env.getProperty("app.llm.embedding.api-key")).isEqualTo("test-embedding-key");
-        assertThat(env.getProperty("app.llm.chat.api-key")).isEqualTo("test-gateway-token");
-    }
-
-    @ParameterizedTest
-    @ValueSource(strings = {"application.yml", "application-local.yml"})
-    void explicitEmbeddingProviderAndLegacyOpenAiKeyRemainSupported(String topmost) throws IOException {
-        MockEnvironment env = load(topmost)
-            .withProperty("LLM_EMBEDDING_BASE_URL", "https://api.openai.com")
-            .withProperty("LLM_EMBEDDING_MODEL", "text-embedding-3-small")
-            .withProperty("OPENAI_API_KEY", "test-openai-key");
-
-        assertThat(env.getProperty("app.llm.embedding.base-url")).isEqualTo("https://api.openai.com");
-        assertThat(env.getProperty("app.llm.embedding.api-key")).isEqualTo("test-openai-key");
-        assertThat(env.getProperty("app.llm.embedding.options.model")).isEqualTo("text-embedding-3-small");
-        assertThat(env.getProperty("app.llm.embedding.options.dimensions")).isEqualTo("1024");
+        env.withProperty("LLM_CHAT_BASE_URL", "https://api.openai.com")
+            .withProperty("LLM_CHAT_API_KEY", "test-chat-key");
+        assertThat(env.getProperty("app.llm.chat.base-url")).isEqualTo("https://api.openai.com");
+        assertThat(env.getProperty("app.llm.chat.api-key")).isEqualTo("test-chat-key");
     }
 
     /** 우선순위: withProperty(환경변수 역할) > 프로필 파일 > application.yml. 실제 기동 순서와 같다. */
