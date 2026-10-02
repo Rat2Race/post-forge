@@ -58,6 +58,14 @@ public class PostForgeOpenApiGroups {
     }
 
     @Bean
+    public GroupedOpenApi studyApi() {
+        return GroupedOpenApi.builder()
+            .group("study")
+            .pathsToMatch(PostForgeOpenApiRoutes.STUDY)
+            .build();
+    }
+
+    @Bean
     public OperationCustomizer securityOperationCustomizer() {
         return (operation, handlerMethod) -> {
             OpenApiSecurityPolicy policy = findSecurityPolicy(handlerMethod);
