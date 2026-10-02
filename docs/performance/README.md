@@ -9,7 +9,7 @@ Gradle `:app:smoke` task와 `app/src/smoke` source set은 2026-06-11 기준 제�
 예전 `tests/k6/**`, `tests/bruno/**`, `setup/**`, 앱 repo의 부하 테스트 runner는 더 이상 실행 표면이 아니지만, 과거 k6/Grafana/manual run/raw 리포트는 정량 근거로 계속 보관한다.
 
 운영 host의 2026-06-17 관측값은 [서버 환경 기록](./prod-environment-spec.md)에 있다. 과거 Oracle ARM 실행과 2026-08-21 로컬 실행은 환경이 달라 현재 운영 수용량으로 해석하지 않는다.
-보관된 측정은 주로 게시판·인증 API를 대상으로 한다. 현재 제품인 뉴스 수집·LLM 가공·자동 게시·06시 데일리 종합의 전체 처리 성능을 입증하는 자료는 아니다.
+보관된 측정은 주로 게시판·인증 API를 대상으로 한다. 현재 제품인 학습 서비스의 처리 성능을 입증하는 자료는 아니다.
 현재 수용량을 판단하려면 같은 commit과 환경에서 k6/Bruno, Prometheus, 컨테이너 지표를 같은 시간 구간에 수집해야 한다.
 
 ## 문서와 저장 위치
@@ -79,14 +79,10 @@ docs/performance/runs/YYYYMMDD-HHMMSS-<target>-<scenario>/
 
 ## 외부 Source / LLM 계측
 
-뉴스 자동 게시의 처리 비용은 HTTP latency만으로 판단하지 않는다. 앱 내부 metric으로 외부 뉴스 수집, 벡터 적재, RAG 검색, LLM 생성을 분리해 남긴다. 스택 선택 근거와 대안 비교는 [ADR-006](../decisions/adr-006-observability-stack.md)에 둔다.
+LLM 처리 비용은 HTTP latency만으로 판단하지 않는다. 앱 내부 metric으로 벡터 적재, RAG 검색, LLM 생성을 분리해 남긴다. 스택 선택 근거와 대안 비교는 [ADR-006](../decisions/adr-006-observability-stack.md)에 둔다.
 
 | Metric | 용도 |
 |---|---|
-| `external_news_fetch_seconds` | 피드 호출 시간, outcome/status별 성공·실패 분리 |
-| `external_news_fetch_success_total` | 피드 조회 성공 횟수 |
-| `external_news_fetch_failure_total` | 예외·HTTP status별 실패 횟수(429/500 포함) |
-| `external_news_fetch_items_total` | 정제·검증을 통과해 반환된 기사 수 |
 | `ingest_documents_embeddings_stored_total` | 벡터 저장에 성공한 청크 수 |
 | `ingest_documents_embeddings_failed_total` | 벡터 저장에 실패한 청크 수 |
 | `ai_vector_search_success_total` | RAG 검색 성공 횟수 |
@@ -96,7 +92,7 @@ docs/performance/runs/YYYYMMDD-HHMMSS-<target>-<scenario>/
 | `ai_text_generation_prompt_tokens` | LLM input token 처리량 계산 |
 | `ai_text_generation_completion_tokens` | LLM output TPS 계산 |
 
-수집·적재·검색·생성 지표를 같은 시간 구간에서 비교하고, `displayCount`와 `dailyCap`을 별도로 기록한다. 데일리는 대상 분야·전날 게시글 수·생성 성공/건너뜀·완료 시간을 함께 남긴다. 스케줄은 [자동 게시 스케줄](../api/README.md#자동-게시-스케줄)을 따른다. 위 표는 계측 항목이며 실측 수치가 아니다. 외부 API를 호출하지 않는 테스트와 피드/LLM 실호출 성능 측정을 구분한다.
+적재·검색·생성 지표는 같은 시간 구간에서 비교한다. 위 표는 계측 항목이며 실측 수치가 아니다. LLM을 호출하지 않는 테스트와 LLM 실호출 성능 측정을 구분한다.
 
 ## 제외할 값
 

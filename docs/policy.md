@@ -2,14 +2,14 @@
 
 권한·계정·삭제·AI 비용의 invariant를 이 문서가 소유한다. Endpoint/DTO/status는 [API 명세](./api/README.md), schema column ownership은 [DB Schema Ownership](./database/schema-ownership.md), 모듈 경계와 요청 흐름은 [architecture](./architecture/module-dependencies.md)·[요청 흐름](./architecture/flows.md)을 따른다.
 
-현재 PostForge는 뉴스를 수집하고 분류한 뒤 LLM으로 가공한 초안을 자동 게시하는 정보 서비스다. 현재 개별 자동 게시 범위인 출시 뉴스는 `PRODUCT_LAUNCH_NEWS`, 전날 출시 뉴스를 분야별로 종합한 글은 매일 06:00(Asia/Seoul)에 `DAILY_DIGEST`로 게시한다. 메일 구독은 향후 범위이며 현재 권한이나 데이터 보장을 갖지 않는다.
+현재 PostForge는 사용자가 올린 자료로 학습하는 서비스다([ADR-008](./decisions/adr-008-switch-to-learning-platform.md)). 게시판과 로그인은 유지하고, 뉴스 수집·자동 게시·데일리 종합은 지웠다.
 
 ## Access
 
-> Current: 공개 게시판의 Guest/Member/Admin 권한, 좋아요/댓글, 시스템 자동 게시.
-> Target: 회원 탈퇴 API와 분야별 메일 구독.
+> Current: 공개 게시판의 Guest/Member/Admin 권한, 좋아요/댓글, 회원 본인의 학습 자료.
+> Target: 회원 탈퇴 API.
 
-PostForge 접근 정책은 공개 뉴스·데일리 조회, 회원의 게시판 참여·AI 채팅, 운영자의 수집·게시 작업을 구분한다.
+PostForge 접근 정책은 공개 게시판 조회, 회원의 게시판 참여·AI 채팅·학습, 운영자의 관리 작업을 구분한다.
 권한 판단은 닉네임이나 로그인 `username`이 아니라 인증된 `account_id`를 기준으로 한다.
 
 ### Current Invariants
@@ -35,8 +35,7 @@ PostForge 접근 정책은 공개 뉴스·데일리 조회, 회원의 게시판 
 ### Admin
 
 - 공개 게시글과 댓글을 수정·삭제할 수 있다.
-- gated launch-news 수동/backfill 게시를 실행할 수 있다. 자동 발행은 system batch scheduler가 `SYSTEM_BATCH` origin으로 실행한다.
-- launch-news 수동 게시를 실행할 수 있다. 자동 수집 섹션은 설정(`INGEST_NEWS_LAUNCH_SECTIONS`)으로 켜고 끈다.
+- 다른 활성 계정에 ADMIN 권한을 줄 수 있다. 본인 승격은 하지 않는다.
 - 일반 회원의 개인정보를 변경하는 권한은 이 정책에 포함하지 않는다.
 
 ### Read Boundary
@@ -56,8 +55,6 @@ PostForge 접근 정책은 공개 뉴스·데일리 조회, 회원의 게시판 
 ### Target
 
 - 회원 탈퇴 권한은 [Account](#target-withdrawal-and-retention)의 target policy를 따른다.
-- 향후 메일 구독을 구현하면 Member는 본인의 구독만 읽고 쓴다. 아직 구독 API와 저장 schema는 없다.
-- 구독 방향과 현재 자동 게시 범위는 [ADR-005](./decisions/adr-005-subscription-information-service.md)를 따른다.
 
 ## Account
 
@@ -153,7 +150,7 @@ PostForge 삭제 정책은 일반 사용자에게 리소스를 더 이상 노출
 
 ## AI Cost
 
-> Current: AI chat, 뉴스·데일리 요약 draft 생성, 학습 문제 생성·가르치기·꼬리질문, public read path AI 호출 금지, deterministic pre-gate, shared `TextGenerationClient` metric/log.
+> Current: AI chat, 학습 문제 생성·가르치기·꼬리질문, public read path AI 호출 금지, deterministic pre-gate, shared `TextGenerationClient` metric/log.
 
 PostForge의 AI 정책은 기능보다 비용 통제를 우선한다. AI는 모든 요청의 기본 동작이 아니라 명시적으로 실행되는 작업이다.
 
@@ -163,9 +160,6 @@ PostForge의 AI 정책은 기능보다 비용 통제를 우선한다. AI는 모�
 - 사용자 AI 기능은 인증된 사용자가 명시적으로 요청할 때만 실행한다: 채팅, 학습 자료 업로드(문제 초안 생성 1회), 가르치기 버튼(AI 학생 질문 1회), 꼬리질문 버튼(1회).
 - 학습의 매일 반복 루프(오늘 할 것, 채점, 빈 페이지 대조와 제안, 간격 계산, 기록)는 AI를 호출하지 않는다. LLM을 부르는 study 경로는 `StudyAiService`와 문제 생성뿐이고, 매일 루프 서비스는 `StudyAssistant`를 갖지 않는다.
 - 학습 AI의 결과는 채점에 쓰지 않는다. 문제는 근거 문장이 자료에 그대로 있어야 저장된다(ADR-008).
-- 출시 뉴스 AI draft는 [통합 API 명세의 Ingest](./api/README.md#ingest) gate를 통과한 batch/admin/system write flow에서만 실행한다. 운영 키워드의 분야 분류는 `board_category`에 기록한다.
-- 데일리 요약 AI draft는 전날 `posts`(`PRODUCT_LAUNCH_NEWS`)를 분야별로 읽어 `posts`(`DAILY_DIGEST`)로 쓰는 system/admin write flow에서만 실행한다. 기본 자동 실행 시각은 매일 06:00(Asia/Seoul)이다.
-- 수집된 모든 item을 AI 호출이나 공개 게시글로 연결하지 않는다.
 - 현재 호출은 shared `TextGenerationClient`의 metric/log 대상이다.
 
 ### Current AI Boundary
@@ -173,5 +167,4 @@ PostForge의 AI 정책은 기능보다 비용 통제를 우선한다. AI는 모�
 AI를 사용하지 않는 검색과 모델 생성 요청을 구분한다.
 
 - DB/vector 검색, 관련 자료 조회, 출처 링크 추천은 AI 호출이 아니다.
-- 채팅 답변, 내부 출시 뉴스 draft 생성, 데일리 요약 draft 생성, 학습 문제·AI 학생 질문·꼬리질문 생성은 AI 호출이다.
-- 출시 뉴스 생성 결과는 별도의 admin/system gate와 write flow를 통과해야 공개 게시글이 된다.
+- 채팅 답변, 학습 문제·AI 학생 질문·꼬리질문 생성은 AI 호출이다.

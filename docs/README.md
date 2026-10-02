@@ -1,6 +1,6 @@
 # PostForge 문서 안내
 
-PostForge는 뉴스 수집·분류·LLM 초안 작성·스케줄 자동 게시를 수행합니다. 매일 06:00(Asia/Seoul)에 전날 게시된 뉴스를 종합한 데일리 포스트를 발행하며, 메일 구독은 향후 계획입니다.
+PostForge는 사용자가 올린 자료로 학습하는 서비스입니다. 근거가 검증된 복습 문제, 간격 반복, 빈 페이지 정리, 가르치기를 제공합니다([ADR-008](./decisions/adr-008-switch-to-learning-platform.md)).
 
 이 문서는 문서의 진입점이자 정본(canonical source) 경계를 정의합니다.
 같은 표나 규칙을 여러 문서에 복사하지 않고, 소유 문서에 상세를 두고 나머지는 링크합니다.
@@ -10,7 +10,7 @@ PostForge는 뉴스 수집·분류·LLM 초안 작성·스케줄 자동 게시�
 | 목적 | 읽는 순서 |
 | --- | --- |
 | 프로젝트 전체 파악 | [루트 README](../README.md) → [제품 방향 전환](./decisions/adr-008-switch-to-learning-platform.md) |
-| 뉴스·데일리 자동 게시 | [처리 흐름](./architecture/flows.md#ingest) → [스케줄 설정](./api/README.md#자동-게시-스케줄) |
+| 학습 루프 | [처리 흐름](./architecture/flows.md#study) → [API와 규칙](./api/README.md#study) |
 | API 사용 | [API 명세](./api/README.md) → 실행 중 Swagger UI |
 | 요청 내부 흐름 | [요청 흐름](./architecture/flows.md) |
 | 모듈 경계 검토 | [Module Dependency Policy](./architecture/module-dependencies.md) → [ADR-003](./decisions/adr-003-modular-monolith.md) |

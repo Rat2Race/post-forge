@@ -20,9 +20,7 @@ final class PostForgeOpenApiRoutes {
             "/api/ai/**"
     };
     static final String[] INGEST = {
-            "/api/ingest/**",
-            "/api/admin/news-documents/**",
-            "/api/admin/launch-news/**"
+            "/api/ingest/**"
     };
     static final String[] STUDY = {
             "/api/study/**"
