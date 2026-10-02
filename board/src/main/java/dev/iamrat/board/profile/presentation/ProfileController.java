@@ -2,7 +2,6 @@ package dev.iamrat.board.profile.presentation;
 
 import dev.iamrat.board.profile.application.ProfileService;
 import dev.iamrat.core.account.UserPrincipal;
-import dev.iamrat.core.global.dto.MessageResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -28,20 +27,20 @@ public class ProfileController {
     }
 
     @PatchMapping("/nickname")
-    public ResponseEntity<MessageResponse> updateNickname(
+    public ResponseEntity<Void> updateNickname(
         @AuthenticationPrincipal UserPrincipal user,
         @RequestBody @Valid ProfileNicknameUpdateRequest request
     ) {
         profileService.updateNickname(user.getAccountId(), request.nickname());
-        return ResponseEntity.ok(MessageResponse.of("닉네임 변경 완료"));
+        return ResponseEntity.noContent().build();
     }
 
     @PatchMapping("/password")
-    public ResponseEntity<MessageResponse> updatePassword(
+    public ResponseEntity<Void> updatePassword(
         @AuthenticationPrincipal UserPrincipal user,
         @RequestBody @Valid ProfilePasswordUpdateRequest request
     ) {
         profileService.updatePassword(user.getAccountId(), request.currentPassword(), request.newPassword());
-        return ResponseEntity.ok(MessageResponse.of("비밀번호 변경 완료"));
+        return ResponseEntity.noContent().build();
     }
 }

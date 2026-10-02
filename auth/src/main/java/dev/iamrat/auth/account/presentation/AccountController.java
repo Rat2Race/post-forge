@@ -5,7 +5,6 @@ import dev.iamrat.auth.account.application.AccountQueryService;
 import dev.iamrat.auth.account.domain.Account;
 import dev.iamrat.auth.support.error.AuthErrorCode;
 import dev.iamrat.core.global.exception.CustomException;
-import dev.iamrat.core.global.dto.MessageResponse;
 import dev.iamrat.core.account.UserPrincipal;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -33,18 +32,18 @@ public class AccountController {
     }
 
     @PatchMapping("/nickname")
-    public ResponseEntity<MessageResponse> updateNickname(
+    public ResponseEntity<Void> updateNickname(
             @AuthenticationPrincipal UserPrincipal userDetails,
             @RequestBody @Valid AccountUpdateRequest request) {
 
         accountCommandService.updateNickname(
                 userDetails.getAccountId(),
                 request.nickname());
-        return ResponseEntity.ok(MessageResponse.of("닉네임 변경 완료"));
+        return ResponseEntity.noContent().build();
     }
 
     @PatchMapping("/password")
-    public ResponseEntity<MessageResponse> updatePassword(
+    public ResponseEntity<Void> updatePassword(
             @AuthenticationPrincipal UserPrincipal userDetails,
             @RequestBody @Valid PasswordUpdateRequest request) {
 
@@ -52,6 +51,6 @@ public class AccountController {
                 userDetails.getAccountId(),
                 request.currentPassword(),
                 request.newPassword());
-        return ResponseEntity.ok(MessageResponse.of("비밀번호 변경 완료"));
+        return ResponseEntity.noContent().build();
     }
 }

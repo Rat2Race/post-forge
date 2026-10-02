@@ -194,15 +194,14 @@ class LoginControllerTest {
     class Logout {
         
         @Test
-        @DisplayName("인증된 사용자가 로그아웃하면 200을 반환한다")
-        void logout_authenticatedUser_returns200() throws Exception {
+        @DisplayName("인증된 사용자가 로그아웃하면 204를 반환한다")
+        void logout_authenticatedUser_returns204() throws Exception {
             willDoNothing().given(loginService).logout(anyLong());
             SecurityContextHolder.getContext().setAuthentication(userAuthentication());
 
             try {
                 mockMvc.perform(post("/api/auth/logout"))
-                    .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.message").value("로그아웃되었습니다."));
+                    .andExpect(status().isNoContent());
             } finally {
                 SecurityContextHolder.clearContext();
             }

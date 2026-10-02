@@ -125,8 +125,7 @@ class CommentControllerRouteAliasTest {
     @DisplayName("DELETE /api/posts/{postId}/comments/{commentId} 는 댓글을 삭제한다")
     void deleteComment_apiRoute_deletesComment() throws Exception {
         mockMvc.perform(delete("/api/posts/1/comments/2").with(user(9L)))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$.message").value("댓글 삭제 완료"));
+            .andExpect(status().isNoContent());
 
         verify(commentCommandService).deleteComment(2L);
     }
