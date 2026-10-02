@@ -49,5 +49,6 @@ postforge-app         | 2026-09-21T02:03:26.453Z  INFO [requestId=3d27bec2-cffe-
 동기 요청은 수집·생성·재시도 전체가 외부 프록시 제한 안에 끝나도록 설계한다.
 장시간 또는 여러 기사 발행은 작업 등록과 결과 조회를 분리하는 비동기 처리를 검토한다.
 이 문서는 원인 확인 기록이다. 이후 0be32ca5에서 발행 경로에 별도 LLM 클라이언트를 두어 읽기 제한 시간(`LLM_PUBLISHING_READ_TIMEOUT`, 기본 210초)을 분리하고 재시도를 1회로 줄였다.
+남은 채팅 모델(`LlmConfig.llmChatModel`)도 2026-10-02부터 자체 재시도를 끈다(`maxAttempts(1)`). 503을 돌려주는 서버로 확인하면 요청은 1번만 가고 바로 실패한다(`LlmConfigTest`).
 
 참고: [Cloudflare 524 설명](https://developers.cloudflare.com/support/troubleshooting/http-status-codes/cloudflare-5xx-errors/error-524/).
