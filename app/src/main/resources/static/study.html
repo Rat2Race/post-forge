@@ -143,12 +143,28 @@ function later(iso){
 let toastT;
 function toast(msg){ const t=$('#toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(toastT); toastT=setTimeout(()=>t.classList.remove('show'),2600); }
 
-async function api(path, opt={}){
+// access token이 만료되면 refresh cookie(경로 /api/auth)로 한 번 재발급받아 같은 요청을 다시 보낸다.
+// 동시에 난 401은 재발급 하나를 기다린다. refresh token이 회전하므로 따로 재발급하면 늦은 쪽은 이미 바뀐 토큰을 내밀어 거절된다.
+let reissuing = null;
+function reissue(){
+  reissuing ??= fetch('/api/auth/token/reissue', { method: 'POST' })
+    .then(res => res.ok ? res.json() : null)
+    .then(b => { if (!b?.accessToken) return false; localStorage.setItem('pf.token', b.accessToken); return true; })
+    .catch(() => false)
+    .finally(() => { reissuing = null; });
+  return reissuing;
+}
+async function api(path, opt={}, retried=false){
   const headers = { ...(opt.headers||{}) };
+  const sent = token();
   if (opt.body) headers['Content-Type'] = 'application/json';
-  if (token()) headers['Authorization'] = 'Bearer ' + token();
+  if (sent) headers['Authorization'] = 'Bearer ' + sent;
   const res = await fetch(path, { ...opt, headers });
-  if (res.status === 401 && token()) { localStorage.removeItem('pf.token'); renderAuth(); }
+  if (res.status === 401 && sent) {
+    // 보내는 사이 다른 요청이 이미 재발급했으면 새 토큰으로 다시 보내기만 한다.
+    if (!retried && (token() !== sent || await reissue())) return api(path, opt, true);
+    localStorage.removeItem('pf.token'); renderAuth();
+  }
   if (!res.ok) {
     let msg = res.status + ' 오류';
     try { const b = await res.json(); msg = b.message || msg; } catch(e){}
@@ -163,7 +179,11 @@ function renderAuth(){
   const el = $('#authbox');
   if (token()) {
     el.innerHTML = `<span class="me">${esc(meName()||'회원')}님</span><button class="btn" id="logoutBtn">로그아웃</button>`;
-    $('#logoutBtn').onclick = ()=>{ localStorage.removeItem('pf.token'); localStorage.removeItem('pf.name'); renderAuth(); route(); };
+    // 서버의 refresh token도 지운다. 재발급을 쓰므로 남겨 두면 로그아웃 뒤에도 세션이 살아난다.
+    $('#logoutBtn').onclick = async ()=>{
+      await api('/api/auth/logout', { method:'POST' }).catch(() => {});
+      localStorage.removeItem('pf.token'); localStorage.removeItem('pf.name'); renderAuth(); route();
+    };
   } else {
     el.innerHTML = `<button class="btn primary" id="loginBtn">로그인</button>`;
     $('#loginBtn').onclick = ()=>loginDlg.showModal();
