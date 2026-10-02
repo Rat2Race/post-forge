@@ -55,7 +55,7 @@ PostForge는 사용자가 올린 자료(마크다운·텍스트)에서 근거 �
 테이블·Redis key 소유권은 [DB Schema Ownership](./docs/database/schema-ownership.md)이 정본입니다.
 관계 시각화는 [MVP ERD](./docs/database/postforge-mvp-erd.md)를 봅니다.
 
-신규 DB는 Flyway `V0000__baseline_schema.sql` 하나로 만듭니다. 2026-09-30 뉴스 도메인을 떠나는 시점([ADR-007](./docs/decisions/adr-007-remove-naver-news-source.md))에 이력을 리셋했으므로,
+신규 DB는 Flyway `V0000__baseline_schema.sql` 하나로 만듭니다. 2026-09-30 이력을 리셋했고([ADR-007](./docs/decisions/adr-007-remove-naver-news-source.md)), 2026-10-02 뉴스 퇴역 끝에 학습 표를 합쳐 동결했습니다([ADR-008](./docs/decisions/adr-008-switch-to-learning-platform.md)). 이후 변경은 `V0001`부터 쌓습니다.
 옛 이력이 적용된 DB는 고쳐 쓰지 않고 DB를 지우고 다시 만듭니다. 로컬은 `docker exec postforge-db sh -c 'psql -U "$POSTGRES_USER" -d postgres -c "drop database postforge" -c "create database postforge"'` 뒤 재기동, 계정·게시글은 `scripts/local-demo-seed.sql`로 다시 넣습니다.
 모든 프로필은 `ddl-auto=validate`로 entity와 schema의 일치만 검증합니다.
 
