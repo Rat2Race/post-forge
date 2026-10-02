@@ -23,6 +23,8 @@
 - OAuth2 redirect URL에는 refresh token이나 access token을 노출하지 않는다.
 - 로그인 실패, 이메일 인증, OAuth2 exchange code는 Redis guard/TTL state로 보호한다.
 - refresh token, 로그인 guard, 이메일 인증, OAuth2 exchange code의 Redis state 장애는 인증 안전성을 위해 fail-closed로 처리한다.
+- Redis 명령은 2초, 연결은 1초 안에 끊는다(`spring.data.redis.timeout`·`connect-timeout`). 지정하지 않으면 Lettuce 기본 60초를 기다려 장애 중 로그인·메일 요청이 스레드를 붙잡는다. 끊기면 위 fail-closed 규칙대로 `429 TOO_MANY_REQUESTS`나 인증 실패로 응답한다. 막는 쪽을 고른 이유는 장애 중 무차별 대입·메일 폭주를 막는 것이 로그인 가용성보다 중요해서다.
+- 인증 메일 발송이 실패하면(`MessagingException`·`MailException` 모두) `EMAIL_SEND_FAILED`로 응답하고, 요청 가드의 쿨다운은 이미 쓴 것으로 둔다. 메일 서버 장애는 대개 한동안 이어지므로 바로 다시 보내게 하면 실패만 쌓인다. 사용자는 쿨다운이 끝난 뒤 다시 요청한다.
 - 계정 비활성 상태는 login, token reissue, OAuth2 exchange에서 거절한다.
 - 존재하지 않는 username과 잘못된 password는 모두 `INVALID_CREDENTIALS`로 응답해 계정 존재 여부를 노출하지 않는다.
 
@@ -49,6 +51,7 @@
 - access token은 stateless이며 API 응답 후 `Authorization` header로 사용한다.
 - refresh token은 Redis에 저장하는 stateful credential이며 재발급 때 rotation한다.
 - OAuth2 handoff code는 짧은 TTL의 1회성 값이다.
+- OAuth2 사용자 로드(`CustomOAuth2UserService.loadUser`)에는 트랜잭션을 걸지 않는다. 같은 사용자의 로그인 두 개가 동시에 가입하면 늦은 쪽 INSERT가 유니크 제약에 걸린다. 그 뒤 기존 계정 재조회는 새 트랜잭션에서 돌아야 한다. PostgreSQL은 실패한 트랜잭션의 다음 문장을 거절하고(25P02), Hibernate도 실패한 엔티티가 남은 세션을 flush하지 못한다. 외부 userinfo 호출 동안 DB 커넥션을 잡지 않는 효과도 있다. 역할은 조회 쿼리의 entity graph로 함께 읽어 트랜잭션 밖에서도 권한을 만든다.
 
 cookie 속성과 response header의 HTTP 계약은 [통합 API 명세의 Token/Cookie](../api/README.md#token--cookie)를 따른다.
 

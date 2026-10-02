@@ -1,5 +1,6 @@
 package dev.iamrat.board.comment.application;
 
+import dev.iamrat.board.comment.domain.CommentRepository;
 import dev.iamrat.board.comment.domain.Comment;
 import dev.iamrat.board.support.error.BoardErrorCode;
 import dev.iamrat.core.global.error.CommonErrorCode;
@@ -13,13 +14,13 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional(readOnly = true)
 public class CommentReader {
 
-    private final CommentStore commentStore;
+    private final CommentRepository commentRepository;
 
     public Comment getById(Long commentId) {
         if (commentId == null) {
             throw new CustomException(CommonErrorCode.INVALID_INPUT);
         }
-        return commentStore.findById(commentId)
+        return commentRepository.findById(commentId)
             .orElseThrow(() -> new CustomException(BoardErrorCode.COMMENT_NOT_FOUND));
     }
 

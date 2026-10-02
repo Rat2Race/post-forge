@@ -1,5 +1,6 @@
 package dev.iamrat.board.post.application;
 
+import dev.iamrat.board.post.domain.PostRepository;
 import dev.iamrat.board.post.domain.Post;
 import dev.iamrat.board.support.error.BoardErrorCode;
 import dev.iamrat.core.global.error.CommonErrorCode;
@@ -15,14 +16,14 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class PostViewCountService {
-    private final PostStore postStore;
+    private final PostRepository postRepository;
 
     public long getViewCount(Long postId) {
         if (postId == null) {
             throw new CustomException(CommonErrorCode.INVALID_INPUT);
         }
 
-        return postStore.findById(postId)
+        return postRepository.findById(postId)
             .map(Post::getViews)
             .orElseThrow(() -> new CustomException(BoardErrorCode.POST_NOT_FOUND));
     }
@@ -33,7 +34,7 @@ public class PostViewCountService {
         }
 
         Map<Long, Long> result = new HashMap<>();
-        postStore.findAllById(postIds).forEach(post -> result.put(post.getId(), post.getViews()));
+        postRepository.findAllById(postIds).forEach(post -> result.put(post.getId(), post.getViews()));
 
         return result;
     }
@@ -44,6 +45,6 @@ public class PostViewCountService {
             throw new CustomException(CommonErrorCode.INVALID_INPUT);
         }
 
-        postStore.updateViews(postId, views);
+        postRepository.updateViews(postId, views);
     }
 }

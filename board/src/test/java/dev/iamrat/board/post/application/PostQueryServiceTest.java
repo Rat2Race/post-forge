@@ -1,10 +1,10 @@
 package dev.iamrat.board.post.application;
 
+import dev.iamrat.board.post.domain.PostRepository;
 import dev.iamrat.board.comment.application.CommentQueryService;
 import dev.iamrat.board.like.application.LikeResult;
 import dev.iamrat.board.like.application.PostLikeService;
 import dev.iamrat.board.post.domain.Post;
-import dev.iamrat.board.post.presentation.PostDetailResponse;
 import dev.iamrat.board.view.application.ViewCountService;
 import java.util.List;
 import java.util.Map;
@@ -27,7 +27,7 @@ import java.util.Set;
 class PostQueryServiceTest {
 
     @Mock
-    private PostStore postStore;
+    private PostRepository postRepository;
 
     @Mock
     private PostReader postReader;
@@ -62,7 +62,7 @@ class PostQueryServiceTest {
         given(postLikeService.getLikeInfo(postId, null)).willReturn(new LikeResult(false, 1L));
         given(commentQueryService.getCommentCount(postId)).willReturn(2);
 
-        PostDetailResponse response = postQueryService.readPost(postId, null);
+        PostDetail response = postQueryService.readPost(postId, null);
 
         assertThat(response.views()).isEqualTo(3L);
         assertThat(response.isLiked()).isFalse();
@@ -79,13 +79,13 @@ class PostQueryServiceTest {
             .accountId(1L)
             .nickname("writer")
             .build();
-        given(postStore.findByKeyword(null, Pageable.unpaged())).willReturn(new PageImpl<>(List.of(post)));
+        given(postRepository.findByKeyword(null, Pageable.unpaged())).willReturn(new PageImpl<>(List.of(post)));
         given(postLikeService.getLikedPostIds(List.of(3L), null)).willReturn(Set.of());
         given(viewCountService.getViewCounts(List.of(3L))).willReturn(Map.of(3L, 5L));
         given(postLikeService.getLikeCounts(List.of(3L))).willReturn(Map.of(3L, 0L));
         given(commentQueryService.getCommentCounts(List.of(3L))).willReturn(Map.of(3L, 0));
 
-        PostDetailResponse response = postQueryService.getPosts(null, Pageable.unpaged(), null).getContent().getFirst();
+        PostDetail response = postQueryService.getPosts(null, Pageable.unpaged(), null).getContent().getFirst();
 
         assertThat(response.views()).isEqualTo(5L);
         assertThat(response.commentCount()).isZero();
@@ -95,10 +95,10 @@ class PostQueryServiceTest {
     @DisplayName("게시글 목록 조회는 앞뒤 공백을 지운 검색어를 store에 넘긴다")
     void getPosts_trimsKeywordBeforeDelegating() {
         Pageable pageable = Pageable.unpaged();
-        given(postStore.findByKeyword("격리 수준", pageable)).willReturn(new PageImpl<>(List.of()));
+        given(postRepository.findByKeyword("격리 수준", pageable)).willReturn(new PageImpl<>(List.of()));
 
         postQueryService.getPosts("  격리 수준  ", pageable, null);
 
-        verify(postStore).findByKeyword("격리 수준", pageable);
+        verify(postRepository).findByKeyword("격리 수준", pageable);
     }
 }

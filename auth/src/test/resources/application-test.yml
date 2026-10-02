@@ -1,0 +1,12 @@
+spring:
+  # Testcontainers가 compose·운영과 같은 PostgreSQL 이미지를 띄운다. Flyway V0000으로 스키마를 만들고 엔티티와 대조한다.
+  datasource:
+    url: jdbc:tc:pgvector:0.8.2-pg18-trixie:///postforge
+  flyway:
+    locations: filesystem:../app/src/main/resources/db/migration
+  jpa:
+    hibernate:
+      ddl-auto: validate
+  test:
+    database:
+      replace: none

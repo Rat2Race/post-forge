@@ -1,10 +1,10 @@
 package dev.iamrat.board.post.application;
 
+import dev.iamrat.board.post.domain.PostRepository;
 import dev.iamrat.board.comment.application.CommentQueryService;
 import dev.iamrat.board.like.application.LikeResult;
 import dev.iamrat.board.like.application.PostLikeService;
 import dev.iamrat.board.post.domain.Post;
-import dev.iamrat.board.post.presentation.PostDetailResponse;
 import dev.iamrat.board.view.application.ViewCountService;
 import java.util.List;
 import java.util.Map;
@@ -21,34 +21,34 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional(readOnly = true)
 public class PostQueryService {
 
-    private final PostStore postStore;
+    private final PostRepository postRepository;
     private final PostReader postReader;
     private final PostLikeService postLikeService;
     private final CommentQueryService commentQueryService;
     private final ViewCountService viewCountService;
 
-    public Page<PostDetailResponse> getPosts(String keyword, Pageable pageable, Long accountId) {
-        Page<Post> posts = postStore.findByKeyword(normalizeKeyword(keyword), pageable);
+    public Page<PostDetail> getPosts(String keyword, Pageable pageable, Long accountId) {
+        Page<Post> posts = postRepository.findByKeyword(normalizeKeyword(keyword), pageable);
         return toDetailPage(posts, pageable, accountId);
     }
 
-    public PostDetailResponse getPost(Long postId, Long accountId) {
+    public PostDetail getPost(Long postId, Long accountId) {
         Post post = postReader.getById(postId);
 
         long views = viewCountService.getViewCount(postId);
         LikeResult likeInfo = postLikeService.getLikeInfo(postId, accountId);
         int commentCount = commentQueryService.getCommentCount(postId);
-        return PostDetailResponse.from(post, likeInfo.isLiked(), likeInfo.likeCount(), commentCount, views);
+        return PostDetail.from(post, likeInfo.isLiked(), likeInfo.likeCount(), commentCount, views);
     }
 
-    public PostDetailResponse readPost(Long postId, Long accountId) {
+    public PostDetail readPost(Long postId, Long accountId) {
         if (accountId != null) {
             viewCountService.incrementIfNew(postId, accountId);
         }
         return getPost(postId, accountId);
     }
 
-    private Page<PostDetailResponse> toDetailPage(Page<Post> posts, Pageable pageable, Long accountId) {
+    private Page<PostDetail> toDetailPage(Page<Post> posts, Pageable pageable, Long accountId) {
         List<Post> content = posts.getContent();
         if (content.isEmpty()) {
             return new PageImpl<>(List.of(), pageable, posts.getTotalElements());
@@ -63,8 +63,8 @@ public class PostQueryService {
         Map<Long, Long> likeCounts = postLikeService.getLikeCounts(postIds);
         Map<Long, Integer> commentCounts = commentQueryService.getCommentCounts(postIds);
 
-        List<PostDetailResponse> responses = content.stream()
-            .map(post -> PostDetailResponse.from(
+        List<PostDetail> responses = content.stream()
+            .map(post -> PostDetail.from(
                 post,
                 likedPostIds.contains(post.getId()),
                 likeCounts.getOrDefault(post.getId(), 0L),

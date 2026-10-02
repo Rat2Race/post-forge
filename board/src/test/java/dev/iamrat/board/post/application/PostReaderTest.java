@@ -1,5 +1,6 @@
 package dev.iamrat.board.post.application;
 
+import dev.iamrat.board.post.domain.PostRepository;
 import dev.iamrat.board.support.error.BoardErrorCode;
 import dev.iamrat.core.global.exception.CustomException;
 import java.util.Optional;
@@ -17,7 +18,7 @@ import static org.mockito.BDDMockito.given;
 class PostReaderTest {
 
     @Mock
-    private PostStore postStore;
+    private PostRepository postRepository;
 
     @InjectMocks
     private PostReader postReader;
@@ -25,7 +26,7 @@ class PostReaderTest {
     @Test
     @DisplayName("게시글이 없으면 POST_NOT_FOUND 예외를 던진다")
     void getById_whenPostMissing_throwsNotFound() {
-        given(postStore.findById(1L)).willReturn(Optional.empty());
+        given(postRepository.findById(1L)).willReturn(Optional.empty());
 
         assertThatThrownBy(() -> postReader.getById(1L))
             .isInstanceOf(CustomException.class)

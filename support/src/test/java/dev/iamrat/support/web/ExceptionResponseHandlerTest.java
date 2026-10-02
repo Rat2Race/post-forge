@@ -6,8 +6,12 @@ import dev.iamrat.core.global.dto.ErrorResponse;
 import dev.iamrat.core.global.error.CommonErrorCode;
 import dev.iamrat.core.global.exception.CustomException;
 import java.io.IOException;
+import java.sql.SQLException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.springframework.boot.test.system.CapturedOutput;
+import org.springframework.boot.test.system.OutputCaptureExtension;
 import org.springframework.core.MethodParameter;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
@@ -27,6 +31,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
+@ExtendWith(OutputCaptureExtension.class)
 class ExceptionResponseHandlerTest {
 
     private final ExceptionResponseHandler handler = new ExceptionResponseHandler();
@@ -73,6 +78,49 @@ class ExceptionResponseHandlerTest {
         assertThat(response.getBody().getStatus()).isEqualTo(400);
         assertThat(response.getBody().getError()).isEqualTo("VALIDATION_ERROR");
         assertThat(response.getBody().getValidation()).containsEntry("message", "must not be blank");
+    }
+
+    @Test
+    @DisplayName("요청 검증 실패 로그에는 필드 이름과 위반 코드만 남기고 사용자가 보낸 값(비밀번호 등)은 남기지 않는다")
+    void handleValidationException_doesNotLogRejectedValue(CapturedOutput output) throws Exception {
+        MethodParameter parameter = new MethodParameter(
+            ExceptionResponseHandlerTest.class.getDeclaredMethod("validatedMethod", String.class),
+            0
+        );
+        BeanPropertyBindingResult bindingResult = new BeanPropertyBindingResult(new Object(), "request");
+        bindingResult.addError(new FieldError("request", "password", "leakpw1234", false,
+            new String[] {"Pattern.request.password", "Pattern"}, null, "비밀번호 형식이 아닙니다"));
+
+        handler.handleValidationException(new MethodArgumentNotValidException(parameter, bindingResult));
+
+        assertThat(output).contains("password").contains("Pattern").doesNotContain("leakpw1234");
+    }
+
+    @Test
+    @DisplayName("무결성 위반 로그에는 제약 이름과 SQLState만 남기고 충돌한 값(이메일 등)은 남기지 않는다")
+    void handleDataIntegrityViolationException_logsConstraintNameOnly(CapturedOutput output) {
+        SQLException sql = new SQLException(
+            "ERROR: duplicate key value violates unique constraint \"uk_accounts_email\"\n  Detail: Key (email)=(leak@example.com) already exists.",
+            "23505");
+        DataIntegrityViolationException exception = new DataIntegrityViolationException(
+            "could not execute statement; Key (email)=(leak@example.com)", new RuntimeException("wrapped", sql));
+
+        handler.handleDataIntegrityViolationException(exception);
+
+        assertThat(output).contains("uk_accounts_email").contains("23505").doesNotContain("leak@example.com");
+    }
+
+    @Test
+    @DisplayName("읽을 수 없는 본문 로그에는 본문 조각을 남기지 않는다")
+    void handleHttpMessageNotReadableException_doesNotLogBodyFragment(CapturedOutput output) {
+        HttpMessageNotReadableException exception = new HttpMessageNotReadableException(
+            "JSON parse error: Unrecognized token 'leakpw1234': was expecting (JSON String, Number, Array, Object)",
+            new MockHttpInputMessage(new byte[0])
+        );
+
+        handler.handleHttpMessageNotReadableException(exception);
+
+        assertThat(output).doesNotContain("leakpw1234");
     }
 
     @Test
@@ -130,6 +178,22 @@ class ExceptionResponseHandlerTest {
         assertThat(response.getBody().getStatus()).isEqualTo(400);
         assertThat(response.getBody().getError()).isEqualTo("INVALID_INPUT");
         assertThat(response.getBody().getMessage()).isEqualTo("잘못된 입력입니다");
+    }
+
+    @Test
+    @DisplayName("경로 변수 타입 변환 실패 로그에는 변수 이름과 기대 타입만 남기고 보낸 값은 남기지 않는다")
+    void handleMethodArgumentTypeMismatchException_doesNotLogValue(CapturedOutput output) throws Exception {
+        MethodParameter parameter = new MethodParameter(
+            ExceptionResponseHandlerTest.class.getDeclaredMethod("validatedMethod", String.class),
+            0
+        );
+        MethodArgumentTypeMismatchException exception = new MethodArgumentTypeMismatchException(
+            "private-token-123", Long.class, "sourceId", parameter, new NumberFormatException("For input string: \"private-token-123\"")
+        );
+
+        handler.handleMethodArgumentTypeMismatchException(exception);
+
+        assertThat(output).contains("sourceId").contains("Long").doesNotContain("private-token-123");
     }
 
     @Test

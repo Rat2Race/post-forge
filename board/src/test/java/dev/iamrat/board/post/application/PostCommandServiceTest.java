@@ -1,7 +1,7 @@
 package dev.iamrat.board.post.application;
 
+import dev.iamrat.board.post.domain.PostRepository;
 import dev.iamrat.board.post.domain.Post;
-import dev.iamrat.board.post.presentation.PostSummaryResponse;
 import dev.iamrat.board.view.application.ViewCountService;
 import dev.iamrat.core.account.AccountProfile;
 import dev.iamrat.core.account.AccountProfileReader;
@@ -22,7 +22,7 @@ import static org.mockito.Mockito.verify;
 class PostCommandServiceTest {
 
     @Mock
-    private PostStore postStore;
+    private PostRepository postRepository;
 
     @Mock
     private PostReader postReader;
@@ -38,7 +38,7 @@ class PostCommandServiceTest {
     @BeforeEach
     void setUp() {
         postCommandService = new PostCommandService(
-            postStore,
+            postRepository,
             postReader,
             viewCountService,
             accountProfileReader
@@ -50,7 +50,7 @@ class PostCommandServiceTest {
     void savePost_usesAccountProfileNickname() {
         given(accountProfileReader.getProfile(1L)).willReturn(new AccountProfile(1L, "포트닉네임"));
 
-        PostSummaryResponse response = postCommandService.savePost(
+        PostSummary response = postCommandService.savePost(
             "title",
             "content",
             null,
@@ -58,7 +58,7 @@ class PostCommandServiceTest {
         );
 
         ArgumentCaptor<Post> postCaptor = ArgumentCaptor.forClass(Post.class);
-        verify(postStore).save(postCaptor.capture());
+        verify(postRepository).save(postCaptor.capture());
         assertThat(postCaptor.getValue().getNickname()).isEqualTo("포트닉네임");
         assertThat(response.nickname()).isEqualTo("포트닉네임");
     }
@@ -94,6 +94,6 @@ class PostCommandServiceTest {
         postCommandService.deletePost(10L);
 
         verify(viewCountService).deleteViewCount(10L);
-        verify(postStore).delete(post);
+        verify(postRepository).delete(post);
     }
 }

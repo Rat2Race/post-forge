@@ -51,7 +51,7 @@ jobs:
       - name: Run tests
         run: |
           ./gradlew check \
-            -PexcludeTags=integration \
+            -PexcludeTags=eval \
             --build-cache \
             --no-daemon
 

@@ -1,5 +1,6 @@
 package dev.iamrat.board.comment.application;
 
+import dev.iamrat.board.comment.domain.CommentRepository;
 import dev.iamrat.board.support.error.BoardErrorCode;
 import dev.iamrat.core.global.exception.CustomException;
 import java.util.Optional;
@@ -17,7 +18,7 @@ import static org.mockito.BDDMockito.given;
 class CommentReaderTest {
 
     @Mock
-    private CommentStore commentStore;
+    private CommentRepository commentRepository;
 
     @InjectMocks
     private CommentReader commentReader;
@@ -25,7 +26,7 @@ class CommentReaderTest {
     @Test
     @DisplayName("댓글이 없으면 COMMENT_NOT_FOUND 예외를 던진다")
     void getById_whenCommentMissing_throwsNotFound() {
-        given(commentStore.findById(1L)).willReturn(Optional.empty());
+        given(commentRepository.findById(1L)).willReturn(Optional.empty());
 
         assertThatThrownBy(() -> commentReader.getById(1L))
             .isInstanceOf(CustomException.class)
