@@ -24,9 +24,5 @@ NAVER_CLIENT_SECRET: dummy-naver-secret
 KAKAO_CLIENT_ID: dummy-kakao-client-id
 KAKAO_CLIENT_SECRET: dummy-kakao-secret
 JWT_SECRET: test-only-jwt-secret-key-postforge-0123456789abcdef0123456789
-AWS_BUCKET: test-bucket
-AWS_REGION: ap-northeast-2
-AWS_ACCESS_KEY_ID: test-access-key
-AWS_SECRET_ACCESS_KEY: test-secret-key
 MONITORING_USERNAME: monitor
 MONITORING_PASSWORD: monitor-secret

@@ -11,11 +11,11 @@ PostForge는 사용자가 올린 자료(마크다운·텍스트)에서 근거 �
 | --- | --- |
 | 학습 | 근거 문장 검증 문제(LLM 초안, 실패하면 규칙 문제), 간격 반복(10분·1·3·7·14·30일), 빈 페이지 정리(자료별 일정·언급 제안), 가르치기, 꼬리질문, 잔디·게이트 지표 (`/study.html`) |
 | 인증 | JWT, Redis refresh token rotation, OAuth2, 이메일 인증, 로그인 보호 |
-| 게시판 | 게시글, 댓글/대댓글, 좋아요, 조회수, S3 presigned URL, 작성자 소유권 검증 |
+| 게시판 | 게시글, 댓글/대댓글, 좋아요, 조회수, 작성자 소유권 검증 |
 | AI | Spring AI, OpenAI-compatible LLM(로컬은 Ollama `qwen3:8b`). 문제 초안·AI 학생 질문·꼬리질문만 만들고 채점하지 않는다 |
 | 운영 기반 | Flyway baseline, Docker layered jar, 구조화 로그, Prometheus/Grafana |
 
-뉴스 수집·자동 게시·데일리 종합은 ADR-008에 따라 지웠습니다. 그 시절의 첨부파일도 같은 ADR의 삭제 목록에 따라 지우는 중입니다.
+뉴스 수집·자동 게시·데일리 종합, 그 시절의 초안 생성기·RAG 채팅·문서 적재·첨부파일은 ADR-008에 따라 지웠습니다.
 
 ## Architecture
 
@@ -46,14 +46,13 @@ PostForge는 사용자가 올린 자료(마크다운·텍스트)에서 근거 �
 | Data | PostgreSQL, Redis, Spring Data JPA, Flyway |
 | Security | Spring Security, JWT, OAuth2, Gmail SMTP |
 | AI | Spring AI 1.0.7, OpenAI-compatible API |
-| Storage | S3-compatible storage |
 | API | Spring MVC, SpringDoc OpenAPI |
 | Test | JUnit 5, Spring Boot Test, ArchUnit |
 | Operations | Docker Compose, GitHub Actions, Prometheus, Grafana, ECS JSON logging |
 
 ## Data And API
 
-테이블·Redis key·S3 object 소유권은 [DB Schema Ownership](./docs/database/schema-ownership.md)이 정본입니다.
+테이블·Redis key 소유권은 [DB Schema Ownership](./docs/database/schema-ownership.md)이 정본입니다.
 관계 시각화는 [MVP ERD](./docs/database/postforge-mvp-erd.md)를 봅니다.
 
 신규 DB는 Flyway `V0000__baseline_schema.sql` 하나로 만듭니다. 2026-09-30 뉴스 도메인을 떠나는 시점([ADR-007](./docs/decisions/adr-007-remove-naver-news-source.md))에 이력을 리셋했으므로,
@@ -79,7 +78,7 @@ Endpoint, DTO, status, 인증 조건의 정본은 [API 명세](./docs/api/README
 | 환경변수 | `.env.local` (커밋 안 함) | `.env` (커밋 안 함, compose `env_file`) |
 | compose | `docker-compose.local.yml` (커밋) | `docker-compose.prod.yml` (커밋 안 함) |
 
-[`.env.example`](./.env.example)은 두 환경에서 쓰는 변수명만 값 없이 나열합니다. 로컬은 주소·DB 계정·JWT·소셜 로그인·S3·
+[`.env.example`](./.env.example)은 두 환경에서 쓰는 변수명만 값 없이 나열합니다. 로컬은 주소·DB 계정·JWT·소셜 로그인·
 모니터링 값만 채우면 됩니다. LLM 주소·모델, Redis 호스트, 메일 서버는 `application-local.yml` 기본값
 (Ollama `localhost:11434`의 `qwen3:8b`, Redis `localhost`, Mailpit `localhost:1025`)을 쓰므로 비워 둡니다.
 
@@ -146,7 +145,7 @@ workflow_dispatch (release/postforge)
 | [전체 문서 안내](./docs/README.md) | 정본 경계, 읽는 순서, 전체 분류 |
 | [API 명세](./docs/api/README.md) | 모듈별 endpoint, DTO, status, 인증 조건 |
 | [모듈 의존성](./docs/architecture/module-dependencies.md) | 모듈 책임과 dependency policy |
-| [DB Schema Ownership](./docs/database/schema-ownership.md) | DB/Redis/S3 소유권과 migration 규칙 |
+| [DB Schema Ownership](./docs/database/schema-ownership.md) | DB/Redis 소유권과 migration 규칙 |
 | [성능 리포트](./docs/performance/README.md) | 현재 검증 표면과 historical evidence 구분 |
 
 ## License

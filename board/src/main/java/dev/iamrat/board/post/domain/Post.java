@@ -2,7 +2,6 @@ package dev.iamrat.board.post.domain;
 
 import dev.iamrat.board.support.persistence.AuditingFields;
 import dev.iamrat.board.comment.domain.Comment;
-import dev.iamrat.board.file.domain.PostFile;
 import jakarta.persistence.*;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
@@ -67,11 +66,6 @@ public class Post extends AuditingFields {
 	@OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
 	@Builder.Default
 	private Set<Comment> comments = new LinkedHashSet<>();
-
-	@ToString.Exclude
-	@OneToMany(mappedBy = "post")
-	@Builder.Default
-	private Set<PostFile> files = new LinkedHashSet<>();
 
 	public static Post general(String title, String content, Long accountId, String nickname) {
 		return create(title, content, null, accountId, nickname);

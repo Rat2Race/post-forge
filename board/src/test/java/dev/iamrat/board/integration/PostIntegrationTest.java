@@ -67,8 +67,7 @@ class PostIntegrationTest {
             "테스트 제목",
             "테스트 내용입니다. 10자 이상.",
             null,
-            1L,
-            List.of()
+            1L
         );
         given(viewCountService.getViewCount(saved.id())).willReturn(0L);
         given(viewCountService.getViewCounts(anyList())).willReturn(Map.of(saved.id(), 0L));
@@ -124,8 +123,7 @@ class PostIntegrationTest {
             "수정 전 제목",
             "수정 전 게시글 내용입니다.",
             null,
-            1L,
-            List.of()
+            1L
         );
         given(viewCountService.getViewCount(saved.id())).willReturn(0L);
 
@@ -133,8 +131,7 @@ class PostIntegrationTest {
             saved.id(),
             "수정 후 제목",
             "수정 후 게시글 내용입니다.",
-            null,
-            List.of()
+            null
         );
         PostDetailResponse detail = postQueryService.getPost(saved.id(), 1L);
 
@@ -154,8 +151,7 @@ class PostIntegrationTest {
             "삭제 대상 제목",
             "삭제 대상 게시글 내용입니다.",
             null,
-            1L,
-            List.of()
+            1L
         );
 
         postCommandService.deletePost(saved.id());

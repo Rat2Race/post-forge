@@ -54,7 +54,6 @@ spring:
     redis:
       port: ${REDIS_PORT:6379}
 
-
   jpa:
     database-platform: org.hibernate.dialect.PostgreSQLDialect
     hibernate:
@@ -63,12 +62,6 @@ spring:
       hibernate:
         format_sql: true
         default_batch_fetch_size: 1000
-
-  servlet:
-    multipart:
-      enabled: true
-      max-file-size: 10MB
-      max-request-size: 10MB
 
   mail:
     properties:
@@ -136,13 +129,6 @@ logging:
     org.springframework.security: ${LOG_LEVEL_SPRING_SECURITY:INFO}
     org.springframework.security.oauth2: ${LOG_LEVEL_SPRING_SECURITY_OAUTH2:INFO}
     dev.iamrat: ${LOG_LEVEL_APP:INFO}
-
-aws:
-  s3:
-    bucket: ${AWS_BUCKET}
-    region: ${AWS_REGION}
-    access-key-id: ${AWS_ACCESS_KEY_ID}
-    secret-access-key: ${AWS_SECRET_ACCESS_KEY}
 
 springdoc:
   api-docs:

@@ -50,7 +50,6 @@ public class PostForgeAuthorizationRules {
             "/api/posts/*/comments",
             "/api/posts/*/comments/*",
             "/api/posts/*/comments/*/like",
-            "/api/files/**",
             "/api/study/**"
     };
 

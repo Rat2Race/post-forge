@@ -137,10 +137,10 @@ Spring pageable resolver는 일부 잘못된 `page`/`size` 값을 `0`, 엔드포
 | Endpoint | Auth | Parameters — 필요한 이유 | Success | Fail |
 | --- | --- | --- | --- | --- |
 | `GET /api/posts` | PUBLIC | `keyword?` 제목·본문 검색, pageable 기본 `size=20`, `sort=createdAt,DESC`; 선택 JWT는 `isLiked` 계산에 사용 | `200 PageResponse<PostDetailResponse>` | 지원하지 않는 sort property·내부 조회 오류 `500` |
-| `POST /api/posts` | USER | body `PostRequest` — 일반 게시글 본문·태그·첨부 지정; JWT account ID는 작성자 | `201 PostSummaryResponse` | `400 VALIDATION_ERROR`; 인증·계정 상태 `401/403`; 작성자 `404 USER_NOT_FOUND`; 충돌 `409` |
+| `POST /api/posts` | USER | body `PostRequest` — 일반 게시글 본문·태그 지정; JWT account ID는 작성자 | `201 PostSummaryResponse` | `400 VALIDATION_ERROR`; 인증·계정 상태 `401/403`; 작성자 `404 USER_NOT_FOUND`; 충돌 `409` |
 | `GET /api/posts/{postId}` | PUBLIC | path `postId` — 조회할 게시글 식별. 선택 JWT가 있으면 개인화 및 사용자별 조회수 증가 | `200 PostDetailResponse` | `404 POST_NOT_FOUND`; 숫자가 아닌 경로 `404 RESOURCE_NOT_FOUND` |
 | `PUT /api/posts/{postId}` | USER | path `postId` 대상 식별, body `PostRequest` 새 상태. 작성자 또는 ADMIN만 허용 | `200 PostSummaryResponse` | `400 VALIDATION_ERROR`; 인증·소유권 `401/403`; `404 POST_NOT_FOUND` |
-| `DELETE /api/posts/{postId}` | USER | path `postId` — 삭제할 게시글과 연결 파일·조회수 정리 대상 식별. 작성자 또는 ADMIN만 허용 | `204 No Content` | 인증·소유권 `401/403`; `404 POST_NOT_FOUND` |
+| `DELETE /api/posts/{postId}` | USER | path `postId` — 삭제할 게시글과 조회수 정리 대상 식별. 작성자 또는 ADMIN만 허용 | `204 No Content` | 인증·소유권 `401/403`; `404 POST_NOT_FOUND` |
 | `POST /api/posts/{postId}/like` | USER | path `postId` 대상, JWT account ID 중복 방지·개인 상태 | `200 LikeResponse` | 인증 `401/403`; `404 POST_NOT_FOUND`; cooldown·분당 한도·guard 장애 `429 TOO_MANY_REQUESTS` |
 | `DELETE /api/posts/{postId}/like` | USER | path `postId` 대상, JWT account ID의 좋아요만 제거 | `200 LikeResponse` | 인증 `401/403`; `404 POST_NOT_FOUND`; 요청 보호 `429 TOO_MANY_REQUESTS` |
 | `GET /api/posts/{postId}/comments` | PUBLIC | path `postId` 댓글 묶음, pageable 기본 `size=50`, `sort=createdAt,ASC`; 선택 JWT는 `isLiked` 계산 | `200 PageResponse<CommentDetailResponse>`; 댓글이 없으면 빈 page | 지원하지 않는 sort property·내부 조회 오류 `500` |
@@ -152,8 +152,6 @@ Spring pageable resolver는 일부 잘못된 `page`/`size` 값을 `0`, 엔드포
 | `GET /api/user/profile` | USER | body 없음. JWT account ID로 상세 프로필 조회 | `200 ProfileResponse` | 인증·비활성 `401/403`; `404 USER_NOT_FOUND` |
 | `PATCH /api/user/profile/nickname` | USER | body `ProfileNicknameUpdateRequest` — 새 공개 닉네임 | `204 No Content` | `400 VALIDATION_ERROR`; 인증·비활성 `401/403`; `404 USER_NOT_FOUND`; `409 DUPLICATE_NICKNAME` |
 | `PATCH /api/user/profile/password` | USER | body `ProfilePasswordUpdateRequest` — 현재 비밀번호 확인 후 변경 | `204 No Content`; refresh token 폐기 | `400 VALIDATION_ERROR/INVALID_PASSWORD/OAUTH_PASSWORD_UPDATE_NOT_ALLOWED`; 인증·비활성 `401/403`; `404 USER_NOT_FOUND` |
-| `GET /api/files/presigned-url` | USER | query `fileName` 확장자·저장명 생성, `contentType` 실제 업로드 MIME 서명. `/api/files/s3/presigned-url` 별칭도 동일 | `200 FileUploadResponse`; URL TTL 5분 | 누락 `400 INVALID_INPUT`; `400 FILE_EXTENSION_NOT_ALLOWED/FILE_TYPE_MISMATCH`; 인증 `401/403`; S3/DB 오류 `500` |
-| `GET /api/files/{fileId}/download-url` | USER | path `fileId` — 저장 object key를 조회. `/api/files/s3/{fileId}/download-url` 별칭도 동일 | `200 UrlResponse`; URL TTL 5분 | 타입 오류 `400 INVALID_INPUT`; 인증 `401/403`; `404 FILE_NOT_FOUND`; S3 오류 `500` |
 
 ### HTTP method 선택 기준
 
@@ -176,7 +174,7 @@ Spring pageable resolver는 일부 잘못된 `page`/`size` 값을 `0`, 엔드포
 
 PUT/PATCH의 기준은 ID·작성자·생성일 같은 서버 관리 필드를 보존하느냐가 아니다. client가 관리하는 편집 필드를 매번 완전한 상태로 보내면 PUT이고, 일부 필드만 보내며 누락 필드를 유지해야 하면 PATCH다. PATCH로 바꾸려면 annotation만 교체할 것이 아니라 DTO가 `누락`과 `명시적 null/빈 값`을 구분하고 service가 기존 값과 merge하도록 바꿔야 한다.
 
-현재 `PUT /api/posts/{postId}`는 client가 편집 가능한 `title`, `content`, `tags`, `fileIds` 묶음을 교체한다. `tags`를 생략하면 빈 목록이 되고 `fileIds`를 생략하면 기존 첨부가 모두 해제되므로, edit client는 네 필드를 전체 전송해야 한다. 댓글 `PUT`도 생성용 `CommentRequest`를 재사용해 `parentId`를 받지만 수정에서는 무시하고 `content`만 바꾼다. 댓글 수정에는 `content`만 가진 별도 DTO를 쓰는 것이 현재 의도에 맞다.
+현재 `PUT /api/posts/{postId}`는 client가 편집 가능한 `title`, `content`, `tags` 묶음을 교체한다. `tags`를 생략하면 빈 목록이 되므로 edit client는 세 필드를 전체 전송해야 한다. 댓글 `PUT`도 생성용 `CommentRequest`를 재사용해 `parentId`를 받지만 수정에서는 무시하고 `content`만 바꾼다. 댓글 수정에는 `content`만 가진 별도 DTO를 쓰는 것이 현재 의도에 맞다.
 
 Board의 게시글·댓글 path ID는 `\d+` 경로만 매핑한다. 숫자가 아니면 controller에 도달하지 않고 `404 RESOURCE_NOT_FOUND`다. `PUT/DELETE` 댓글 경로의 `postId`는 현재 서비스 계층에서 `commentId`와의 소속 관계 검증에 사용되지 않는다. 호출자는 실제 댓글의 게시글 ID를 넣어야 한다.
 
@@ -187,7 +185,6 @@ Board의 게시글·댓글 path ID는 `\d+` 경로만 매핑한다. 숫자가 �
 | `PostRequest.title` | 필수, 2~100자, `<`·`>` 금지 | 목록·상세 제목과 기본 검색 대상 |
 | `PostRequest.content` | 필수, 10~10000자 | 게시글 본문 |
 | `PostRequest.tags` | 선택, 최대 20개·각 50자 | 게시글 분류·표시용 태그 |
-| `PostRequest.fileIds` | 선택 | presigned URL 발급 때 만든 파일 레코드를 게시글에 연결. 현재 저장소 조회 결과에 없는 ID는 연결되지 않음 |
 | `CommentRequest.parentId` | 선택 | 대댓글의 바로 위 댓글 식별. 없으면 최상위 댓글 |
 | `CommentRequest.content` | 필수, 2~500자, 위험 HTML 패턴 차단 | 댓글 본문 |
 | `ProfileNicknameUpdateRequest.nickname` | 필수, 2~20자 한글·영문·숫자·`_` | 변경할 공개 표시명 |
@@ -198,15 +195,12 @@ Board의 게시글·댓글 path ID는 `\d+` 경로만 매핑한다. 숫자가 �
 
 | DTO | 필드 |
 | --- | --- |
-| `PostDetailResponse` | `id`, `title`, `content`, `tags`, `accountId`, `nickname`, `views`, `commentCount`, `likeCount`, `isLiked`, `files`, `createdAt`, `modifiedAt` |
+| `PostDetailResponse` | `id`, `title`, `content`, `tags`, `accountId`, `nickname`, `views`, `commentCount`, `likeCount`, `isLiked`, `createdAt`, `modifiedAt` |
 | `PostSummaryResponse` | `id`, `title`, `tags`, `accountId`, `nickname`, `createdAt`, `modifiedAt` |
-| `FileInfoResponse` | `fileId`, `originalFileName`, `fileType` |
 | `CommentDetailResponse` | `id`, `content`, `accountId`, `nickname`, `parentId`, `replyCount`, `likeCount`, `isLiked`, `createdAt`, `modifiedAt` |
 | `CommentSummaryResponse` | `id`, `content`, `accountId`, `nickname`, `parentId`, `createdAt`, `modifiedAt` |
 | `LikeResponse` | `isLiked`, `likeCount` |
 | `ProfileResponse` | `accountId`, `username`, `email`, `nickname`, `provider`, `isOAuthUser`, `roles`, `createdAt`, `updatedAt` |
-| `FileUploadResponse` | `fileId`, `savedName`, `url` |
-| `UrlResponse` | `url` |
 
 <a id="study"></a>
 ## Study
