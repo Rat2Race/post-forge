@@ -41,7 +41,7 @@ class PostDetailResponseTest {
             "summary",
             List.of("tag"),
             null,
-            BoardCategory.BEAUTY,
+            BoardCategory.ENTERTAINMENT,
             PostPublishOrigin.USER,
             1L,
             "writer"
@@ -49,6 +49,6 @@ class PostDetailResponseTest {
 
         PostDetailResponse response = PostDetailResponse.from(post, false, 0L, 0, 0L);
 
-        assertThat(response.boardCategory()).isEqualTo(BoardCategory.BEAUTY);
+        assertThat(response.boardCategory()).isEqualTo(BoardCategory.ENTERTAINMENT);
     }
 }

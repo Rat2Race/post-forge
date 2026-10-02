@@ -127,13 +127,13 @@ class PostTest {
             "summary",
             List.of("tag"),
             PostCategory.GENERAL,
-            BoardCategory.DIGITAL,
+            BoardCategory.TECHNOLOGY,
             PostPublishOrigin.USER,
             1L,
             "writer"
         );
 
-        assertThat(post.getBoardCategory()).isEqualTo(BoardCategory.DIGITAL);
+        assertThat(post.getBoardCategory()).isEqualTo(BoardCategory.TECHNOLOGY);
     }
 
     @Test
@@ -163,7 +163,7 @@ class PostTest {
             "summary",
             List.of("tag"),
             PostCategory.GENERAL,
-            BoardCategory.APPLIANCE,
+            BoardCategory.BUSINESS,
             PostPublishOrigin.USER,
             1L,
             "writer"
@@ -171,7 +171,7 @@ class PostTest {
 
         post.update("new title", "new content", List.of("new"));
 
-        assertThat(post.getBoardCategory()).isEqualTo(BoardCategory.APPLIANCE);
+        assertThat(post.getBoardCategory()).isEqualTo(BoardCategory.BUSINESS);
     }
 
     @Test

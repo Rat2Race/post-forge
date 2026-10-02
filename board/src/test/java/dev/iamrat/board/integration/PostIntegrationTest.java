@@ -114,7 +114,7 @@ class PostIntegrationTest {
             1L,
             "테스터",
             PostCategory.GENERAL,
-            BoardCategory.DIGITAL,
+            BoardCategory.TECHNOLOGY,
             PostPublishOrigin.USER
         ));
         Long livingPostId = postWriter.write(new PostWriteCommand(
@@ -125,7 +125,7 @@ class PostIntegrationTest {
             1L,
             "테스터",
             PostCategory.GENERAL,
-            BoardCategory.LIVING,
+            BoardCategory.NATION,
             PostPublishOrigin.USER
         ));
         given(viewCountService.getViewCounts(anyList()))
@@ -135,7 +135,7 @@ class PostIntegrationTest {
         Page<PostDetailResponse> posts = postQueryService.getPosts(
             null,
             null,
-            BoardCategory.DIGITAL,
+            BoardCategory.TECHNOLOGY,
             null,
             pageable,
             1L

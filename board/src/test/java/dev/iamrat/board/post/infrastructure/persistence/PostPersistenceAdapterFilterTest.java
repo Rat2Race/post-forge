@@ -41,13 +41,13 @@ class PostPersistenceAdapterFilterTest {
     void setUp() {
         entityManager.persistAndFlush(post(
             "Galaxy Book 출시", "신제품 소개", PostCategory.PRODUCT_LAUNCH_NEWS,
-            BoardCategory.DIGITAL, PostPublishOrigin.SYSTEM_BATCH));
+            BoardCategory.TECHNOLOGY, PostPublishOrigin.SYSTEM_BATCH));
         entityManager.persistAndFlush(post(
             "일반 글", "galaxy book 사용 후기", PostCategory.GENERAL,
             BoardCategory.GENERAL, PostPublishOrigin.USER));
         entityManager.persistAndFlush(post(
             "무관한 글", "관계 없는 본문", PostCategory.DAILY_DIGEST,
-            BoardCategory.LIVING, PostPublishOrigin.ADMIN_BACKFILL));
+            BoardCategory.NATION, PostPublishOrigin.ADMIN_BACKFILL));
     }
 
     @Test
@@ -69,7 +69,7 @@ class PostPersistenceAdapterFilterTest {
     @Test
     @DisplayName("boardCategory가 있으면 해당 boardCategory만 조회한다")
     void filtersByBoardCategory() {
-        assertThat(adapter.findByFilters(null, null, BoardCategory.LIVING, null, PageRequest.of(0, 10)))
+        assertThat(adapter.findByFilters(null, null, BoardCategory.NATION, null, PageRequest.of(0, 10)))
             .extracting(Post::getTitle)
             .containsExactly("무관한 글");
     }

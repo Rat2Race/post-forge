@@ -105,13 +105,13 @@ class NewsAdminControllerTest {
                     5,
                     3,
                     List.of("출시"),
-                    BoardCategory.DIGITAL
+                    BoardCategory.TECHNOLOGY
                 ))))
             .andExpect(status().isOk());
 
         ArgumentCaptor<LaunchNewsPublishCommand> captor = ArgumentCaptor.forClass(LaunchNewsPublishCommand.class);
         verify(publishLaunchNewsUseCase).publish(captor.capture());
-        assertThat(captor.getValue().category()).isEqualTo(BoardCategory.DIGITAL);
+        assertThat(captor.getValue().category()).isEqualTo(BoardCategory.TECHNOLOGY);
     }
 
     @Test

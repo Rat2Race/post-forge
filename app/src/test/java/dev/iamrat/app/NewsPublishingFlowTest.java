@@ -99,7 +99,7 @@ class NewsPublishingFlowTest {
                 && post.boardCategory() == call.getArgument(0) && post.title().equals(call.getArgument(1))));
 
         LaunchNewsPublishCommand command = new LaunchNewsPublishCommand(
-            "갤럭시북", 5, 3, List.of("출시"), BoardCategory.DIGITAL, PostPublishOrigin.SYSTEM_BATCH
+            "갤럭시북", 5, 3, List.of("출시"), BoardCategory.TECHNOLOGY, PostPublishOrigin.SYSTEM_BATCH
         );
         publisher.publish(command);
 

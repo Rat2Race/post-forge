@@ -21,6 +21,7 @@ import org.springframework.test.web.client.MockRestServiceServer;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientResponseException;
 import org.springframework.web.util.UriUtils;
+import java.util.Map;
 
 class GoogleNewsRssSourceClientTest {
 
@@ -59,6 +60,40 @@ class GoogleNewsRssSourceClientTest {
         assertThat(first.description()).isEqualTo("최신 갤럭시 S26 출시 (전자신문)");
         assertThat(registry.counter("external_news_fetch_success_total", "api", "news").count()).isEqualTo(1.0);
         assertThat(registry.counter("external_news_fetch_items_total", "api", "news").count()).isEqualTo(2.0);
+        server.verify();
+    }
+
+    @Test
+    @DisplayName("섹션 이름으로 매핑된 키워드는 검색 대신 주제 헤드라인 피드를 읽는다")
+    void readsTopicFeedForMappedSection() {
+        GoogleNewsRssProperties properties = new GoogleNewsRssProperties();
+        properties.setEnabled(true);
+        properties.setSections(Map.of("기술", "technology"));
+        GoogleNewsRssSourceClient client = new GoogleNewsRssSourceClient(properties, builder.build(), new NewsFetchMetrics(registry));
+        server.expect(requestTo("https://news.google.com/rss/headlines/section/topic/TECHNOLOGY?hl=ko&gl=KR&ceid=KR:ko"))
+            .andRespond(withSuccess(rss(
+                item("기술 헤드라인 - A", LINK_1, "A", "https://a.example", "Tue, 29 Sep 2026 09:00:00 GMT")
+            ), MediaType.APPLICATION_RSS_XML));
+
+        assertThat(client.search(new NewsSourceQuery("기술", 5, "date")))
+            .extracting(NewsSourceItem::title).containsExactly("기술 헤드라인");
+        server.verify();
+    }
+
+    @Test
+    @DisplayName("섹션 값이 Google topics 식별자면 /rss/topics 피드를 읽는다")
+    void readsTopicIdFeedForMappedSection() {
+        GoogleNewsRssProperties properties = new GoogleNewsRssProperties();
+        properties.setEnabled(true);
+        properties.setSections(Map.of("과학기술", "CAAqKAgKIiJDQkFTRXdvSkwyMHZNR1ptZHpWbUVnSnJieG9DUzFJb0FBUAE"));
+        GoogleNewsRssSourceClient client = new GoogleNewsRssSourceClient(properties, builder.build(), new NewsFetchMetrics(registry));
+        server.expect(requestTo("https://news.google.com/rss/topics/CAAqKAgKIiJDQkFTRXdvSkwyMHZNR1ptZHpWbUVnSnJieG9DUzFJb0FBUAE?hl=ko&gl=KR&ceid=KR:ko"))
+            .andRespond(withSuccess(rss(
+                item("과학기술 헤드라인 - A", LINK_1, "A", "https://a.example", "Tue, 29 Sep 2026 09:00:00 GMT")
+            ), MediaType.APPLICATION_RSS_XML));
+
+        assertThat(client.search(new NewsSourceQuery("과학기술", 5, "date")))
+            .extracting(NewsSourceItem::title).containsExactly("과학기술 헤드라인");
         server.verify();
     }
 

@@ -23,6 +23,7 @@ import org.springframework.data.domain.AuditorAware;
 import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestConstructor;
+import dev.iamrat.core.board.post.PostPublishOrigin;
 
 @Tag("persistence")
 @DataJpaTest
@@ -48,18 +49,18 @@ class BoardDailyDigestSourceReaderTest {
     @Test
     @DisplayName("해당 날짜와 분야의 출시 뉴스만 반환한다")
     void findLaunchNews_returnsOnlyLaunchNewsOfDateAndCategory() {
-        Long matched = savePost("갤럭시북 출시", "요약", PostCategory.PRODUCT_LAUNCH_NEWS, BoardCategory.DIGITAL,
+        Long matched = savePost("갤럭시북 출시", "요약", PostCategory.PRODUCT_LAUNCH_NEWS, BoardCategory.TECHNOLOGY,
             NEWS_DATE.atTime(9, 0));
-        savePost("전날 뉴스", "요약", PostCategory.PRODUCT_LAUNCH_NEWS, BoardCategory.DIGITAL,
+        savePost("전날 뉴스", "요약", PostCategory.PRODUCT_LAUNCH_NEWS, BoardCategory.TECHNOLOGY,
             NEWS_DATE.minusDays(1).atTime(23, 59));
-        savePost("다음날 뉴스", "요약", PostCategory.PRODUCT_LAUNCH_NEWS, BoardCategory.DIGITAL,
+        savePost("다음날 뉴스", "요약", PostCategory.PRODUCT_LAUNCH_NEWS, BoardCategory.TECHNOLOGY,
             NEWS_DATE.plusDays(1).atStartOfDay());
-        savePost("다른 분야 뉴스", "요약", PostCategory.PRODUCT_LAUNCH_NEWS, BoardCategory.APPLIANCE,
+        savePost("다른 분야 뉴스", "요약", PostCategory.PRODUCT_LAUNCH_NEWS, BoardCategory.BUSINESS,
             NEWS_DATE.atTime(9, 0));
-        savePost("일반 게시글", "요약", PostCategory.GENERAL, BoardCategory.DIGITAL,
+        savePost("일반 게시글", "요약", PostCategory.GENERAL, BoardCategory.TECHNOLOGY,
             NEWS_DATE.atTime(9, 0));
 
-        List<DailyDigestSourceItem> items = reader.findLaunchNews(BoardCategory.DIGITAL, NEWS_DATE);
+        List<DailyDigestSourceItem> items = reader.findLaunchNews(BoardCategory.TECHNOLOGY, NEWS_DATE);
 
         assertThat(items).containsExactly(new DailyDigestSourceItem("갤럭시북 출시", "요약"));
         assertThat(matched).isNotNull();
@@ -68,31 +69,31 @@ class BoardDailyDigestSourceReaderTest {
     @Test
     @DisplayName("자정 경계는 시작 포함, 끝 제외로 판정한다")
     void findLaunchNews_startOfDayInclusiveEndExclusive() {
-        savePost("자정 뉴스", "요약", PostCategory.PRODUCT_LAUNCH_NEWS, BoardCategory.DIGITAL,
+        savePost("자정 뉴스", "요약", PostCategory.PRODUCT_LAUNCH_NEWS, BoardCategory.TECHNOLOGY,
             NEWS_DATE.atStartOfDay());
 
-        assertThat(reader.findLaunchNews(BoardCategory.DIGITAL, NEWS_DATE)).hasSize(1);
-        assertThat(reader.findLaunchNews(BoardCategory.DIGITAL, NEWS_DATE.minusDays(1))).isEmpty();
+        assertThat(reader.findLaunchNews(BoardCategory.TECHNOLOGY, NEWS_DATE)).hasSize(1);
+        assertThat(reader.findLaunchNews(BoardCategory.TECHNOLOGY, NEWS_DATE.minusDays(1))).isEmpty();
     }
 
     @Test
     @DisplayName("같은 분야·제목의 데일리 브리핑이 있으면 digestExists가 true다")
     void digestExists_matchesCategoryAndTitle() {
-        savePost("[디지털] 데일리 브리핑 - 2026-08-20", "요약", PostCategory.DAILY_DIGEST, BoardCategory.DIGITAL,
+        savePost("[과학/기술] 데일리 브리핑 - 2026-08-20", "요약", PostCategory.DAILY_DIGEST, BoardCategory.TECHNOLOGY,
             NEWS_DATE.plusDays(1).atTime(6, 0));
 
-        assertThat(reader.digestExists(BoardCategory.DIGITAL, "[디지털] 데일리 브리핑 - 2026-08-20")).isTrue();
-        assertThat(reader.digestExists(BoardCategory.DIGITAL, "[디지털] 데일리 브리핑 - 2026-08-21")).isFalse();
-        assertThat(reader.digestExists(BoardCategory.APPLIANCE, "[디지털] 데일리 브리핑 - 2026-08-20")).isFalse();
+        assertThat(reader.digestExists(BoardCategory.TECHNOLOGY, "[과학/기술] 데일리 브리핑 - 2026-08-20")).isTrue();
+        assertThat(reader.digestExists(BoardCategory.TECHNOLOGY, "[과학/기술] 데일리 브리핑 - 2026-08-21")).isFalse();
+        assertThat(reader.digestExists(BoardCategory.BUSINESS, "[과학/기술] 데일리 브리핑 - 2026-08-20")).isFalse();
     }
 
     @Test
     @DisplayName("같은 제목이라도 데일리 브리핑 카테고리가 아니면 digestExists가 false다")
     void digestExists_ignoresOtherPostCategories() {
-        savePost("[디지털] 데일리 브리핑 - 2026-08-20", "요약", PostCategory.GENERAL, BoardCategory.DIGITAL,
+        savePost("[과학/기술] 데일리 브리핑 - 2026-08-20", "요약", PostCategory.GENERAL, BoardCategory.TECHNOLOGY,
             NEWS_DATE.atTime(9, 0));
 
-        assertThat(reader.digestExists(BoardCategory.DIGITAL, "[디지털] 데일리 브리핑 - 2026-08-20")).isFalse();
+        assertThat(reader.digestExists(BoardCategory.TECHNOLOGY, "[과학/기술] 데일리 브리핑 - 2026-08-20")).isFalse();
     }
 
     private Long savePost(
@@ -109,7 +110,7 @@ class BoardDailyDigestSourceReaderTest {
             List.of(),
             category,
             boardCategory,
-            dev.iamrat.core.board.post.PostPublishOrigin.SYSTEM_BATCH,
+            PostPublishOrigin.SYSTEM_BATCH,
             0L,
             "PostForge News Bot"
         ));

@@ -50,8 +50,7 @@ public class LaunchNewsEligibilityPolicy {
         if (!isTrustedSource(candidate.sourceName())) {
             return Optional.of(LaunchNewsSkipReason.UNKNOWN_SOURCE);
         }
-        if (!searchableText.contains(normalize(candidate.keyword()))
-            || !containsAny(searchableText, LAUNCH_KEYWORDS)) {
+        if (!containsAny(searchableText, LAUNCH_KEYWORDS)) {
             return Optional.of(LaunchNewsSkipReason.MISSING_LAUNCH_KEYWORD);
         }
         return Optional.empty();

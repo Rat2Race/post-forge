@@ -253,13 +253,13 @@ class PublishLaunchNewsUseCaseTest {
             5,
             3,
             List.of("출시"),
-            BoardCategory.DIGITAL,
+            BoardCategory.TECHNOLOGY,
             PostPublishOrigin.SYSTEM_BATCH
         ));
 
         ArgumentCaptor<PostWriteCommand> postCommand = ArgumentCaptor.forClass(PostWriteCommand.class);
         verify(postWriter).write(postCommand.capture());
-        assertThat(postCommand.getValue().boardCategory()).isEqualTo(BoardCategory.DIGITAL);
+        assertThat(postCommand.getValue().boardCategory()).isEqualTo(BoardCategory.TECHNOLOGY);
     }
 
     @Test
@@ -280,8 +280,8 @@ class PublishLaunchNewsUseCaseTest {
     }
 
     @Test
-    @DisplayName("topics가 비어 있으면 기본 주제로 검색한다")
-    void searchesDefaultTopicsWhenTopicsIsEmpty() {
+    @DisplayName("topics가 비어 있으면 주제를 붙이지 않고 키워드만 넘긴다")
+    void passesEmptyTopicsThroughWithoutDefaults() {
         givenCollected(List.of());
 
         LaunchNewsPublishResult result = useCase.publish(new LaunchNewsPublishCommand(
@@ -298,7 +298,7 @@ class PublishLaunchNewsUseCaseTest {
         verify(ingestProductNewsUseCase).collectAndIngest(
             "갤럭시북",
             5,
-            List.of("신제품", "출시", "공개", "사전예약")
+            List.of()
         );
     }
 

@@ -36,7 +36,7 @@ PostForge 접근 정책은 공개 뉴스·데일리 조회, 회원의 게시판 
 
 - 공개 게시글과 댓글을 수정·삭제할 수 있다.
 - gated launch-news 수동/backfill 게시를 실행할 수 있다. 자동 발행은 system batch scheduler가 `SYSTEM_BATCH` origin으로 실행한다.
-- launch-news 수동 게시를 실행하고, tracked_keywords를 DB에서 직접 관리해 자동 수집을 켜고 끌 수 있다.
+- launch-news 수동 게시를 실행할 수 있다. 자동 수집 섹션은 설정(`INGEST_NEWS_LAUNCH_SECTIONS`)으로 켜고 끈다.
 - 일반 회원의 개인정보를 변경하는 권한은 이 정책에 포함하지 않는다.
 
 ### Read Boundary

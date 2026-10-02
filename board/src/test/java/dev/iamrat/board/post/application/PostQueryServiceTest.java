@@ -25,6 +25,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Page;
+import java.util.Set;
 
 @ExtendWith(MockitoExtension.class)
 class PostQueryServiceTest {
@@ -117,16 +121,16 @@ class PostQueryServiceTest {
             .accountId(1L)
             .nickname("writer")
             .build();
-        org.springframework.data.domain.Page<Post> page =
-            new org.springframework.data.domain.PageImpl<>(List.of(post));
+        Page<Post> page =
+            new PageImpl<>(List.of(post));
         given(postStore.findByFilters(
             null,
             null,
             null,
             null,
-            org.springframework.data.domain.Pageable.unpaged()
+            Pageable.unpaged()
         )).willReturn(page);
-        given(postLikeService.getLikedPostIds(List.of(3L), null)).willReturn(java.util.Set.of());
+        given(postLikeService.getLikedPostIds(List.of(3L), null)).willReturn(Set.of());
         given(viewCountService.getViewCounts(List.of(3L))).willReturn(Map.of(3L, 5L));
         given(postLikeService.getLikeCounts(List.of(3L))).willReturn(Map.of(3L, 0L));
         given(commentQueryService.getCommentCounts(List.of(3L))).willReturn(Map.of(3L, 0));
@@ -137,7 +141,7 @@ class PostQueryServiceTest {
             null,
             null,
             null,
-            org.springframework.data.domain.Pageable.unpaged(),
+            Pageable.unpaged(),
             null
         ).getContent().getFirst();
 
@@ -149,28 +153,28 @@ class PostQueryServiceTest {
     @Test
     @DisplayName("게시글 목록 조회는 조합 가능한 필터를 store에 위임한다")
     void getPosts_delegatesComposableFiltersToStore() {
-        org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.Pageable.unpaged();
+        Pageable pageable = Pageable.unpaged();
         given(postStore.findByFilters(
             "갤럭시북",
             PostCategory.PRODUCT_LAUNCH_NEWS,
-            BoardCategory.DIGITAL,
+            BoardCategory.TECHNOLOGY,
             PostPublishOrigin.SYSTEM_BATCH,
             pageable
-        )).willReturn(new org.springframework.data.domain.PageImpl<>(List.of()));
+        )).willReturn(new PageImpl<>(List.of()));
 
         postQueryService.getPosts(
             "  갤럭시북  ",
             PostCategory.PRODUCT_LAUNCH_NEWS,
-            BoardCategory.DIGITAL,
+            BoardCategory.TECHNOLOGY,
             PostPublishOrigin.SYSTEM_BATCH,
             pageable,
             null
         );
 
-        org.mockito.Mockito.verify(postStore).findByFilters(
+        verify(postStore).findByFilters(
             "갤럭시북",
             PostCategory.PRODUCT_LAUNCH_NEWS,
-            BoardCategory.DIGITAL,
+            BoardCategory.TECHNOLOGY,
             PostPublishOrigin.SYSTEM_BATCH,
             pageable
         );

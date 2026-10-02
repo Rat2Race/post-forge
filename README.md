@@ -18,7 +18,7 @@ PostForge는 외부 뉴스를 수집하고 분야별로 선별한 뒤, LLM으로
 | AI / RAG | Spring AI, OpenAI-compatible LLM, PgVector 문서 검색, 수집 자료에 대한 RAG 채팅 |
 | 운영 기반 | Flyway baseline, Docker layered jar, 구조화 로그, Prometheus/Grafana |
 
-이 브랜치의 수집원은 Google News RSS 검색 피드다. 피드 자체가 개인·비상업 용도로 제한된다고 명시하므로 파이프라인 검증용이며 배포 소스가 아니다.
+이 브랜치의 수집원은 Google News RSS다. 스케줄러는 설정된 섹션(기본 `TECHNOLOGY,BUSINESS`)의 주제 피드를 키워드 없이 읽고, 게시글 분야는 Google 뉴스 한국판 섹션(대한민국·세계·비즈니스·과학/기술·엔터테인먼트·스포츠·건강)과 같다. 수동 게시는 키워드 검색 피드를 읽는다. 피드 자체가 개인·비상업 용도로 제한된다고 명시하므로 파이프라인 검증용이며 배포 소스가 아니다.
 현재 수집·게시 정책은 신제품 출시뉴스를 대상으로 하며, 뉴스 글은 `PRODUCT_LAUNCH_NEWS`, 데일리 글은 `DAILY_DIGEST`로 저장합니다.
 분야는 수집 설정에서 결정하고 LLM은 초안을 작성합니다. 스케줄 실행 안에서 수집부터 게시까지 처리하며, 초안을 별도 예약 대기열에 저장하지는 않습니다.
 뉴스 자동 게시는 기본 매시 30분, 데일리는 매일 06:00이고 두 스케줄러는 기본 비활성입니다.
@@ -63,7 +63,8 @@ PostForge는 외부 뉴스를 수집하고 분야별로 선별한 뒤, LLM으로
 테이블·Redis key·S3 object 소유권은 [DB Schema Ownership](./docs/database/schema-ownership.md)이 정본입니다.
 관계 시각화는 [MVP ERD](./docs/database/postforge-mvp-erd.md)를 봅니다.
 
-신규 DB는 Flyway `V0000__baseline_schema.sql` 이후 증분 migration을 적용합니다.
+신규 DB는 Flyway `V0000__baseline_schema.sql` 하나로 만듭니다. 2026-09-30 뉴스 도메인을 떠나는 시점([ADR-007](./docs/decisions/adr-007-remove-naver-news-source.md))에 이력을 리셋했으므로,
+옛 이력이 적용된 DB는 고쳐 쓰지 않고 DB를 지우고 다시 만듭니다. 로컬은 `docker exec postforge-db sh -c 'psql -U "$POSTGRES_USER" -d postgres -c "drop database postforge" -c "create database postforge"'` 뒤 재기동, 계정·게시글은 `scripts/local-demo-seed.sql`로 다시 넣습니다.
 모든 프로필은 `ddl-auto=validate`로 entity와 schema의 일치만 검증합니다.
 
 Endpoint, DTO, status, 인증 조건의 정본은 [API 명세](./docs/api/README.md)입니다.
