@@ -15,7 +15,6 @@ public record PostDetailResponse(
     Integer commentCount,
     Long likeCount,
     boolean isLiked,
-    List<FileInfoResponse> files,
     LocalDateTime createdAt,
     LocalDateTime modifiedAt
 ) {
@@ -24,10 +23,6 @@ public record PostDetailResponse(
     }
 
     public static PostDetailResponse from(Post post, boolean isLiked, Long likeCount, int commentCount, long views) {
-        List<FileInfoResponse> files = post.getFiles().stream()
-            .map(FileInfoResponse::from)
-            .toList();
-
         return new PostDetailResponse(
             post.getId(),
             post.getTitle(),
@@ -39,7 +34,6 @@ public record PostDetailResponse(
             commentCount,
             likeCount,
             isLiked,
-            files,
             post.getCreatedAt(),
             post.getModifiedAt()
         );

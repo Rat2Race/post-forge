@@ -13,8 +13,7 @@ final class PostForgeOpenApiRoutes {
     static final String[] BOARD = {
             "/api/posts/**",
             "/api/user/profile",
-            "/api/user/profile/**",
-            "/api/files/**"
+            "/api/user/profile/**"
     };
     static final String[] STUDY = {
             "/api/study/**"

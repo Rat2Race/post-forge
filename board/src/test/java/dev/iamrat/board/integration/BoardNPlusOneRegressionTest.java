@@ -8,8 +8,6 @@ import dev.iamrat.board.comment.application.CommentQueryService;
 import dev.iamrat.board.comment.domain.Comment;
 import dev.iamrat.board.comment.infrastructure.persistence.CommentRepository;
 import dev.iamrat.board.comment.presentation.CommentDetailResponse;
-import dev.iamrat.board.file.domain.PostFile;
-import dev.iamrat.board.file.infrastructure.persistence.FileRepository;
 import dev.iamrat.board.integration.security.WithMockAccount;
 import dev.iamrat.board.post.application.PostQueryService;
 import dev.iamrat.board.post.domain.Post;
@@ -59,9 +57,6 @@ class BoardNPlusOneRegressionTest {
 
     @Autowired
     private CommentRepository commentRepository;
-
-    @Autowired
-    private FileRepository fileRepository;
 
     @Autowired
     private EntityManager entityManager;
@@ -141,7 +136,6 @@ class BoardNPlusOneRegressionTest {
         for (int index = 0; index < count; index++) {
             Post post = postRepository.save(post(index));
             commentRepository.save(Comment.create(post, null, "댓글 " + index, 2L, "commenter"));
-            fileRepository.save(file(post, index));
         }
         postRepository.flush();
     }
@@ -155,17 +149,6 @@ class BoardNPlusOneRegressionTest {
 
     private Post post(int index) {
         return Post.create("게시글 " + index, "게시글 본문입니다 " + index, List.of("tag-" + index), 1L, "writer");
-    }
-
-    private PostFile file(Post post, int index) {
-        return PostFile.builder()
-            .originalFileName("file-" + index + ".png")
-            .savedFileName("saved-" + index + ".png")
-            .filePath("/tmp/file-" + index + ".png")
-            .fileSize(100L + index)
-            .fileType("image/png")
-            .post(post)
-            .build();
     }
 
     private PageRequest pageable(int size) {

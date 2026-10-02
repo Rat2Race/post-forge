@@ -49,7 +49,7 @@ modular monolith 선택 근거는 [ADR-003](../decisions/adr-003-modular-monolit
 |------|--------|-----------|
 | 역할 | 모듈 간 계약 | 공통 Spring 인프라 구현 |
 | 들어가는 것 | interface, record, 공통 DTO·예외·principal | `@Configuration`, `@Bean`, 공통 web/redis/persistence helper |
-| 들어가면 안 되는 것 | Redis/OpenAPI/S3/OpenAI/JPA 구현, feature service | 도메인 계약·규칙, feature service |
+| 들어가면 안 되는 것 | Redis/OpenAPI/OpenAI/JPA 구현, feature service | 도메인 계약·규칙, feature service |
 | 참조 방식 | 기능 모듈이 컴파일 시 참조 | `app`이 조립하고 필요한 기능 모듈만 참조 |
 
 예를 들어 `StudyAssistant`는 모듈 간 약속이므로 `core`에 둔다. Redis TTL primitive와 MVC 예외 응답 변환은 공통 Spring 구현이므로 `support`에 둔다.
@@ -64,7 +64,7 @@ modular monolith 선택 근거는 [ADR-003](../decisions/adr-003-modular-monolit
 | `core` | 공통 DTO·예외·principal/API metadata와 모듈 간 port 계약 |
 | `support` | Redis guard primitive, JPA auditing, request logging, MVC 예외 응답 |
 | `auth` | 계정, 로그인, JWT, OAuth2, 이메일 인증, 인증/인가 오류 응답 |
-| `board` | 게시글, 댓글, 좋아요, 파일/S3, 조회수 |
+| `board` | 게시글, 댓글, 좋아요, 조회수 |
 | `ai` | 학습 문제 초안·AI 학생 질문·꼬리질문, LLM 설정 |
 | `study` | 사용자 자료, 근거가 검증된 복습 문제, 간격 반복, 빈 페이지 정리, 가르치기, 학습 기록 |
 
@@ -95,7 +95,7 @@ modular monolith 선택 근거는 [ADR-003](../decisions/adr-003-modular-monolit
 | `core`의 `jackson-annotations`는 `api` | annotation이 public class metadata에 남는다. |
 | PostgreSQL driver와 JJWT codec은 `runtimeOnly` | compile-time contract가 아니라 런타임 구현체다. |
 | servlet API는 필요한 library에서 `compileOnly` | embedded container가 런타임에 제공한다. |
-| Spring Boot, Spring AI, AWS SDK는 BOM 사용 | 함께 동작하는 라이브러리의 version set을 맞춘다. |
+| Spring Boot, Spring AI는 BOM 사용 | 함께 동작하는 라이브러리의 version set을 맞춘다. |
 | test helper(slice test, spring-security-test)와 H2는 test configuration | production classpath에 포함할 이유가 없다. |
 
 ## 주요 연결 경계

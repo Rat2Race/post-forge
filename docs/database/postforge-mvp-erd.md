@@ -20,7 +20,6 @@ erDiagram
     COMMENTS ||--o{ COMMENTS : replies
     POSTS ||--o{ POST_LIKE : receives
     COMMENTS ||--o{ COMMENT_LIKE : receives
-    POSTS ||--o{ POST_FILE : attaches
 
     ACCOUNTS {
         bigint id PK
@@ -93,18 +92,6 @@ erDiagram
         timestamp modified_at
         varchar modified_by
     }
-
-    POST_FILE {
-        bigint id PK
-        bigint post_id FK
-        varchar original_file_name
-        varchar saved_file_name
-        varchar file_path
-        bigint file_size
-        varchar file_type
-        timestamp created_at
-    }
-
 ```
 
 ## Index Targets

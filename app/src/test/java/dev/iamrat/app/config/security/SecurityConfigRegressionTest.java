@@ -186,31 +186,6 @@ class SecurityConfigRegressionTest {
     }
 
     @Test
-    @DisplayName("파일 API는 익명 사용자를 차단한다")
-    void fileApi_rejectsAnonymousAccess() throws Exception {
-        mockMvc.perform(get("/api/files/presigned-url"))
-            .andExpect(status().isUnauthorized());
-    }
-
-    @Test
-    @WithMockUser(roles = "USER")
-    @DisplayName("파일 API는 USER 권한이면 허용한다")
-    void fileApi_allowsUserRole() throws Exception {
-        mockMvc.perform(get("/api/files/presigned-url"))
-            .andExpect(status().isOk())
-            .andExpect(content().string("file"));
-    }
-
-    @Test
-    @WithMockUser(roles = "USER")
-    @DisplayName("파일 API S3 경로도 USER 권한이면 허용한다")
-    void fileApi_s3Path_allowsUserRole() throws Exception {
-        mockMvc.perform(get("/api/files/s3/presigned-url"))
-            .andExpect(status().isOk())
-            .andExpect(content().string("file"));
-    }
-
-    @Test
     @DisplayName("게시글 생성은 익명 사용자를 차단한다")
     void createPost_rejectsAnonymousAccess() throws Exception {
         mockMvc.perform(post("/api/posts")
@@ -405,7 +380,6 @@ class SecurityConfigRegressionTest {
         DummyPostController.class,
         DummyCommentController.class,
         DummyAccountController.class,
-        DummyFileController.class,
         DummyStudyController.class,
         DummyEmailVerificationController.class,
         DummyPublicAuthController.class,
@@ -540,16 +514,6 @@ class SecurityConfigRegressionTest {
         @GetMapping
         String getAccount() {
             return "account";
-        }
-    }
-
-    @RestController
-    @RequestMapping({"/api/files", "/api/files/s3"})
-    static class DummyFileController {
-
-        @GetMapping("/presigned-url")
-        String getPresignedUrl() {
-            return "file";
         }
     }
 

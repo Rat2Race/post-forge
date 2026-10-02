@@ -38,8 +38,7 @@ public class PostController {
             postRequest.title(),
             postRequest.content(),
             postRequest.tags(),
-            accountId(user),
-            postRequest.fileIds()
+            accountId(user)
         );
 
         return ResponseEntity
@@ -81,8 +80,7 @@ public class PostController {
             postId,
             postRequest.title(),
             postRequest.content(),
-            postRequest.tags(),
-            postRequest.fileIds()
+            postRequest.tags()
         );
 
         return ResponseEntity.ok(modifiedPost);

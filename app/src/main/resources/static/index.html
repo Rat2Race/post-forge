@@ -267,7 +267,7 @@ function viewWrite(){
     try {
       const tags = $('#wTags').value.split(',').map(s=>s.trim()).filter(Boolean);
       const r = await api('/api/posts', { method:'POST',
-        body: JSON.stringify({ title:$('#wTitle').value, content:$('#wBody').value, tags, fileIds:[] }) });
+        body: JSON.stringify({ title:$('#wTitle').value, content:$('#wBody').value, tags }) });
       toast('등록되었습니다'); location.hash = '#/post/'+r.id;
     } catch(err){ toast(err.message); }
   });
