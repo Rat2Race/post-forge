@@ -67,6 +67,8 @@ PostForge는 외부 뉴스를 수집하고 분야별로 선별한 뒤, LLM으로
 모든 프로필은 `ddl-auto=validate`로 entity와 schema의 일치만 검증합니다.
 
 Endpoint, DTO, status, 인증 조건의 정본은 [API 명세](./docs/api/README.md)입니다.
+관리자 권한은 기존 ADMIN이 `PUT /api/admin/accounts/{accountId}/roles/admin`으로 다른 활성 계정에 부여할 수 있습니다.
+최초 ADMIN은 DB에서 지정해야 하며, 승격된 계정은 다시 로그인하거나 토큰을 재발급받아야 합니다.
 실행 중에는 [Swagger UI](http://localhost:8080/swagger-ui.html)에서 현재 OpenAPI schema를 확인할 수 있습니다.
 
 ## Local Run

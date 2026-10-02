@@ -1,7 +1,10 @@
 package dev.iamrat.app.config.security;
 
 import dev.iamrat.app.config.monitoring.MetricsConfig;
+import dev.iamrat.auth.account.application.AccountCommandService;
+import dev.iamrat.auth.account.presentation.AccountAdminController;
 import dev.iamrat.auth.login.application.CustomUserDetailsService;
+import dev.iamrat.auth.security.infrastructure.principal.AuthenticatedAccount;
 import dev.iamrat.auth.security.infrastructure.handler.JwtAccessDeniedHandler;
 import dev.iamrat.auth.security.infrastructure.handler.JwtAuthenticationEntryPoint;
 import dev.iamrat.auth.support.error.AuthErrorCode;
@@ -34,6 +37,7 @@ import org.springframework.security.oauth2.core.AuthorizationGrantType;
 import org.springframework.security.oauth2.core.ClientAuthenticationMethod;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.core.userdetails.User;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.test.context.support.WithMockUser;
@@ -50,6 +54,7 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import java.util.List;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -62,6 +67,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.BDDMockito.willAnswer;
 import static org.mockito.BDDMockito.willThrow;
+import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.ArgumentMatchers.anyString;
 
 @SpringBootTest(classes = SecurityConfigRegressionTest.TestApp.class)
 @AutoConfigureMockMvc
@@ -92,6 +101,9 @@ class SecurityConfigRegressionTest {
     private TokenService tokenService;
 
     @MockitoBean
+    private AccountCommandService accountCommandService;
+
+    @MockitoBean
     private OAuth2UserService<OAuth2UserRequest, OAuth2User> oauth2UserService;
 
     @MockitoBean
@@ -112,7 +124,7 @@ class SecurityConfigRegressionTest {
                 .roles("USER")
                 .build();
             return userDetails;
-        }).given(customUserDetailsService).loadUserByUsername(org.mockito.ArgumentMatchers.anyString());
+        }).given(customUserDetailsService).loadUserByUsername(anyString());
     }
 
     @Test
@@ -295,6 +307,42 @@ class SecurityConfigRegressionTest {
     }
 
     @Test
+    void grantAdminRole_rejectsAnonymousRequest() throws Exception {
+        mockMvc.perform(put("/api/admin/accounts/2/roles/admin"))
+            .andExpect(status().isUnauthorized());
+
+        verifyNoInteractions(accountCommandService);
+    }
+
+    @Test
+    void grantAdminRole_rejectsUserRole() throws Exception {
+        given(tokenService.resolveAuthentication("user-token"))
+            .willReturn(UsernamePasswordAuthenticationToken.authenticated(
+                new AuthenticatedAccount(1L), null,
+                List.of(new SimpleGrantedAuthority("ROLE_USER"))));
+
+        mockMvc.perform(put("/api/admin/accounts/2/roles/admin")
+                .header("Authorization", "Bearer user-token"))
+            .andExpect(status().isForbidden());
+
+        verifyNoInteractions(accountCommandService);
+    }
+
+    @Test
+    void grantAdminRole_allowsAdminRole() throws Exception {
+        given(tokenService.resolveAuthentication("admin-token"))
+            .willReturn(UsernamePasswordAuthenticationToken.authenticated(
+                new AuthenticatedAccount(1L), null,
+                List.of(new SimpleGrantedAuthority("ROLE_ADMIN"))));
+
+        mockMvc.perform(put("/api/admin/accounts/2/roles/admin")
+                .header("Authorization", "Bearer admin-token"))
+            .andExpect(status().isNoContent());
+
+        verify(accountCommandService).grantAdminRole(1L, 2L);
+    }
+
+    @Test
     @WithMockUser(roles = "USER")
     @DisplayName("명시되지 않은 경로는 인증된 사용자도 차단한다")
     void undeclaredRoute_deniesAuthenticatedUser() throws Exception {
@@ -380,7 +428,8 @@ class SecurityConfigRegressionTest {
         DummyIngestController.class,
         DummyEmailVerificationController.class,
         DummyPublicAuthController.class,
-        DummyAdminLaunchNewsController.class
+        DummyAdminLaunchNewsController.class,
+        AccountAdminController.class
     })
     static class TestApp {
 

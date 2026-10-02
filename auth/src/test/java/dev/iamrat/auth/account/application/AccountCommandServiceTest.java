@@ -13,6 +13,7 @@ import dev.iamrat.auth.account.domain.AccountRole;
 import dev.iamrat.auth.support.error.AuthErrorCode;
 import dev.iamrat.auth.token.application.RefreshTokenStore;
 import dev.iamrat.core.global.exception.CustomException;
+import dev.iamrat.core.global.error.CommonErrorCode;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -195,6 +196,64 @@ class AccountCommandServiceTest {
                 .isEqualTo(AuthErrorCode.USER_NOT_FOUND));
     }
 
+    @Test
+    void grantAdminRole_preservesUserRoleAndIsIdempotent() {
+        Account actor = account(1L, AccountStatus.ACTIVE);
+        actor.addRole(AccountRole.ADMIN);
+        Account target = account(2L, AccountStatus.ACTIVE);
+        given(accountQueryService.findWithRolesById(1L)).willReturn(Optional.of(actor));
+        given(accountQueryService.findWithRolesById(2L)).willReturn(Optional.of(target));
+
+        accountCommandService.grantAdminRole(1L, 2L);
+        accountCommandService.grantAdminRole(1L, 2L);
+
+        assertThat(target.getRoles()).containsExactlyInAnyOrder(AccountRole.USER, AccountRole.ADMIN);
+        verify(accountStore).flush();
+    }
+
+    @Test
+    void grantAdminRole_rejectsStaleAdminToken() {
+        Account actor = account(1L, AccountStatus.ACTIVE);
+        given(accountQueryService.findWithRolesById(1L)).willReturn(Optional.of(actor));
+
+        assertThatThrownBy(() -> accountCommandService.grantAdminRole(1L, 2L))
+            .isInstanceOf(CustomException.class)
+            .satisfies(exception -> assertThat(((CustomException) exception).getErrorCode())
+                .isEqualTo(CommonErrorCode.ACCESS_DENIED));
+        verify(accountQueryService, never()).findWithRolesById(2L);
+    }
+
+    @Test
+    void grantAdminRole_rejectsSelfAndInactiveTarget() {
+        Account actor = account(1L, AccountStatus.ACTIVE);
+        actor.addRole(AccountRole.ADMIN);
+        Account target = account(2L, AccountStatus.SUSPENDED);
+        given(accountQueryService.findWithRolesById(1L)).willReturn(Optional.of(actor));
+        given(accountQueryService.findWithRolesById(2L)).willReturn(Optional.of(target));
+
+        assertThatThrownBy(() -> accountCommandService.grantAdminRole(1L, 1L))
+            .isInstanceOf(CustomException.class)
+            .satisfies(exception -> assertThat(((CustomException) exception).getErrorCode())
+                .isEqualTo(CommonErrorCode.ACCESS_DENIED));
+        assertThatThrownBy(() -> accountCommandService.grantAdminRole(1L, 2L))
+            .isInstanceOf(CustomException.class)
+            .satisfies(exception -> assertThat(((CustomException) exception).getErrorCode())
+                .isEqualTo(AuthErrorCode.ACCOUNT_NOT_ACTIVE));
+        assertThat(target.getRoles()).containsExactly(AccountRole.USER);
+    }
+
+    @Test
+    void grantAdminRole_missingTargetReturnsNotFound() {
+        Account actor = account(1L, AccountStatus.ACTIVE);
+        actor.addRole(AccountRole.ADMIN);
+        given(accountQueryService.findWithRolesById(1L)).willReturn(Optional.of(actor));
+
+        assertThatThrownBy(() -> accountCommandService.grantAdminRole(1L, 2L))
+            .isInstanceOf(CustomException.class)
+            .satisfies(exception -> assertThat(((CustomException) exception).getErrorCode())
+                .isEqualTo(AuthErrorCode.USER_NOT_FOUND));
+    }
+
     private Account account(AccountStatus status, String provider, String password) {
         Account account = Account.builder()
             .id(1L)
@@ -206,6 +265,12 @@ class AccountCommandServiceTest {
             .providerId("GOOGLE".equals(provider) ? "google-user-123" : null)
             .status(status)
             .build();
+        account.addRole(AccountRole.USER);
+        return account;
+    }
+
+    private Account account(Long id, AccountStatus status) {
+        Account account = Account.builder().id(id).status(status).build();
         account.addRole(AccountRole.USER);
         return account;
     }
