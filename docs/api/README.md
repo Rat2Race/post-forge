@@ -338,6 +338,7 @@ Google News source가 비활성이면 두 news endpoint 호출은 현재 `500 IN
 | `GET /api/study/today` | USER | 없음 | `200 Today`; 오늘 할 빈 페이지 정리와 문제를 섞은 최대 20개와 남은 수(아래 규칙) | 인증 `401/403` |
 | `POST /api/study/questions/{questionId}/reviews` | USER | body `ReviewRequest` — 내 답과 자가 평가 | `200 ReviewResult`; 다음 상자와 복습 시각 | 아직 예정 전(중복 제출 포함, 아래 규칙) `409 NOT_DUE_YET`; 동시 제출의 패자 `409 CONCURRENT_MODIFICATION`; `404 QUESTION_NOT_FOUND` |
 | `POST /api/study/questions/{questionId}/follow-ups` | USER | 없음 — 버튼을 누를 때만 호출 | `201 FollowUp`; 근거가 자료에 그대로 있는 새 문제 1개, 바로 복습 대상 | `404 QUESTION_NOT_FOUND` |
+| `GET /api/study/stats` | USER | 없음 | `200 StudyStats`; 잔디·연속 학습일과 ADR-008 게이트 수치. LLM을 쓰지 않는다 | 인증 `401/403` |
 | `GET /api/study/records` | USER | 없음 | `200 List<RecordView>` 최신순 50개 | 인증 `401/403` |
 
 ### 요청 DTO와 파라미터 이유
@@ -370,6 +371,9 @@ Google News source가 비활성이면 두 news endpoint 호출은 현재 `500 IN
 | `TeachResponse` | `questions` |
 | `FollowUp` | `id`, `question`, `evidence`, `origin`(`LLM`, 근거 검증에 실패하면 `RULE`) |
 | `SuggestResponse` | `mentionedIndexes` — `SourceDetail.keyPoints` 번호 |
+| `StudyStats` | `today`(Asia/Seoul 날짜), `days`(`DayCount` 목록, 최근 84일 중 학습한 날만), `streak`, `todayDone`, `activeDaysLast11`(오늘을 포함한 최근 11일 중 학습한 날), `boxCounts`(상자 0~5별 문제 수), `unknown`(복습 중 `AGAIN`), `retentionOneDay`(복습 직전 상자 1, 하루 간격 복습의 `GOOD`), `retentionSevenDay`(복습 직전 상자 3, 7일 간격 복습의 `GOOD`), `evidencePass`(근거 검증을 통과한 LLM 초안) |
+| `DayCount` | `date`, `count`(그날 학습 기록 수) |
+| `Rate` | `hit`, `total` — 비율만 주면 표본이 적은지 알 수 없어 두 수를 준다 |
 | `RecordView` | `id`, `kind`, `sourceId`, `sourceTitle`, `prompt`, `userText`, `result`, `reviewBox`(복습 기록일 때 복습 직전 상자, 그 밖에는 null), `createdAt` |
 
 ### 규칙
@@ -384,6 +388,7 @@ Google News source가 비활성이면 두 news endpoint 호출은 현재 `500 IN
 | 중복·동시 제출 | 복습 시각 전 문제는 받지 않는다. 동시에 들어온 두 제출은 `@Version`으로 한 번만 반영하고, 기록도 하나만 남는다 |
 | 빈 페이지 제안 | 핵심 항목마다 두 글자 조각의 절반 이상이 글에 나오면 '언급한 것 같아요' 후보로 낸다. 화면은 후보를 미리 체크해 보여 주고, 기록되는 것은 사용자가 최종 체크한 번호다 |
 | 꼬리질문 | LLM을 한 번 부른다. 앞 문제·앞 근거와 근거 주변 자료 ±1500자를 보내고, 사용자의 답은 보내지 않는다. 근거가 자료에 그대로 없으면 버리고 앞 근거로 예를 묻는 규칙 문제를 만든다. 기록 종류는 `FOLLOW_UP`이다 |
+| 학습 현황 | 날짜는 Asia/Seoul 기준이다. 학습한 날은 답하기·빈 페이지 정리·가르치기·문제 만들기 기록이 있는 날이다. 꼬리질문은 버튼만 누른 것이라 세지 않고, 그 문제를 푼 답하기가 따로 남는다. 연속 학습일은 오늘을 아직 안 했으면 어제부터 센다(오늘 미완료는 끊김이 아니다). 잔디와 연속 학습일은 최근 84일 기록으로 센다. 유지율은 복습 직전 상자로 나누므로 이 값이 없는 이전 기록은 빠지고, 근거 통과율은 LLM 초안 수가 없는 이전 자료를 뺀다 |
 | 가르치기 | LLM 호출은 트랜잭션 밖에서 한다. 학생 질문은 최대 3개이며 판정·정답 제시는 하지 않는다. 기록에는 질문을 2000자까지만 남긴다 |
 
 ### 주요 enum

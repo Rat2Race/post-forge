@@ -68,6 +68,7 @@ class StudyFlowTest {
     @Autowired private StudySourceService sources;
     @Autowired private StudyPracticeService practice;
     @Autowired private StudyAiService ai;
+    @Autowired private StudyStatsService stats;
     @Autowired private FakeStudyAssistant assistant;
     @Autowired private MutableClock clock;
 
@@ -432,6 +433,36 @@ class StudyFlowTest {
         assertThatThrownBy(() -> ai.followUp(other, questionId))
             .extracting(e -> ((CustomException) e).getErrorCode())
             .isEqualTo(StudyErrorCode.QUESTION_NOT_FOUND);
+    }
+
+    @Test
+    @DisplayName("학습 현황은 잔디·연속 학습일과 게이트 지표(사용일, 7일 유지율, 근거 검증 통과율)를 기록에서 계산한다")
+    void statsComputeStreakAndGateMetricsFromRecords() {
+        assistant.drafts = List.of(
+            new QuestionDraft("무엇을 읽나요?", "커밋된 데이터만 읽는다"),
+            new QuestionDraft("지어낸 문제", "자료에 없는 문장입니다"));
+        sources.create(me, "격리 수준", CONTENT);
+        Long questionId = practice.today(me).items().get(0).id();
+        practice.review(me, questionId, "답", ReviewGrade.GOOD);
+        clock.advance(java.time.Duration.ofDays(1));
+        practice.review(me, questionId, "답", ReviewGrade.GOOD);
+        assistant.followUps = List.of(new QuestionDraft("왜 스냅샷을 새로 쓰나요?", "문장마다 새 스냅샷을 쓴다"));
+        ai.followUp(me, questionId);
+
+        StudyStatsService.StudyStats result = stats.of(me);
+
+        java.time.LocalDate day0 = NOW.toLocalDate();
+        assertThat(result.today()).isEqualTo(day0.plusDays(1));
+        assertThat(result.days()).extracting(StudyStatsService.DayCount::date, StudyStatsService.DayCount::count)
+            .containsExactly(tuple(day0, 1), tuple(day0.plusDays(1), 1));
+        assertThat(result.streak()).isEqualTo(2);
+        assertThat(result.todayDone()).isTrue();
+        assertThat(result.activeDaysLast11()).isEqualTo(2);
+        assertThat(result.boxCounts()).containsExactly(1, 0, 1, 0, 0, 0);
+        assertThat(result.unknown()).isEqualTo(new StudyStatsService.Rate(0, 2));
+        assertThat(result.retentionOneDay()).isEqualTo(new StudyStatsService.Rate(1, 1));
+        assertThat(result.retentionSevenDay()).isEqualTo(new StudyStatsService.Rate(0, 0));
+        assertThat(result.evidencePass()).isEqualTo(new StudyStatsService.Rate(1, 2));
     }
 
     @Test
