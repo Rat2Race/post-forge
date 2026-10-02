@@ -14,12 +14,11 @@ import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
 import org.springframework.security.oauth2.core.OAuth2Error;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 
+// 트랜잭션을 걸지 않는다. userinfo 호출 동안 DB 커넥션을 잡지 않고, 동시 가입 충돌 뒤 재조회가 실패한 트랜잭션이 아닌 새 트랜잭션에서 돈다.
 @RequiredArgsConstructor
 @Service
-@Transactional
 @Slf4j
 public class CustomOAuth2UserService extends DefaultOAuth2UserService {
     private final OAuth2AccountService oAuth2AccountService;

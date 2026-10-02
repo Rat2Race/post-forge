@@ -51,6 +51,7 @@
 - access token은 stateless이며 API 응답 후 `Authorization` header로 사용한다.
 - refresh token은 Redis에 저장하는 stateful credential이며 재발급 때 rotation한다.
 - OAuth2 handoff code는 짧은 TTL의 1회성 값이다.
+- OAuth2 사용자 로드(`CustomOAuth2UserService.loadUser`)에는 트랜잭션을 걸지 않는다. 같은 사용자의 로그인 두 개가 동시에 가입하면 늦은 쪽 INSERT가 유니크 제약에 걸린다. 그 뒤 기존 계정 재조회는 새 트랜잭션에서 돌아야 한다. PostgreSQL은 실패한 트랜잭션의 다음 문장을 거절하고(25P02), Hibernate도 실패한 엔티티가 남은 세션을 flush하지 못한다. 외부 userinfo 호출 동안 DB 커넥션을 잡지 않는 효과도 있다. 역할은 조회 쿼리의 entity graph로 함께 읽어 트랜잭션 밖에서도 권한을 만든다.
 
 cookie 속성과 response header의 HTTP 계약은 [통합 API 명세의 Token/Cookie](../api/README.md#token--cookie)를 따른다.
 
