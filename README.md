@@ -134,12 +134,13 @@ prod:  PostForge app -> OpenAI-compatible LLM gateway -> Ollama -> qwen3:8b / bg
 
 ## Docker And Deployment
 
-`release/postforge` 브랜치의 CI가 테스트 성공 후 Spring Boot layered jar 기반 runtime image를 만들고,
-Docker Hub에 `latest`와 commit SHA tag로 게시합니다. `Dockerfile.runtime`은 non-root 사용자로 실행하며
+이미지 빌드·게시는 수동 실행만 합니다. `release/postforge`에서 Actions의 APP-CI를 `workflow_dispatch`로 실행하면
+테스트 성공 후 Spring Boot layered jar 기반 runtime image를 만들어 Docker Hub에 `latest`와 commit SHA tag로 게시합니다.
+`release/postforge` push와 PR은 테스트만 돌리고 이미지를 만들지 않습니다. `Dockerfile.runtime`은 non-root 사용자로 실행하며
 dependency와 application layer를 분리해 registry cache 효율을 높입니다.
 
 ```text
-GitHub push
+workflow_dispatch (release/postforge)
 -> ./gradlew check -PexcludeTags=integration
 -> ./gradlew :app:bootJar
 -> Dockerfile.runtime
