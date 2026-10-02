@@ -1,10 +1,12 @@
 package dev.iamrat.board.like.infrastructure.persistence;
 
 import dev.iamrat.board.like.application.CommentLikeStore;
-import dev.iamrat.board.like.domain.CommentLike;
+import java.time.Clock;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.AuditorAware;
 import org.springframework.stereotype.Repository;
 
 @Repository
@@ -12,6 +14,8 @@ import org.springframework.stereotype.Repository;
 public class CommentLikePersistenceAdapter implements CommentLikeStore {
 
     private final CommentLikeRepository commentLikeRepository;
+    private final Clock clock;
+    private final AuditorAware<String> auditorAware;
 
     @Override
     public boolean existsByCommentIdAndAccountId(Long commentId, Long accountId) {
@@ -19,8 +23,8 @@ public class CommentLikePersistenceAdapter implements CommentLikeStore {
     }
 
     @Override
-    public CommentLike save(CommentLike commentLike) {
-        return commentLikeRepository.save(commentLike);
+    public boolean insertIfAbsent(Long commentId, Long accountId) {
+        return commentLikeRepository.insertIfAbsent(commentId, accountId, LocalDateTime.now(clock), auditorAware.getCurrentAuditor().orElseThrow()) == 1;
     }
 
     @Override
@@ -30,7 +34,7 @@ public class CommentLikePersistenceAdapter implements CommentLikeStore {
 
     @Override
     public long deleteByCommentIdAndAccountId(Long commentId, Long accountId) {
-        return commentLikeRepository.deleteByComment_IdAndAccountId(commentId, accountId);
+        return commentLikeRepository.deleteByCommentIdAndAccountId(commentId, accountId);
     }
 
     @Override

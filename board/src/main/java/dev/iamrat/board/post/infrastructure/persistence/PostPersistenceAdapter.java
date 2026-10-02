@@ -63,8 +63,8 @@ public class PostPersistenceAdapter implements PostStore {
     }
 
     @Override
-    public void updateLikeCount(Long postId, long likeCount) {
-        postRepository.updateLikeCount(postId, likeCount);
+    public void addLikeCount(Long postId, long delta) {
+        postRepository.addLikeCount(postId, delta);
     }
 
     private Specification<Post> keywordFilter(String keyword) {

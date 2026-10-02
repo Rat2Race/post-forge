@@ -26,5 +26,5 @@ public interface PostStore {
 
     void updateViews(Long postId, long views);
 
-    void updateLikeCount(Long postId, long likeCount);
+    void addLikeCount(Long postId, long delta);
 }

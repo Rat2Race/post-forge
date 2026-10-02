@@ -1,6 +1,5 @@
 package dev.iamrat.board.like.application;
 
-import dev.iamrat.board.like.domain.CommentLike;
 import java.util.List;
 import java.util.Set;
 
@@ -8,7 +7,7 @@ public interface CommentLikeStore {
 
     boolean existsByCommentIdAndAccountId(Long commentId, Long accountId);
 
-    CommentLike save(CommentLike commentLike);
+    boolean insertIfAbsent(Long commentId, Long accountId);
 
     long countByCommentId(Long commentId);
 

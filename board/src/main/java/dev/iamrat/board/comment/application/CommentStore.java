@@ -22,5 +22,5 @@ public interface CommentStore {
 
     List<Object[]> countByPostIds(List<Long> postIds);
 
-    void updateLikeCount(Long commentId, long likeCount);
+    void addLikeCount(Long commentId, long delta);
 }

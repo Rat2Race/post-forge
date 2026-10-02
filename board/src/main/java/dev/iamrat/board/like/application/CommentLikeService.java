@@ -1,7 +1,6 @@
 package dev.iamrat.board.like.application;
 
 import dev.iamrat.board.comment.application.CommentStore;
-import dev.iamrat.board.like.domain.CommentLike;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -34,28 +33,23 @@ public class CommentLikeService extends AbstractLikeService {
     }
 
     @Override
-    protected boolean existsByTargetIdAndAccountId(Long targetId, Long accountId) {
-        return commentLikeStore.existsByCommentIdAndAccountId(targetId, accountId);
+    protected boolean insertLikeIfAbsent(Long targetId, Long accountId) {
+        return commentLikeStore.insertIfAbsent(targetId, accountId);
     }
 
     @Override
-    protected void saveLike(Long targetId, Long accountId) {
-        commentLikeStore.save(CommentLike.of(commentStore.getReferenceById(targetId), accountId));
+    protected boolean deleteLike(Long targetId, Long accountId) {
+        return commentLikeStore.deleteByCommentIdAndAccountId(targetId, accountId) > 0;
+    }
+
+    @Override
+    protected void addLikeCount(Long targetId, long delta) {
+        commentStore.addLikeCount(targetId, delta);
     }
 
     @Override
     protected long countByTargetId(Long targetId) {
         return commentLikeStore.countByCommentId(targetId);
-    }
-
-    @Override
-    protected void updateLikeCount(Long targetId, long likeCount) {
-        commentStore.updateLikeCount(targetId, likeCount);
-    }
-
-    @Override
-    protected void deleteByTargetIdAndAccountId(Long targetId, Long accountId) {
-        commentLikeStore.deleteByCommentIdAndAccountId(targetId, accountId);
     }
 
     @Override

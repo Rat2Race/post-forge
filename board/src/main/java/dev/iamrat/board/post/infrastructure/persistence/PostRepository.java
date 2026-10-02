@@ -15,7 +15,8 @@ public interface PostRepository extends JpaRepository<Post, Long>, JpaSpecificat
     @Query("UPDATE Post p SET p.views = :views WHERE p.id = :id")
     void updateViews(@Param("id") Long id, @Param("views") long views);
 
+    // 읽은 값을 다시 쓰지 않고 한 문장으로 더한다. 동시 요청은 행 잠금 순서대로 서로의 결과 위에 더한다.
     @Modifying
-    @Query("UPDATE Post p SET p.likeCount = :likeCount WHERE p.id = :id")
-    void updateLikeCount(@Param("id") Long id, @Param("likeCount") long likeCount);
+    @Query("UPDATE Post p SET p.likeCount = p.likeCount + :delta WHERE p.id = :id")
+    void addLikeCount(@Param("id") Long id, @Param("delta") long delta);
 }

@@ -1,10 +1,12 @@
 package dev.iamrat.board.like.infrastructure.persistence;
 
 import dev.iamrat.board.like.application.PostLikeStore;
-import dev.iamrat.board.like.domain.PostLike;
+import java.time.Clock;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.AuditorAware;
 import org.springframework.stereotype.Repository;
 
 @Repository
@@ -12,6 +14,8 @@ import org.springframework.stereotype.Repository;
 public class PostLikePersistenceAdapter implements PostLikeStore {
 
     private final PostLikeRepository postLikeRepository;
+    private final Clock clock;
+    private final AuditorAware<String> auditorAware;
 
     @Override
     public boolean existsByPostIdAndAccountId(Long postId, Long accountId) {
@@ -19,8 +23,8 @@ public class PostLikePersistenceAdapter implements PostLikeStore {
     }
 
     @Override
-    public PostLike save(PostLike postLike) {
-        return postLikeRepository.save(postLike);
+    public boolean insertIfAbsent(Long postId, Long accountId) {
+        return postLikeRepository.insertIfAbsent(postId, accountId, LocalDateTime.now(clock), auditorAware.getCurrentAuditor().orElseThrow()) == 1;
     }
 
     @Override
@@ -30,7 +34,7 @@ public class PostLikePersistenceAdapter implements PostLikeStore {
 
     @Override
     public long deleteByPostIdAndAccountId(Long postId, Long accountId) {
-        return postLikeRepository.deleteByPost_IdAndAccountId(postId, accountId);
+        return postLikeRepository.deleteByPostIdAndAccountId(postId, accountId);
     }
 
     @Override
