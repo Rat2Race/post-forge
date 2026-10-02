@@ -125,6 +125,7 @@ dialog .hint{font-size:.76rem;color:var(--ink-3);margin:.2rem 0 0}
 </dialog>
 <div id="toast" role="status"></div>
 
+<script src="/auth.js"></script>
 <script>
 'use strict';
 /* ---------- 상태 ---------- */
@@ -139,8 +140,6 @@ const CATS = [
 ];
 const CATL = Object.fromEntries(CATS.map(([k,v])=>[k,v]));
 const state = { kind:'PRODUCT_LAUNCH_NEWS', cat:'', page:0, replyTo:null };
-const token  = () => localStorage.getItem('pf.token');
-const meName = () => localStorage.getItem('pf.name');
 
 /* ---------- 유틸 ---------- */
 const $ = (s,el=document)=>el.querySelector(s);
@@ -149,19 +148,6 @@ const dt = s => s ? s.replace('T',' ').slice(0,16) : '';
 let toastT;
 function toast(msg){ const t=$('#toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(toastT); toastT=setTimeout(()=>t.classList.remove('show'),2600); }
 
-async function api(path, opt={}){
-  const headers = { ...(opt.headers||{}) };
-  if (opt.body) headers['Content-Type'] = 'application/json';
-  if (token()) headers['Authorization'] = 'Bearer ' + token();
-  const res = await fetch(path, { ...opt, headers });
-  if (res.status === 401 && token()) { localStorage.removeItem('pf.token'); renderAuth(); }
-  if (!res.ok) {
-    let msg = res.status + ' 오류';
-    try { const b = await res.json(); msg = b.message || msg; } catch(e){}
-    throw new Error(msg);
-  }
-  return res.status === 204 ? null : res.json();
-}
 
 /* ---------- 인증 ---------- */
 function renderAuth(){
@@ -170,7 +156,7 @@ function renderAuth(){
     el.innerHTML = `<span class="me">${esc(meName()||'회원')}님</span>
       <a class="btn" href="#/write">글쓰기</a>
       <button class="btn" id="logoutBtn">로그아웃</button>`;
-    $('#logoutBtn').onclick = ()=>{ localStorage.removeItem('pf.token'); localStorage.removeItem('pf.name'); renderAuth(); route(); };
+    $('#logoutBtn').onclick = () => logout();
   } else {
     el.innerHTML = `<button class="btn primary" id="loginBtn">로그인</button>`;
     $('#loginBtn').onclick = ()=>loginDlg.showModal();
@@ -179,13 +165,12 @@ function renderAuth(){
 $('#loginForm').addEventListener('submit', async e=>{
   e.preventDefault();
   try {
-    const body = JSON.stringify({ username:$('#loginU').value, password:$('#loginP').value });
-    const r = await api('/api/auth/login', { method:'POST', body });
-    localStorage.setItem('pf.token', r.accessToken);
-    localStorage.setItem('pf.name', $('#loginU').value);
-    loginDlg.close(); renderAuth(); route(); toast('로그인되었습니다');
+    await login($('#loginU').value, $('#loginP').value);
+    loginDlg.close(); toast('로그인되었습니다');
   } catch(err){ toast(err.message); }
 });
+// 로그인·로그아웃이나 만료로 인증이 바뀌면 다시 그린다(auth.js).
+window.addEventListener('pf-auth', () => { renderAuth(); route(); });
 
 /* ---------- 목록 ---------- */
 async function viewList(){
