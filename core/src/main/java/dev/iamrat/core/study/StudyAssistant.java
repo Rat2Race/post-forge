@@ -11,4 +11,7 @@ public interface StudyAssistant {
     List<QuestionDraft> draftQuestions(String content, int limit);
 
     List<String> askAsStudent(String content, String explanation, int limit);
+
+    /** 앞 문제를 한 단계 더 파고드는 꼬리질문. context는 앞 문제 근거 주변의 자료 일부다. */
+    List<QuestionDraft> draftFollowUps(String context, String question, String evidence, int limit);
 }

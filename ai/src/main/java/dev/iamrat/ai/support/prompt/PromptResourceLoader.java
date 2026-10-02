@@ -19,6 +19,7 @@ public class PromptResourceLoader {
         "prompts/launch-news-draft-system.md",
         "prompts/refusal-security.md",
         "prompts/safety-policy.md",
+        "prompts/study-follow-up-system.md",
         "prompts/study-question-system.md",
         "prompts/study-student-system.md"
     );

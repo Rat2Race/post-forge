@@ -48,6 +48,16 @@ class StudyAssistantServiceTest {
     }
 
     @Test
+    @DisplayName("꼬리질문은 자료 일부·앞 문제·앞 근거를 보내고, 질문과 근거 배열을 꺼낸다")
+    void draftsFollowUpsFromContextAndParentQuestion() {
+        model.response = "[{\"question\": \"왜 문장마다 스냅샷을 새로 쓰나요?\", \"evidence\": \"문장마다 새 스냅샷을 쓴다\"}]";
+
+        assertThat(assistant.draftFollowUps("자료 일부", "무엇을 읽나요?", "커밋된 데이터만 읽는다", 1))
+            .containsExactly(new QuestionDraft("왜 문장마다 스냅샷을 새로 쓰나요?", "문장마다 새 스냅샷을 쓴다"));
+        assertThat(model.lastUserPrompt).contains("자료 일부", "무엇을 읽나요?", "커밋된 데이터만 읽는다");
+    }
+
+    @Test
     @DisplayName("긴 자료는 앞부분만 모델에 보낸다")
     void clipsLongContentBeforeSending() {
         model.response = "[]";

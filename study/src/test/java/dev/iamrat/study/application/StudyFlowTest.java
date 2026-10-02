@@ -67,6 +67,7 @@ class StudyFlowTest {
 
     @Autowired private StudySourceService sources;
     @Autowired private StudyPracticeService practice;
+    @Autowired private StudyAiService ai;
     @Autowired private FakeStudyAssistant assistant;
     @Autowired private MutableClock clock;
 
@@ -78,6 +79,7 @@ class StudyFlowTest {
         clock.set(NOW.atZone(SEOUL).toInstant());
         assistant.drafts = List.of();
         assistant.studentQuestions = List.of();
+        assistant.followUps = List.of();
     }
 
     @Test
@@ -367,7 +369,7 @@ class StudyFlowTest {
         assistant.studentQuestions = List.of("스냅샷은 언제 찍나요?");
         Long sourceId = sources.create(me, "격리 수준", CONTENT);
 
-        List<String> questions = practice.teach(me, sourceId, "READ COMMITTED는 커밋된 데이터만 읽어요.");
+        List<String> questions = ai.teach(me, sourceId, "READ COMMITTED는 커밋된 데이터만 읽어요.");
 
         assertThat(questions).containsExactly("스냅샷은 언제 찍나요?");
         assertThat(practice.records(me))
@@ -376,12 +378,85 @@ class StudyFlowTest {
     }
 
     @Test
+    @DisplayName("꼬리질문은 LLM을 한 번 부르고, 근거가 자료에 있는 새 문제를 바로 오늘 할 것에 올린다")
+    void followUpCallsLlmOnceAndQueuesVerifiedQuestion() {
+        assistant.drafts = List.of(new QuestionDraft("무엇을 읽나요?", "커밋된 데이터만 읽는다"));
+        sources.create(me, "격리 수준", CONTENT);
+        Long parentId = practice.today(me).items().get(0).id();
+        practice.review(me, parentId, "커밋된 것", ReviewGrade.GOOD);
+        assistant.followUps = List.of(new QuestionDraft("왜 문장마다 스냅샷을 새로 쓰나요?", "문장마다 새 스냅샷을 쓴다"));
+        int before = assistant.calls;
+
+        StudyAiService.FollowUp followUp = ai.followUp(me, parentId);
+
+        assertThat(assistant.calls - before).isEqualTo(1);
+        assertThat(followUp.origin()).isEqualTo("LLM");
+        assertThat(practice.today(me).items()).extracting(TodayItem::id).containsExactly(followUp.id());
+        assertThat(practice.records(me)).extracting(RecordView::kind).contains("FOLLOW_UP");
+    }
+
+    @Test
+    @DisplayName("꼬리질문의 근거가 자료에 없으면 버리고, 앞 문제의 근거로 예를 묻는 문제로 대신한다")
+    void followUpFallsBackToExampleQuestionOnUnverifiedEvidence() {
+        assistant.drafts = List.of(new QuestionDraft("무엇을 읽나요?", "커밋된 데이터만 읽는다"));
+        sources.create(me, "격리 수준", CONTENT);
+        Long parentId = practice.today(me).items().get(0).id();
+        assistant.followUps = List.of(new QuestionDraft("지어낸 꼬리질문", "자료에 없는 문장입니다"));
+
+        StudyAiService.FollowUp followUp = ai.followUp(me, parentId);
+
+        assertThat(followUp.origin()).isEqualTo("RULE");
+        assertThat(followUp.evidence()).isEqualTo("커밋된 데이터만 읽는다");
+    }
+
+    @Test
+    @DisplayName("꼬리질문에는 근거 주변 자료를 보내므로 근거가 자료 뒤쪽에 있어도 문맥에 들어간다")
+    void followUpSendsTextAroundEvidenceEvenFarIntoTheSource() {
+        String longContent = "# 앞부분\n" + "가나다라마바사 ".repeat(800) + "\n- 뒤쪽 핵심 문장은 여기에 있다\n";
+        assistant.drafts = List.of(new QuestionDraft("뒤쪽에는 무엇이 있나요?", "뒤쪽 핵심 문장은 여기에 있다"));
+        sources.create(me, "긴 자료", longContent);
+        Long parentId = practice.today(me).items().get(0).id();
+
+        ai.followUp(me, parentId);
+
+        assertThat(assistant.lastFollowUpContext).contains("뒤쪽 핵심 문장은 여기에 있다").hasSizeLessThanOrEqualTo(3100);
+    }
+
+    @Test
+    @DisplayName("꼬리질문은 남의 문제에 만들 수 없다")
+    void followUpRejectsOthersQuestion() {
+        sources.create(me, "격리 수준", CONTENT);
+        Long questionId = practice.today(me).items().get(0).id();
+        long other = ACCOUNTS.incrementAndGet();
+
+        assertThatThrownBy(() -> ai.followUp(other, questionId))
+            .extracting(e -> ((CustomException) e).getErrorCode())
+            .isEqualTo(StudyErrorCode.QUESTION_NOT_FOUND);
+    }
+
+    @Test
+    @DisplayName("매일 반복 루프(오늘 할 것·복습·빈 페이지 제안과 기록)는 LLM을 부르지 않는다")
+    void dailyLoopNeverCallsLlm() {
+        assistant.drafts = List.of(new QuestionDraft("무엇을 읽나요?", "커밋된 데이터만 읽는다"));
+        Long sourceId = sources.create(me, "격리 수준", CONTENT);
+        int before = assistant.calls;
+
+        Long questionId = practice.today(me).items().get(0).id();
+        practice.review(me, questionId, "답", ReviewGrade.GOOD);
+        practice.suggestRecalled(me, sourceId, "커밋된 데이터만");
+        practice.recall(me, sourceId, "커밋된 데이터만", List.of(1));
+        practice.records(me);
+
+        assertThat(assistant.calls).isEqualTo(before);
+    }
+
+    @Test
     @DisplayName("AI 학생 질문이 길어도 가르치기 기록은 저장된다")
     void teachingRecordFitsColumnEvenWithLongStudentQuestions() {
         assistant.studentQuestions = List.of("가".repeat(900), "나".repeat(900), "다".repeat(900));
         Long sourceId = sources.create(me, "격리 수준", CONTENT);
 
-        practice.teach(me, sourceId, "설명");
+        ai.teach(me, sourceId, "설명");
 
         assertThat(practice.records(me))
             .singleElement()
@@ -416,7 +491,7 @@ class StudyFlowTest {
     void teachingFallsBackToGapQuestions() {
         Long sourceId = sources.create(me, "격리 수준", CONTENT);
 
-        List<String> questions = practice.teach(me, sourceId,
+        List<String> questions = ai.teach(me, sourceId,
             "트랜잭션 격리 수준 중 READ COMMITTED는 커밋된 데이터만 읽어요. 문장마다 스냅샷을 새로 찍어요.");
 
         assertThat(questions).containsExactly("'팬텀 리드가 생길 수 있다' 부분은 설명에 안 나왔어요. 어떤 뜻인가요?");

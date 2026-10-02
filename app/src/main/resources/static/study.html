@@ -114,7 +114,7 @@ dialog form{display:flex;flex-direction:column;gap:.6rem}
 
 <script>
 'use strict';
-const KIND = { ANSWER:'답하기', RECALL:'빈 페이지 정리', TEACH:'가르치기', QUESTION:'문제 만들기' };
+const KIND = { ANSWER:'답하기', RECALL:'빈 페이지 정리', TEACH:'가르치기', QUESTION:'문제 만들기', FOLLOW_UP:'꼬리질문' };
 const GRADE = { AGAIN:'몰랐음', HARD:'애매함', GOOD:'알았음' };
 const ORIGIN = { LLM:'AI 출제', RULE:'핵심 항목', USER:'내가 만듦' };
 const token  = () => localStorage.getItem('pf.token');
@@ -234,10 +234,25 @@ function showCard(){
       <div class="label" style="margin-top:1rem">자료의 근거 문장</div>
       <div class="evidence">${esc(q.evidence)}</div>
       <div class="label">내 답은 어땠나요? 직접 판단합니다</div>
-      <div class="row" style="margin-top:.4rem">${['AGAIN','HARD','GOOD'].map(g => `<button class="btn" data-g="${g}">${GRADE[g]}</button>`).join('')}</div>
+      <div class="row" style="margin-top:.4rem">${['AGAIN','HARD','GOOD'].map(g => `<button class="btn" data-g="${g}">${GRADE[g]}</button>`).join('')}
+        <span class="spacer"></span><button class="btn" id="followUp" title="AI에게 한 단계 더 깊은 문제를 하나 받아 다음 카드로 풉니다">꼬리질문 받기</button></div>
     </div>
   </section>`;
   $('#reveal').onclick = () => { $('#after').hidden = false; $('#reveal').hidden = true; $('#answer').readOnly = true; };
+  // 버튼을 누를 때만 LLM을 한 번 부른다. 만든 문제는 지금 카드 바로 다음에 낸다.
+  const fu = $('#followUp');
+  fu.onclick = async () => {
+    if (fu.disabled) return;
+    fu.disabled = true; fu.textContent = '꼬리질문 만드는 중…';
+    try {
+      const f = await post(`/api/study/questions/${q.id}/follow-ups`, {});
+      if (queue[0] === q) queue.splice(1, 0, { type:'QUESTION', id:f.id, sourceId:q.sourceId, sourceTitle:q.sourceTitle, question:f.question, evidence:f.evidence, box:0 });
+      if (fu.isConnected) fu.textContent = '다음 카드로 냈어요';
+    } catch(e){
+      toast(e.message);
+      if (fu.isConnected) { fu.disabled = false; fu.textContent = '꼬리질문 받기'; }
+    }
+  };
   app.querySelectorAll('[data-g]').forEach(b => b.onclick = async () => {
     app.querySelectorAll('[data-g]').forEach(x => x.disabled = true);
     try {
@@ -435,6 +450,7 @@ function resultText(r){
     case 'RECALL': return '떠올림 ' + r.result;
     case 'TEACH': return 'AI 학생 질문 ' + (r.result ? r.result.split('\n').length : 0) + '개';
     case 'QUESTION': return '근거 · ' + r.result;
+    case 'FOLLOW_UP': return '앞 문제 · ' + r.result;
     default: return r.result || '';
   }
 }
