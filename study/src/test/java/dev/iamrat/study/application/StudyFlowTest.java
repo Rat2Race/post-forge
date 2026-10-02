@@ -12,7 +12,6 @@ import dev.iamrat.study.application.StudyPracticeService.RecordView;
 import dev.iamrat.study.application.StudySourceService.SourceDetail;
 import dev.iamrat.study.domain.ReviewGrade;
 import dev.iamrat.study.support.error.StudyErrorCode;
-import java.time.Clock;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.List;
@@ -51,8 +50,8 @@ class StudyFlowTest {
     @TestConfiguration
     static class Config {
         @Bean
-        Clock clock() {
-            return Clock.fixed(NOW.atZone(SEOUL).toInstant(), SEOUL);
+        MutableClock clock() {
+            return new MutableClock(NOW.atZone(SEOUL).toInstant(), SEOUL);
         }
 
         @Bean
@@ -69,12 +68,14 @@ class StudyFlowTest {
     @Autowired private StudySourceService sources;
     @Autowired private StudyPracticeService practice;
     @Autowired private FakeStudyAssistant assistant;
+    @Autowired private MutableClock clock;
 
     private long me;
 
     @BeforeEach
     void setUp() {
         me = ACCOUNTS.incrementAndGet();
+        clock.set(NOW.atZone(SEOUL).toInstant());
         assistant.drafts = List.of();
         assistant.studentQuestions = List.of();
     }
@@ -155,6 +156,38 @@ class StudyFlowTest {
         assertThat(practice.records(me))
             .extracting(RecordView::kind, RecordView::prompt, RecordView::userText, RecordView::result)
             .containsExactly(tuple("ANSWER", "무엇을 읽나요?", "커밋된 것만", "GOOD"));
+    }
+
+    @Test
+    @DisplayName("복습 기록에는 복습 직전의 상자가 남는다 — 하루·7일 간격 유지율의 기준")
+    void answerRecordKeepsTheBoxBeforeReview() {
+        assistant.drafts = List.of(new QuestionDraft("무엇을 읽나요?", "커밋된 데이터만 읽는다"));
+        sources.create(me, "격리 수준", CONTENT);
+        Long questionId = practice.today(me).get(0).id();
+
+        practice.review(me, questionId, "커밋된 것만", ReviewGrade.GOOD);
+        clock.advance(java.time.Duration.ofDays(1));
+        practice.review(me, questionId, "커밋된 것만", ReviewGrade.GOOD);
+
+        assertThat(practice.records(me))
+            .extracting(RecordView::reviewBox)
+            .containsExactly(1, 0);
+    }
+
+    @Test
+    @DisplayName("자료마다 LLM이 낸 문제 수와 근거 검증에서 버린 수를 남긴다 — 근거 검증 통과율의 기준")
+    void sourceKeepsDraftedAndDiscardedCounts() {
+        assistant.drafts = List.of(
+            new QuestionDraft("무엇을 읽나요?", "커밋된 데이터만 읽는다"),
+            new QuestionDraft("스냅샷은요?", "문장마다 새 스냅샷을 쓴다"),
+            new QuestionDraft("지어낸 문제", "자료에 없는 문장입니다")
+        );
+
+        Long sourceId = sources.create(me, "격리 수준", CONTENT);
+
+        SourceDetail detail = sources.get(me, sourceId);
+        assertThat(detail.draftedQuestionCount()).isEqualTo(3);
+        assertThat(detail.discardedQuestionCount()).isEqualTo(1);
     }
 
     @Test

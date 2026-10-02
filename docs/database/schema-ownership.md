@@ -34,9 +34,9 @@
 | `board` | `comment_like` | `board/like/domain/CommentLike.java` | 댓글 좋아요 uniqueness: `(comment_id, account_id)` |
 | `board` | `post_file` | `board/file/domain/PostFile.java` | S3 object metadata and post attachment relation |
 | `board` | `post_reference_links` | `board/post/domain/PostReferenceLink.java` | 자동 게시 뉴스의 출처, canonical URL 중복 기준, keyword 일일 한도 metadata. 발행 출처는 `posts.publish_origin`에만 둔다 |
-| `study` | `study_sources` | `study/domain/StudySource.java` | 사용자가 올린 학습 자료, 문제 생성 상태, 근거 불일치로 버린 LLM 문제 수; 브랜치 마이그레이션 `V20261002_1` |
+| `study` | `study_sources` | `study/domain/StudySource.java` | 사용자가 올린 학습 자료, 문제 생성 상태, LLM 문제 초안 수와 버린 수(근거 검증 통과율 기준); 브랜치 마이그레이션 `V20261002_1` |
 | `study` | `study_questions` | `study/domain/StudyQuestion.java` | 근거가 자료에 그대로 있는 복습 문제, 출처(LLM/RULE/USER), 라이트너 상자와 다음 복습 시각, 동시 채점용 `version` |
-| `study` | `study_records` | `study/domain/StudyRecord.java` | 덧붙이기만 하는 학습 기록. 자료 제목·질문 문장은 그때 모습으로 복사해 둔다 |
+| `study` | `study_records` | `study/domain/StudyRecord.java` | 덧붙이기만 하는 학습 기록. 자료 제목·질문 문장은 그때 모습으로 복사해 둔다. 복습 기록은 복습 직전 상자(`review_box`)를 남겨 간격별 유지율을 계산한다 |
 | `ai` | `vector_store` | Spring AI PgVector mapping | RAG embeddings; 테이블(1024차원)과 HNSW 인덱스는 Flyway `V0000` baseline에 포함된다. Spring AI의 `initialize-schema: true`도 설정되어 있다. **1024는 provider 교체와 무관한 고정 계약이다** — `LLM_EMBEDDING_DIMENSIONS`가 pgvector와 임베딩 요청 양쪽에 같은 값으로 들어가므로, 로컬 `bge-m3`와 상용 `text-embedding-3-small/large` 모두 1024를 내도록 맞춰 쓴다. 차원 자체를 바꾸려면 새 migration과 전체 재적재가 필요하다 |
 
 ## Non-Relational Storage

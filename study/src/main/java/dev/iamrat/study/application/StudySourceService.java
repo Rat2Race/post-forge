@@ -35,6 +35,7 @@ public class StudySourceService {
         String title,
         String content,
         String questionStatus,
+        int draftedQuestionCount,
         int discardedQuestionCount,
         List<String> keyPoints,
         List<QuestionView> questions,
@@ -105,7 +106,7 @@ public class StudySourceService {
                 question.getOrigin().name(), question.getBox(), question.getDueAt()))
             .toList();
         return new SourceDetail(source.getId(), source.getTitle(), source.getContent(),
-            source.getQuestionStatus().name(), source.getDiscardedQuestionCount(),
+            source.getQuestionStatus().name(), source.getDraftedQuestionCount(), source.getDiscardedQuestionCount(),
             KeyPointExtractor.extract(source.getContent()), questions, source.getCreatedAt());
     }
 
@@ -133,7 +134,7 @@ public class StudySourceService {
         transactionTemplate.executeWithoutResult(status -> {
             chosen.forEach(draft -> questionRepository.save(
                 StudyQuestion.create(source, draft.question(), draft.evidence(), origin, now)));
-            sourceRepository.findById(source.getId()).orElseThrow().questionsReady(discarded);
+            sourceRepository.findById(source.getId()).orElseThrow().questionsReady(drafts.size(), discarded);
         });
     }
 
