@@ -66,9 +66,7 @@ public class LlmConfig {
     public OpenAiChatModel llmChatModel(@Qualifier("llmChatApi") OpenAiApi compatibleApi) {
         return OpenAiChatModel.builder()
             .openAiApi(compatibleApi)
-            .defaultOptions(OpenAiChatOptions.builder()
-                .model(llmProperties.getChat().getOptions().getModel())
-                .build())
+            .defaultOptions(chatOptions())
             .build();
     }
 
@@ -76,10 +74,17 @@ public class LlmConfig {
     public OpenAiChatModel llmPublishingChatModel(@Qualifier("llmPublishingApi") OpenAiApi compatibleApi) {
         return OpenAiChatModel.builder()
             .openAiApi(compatibleApi)
-            .defaultOptions(OpenAiChatOptions.builder()
-                .model(llmProperties.getChat().getOptions().getModel())
-                .build())
+            .defaultOptions(chatOptions())
             .retryTemplate(RetryTemplate.builder().maxAttempts(1).build())
+            .build();
+    }
+
+    private OpenAiChatOptions chatOptions() {
+        LlmProperties.ChatOptions options = llmProperties.getChat().getOptions();
+        String reasoningEffort = options.getReasoningEffort();
+        return OpenAiChatOptions.builder()
+            .model(options.getModel())
+            .reasoningEffort(StringUtils.hasText(reasoningEffort) ? reasoningEffort : null)
             .build();
     }
 

@@ -2,6 +2,8 @@
 
 PostForge는 뉴스를 수집하고, 분야별 정책과 LLM 가공을 거쳐 게시글 초안을 만든 뒤 자동 게시한다. 매일 전날 게시된 뉴스를 종합한 데일리 포스트도 자동 게시한다. 메일 구독은 향후 계획이며 현재 요청 흐름에는 포함되지 않는다.
 
+사용자가 올린 자료로 학습하는 흐름은 [Study](#study)에 있다.
+
 Endpoint, DTO, status와 스케줄 설정의 정본은 [API 문서](../api/README.md)와 [자동 게시 스케줄](../api/README.md#자동-게시-스케줄)이다. 이 문서는 모듈 경계, 실패 처리, 일관성 보장만 설명한다.
 
 ## 공통 구조 원리
@@ -59,7 +61,7 @@ presentation -> application -> domain
 
 ## AI
 
-LLM은 application port 뒤에서 실행하며 provider와 model은 실행 설정으로 선택한다. 현재 호출 지점은 사용자 RAG 채팅, 출시 뉴스 초안, 데일리 초안이다.
+LLM은 application port 뒤에서 실행하며 provider와 model은 실행 설정으로 선택한다. 현재 호출 지점은 사용자 RAG 채팅, 출시 뉴스 초안, 데일리 초안, 학습 문제 초안·AI 학생 질문·꼬리질문이다.
 
 ### 공통 안전·실패 경계
 
@@ -95,3 +97,21 @@ Redis key 소유권은 [DB Schema Ownership](../database/schema-ownership.md#non
 - 파일 업로드는 앱 서버가 바이트를 중계하지 않고 S3 presigned URL을 발급한다. 연결되지 않은 metadata는 cleanup scheduler가 정리한다.
 
 댓글, 파일, 게시글 endpoint의 세부 단계와 응답 상태는 [API 문서](../api/README.md)를 따른다.
+
+## Study
+
+`study`는 사용자가 올린 자료로 문제 풀기·간격 반복·빈 페이지 정리·가르치기를 하는 학습 루프를 소유한다. LLM은 `core`의 `StudyAssistant` port 뒤에 있고 `ai`가 구현한다. 원칙과 게이트는 [ADR-008](../decisions/adr-008-switch-to-learning-platform.md), endpoint와 규칙은 [API 문서](../api/README.md#study)를 따른다.
+
+```text
+자료 업로드(커밋) -> 메모리 실행기: LLM 문제 초안 -> 근거 검증 -> 문제 저장 + READY
+                                    (실패·전부 버림) -> 규칙 문제
+오늘 할 것 -> 답하기 -> 근거 확인 -> 자가 평가 -> 상자 이동                    (LLM 없음)
+          -> 빈 페이지 정리 -> 핵심 항목 대조(겹침 제안) -> 직접 체크 -> 자료별 일정  (LLM 없음)
+버튼: 가르치기 · 꼬리질문 -> StudyAiService -> LLM 1회
+```
+
+- LLM 경로는 문제 생성과 `StudyAiService`(가르치기·꼬리질문)뿐이다. 매일 반복 루프의 `StudyPracticeService`는 `StudyAssistant`를 갖지 않아 LLM을 부를 수 없다. LLM 호출은 트랜잭션 밖에서 하고 결과 저장만 짧은 트랜잭션으로 묶는다.
+- 채점은 학습자가 한다. LLM 출력은 문제 초안과 질문으로만 쓰고, 문제는 근거 문장이 자료에 그대로 있어야 저장된다. LLM이 실패하거나 초안이 모두 버려지면 마크다운 제목·목록으로 규칙 문제를 만들고, 꼬리질문은 앞 근거로 예를 묻는 문제로 대신한다.
+- 문제 생성은 자료 저장을 커밋한 뒤 메모리 실행기에서 돈다. 재시작으로 잃은 생성은 기동 직후(`ApplicationReadyEvent`) `GENERATING` 자료를 다시 맡겨 잇는다. 인스턴스 하나를 전제하며, 여럿이면 DB 작업 큐로 옮긴다.
+- 복습은 `StudyQuestion`의 `@Version`과 예정 전 제출 거절(`409 NOT_DUE_YET`)로 동시·중복 제출을 한 번만 반영한다. 빈 페이지 일정도 `StudySource`의 `@Version`으로 겹친 갱신을 막는다.
+- 학습 현황(잔디·연속 학습일·게이트 수치)은 기록 테이블에서 그때그때 집계하고 따로 저장하지 않는다.

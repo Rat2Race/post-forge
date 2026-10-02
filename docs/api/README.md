@@ -2,7 +2,7 @@
 
 현재 `@RestController`, 요청·응답 DTO, `PostForgeAuthorizationRules`, 전역 예외 처리기를 기준으로 한 단일 명세다. Spring Security가 소유하는 `/oauth2/**`, `/login/oauth2/**`와 Swagger/static 경로는 제외한다.
 
-현재 제품 흐름은 뉴스 수집·분야별 선별·LLM 초안 작성·자동 게시와 전날 뉴스의 데일리 종합 게시다. 메일 구독 API는 아직 구현되지 않았다.
+현재 제품 흐름은 뉴스 수집·분야별 선별·LLM 초안 작성·자동 게시와 전날 뉴스의 데일리 종합 게시다. 메일 구독 API는 아직 구현되지 않았다. 사용자가 올린 자료로 학습하는 프로토타입은 [Study](#study)와 화면 `/study.html`에 있다.
 
 - AI 채팅 실행 예시: [ai-chat-smoke.http](./ai-chat-smoke.http)
 - 뉴스 source 실행 예시: [news-source-smoke.http](./news-source-smoke.http)
@@ -318,3 +318,84 @@ Google News source가 비활성이면 두 news endpoint 호출은 현재 `500 IN
 | `PostPublishOrigin` | `USER`, `SYSTEM_BATCH`, `ADMIN_BACKFILL` |
 | `LaunchNewsPublishResult.SkipReason` | `DUPLICATE_ARTICLE`, `ADVERTISING`, `UNKNOWN_SOURCE`, `MISSING_LAUNCH_KEYWORD`, `AI_GENERATION_FAILED`, `DAILY_CAP_EXCEEDED` |
 | `DailyDigestPublishResult.SkipReason` | `NO_SOURCE`, `ALREADY_PUBLISHED`, `AI_GENERATION_FAILED` |
+
+<a id="study"></a>
+## Study
+
+사용자가 올린 자료로 학습한다. LLM은 묻거나 제안만 하고 채점하지 않는다. 모든 데이터는 계정 소유이며, 남의 자료·문제는 `403`이 아니라 `404`로 숨긴다.
+
+### 엔드포인트
+
+| Endpoint | Auth | Parameters — 필요한 이유 | Success | Fail |
+| --- | --- | --- | --- | --- |
+| `POST /api/study/sources` | USER | body `SourceRequest` — 학습할 자료. 저장 직후 문제 생성을 비동기로 시작 | `201 IdResponse`; 상태는 `GENERATING` | `400 VALIDATION_ERROR`; 인증 `401/403` |
+| `GET /api/study/sources` | USER | 없음 | `200 List<SourceSummary>` 최신순 | 인증 `401/403` |
+| `GET /api/study/sources/{sourceId}` | USER | path `sourceId` | `200 SourceDetail`; 생성이 끝나면 `questionStatus=READY` | 남의 자료·없는 자료 `404 SOURCE_NOT_FOUND` |
+| `POST /api/study/sources/{sourceId}/questions` | USER | body `QuestionRequest` — 사용자가 만든 문제와 자료에서 그대로 옮긴 근거 | `201 IdResponse`; 바로 복습 대상 | 근거가 자료에 없음 `400 EVIDENCE_NOT_IN_SOURCE`; `404 SOURCE_NOT_FOUND` |
+| `POST /api/study/sources/{sourceId}/recalls` | USER | body `RecallRequest` — 빈 페이지에 쓴 글과 사용자가 직접 체크한 핵심 항목 번호 | `200 RecallResult` | 없는 항목 번호 `400 INVALID_KEY_POINT`; `404 SOURCE_NOT_FOUND` |
+| `POST /api/study/sources/{sourceId}/recalls/suggestions` | USER | body `SuggestRequest` — 빈 페이지에 쓴 글 | `200 SuggestResponse`; '언급한 것 같아요' 후보 번호. 기록하지 않고 LLM을 쓰지 않는다 | `400 VALIDATION_ERROR`; `404 SOURCE_NOT_FOUND` |
+| `POST /api/study/sources/{sourceId}/teachings` | USER | body `TeachRequest` — 자료를 설명한 글 | `200 TeachResponse`; LLM이 실패하면 설명에 빠진 핵심 항목을 되묻는 질문으로 대체 | `404 SOURCE_NOT_FOUND` |
+| `GET /api/study/today` | USER | 없음 | `200 Today`; 오늘 할 빈 페이지 정리와 문제를 섞은 최대 20개와 남은 수(아래 규칙) | 인증 `401/403` |
+| `POST /api/study/questions/{questionId}/reviews` | USER | body `ReviewRequest` — 내 답과 자가 평가 | `200 ReviewResult`; 다음 상자와 복습 시각 | 아직 예정 전(중복 제출 포함, 아래 규칙) `409 NOT_DUE_YET`; 동시 제출의 패자 `409 CONCURRENT_MODIFICATION`; `404 QUESTION_NOT_FOUND` |
+| `POST /api/study/questions/{questionId}/follow-ups` | USER | 없음 — 버튼을 누를 때만 호출 | `201 FollowUp`; 근거가 자료에 그대로 있는 새 문제 1개, 바로 복습 대상 | `404 QUESTION_NOT_FOUND`; 같은 자료에 없는 새 문장을 만들지 못함 `409 NO_NEW_FOLLOW_UP` |
+| `GET /api/study/stats` | USER | 없음 | `200 StudyStats`; 잔디·연속 학습일과 ADR-008 게이트 수치. LLM을 쓰지 않는다 | 인증 `401/403` |
+| `GET /api/study/records` | USER | 없음 | `200 List<RecordView>` 최신순 50개 | 인증 `401/403` |
+
+### 요청 DTO와 파라미터 이유
+
+| DTO.field | 제약 | 필요한 이유 |
+| --- | --- | --- |
+| `SourceRequest.title` | 필수, 100자 이하 | 목록과 기록에 표시 |
+| `SourceRequest.content` | 필수, 20000자 이하 | 문제·핵심 항목·근거 검증의 원문. LLM에는 앞 4000자만 보낸다 |
+| `QuestionRequest.question` | 필수, 500자 이하 | 문제를 직접 만드는 활동(생성 효과) |
+| `QuestionRequest.evidence` | 필수, 1000자 이하, 공백을 정리한 뒤 8자 이상, 공백(줄바꿈 없는 공백·전각 공백 포함)과 한글 조합형(NFC/NFD) 차이를 빼고 자료에 그대로 있어야 함. 8자 미만은 자료 어디에나 걸려 근거가 되지 못하므로 `400 EVIDENCE_NOT_IN_SOURCE` | 어디서 온 문제든 근거가 자료에 있어야 복습 목록에 들어간다 |
+| `ReviewRequest.answer` | 10000자 이하, 선택 | 근거를 보기 전에 쓴 내 답을 기록 |
+| `ReviewRequest.grade` | 필수, `AGAIN`·`HARD`·`GOOD` | 시스템이 아니라 학습자가 판단한다 |
+| `RecallRequest.text` | 필수, 10000자 이하 | 빈 페이지에 떠올린 내용 |
+| `RecallRequest.recalledIndexes` | 선택, `SourceDetail.keyPoints`의 번호. 범위 밖이거나 null이면 `400 INVALID_KEY_POINT` | 자료와 대조해 학습자가 직접 체크한 항목 |
+| `TeachRequest.explanation` | 필수, 10000자 이하 | AI 학생이 되물을 설명 |
+| `SuggestRequest.text` | 필수, 10000자 이하 | 핵심 항목과 겹치는지 볼 빈 페이지 글 |
+
+### 응답 DTO
+
+| DTO | 필드 |
+| --- | --- |
+| `IdResponse` | `id` |
+| `SourceSummary` | `id`, `title`, `questionStatus`, `createdAt` |
+| `SourceDetail` | `id`, `title`, `content`, `questionStatus`, `draftedQuestionCount`(LLM이 낸 문제 초안 수, 꼬리질문 초안 포함), `discardedQuestionCount`(근거가 자료에 그대로 없어 버린 LLM 문제 수. 근거는 맞지만 문제·근거 길이 상한을 넘어 못 쓴 초안은 세지 않는다), `keyPoints`, `questions`, `emptyReason`(문제가 0개일 때 이유와 자료를 고치는 방법, 그 밖에는 null), `createdAt` |
+| `QuestionView` | `id`, `question`, `evidence`, `origin`, `box`, `dueAt` |
+| `Today` | `items`(`TodayItem` 목록), `remaining`(상한 때문에 빠진 수) |
+| `TodayItem` | `type`(`QUESTION`·`RECALL`), `id`(문제 id, 빈 페이지면 자료 id), `sourceId`, `sourceTitle`, `question`·`evidence`(빈 페이지면 null), `box`(빈 페이지면 빈 페이지 상자) |
+| `ReviewResult` | `box`, `dueAt` |
+| `RecallResult` | `recalled`, `total`, `missed`, `nextRecallAt`(이 자료의 다음 빈 페이지 예정 시각) |
+| `TeachResponse` | `questions` |
+| `FollowUp` | `id`, `question`, `evidence`, `origin`(`LLM`, 근거 검증에 실패하면 `RULE`) |
+| `SuggestResponse` | `mentionedIndexes` — `SourceDetail.keyPoints` 번호 |
+| `StudyStats` | `today`(Asia/Seoul 날짜), `days`(`DayCount` 목록, 최근 84일 중 학습한 날만), `streak`, `todayDone`, `activeDaysLast11`(오늘을 포함한 최근 11일 중 학습한 날), `boxCounts`(상자 0~5별 문제 수), `unknown`(복습 중 `AGAIN`), `retentionOneDay`(복습 직전 상자 1, 하루 간격 복습의 `GOOD`), `retentionSevenDay`(복습 직전 상자 3, 7일 간격 복습의 `GOOD`), `evidencePass`(근거 검증을 통과한 LLM 초안) |
+| `DayCount` | `date`, `count`(그날 학습 기록 수) |
+| `Rate` | `hit`, `total` — 비율만 주면 표본이 적은지 알 수 없어 두 수를 준다 |
+| `RecordView` | `id`, `kind`, `sourceId`, `sourceTitle`, `prompt`, `userText`, `result`, `reviewBox`(복습 기록일 때 복습 직전 상자, 그 밖에는 null), `createdAt` |
+
+### 규칙
+
+| 규칙 | 내용 |
+| --- | --- |
+| 문제 생성 | 자료 저장을 커밋한 뒤 메모리 실행기에서 LLM을 부른다. LLM 문제 중 근거가 자료에 그대로 없는 것은 버리고 수를 남긴다. 하나도 남지 않으면 마크다운 제목·목록(없으면 문단 첫 문장)으로 규칙 문제를 만든다. 규칙 문제도 문제 500자·근거 1000자 상한과 근거 검증을 똑같이 거친다. 생성은 메모리 실행기에서 돌므로 재시작하면 사라진다. 기동 직후 `GENERATING`에 머문 자료의 생성을 다시 맡긴다(인스턴스 하나 전제) |
+| 간격 반복 | 라이트너 상자 0~5, 간격 10분·1일·3일·7일·14일·30일. `GOOD`은 한 칸 위, `HARD`는 제자리, `AGAIN`은 0칸 |
+| 예정 판단 | 첫 칸(10분)은 예정 시각이 지나야 하고, 하루 이상 간격은 예정일이 되면 그날 내내 오늘 할 것에 나오고 채점된다(Asia/Seoul 날짜) |
+| 빈 페이지 일정 | 자료마다 따로 간격 반복한다. 올린 다음 날 처음 예정되고, 간격은 1일·3일·7일·14일·30일(10분 단계 없음). 예정된 빈 페이지에서 체크한 핵심 항목이 80% 이상이면 한 칸 위, 50% 이상이면 제자리, 그 아래면 첫 칸. 예정 전에 한 정리는 기록만 남고 일정은 그대로다 |
+| 오늘 할 것 섞기 | 빈 페이지는 응답마다가 아니라 하루 3개까지다. 그날 이미 한 빈 페이지 정리(자료 화면에서 직접 한 것 포함)를 빼고 남은 만큼만, 예정이 이른 자료부터 넣고 같은 자료의 문제보다 먼저 둔다(문제를 먼저 풀면 단서가 생겨 자유 회상이 오염된다). 빈 페이지 묶음과 나머지 문제를 가장 이른 예정 시각 순으로 놓고 전체 20개로 자른다 |
+| 중복·동시 제출 | 복습 시각 전 문제는 받지 않는다. 동시에 들어온 두 제출은 `@Version`으로 한 번만 반영하고, 기록도 하나만 남는다 |
+| 빈 페이지 제안 | 핵심 항목마다 두 글자 조각의 절반 이상이 글에 나오면 '언급한 것 같아요' 후보로 낸다. 화면은 후보를 미리 체크해 보여 주고, 기록되는 것은 사용자가 최종 체크한 번호다 |
+| 꼬리질문 | LLM을 한 번 부른다. 앞 문제·앞 근거와 근거 주변 자료 ±1500자를 보내고, 사용자의 답은 보내지 않는다. 근거가 자료에 그대로 없거나 같은 자료에 이미 있는 문제(공백·NFC 정규화 후 같은 문장)면 버리고, 앞 근거로 예를 묻는 규칙 문제를, 그것도 있으면 이유를 묻는 규칙 문제를 만든다. 둘 다 있으면 만들지 않고 `409 NO_NEW_FOLLOW_UP`이다. 꼬리질문 초안도 자료의 LLM 초안 수와 근거 실패 수에 더해 근거 검증 통과율에 들어간다. 기록 종류는 `FOLLOW_UP`이다 |
+| 학습 현황 | 날짜는 Asia/Seoul 기준이다. 학습한 날은 답하기·빈 페이지 정리·가르치기·문제 만들기 기록이 있는 날이다. 꼬리질문은 버튼만 누른 것이라 세지 않고, 그 문제를 푼 답하기가 따로 남는다. 연속 학습일은 오늘을 아직 안 했으면 어제부터 센다(오늘 미완료는 끊김이 아니다). 잔디와 연속 학습일은 최근 84일 기록으로 센다. 유지율은 복습 직전 상자로 나누므로 이 값이 없는 이전 기록은 빠지고, 근거 통과율은 LLM 초안 수가 없는 이전 자료를 뺀다 |
+| 가르치기 | LLM 호출은 트랜잭션 밖에서 한다. 학생 질문은 최대 3개이며 판정·정답 제시는 하지 않는다. 기록에는 질문을 2000자까지만 남긴다 |
+
+### 주요 enum
+
+| Enum | 값 |
+| --- | --- |
+| `QuestionStatus` | `GENERATING`, `READY` |
+| `Origin` | `LLM`, `RULE`(LLM 대체 경로), `USER` |
+| `ReviewGrade` | `AGAIN`, `HARD`, `GOOD` |
+| `StudyRecord.Kind` | `ANSWER`, `RECALL`, `TEACH`, `QUESTION`, `FOLLOW_UP` |

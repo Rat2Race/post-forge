@@ -17,18 +17,19 @@ class ModuleBoundaryTest {
 
     private static final List<String> MODULES = List.of(
         "app", "core", "support", "auth", "board", "source",
-        "ingest", "ai"
+        "ingest", "ai", "study"
     );
 
     private static final Map<String, Set<String>> ALLOWED_MODULE_DEPENDENCIES = Map.ofEntries(
-        Map.entry("app", Set.of("core", "support", "auth", "board", "source", "ingest", "ai")),
+        Map.entry("app", Set.of("core", "support", "auth", "board", "source", "ingest", "ai", "study")),
         Map.entry("core", Set.of()),
         Map.entry("support", Set.of("core")),
         Map.entry("auth", Set.of("core", "support")),
         Map.entry("board", Set.of("core", "support")),
         Map.entry("source", Set.of()),
         Map.entry("ingest", Set.of("source", "core")),
-        Map.entry("ai", Set.of("core"))
+        Map.entry("ai", Set.of("core")),
+        Map.entry("study", Set.of("core"))
     );
 
     private static final JavaClasses CLASSES = new ClassFileImporter()

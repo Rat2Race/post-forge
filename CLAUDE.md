@@ -17,9 +17,10 @@ Gradle modular monolith. 의존성 허용 표와 새 코드 배치 기준은 [mo
 | `app` | 조립 + 실행 |
 | `auth` | 로그인, refresh token rotation |
 | `board` | 게시글·댓글·좋아요·조회수·파일 |
-| `ai` | `chat`·`search`(RAG), `draft`(뉴스·데일리 포스트 초안 생성) |
+| `ai` | `chat`·`search`(RAG), `draft`(뉴스·데일리 포스트 초안 생성), `study`(학습 문제 초안·AI 학생 질문) |
 | `ingest` | `document`(pgvector 적재), `news`(뉴스 수집·선별·스케줄 게시·데일리 종합) |
 | `source` | 외부 뉴스 source adapter (Google News RSS, 실험용) |
+| `study` | 사용자 자료 학습 프로토타입: 근거가 검증된 복습 문제·간격 반복·빈 페이지 정리·가르치기·기록 (`/study.html`) |
 
 이전 제품 기능을 제거한 배경은 [ADR-004](docs/decisions/adr-004-scope-reduction.md)에 이력으로 보존한다. 새 작업의 범위는 현재 제품 정의와 실제 코드에서 판단한다.
 

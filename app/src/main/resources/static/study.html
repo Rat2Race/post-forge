@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PostForge 학습</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+KR:wght@300;400;500;600;700&display=swap">
+<style>
+:root {
+  --ground:#f3f6f6; --surface:#ffffff; --surface-2:#e9eeee;
+  --ink:#10201f; --ink-2:#46585a; --ink-3:#7a8b8c;
+  --rule:#d6dedf; --rule-soft:#e6ecec;
+  --accent:#0d5c63; --accent-ink:#ffffff; --accent-soft:#dfeced;
+  --warn:#a13a37;
+  --sans:'IBM Plex Sans KR',-apple-system,'Apple SD Gothic Neo',system-ui,sans-serif;
+  --mono:'IBM Plex Mono','IBM Plex Sans KR',ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --ground:#0d1415; --surface:#131c1d; --surface-2:#1a2526;
+    --ink:#e5eded; --ink-2:#a1b3b3; --ink-3:#6d8182;
+    --rule:#253334; --rule-soft:#1c2829;
+    --accent:#52b5bc; --accent-ink:#0d1415; --accent-soft:#15302f;
+    --warn:#e08a84;
+  }
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--ground);color:var(--ink);font-family:var(--sans);font-size:15.5px;line-height:1.65;-webkit-font-smoothing:antialiased}
+a{color:var(--accent);text-decoration:none}
+button{font-family:var(--sans);cursor:pointer}
+.wrap{max-width:46rem;margin:0 auto;padding:0 1.1rem 4rem}
+header.site{border-bottom:2px solid var(--ink);padding:1.1rem 0 .9rem;margin-bottom:1rem;display:flex;align-items:center;gap:1rem;flex-wrap:wrap}
+.brand{font-weight:700;font-size:1.25rem;letter-spacing:-.02em}
+.brand small{font-family:var(--mono);font-size:.62rem;font-weight:500;letter-spacing:.16em;color:var(--accent);display:block;text-transform:uppercase}
+.spacer{flex:1}
+.authbox{display:flex;align-items:center;gap:.6rem;font-size:.85rem}
+.authbox .me{color:var(--ink-2)}
+.btn{border:1px solid var(--rule);background:var(--surface);color:var(--ink);padding:.38rem .85rem;border-radius:3px;font-size:.85rem}
+.btn:hover{border-color:var(--accent);color:var(--accent)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn.primary:hover{opacity:.9;color:var(--accent-ink)}
+.btn:disabled{opacity:.5;cursor:wait}
+.btn:focus-visible,.seg button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+nav.seg{display:flex;gap:1px;background:var(--rule);border:1px solid var(--rule);width:max-content;max-width:100%;overflow-x:auto;margin-bottom:.8rem}
+.seg button{border:0;background:var(--surface);padding:.45rem 1.1rem;font-size:.88rem;color:var(--ink-2);white-space:nowrap}
+.seg button.on{background:var(--accent);color:var(--accent-ink);font-weight:600}
+.cards{display:flex;flex-direction:column;gap:1px;background:var(--rule-soft);border:1px solid var(--rule)}
+.card{background:var(--surface);padding:1rem 1.15rem;display:block;color:var(--ink)}
+a.card:hover{background:var(--surface-2)}
+.badges{display:flex;gap:.35rem;margin-bottom:.25rem;flex-wrap:wrap;align-items:center}
+.badge{font-family:var(--mono);font-size:.6rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;padding:.14em .5em;border-radius:2px;background:var(--surface-2);color:var(--ink-2)}
+.badge.cat{background:var(--accent-soft);color:var(--accent)}
+.card h3{margin:0 0 .2rem;font-size:1.02rem;font-weight:600;letter-spacing:-.01em}
+.card p.sum{margin:0 0 .45rem;font-size:.85rem;color:var(--ink-2);white-space:pre-wrap;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden}
+.meta{font-size:.76rem;color:var(--ink-3);display:flex;gap:.7rem;flex-wrap:wrap}
+.empty{padding:3rem 1rem;text-align:center;color:var(--ink-3);background:var(--surface);border:1px solid var(--rule)}
+.panel,article.post{background:var(--surface);border:1px solid var(--rule);padding:1.2rem 1.3rem}
+article.post h1{font-size:1.4rem;font-weight:700;letter-spacing:-.02em;line-height:1.3;margin:.3rem 0 .4rem}
+.label{font-family:var(--mono);font-size:.66rem;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3)}
+.q{font-size:1.12rem;font-weight:600;margin:.3rem 0 .8rem;letter-spacing:-.01em}
+.evidence{border-left:3px solid var(--accent);background:var(--accent-soft);padding:.55rem .8rem;white-space:pre-wrap;font-size:.88rem;margin:.5rem 0 .8rem}
+.row{display:flex;gap:.5rem;align-items:center;flex-wrap:wrap}
+.heat{display:grid;grid-template-rows:repeat(7,11px);grid-auto-flow:column;grid-auto-columns:11px;gap:3px;margin:.7rem 0 1rem}
+.heat i{border-radius:2px;background:var(--surface-2)}
+.heat i[data-l="1"]{background:color-mix(in srgb,var(--accent) 35%,var(--surface-2))}
+.heat i[data-l="2"]{background:color-mix(in srgb,var(--accent) 65%,var(--surface-2))}
+.heat i[data-l="3"]{background:var(--accent)}
+table.metrics{border-collapse:collapse;width:100%;font-size:.86rem;margin:.3rem 0 .9rem;word-break:keep-all}
+table.metrics td{padding:.3rem .6rem .3rem 0;border-bottom:1px solid var(--rule-soft)}
+table.metrics td:nth-child(2){font-family:var(--mono)}
+table.metrics td:nth-child(3){white-space:nowrap}
+.muted{color:var(--ink-3);font-size:.8rem}
+.source-body{white-space:pre-wrap;font-size:.86rem;max-height:20rem;overflow:auto;background:var(--surface-2);padding:.8rem;border-radius:3px;margin-top:.5rem}
+.keypoints{margin:.5rem 0 .9rem}
+.keypoints label{display:flex;gap:.55rem;align-items:flex-start;padding:.3rem 0;font-size:.9rem;border-bottom:1px solid var(--rule-soft)}
+.student{background:var(--surface-2);border-radius:3px;padding:.55rem .8rem;margin:.45rem 0;font-size:.92rem}
+.student b{font-family:var(--mono);font-size:.66rem;letter-spacing:.1em;color:var(--accent);margin-right:.5rem}
+h2.sect{font-size:1rem;border-bottom:1px solid var(--ink);padding-bottom:.4rem;margin:1.6rem 0 .8rem}
+form.wform{background:var(--surface);border:1px solid var(--rule);padding:1.2rem 1.3rem;display:flex;flex-direction:column;gap:.6rem}
+form.wform label{font-family:var(--mono);font-size:.66rem;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3)}
+textarea,input[type=text],input[type=password]{font-family:var(--sans);font-size:.9rem;border:1px solid var(--rule);background:var(--surface);color:var(--ink);border-radius:3px;padding:.55rem .7rem;width:100%}
+textarea:focus,input:focus{outline:2px solid var(--accent);outline-offset:-1px}
+textarea{resize:vertical;min-height:4.5rem}
+textarea[readonly]{background:var(--surface-2)}
+dialog{border:1px solid var(--rule);border-radius:4px;background:var(--surface);color:var(--ink);padding:1.5rem 1.6rem;max-width:20rem;width:90%}
+dialog::backdrop{background:rgba(0,0,0,.45)}
+dialog h3{margin:0 0 .8rem;font-size:1.05rem}
+dialog form{display:flex;flex-direction:column;gap:.6rem}
+#toast{position:fixed;bottom:1.2rem;left:50%;transform:translateX(-50%);background:var(--ink);color:var(--ground);padding:.55rem 1.1rem;border-radius:4px;font-size:.85rem;opacity:0;transition:opacity .2s;pointer-events:none;max-width:90%}
+#toast.show{opacity:1}
+.back{font-size:.82rem;display:inline-block;margin-bottom:.7rem}
+.loading{padding:2.2rem;text-align:center;color:var(--ink-3);font-family:var(--mono);font-size:.8rem}
+@media (prefers-reduced-motion: reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="site">
+    <a href="#/" style="color:inherit"><div class="brand"><small>PostForge Study</small>내 자료로 공부하기</div></a>
+    <div class="spacer"></div>
+    <div class="authbox" id="authbox"></div>
+  </header>
+  <nav class="seg" id="mainnav">
+    <button data-r="#/">오늘 할 것</button>
+    <button data-r="#/sources">내 자료</button>
+    <button data-r="#/records">기록</button>
+  </nav>
+  <main id="app"><div class="loading">LOADING…</div></main>
+</div>
+
+<dialog id="loginDlg">
+  <h3>로그인</h3>
+  <form id="loginForm">
+    <input type="text" id="loginU" placeholder="아이디" autocomplete="username" required>
+    <input type="password" id="loginP" placeholder="비밀번호" autocomplete="current-password" required>
+    <button class="btn primary" type="submit">로그인</button>
+    <button class="btn" type="button" onclick="loginDlg.close()">닫기</button>
+  </form>
+</dialog>
+<div id="toast" role="status"></div>
+
+<script>
+'use strict';
+const KIND = { ANSWER:'답하기', RECALL:'빈 페이지 정리', TEACH:'가르치기', QUESTION:'문제 만들기', FOLLOW_UP:'꼬리질문' };
+const GRADE = { AGAIN:'몰랐음', HARD:'애매함', GOOD:'알았음' };
+const ORIGIN = { LLM:'AI 출제', RULE:'핵심 항목', USER:'내가 만듦' };
+const token  = () => localStorage.getItem('pf.token');
+const meName = () => localStorage.getItem('pf.name');
+
+/* ---------- 유틸 ---------- */
+const $ = (s,el=document)=>el.querySelector(s);
+const esc = s => String(s??'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const dt = s => s ? s.replace('T',' ').slice(0,16) : '';
+function later(iso){
+  const min = Math.round((new Date(iso) - new Date()) / 60000);
+  if (min <= 0) return '지금';
+  if (min < 60) return min + '분 뒤';
+  const hours = Math.round(min / 60);
+  return hours < 24 ? hours + '시간 뒤' : Math.round(hours / 24) + '일 뒤';
+}
+let toastT;
+function toast(msg){ const t=$('#toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(toastT); toastT=setTimeout(()=>t.classList.remove('show'),2600); }
+
+// access token이 만료되면 refresh cookie(경로 /api/auth)로 한 번 재발급받아 같은 요청을 다시 보낸다.
+// 동시에 난 401은 재발급 하나를 기다린다. refresh token이 회전하므로 따로 재발급하면 늦은 쪽은 이미 바뀐 토큰을 내밀어 거절된다.
+let reissuing = null;
+function reissue(){
+  reissuing ??= fetch('/api/auth/token/reissue', { method: 'POST' })
+    .then(res => res.ok ? res.json() : null)
+    .then(b => { if (!b?.accessToken) return false; localStorage.setItem('pf.token', b.accessToken); return true; })
+    .catch(() => false)
+    .finally(() => { reissuing = null; });
+  return reissuing;
+}
+async function api(path, opt={}, retried=false){
+  const headers = { ...(opt.headers||{}) };
+  const sent = token();
+  if (opt.body) headers['Content-Type'] = 'application/json';
+  if (sent) headers['Authorization'] = 'Bearer ' + sent;
+  const res = await fetch(path, { ...opt, headers });
+  if (res.status === 401 && sent) {
+    // 보내는 사이 다른 요청이 이미 재발급했으면 새 토큰으로 다시 보내기만 한다.
+    if (!retried && (token() !== sent || await reissue())) return api(path, opt, true);
+    localStorage.removeItem('pf.token'); renderAuth();
+  }
+  if (!res.ok) {
+    let msg = res.status + ' 오류';
+    try { const b = await res.json(); msg = b.message || msg; } catch(e){}
+    throw new Error(msg);
+  }
+  return res.status === 204 ? null : res.json();
+}
+const post = (path, body) => api(path, { method:'POST', body: JSON.stringify(body) });
+
+/* ---------- 인증 ---------- */
+function renderAuth(){
+  const el = $('#authbox');
+  if (token()) {
+    el.innerHTML = `<span class="me">${esc(meName()||'회원')}님</span><button class="btn" id="logoutBtn">로그아웃</button>`;
+    // 서버의 refresh token도 지운다. 재발급을 쓰므로 남겨 두면 로그아웃 뒤에도 세션이 살아난다.
+    $('#logoutBtn').onclick = async ()=>{
+      await api('/api/auth/logout', { method:'POST' }).catch(() => {});
+      localStorage.removeItem('pf.token'); localStorage.removeItem('pf.name'); renderAuth(); route();
+    };
+  } else {
+    el.innerHTML = `<button class="btn primary" id="loginBtn">로그인</button>`;
+    $('#loginBtn').onclick = ()=>loginDlg.showModal();
+  }
+}
+$('#loginForm').addEventListener('submit', async e=>{
+  e.preventDefault();
+  try {
+    const r = await post('/api/auth/login', { username:$('#loginU').value, password:$('#loginP').value });
+    localStorage.setItem('pf.token', r.accessToken);
+    localStorage.setItem('pf.name', $('#loginU').value);
+    loginDlg.close(); renderAuth(); route(); toast('로그인되었습니다');
+  } catch(err){ toast(err.message); }
+});
+
+/* ---------- 라우팅 ---------- */
+function route(){
+  const h = location.hash || '#/';
+  document.querySelectorAll('#mainnav button').forEach(b =>
+    b.classList.toggle('on', b.dataset.r === '#/' ? h === '#/' : h.startsWith(b.dataset.r)));
+  if (!token()) {
+    $('#app').innerHTML = `<div class="empty">로그인하면 내가 올린 자료로 학습할 수 있어요.<br><br>
+      <button class="btn primary" onclick="loginDlg.showModal()">로그인</button></div>`;
+    return;
+  }
+  const m = h.match(/^#\/sources\/(\d+)(?:\?act=(\w+))?$/);
+  if (m) return viewSource(+m[1], m[2]);
+  if (h.startsWith('#/sources')) return viewSources();
+  if (h.startsWith('#/records')) return viewRecords();
+  return viewToday();
+}
+// 지금 화면의 탭을 다시 누르면 hashchange가 없으므로 직접 다시 그린다. 건너뛴 빈 페이지를 다시 받을 때 쓴다.
+document.querySelectorAll('#mainnav button').forEach(b => b.onclick = () => { if (location.hash === b.dataset.r) route(); else location.hash = b.dataset.r; });
+window.addEventListener('hashchange', route);
+
+/* ---------- 오늘 할 것: 빈 페이지 정리 · 답하기 → 근거 확인 → 자가 평가 ---------- */
+// 응답을 기다린 뒤에는 요청을 보낸 화면의 노드가 아직 붙어 있을 때만 그린다. 그사이 다른 화면으로 갔으면 그 화면을 덮지 않는다.
+let queue = [], remaining = 0;
+async function viewToday(){
+  $('#app').innerHTML = '<div class="loading">LOADING…</div>';
+  const loading = $('#app').firstElementChild;
+  let t;
+  try { t = await api('/api/study/today'); } catch(e){ if (loading.isConnected) $('#app').innerHTML = `<div class="empty">${esc(e.message)}</div>`; return; }
+  if (!loading.isConnected) return;
+  queue = t.items; remaining = t.remaining;
+  showCard();
+}
+// 다 풀어서 비면 다시 받는다. 그사이 10분 간격으로 돌아온 문제와 상한 밖의 것을 놓치지 않는다.
+// 건너뛰어서 비면 다시 받지 않는다. 받으면 방금 건너뛴 빈 페이지가 바로 또 나온다.
+async function nextCard(refetch = true){
+  const card = $('#app').firstElementChild;
+  queue.shift();
+  if (!queue.length && refetch) {
+    try {
+      const t = await api('/api/study/today');
+      if (!card.isConnected) return;
+      queue = t.items; remaining = t.remaining;
+    } catch(e){
+      if (!card.isConnected) return;
+      toast(e.message);
+    }
+  }
+  showCard();
+}
+function showCard(){
+  const app = $('#app');
+  if (!queue.length) {
+    app.innerHTML = `<div class="empty">지금 할 것이 없어요.<br><a href="#/sources">자료를 올리거나</a> 자료에서 빈 페이지 정리·가르치기를 해 보세요.</div>`;
+    return;
+  }
+  const q = queue[0];
+  const head = `<div class="row"><span class="label">${esc(q.sourceTitle)}</span><span class="spacer"></span><span class="muted">남은 것 ${queue.length + remaining}</span></div>`;
+  if (q.type === 'RECALL') {
+    app.innerHTML = `<section class="panel">${head}
+      <p class="q">빈 페이지 정리</p>
+      <p class="muted">원문을 보지 말고 이 자료에서 기억나는 것을 전부 적어 보세요. 다 쓴 뒤 핵심 항목과 대조합니다.</p>
+      <div class="row"><button class="btn primary" id="startRecall">시작</button><button class="btn" id="skipRecall">나중에</button></div>
+    </section>`;
+    $('#startRecall').onclick = () => { location.hash = `#/sources/${q.sourceId}?act=recall`; };
+    $('#skipRecall').onclick = () => { toast('나중에 다시 나와요'); nextCard(false); };
+    return;
+  }
+  app.innerHTML = `<section class="panel">${head}
+    <p class="q">${esc(q.question)}</p>
+    <textarea id="answer" rows="4" placeholder="자료를 보지 말고 내 말로 답해 보세요"></textarea>
+    <div class="row" style="margin-top:.6rem"><button class="btn primary" id="reveal">근거 확인</button></div>
+    <div id="after" hidden>
+      <div class="label" style="margin-top:1rem">자료의 근거 문장</div>
+      <div class="evidence">${esc(q.evidence)}</div>
+      <div class="label">내 답은 어땠나요? 직접 판단합니다</div>
+      <div class="row" style="margin-top:.4rem">${['AGAIN','HARD','GOOD'].map(g => `<button class="btn" data-g="${g}">${GRADE[g]}</button>`).join('')}
+        <span class="spacer"></span><button class="btn" id="followUp" title="AI에게 한 단계 더 깊은 문제를 하나 받아 다음 카드로 풉니다">꼬리질문 받기</button></div>
+    </div>
+  </section>`;
+  $('#reveal').onclick = () => { $('#after').hidden = false; $('#reveal').hidden = true; $('#answer').readOnly = true; };
+  // 꼬리질문과 평가 중 하나가 응답을 기다리는 동안 둘 다 막는다. 꼬리질문을 기다리는 사이 평가하면 이 카드가 빠져 꼬리질문이 다음 카드로 못 들어간다.
+  const fu = $('#followUp'), grades = [...app.querySelectorAll('[data-g]')];
+  let followed = false;
+  const busy = on => { grades.forEach(x => x.disabled = on); fu.disabled = on || followed; };
+  // 버튼을 누를 때만 LLM을 한 번 부른다. 만든 문제는 지금 카드 바로 다음에 낸다.
+  fu.onclick = async () => {
+    if (fu.disabled) return;
+    busy(true); fu.textContent = '꼬리질문 만드는 중…';
+    try {
+      const f = await post(`/api/study/questions/${q.id}/follow-ups`, {});
+      if (queue[0] === q) queue.splice(1, 0, { type:'QUESTION', id:f.id, sourceId:q.sourceId, sourceTitle:q.sourceTitle, question:f.question, evidence:f.evidence, box:0 });
+      followed = true; fu.textContent = '다음 카드로 냈어요';
+    } catch(e){
+      toast(e.message); fu.textContent = '꼬리질문 받기';
+    }
+    busy(false);
+  };
+  grades.forEach(b => b.onclick = async () => {
+    busy(true);
+    try {
+      const r = await post(`/api/study/questions/${q.id}/reviews`, { answer: $('#answer').value, grade: b.dataset.g });
+      toast(`${GRADE[b.dataset.g]} · 다음 복습 ${later(r.dueAt)}`);
+    } catch(e){
+      // 실패하면 쓴 답을 지우지 않고 그대로 다시 고를 수 있게 둔다.
+      toast(e.message);
+      busy(false);
+      return;
+    }
+    if (b.isConnected) nextCard();
+  });
+}
+
+/* ---------- 내 자료 ---------- */
+async function viewSources(){
+  $('#app').innerHTML = `<form class="wform" id="srcForm">
+      <label>새 자료</label>
+      <input type="text" id="srcTitle" placeholder="제목 (예: 트랜잭션 격리 수준)" maxlength="100" required>
+      <textarea id="srcContent" rows="9" maxlength="20000" required placeholder="공부할 내용을 붙여넣거나 .md · .txt 파일을 고르세요. 마크다운 제목과 목록이 핵심 항목이 됩니다."></textarea>
+      <div class="row"><input type="file" id="srcFile" accept=".md,.txt,text/plain,text/markdown"><span class="spacer"></span><button class="btn primary" type="submit">올리기</button></div>
+    </form>
+    <h2 class="sect">내 자료</h2>
+    <div id="srcList" class="loading">LOADING…</div>`;
+  const form = $('#srcForm'), titleEl = $('#srcTitle'), contentEl = $('#srcContent'), el = $('#srcList');
+  $('#srcFile').onchange = async e => {
+    const f = e.target.files[0];
+    if (!f) return;
+    contentEl.value = (await f.text()).slice(0, 20000);
+    if (!titleEl.value) titleEl.value = f.name.replace(/\.(md|txt)$/i, '').slice(0, 100);
+  };
+  form.onsubmit = async e => {
+    e.preventDefault();
+    try {
+      const r = await post('/api/study/sources', { title: titleEl.value, content: contentEl.value });
+      toast('자료를 올렸어요');
+      if (form.isConnected) location.hash = `#/sources/${r.id}`;
+    } catch(err){ toast(err.message); }
+  };
+  try {
+    const list = await api('/api/study/sources');
+    el.className = list.length ? 'cards' : 'empty';
+    el.innerHTML = list.length ? list.map(s => `<a class="card" href="#/sources/${s.id}">
+        <div class="badges"><span class="badge ${s.questionStatus === 'READY' ? 'cat' : ''}">${s.questionStatus === 'READY' ? '문제 준비됨' : '문제 만드는 중'}</span></div>
+        <h3>${esc(s.title)}</h3><div class="meta">${dt(s.createdAt)}</div></a>`).join('')
+      : '아직 올린 자료가 없어요.';
+  } catch(e){ el.textContent = e.message; }
+}
+
+/* ---------- 자료 상세: 문제 · 빈 페이지 정리 · 가르치기 · 문제 만들기 ---------- */
+let pollT;
+async function viewSource(id, act){
+  clearTimeout(pollT);
+  $('#app').innerHTML = '<div class="loading">LOADING…</div>';
+  const loading = $('#app').firstElementChild;
+  let s;
+  try { s = await api(`/api/study/sources/${id}`); } catch(e){ if (loading.isConnected) $('#app').innerHTML = `<div class="empty">${esc(e.message)}</div>`; return; }
+  if (!loading.isConnected) return;
+  $('#app').innerHTML = `<a class="back" href="#/sources">← 내 자료</a>
+    <article class="post">
+      <div class="badges" id="srcBadges"></div>
+      <h1>${esc(s.title)}</h1>
+      <details><summary class="muted">원문 보기</summary><div class="source-body">${esc(s.content)}</div></details>
+    </article>
+    <nav class="seg" style="margin-top:1rem" id="acts">
+      <button data-a="questions" class="on">문제</button><button data-a="recall">빈 페이지 정리</button><button data-a="teach">가르치기</button><button data-a="make">문제 만들기</button>
+    </nav>
+    <section id="act"></section>`;
+  const acts = { questions: actQuestions, recall: actRecall, teach: actTeach, make: actMake };
+  document.querySelectorAll('#acts button').forEach(b => b.onclick = () => {
+    document.querySelectorAll('#acts button').forEach(x => x.classList.toggle('on', x === b));
+    acts[b.dataset.a](s);
+  });
+  renderBadges(s);
+  const first = act && acts[act] ? act : 'questions';
+  document.querySelectorAll('#acts button').forEach(x => x.classList.toggle('on', x.dataset.a === first));
+  acts[first](s);
+  const badges = $('#srcBadges');
+  const poll = async () => {
+    if (!badges.isConnected) return;
+    const next = await api(`/api/study/sources/${id}`).catch(() => null);
+    if (!badges.isConnected) return;
+    if (!next || next.questionStatus === 'GENERATING') { pollT = setTimeout(poll, 2000); return; }
+    Object.assign(s, next);
+    renderBadges(s);
+    if ($('#acts .on').dataset.a === 'questions') actQuestions(s);
+  };
+  if (s.questionStatus === 'GENERATING') pollT = setTimeout(poll, 2000);
+}
+function renderBadges(s){
+  $('#srcBadges').innerHTML = s.questionStatus === 'GENERATING'
+    ? '<span class="badge cat">문제 만드는 중…</span>'
+    : `<span class="badge cat">문제 ${s.questions.length}개</span>` + (s.discardedQuestionCount
+      ? `<span class="badge" title="AI가 낸 문제 중 근거 문장이 자료에 그대로 없어서 버린 수">근거 불일치로 ${s.discardedQuestionCount}개 버림</span>` : '');
+}
+function actQuestions(s){
+  const el = $('#act');
+  if (s.questionStatus === 'GENERATING') {
+    el.innerHTML = '<div class="loading">AI가 자료를 읽고 문제를 만드는 중… 근거 문장이 자료에 그대로 있는 문제만 남깁니다.</div>';
+    return;
+  }
+  if (!s.questions.length) {
+    el.innerHTML = `<div class="empty">${esc(s.emptyReason || '아직 문제가 없어요.')}<br><br>
+      근거 문장을 골라 <button class="btn" id="toMake">문제 만들기</button>를 할 수도 있어요.</div>`;
+    $('#toMake').onclick = () => $('#acts [data-a="make"]').click();
+    return;
+  }
+  el.innerHTML = `<div class="cards">${s.questions.map(q => `<div class="card">
+      <div class="badges"><span class="badge">${ORIGIN[q.origin]}</span><span class="muted">다음 복습 ${later(q.dueAt)}</span></div>
+      <h3>${esc(q.question)}</h3><div class="evidence">${esc(q.evidence)}</div></div>`).join('')}</div>
+    <p class="muted">문제는 <a href="#/">오늘 할 것</a>에서 간격을 두고 다시 나옵니다. 알면 간격이 1·3·7·14·30일로 늘고, 모르면 10분 뒤로 돌아옵니다.</p>`;
+}
+function actRecall(s){
+  const el = $('#act');
+  el.innerHTML = `<section class="panel">
+    <p class="muted" style="margin-top:0">원문을 닫고, 기억나는 것을 빈 페이지에 전부 적어 보세요. 다 쓴 뒤에 핵심 항목과 대조합니다.</p>
+    <textarea id="recallText" rows="9" placeholder="기억나는 대로…"></textarea>
+    <div class="row" style="margin-top:.6rem"><button class="btn primary" id="compare">핵심 항목과 대조</button></div>
+    <div id="kp" hidden>
+      <div class="label" style="margin-top:1rem">핵심 항목 · 내가 떠올린 것에 직접 체크</div>
+      <p class="muted" style="margin:.2rem 0 0">'언급한 것 같아요'는 글자가 겹치는 항목을 미리 고른 제안이에요. 직접 보고 고쳐 주세요.</p>
+      <div class="keypoints">${s.keyPoints.map((p, i) => `<label><input type="checkbox" value="${i}"><span>${esc(p)}</span></label>`).join('')}</div>
+      <button class="btn primary" id="saveRecall">기록하기</button>
+      <div id="recallResult"></div>
+    </div></section>`;
+  // 응답을 기다리는 사이 다른 탭으로 가면 #act가 새 화면으로 바뀐다. 이 화면의 노드를 잡아 두고, 아직 붙어 있을 때만 고친다.
+  const compareBtn = $('#compare'), area = $('#recallText'), kp = $('#kp'), saveBtn = $('#saveRecall'), resultEl = $('#recallResult');
+  compareBtn.onclick = async () => {
+    const text = area.value;
+    if (!text.trim()) { toast('먼저 기억나는 것을 적어 주세요'); return; }
+    compareBtn.disabled = true;
+    let mentioned = [];
+    try { mentioned = (await post(`/api/study/sources/${s.id}/recalls/suggestions`, { text })).mentionedIndexes; } catch(e){}
+    if (!compareBtn.isConnected) return;
+    kp.querySelectorAll('.keypoints input').forEach(c => {
+      c.checked = mentioned.includes(+c.value);
+      if (c.checked) c.closest('label').insertAdjacentHTML('beforeend', '<span class="badge cat">언급한 것 같아요</span>');
+    });
+    kp.hidden = false; compareBtn.hidden = true; area.readOnly = true;
+  };
+  saveBtn.onclick = async () => {
+    const btn = saveBtn;
+    if (btn.disabled) return;
+    btn.disabled = true;
+    const recalledIndexes = [...kp.querySelectorAll('.keypoints input:checked')].map(c => +c.value);
+    try {
+      const r = await post(`/api/study/sources/${s.id}/recalls`, { text: area.value, recalledIndexes });
+      if (!btn.isConnected) return;
+      btn.hidden = true;
+      resultEl.innerHTML = `<p><b>${r.total}개 중 ${r.recalled}개</b>를 떠올렸어요.</p>` + (r.missed.length
+        ? `<div class="label">다시 볼 것</div><ul>${r.missed.map(m => `<li>${esc(m)}</li>`).join('')}</ul>`
+        : '<p>전부 떠올렸어요.</p>')
+        + (r.nextRecallAt ? `<p class="muted">다음 빈 페이지 정리 ${dt(r.nextRecallAt)}</p>` : '');
+    } catch(e){ toast(e.message); btn.disabled = false; }
+  };
+}
+function actTeach(s){
+  const el = $('#act');
+  el.innerHTML = `<section class="panel">
+    <p class="muted" style="margin-top:0">이 내용을 처음 듣는 사람에게 설명하듯 적어 보세요. AI 학생은 맞고 틀림을 채점하지 않고, 빠지거나 모호한 부분을 되묻습니다.</p>
+    <textarea id="explain" rows="9" placeholder="설명…"></textarea>
+    <div class="row" style="margin-top:.6rem"><button class="btn primary" id="ask">설명하기</button></div>
+    <div id="studentQs"></div></section>`;
+  const askBtn = $('#ask'), explain = $('#explain'), box = $('#studentQs');
+  askBtn.onclick = async () => {
+    if (!explain.value.trim()) { toast('설명을 적어 주세요'); return; }
+    askBtn.disabled = true;
+    box.innerHTML = '<div class="loading">학생이 설명을 듣고 생각하는 중…</div>';
+    try {
+      const r = await post(`/api/study/sources/${s.id}/teachings`, { explanation: explain.value });
+      if (!askBtn.isConnected) return;
+      box.innerHTML = `<div class="label" style="margin-top:1rem">AI 학생의 질문</div>`
+        + r.questions.map(q => `<div class="student"><b>Q</b>${esc(q)}</div>`).join('')
+        + '<p class="muted">바로 답할 수 있는지 스스로 확인해 보세요. 막히는 곳이 다시 볼 곳입니다.</p>';
+    } catch(e){ box.innerHTML = ''; toast(e.message); }
+    askBtn.disabled = false;
+  };
+}
+function actMake(s){
+  $('#act').innerHTML = `<form class="wform" id="makeForm">
+    <p class="muted" style="margin:0">문제를 직접 만들면 더 오래 기억합니다. 답의 근거 문장은 자료에서 그대로 복사해 붙이세요. 자료에 없는 문장이면 받지 않습니다.</p>
+    <label>문제</label><input type="text" id="mq" maxlength="500" required>
+    <label>근거 문장 (자료에서 그대로)</label><textarea id="me" rows="3" maxlength="1000" required></textarea>
+    <button class="btn primary" type="submit">복습 목록에 추가</button></form>`;
+  const form = $('#makeForm');
+  form.onsubmit = async e => {
+    e.preventDefault();
+    try {
+      await post(`/api/study/sources/${s.id}/questions`, { question: $('#mq').value, evidence: $('#me').value });
+      toast('추가했어요. 오늘 할 것에 나옵니다');
+      if (form.isConnected) viewSource(s.id);
+    } catch(err){ toast(err.message); }
+  };
+}
+
+/* ---------- 기록: 잔디 · 연속 학습일 · 학습 지표 ---------- */
+const BOX = ['10분','1일','3일','7일','14일','30일'];
+const rate = r => r.total ? `${Math.round(r.hit * 100 / r.total)}% (${r.hit}/${r.total})` : '아직 없음';
+function statsPanel(st){
+  const counts = Object.fromEntries(st.days.map(d => [d.date, d.count]));
+  const today = Date.parse(st.today + 'T00:00:00Z');
+  // 오늘이 오른쪽 아래 칸에 오도록 84일(12주)을 열 단위로 채운다. 날짜는 서버가 준 Asia/Seoul 오늘 기준이다.
+  const cells = Array.from({ length: 84 }, (_, i) => {
+    const d = new Date(today - (83 - i) * 86400000).toISOString().slice(0, 10);
+    const n = counts[d] || 0;
+    return `<i data-d="${d}" data-l="${n === 0 ? 0 : n < 3 ? 1 : n < 6 ? 2 : 3}" title="${d} · ${n}회"></i>`;
+  }).join('');
+  return `<section class="panel" style="margin-bottom:1rem">
+    <div class="row"><b>연속 ${st.streak}일</b><span class="muted">${st.todayDone ? '오늘 했어요' : '오늘은 아직이에요'}</span></div>
+    <div class="heat" role="img" aria-label="최근 12주 동안 학습한 날">${cells}</div>
+    <div class="label">게이트 수치 · ADR-008</div>
+    <table class="metrics">
+      <tr><td>최근 11일 중 학습한 날</td><td>${st.activeDaysLast11}/11</td><td class="muted">기준 8일</td></tr>
+      <tr><td>7일 간격 복습에서 '알았음'</td><td>${rate(st.retentionSevenDay)}</td><td class="muted">기준 70%</td></tr>
+      <tr><td>AI 문제 근거 검증 통과</td><td>${rate(st.evidencePass)}</td><td class="muted">기준 80%</td></tr>
+    </table>
+    <div class="label">참고</div>
+    <table class="metrics">
+      <tr><td>하루 간격 복습에서 '알았음'</td><td>${rate(st.retentionOneDay)}</td></tr>
+      <tr><td>복습 중 '몰랐음'</td><td>${rate(st.unknown)}</td></tr>
+      <tr><td>상자별 문제 수</td><td>${st.boxCounts.map((n, i) => `${BOX[i]} ${n}`).join(' · ')}</td></tr>
+    </table>
+  </section>`;
+}
+function resultText(r){
+  switch (r.kind) {
+    case 'ANSWER': return '자가 평가 · ' + (GRADE[r.result] || r.result);
+    case 'RECALL': return '떠올림 ' + r.result;
+    case 'TEACH': return 'AI 학생 질문 ' + (r.result ? r.result.split('\n').length : 0) + '개';
+    case 'QUESTION': return '근거 · ' + r.result;
+    case 'FOLLOW_UP': return '앞 문제 · ' + r.result;
+    default: return r.result || '';
+  }
+}
+async function viewRecords(){
+  $('#app').innerHTML = '<div class="loading">LOADING…</div>';
+  const loading = $('#app').firstElementChild;
+  try {
+    const [st, list] = await Promise.all([api('/api/study/stats'), api('/api/study/records')]);
+    if (!loading.isConnected) return;
+    $('#app').innerHTML = statsPanel(st) + (list.length ? `<div class="cards">${list.map(r => `<div class="card">
+        <div class="badges"><span class="badge cat">${KIND[r.kind]}</span><span class="badge">${esc(r.sourceTitle)}</span></div>
+        ${r.prompt ? `<h3>${esc(r.prompt)}</h3>` : ''}
+        ${r.userText ? `<p class="sum">${esc(r.userText)}</p>` : ''}
+        <div class="meta"><span>${esc(resultText(r))}</span><span>${dt(r.createdAt)}</span></div></div>`).join('')}</div>`
+      : '<div class="empty">아직 기록이 없어요. 문제를 풀거나 빈 페이지 정리를 해 보세요.</div>');
+  } catch(e){ if (loading.isConnected) $('#app').innerHTML = `<div class="empty">${esc(e.message)}</div>`; }
+}
+
+renderAuth();
+route();
+</script>
+</body>
+</html>
