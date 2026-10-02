@@ -39,7 +39,7 @@ Redis key 소유권은 [DB Schema Ownership](../database/schema-ownership.md#non
 `board`는 게시글·댓글·좋아요·조회수의 저장·조회 경계를 소유한다.
 
 - 목록 조회는 필터를 조합해 페이징하고 좋아요·조회수·댓글 수·출처 링크를 post ID 단위로 batch 조회한다. 근거는 [N+1 분석](../performance/results.md#n1-분석)에 있다.
-- 상세 조회수는 인증 사용자에 한해 Redis에서 계정별 중복 증가를 막고 DB로 동기화한다. 정확성·손실 경계는 [Redis 캐시 전략](./redis-cache-strategy.md)과 [ADR-001](../decisions/adr-001-use-redis-for-view-count.md)을 따른다.
+- 상세 조회수는 인증 사용자에 한해 Redis에서 계정별 중복 증가를 막고 DB로 동기화한다. Redis가 응답하지 않으면 조회수는 DB 값으로 보여 주고 증가는 건너뛰어 게시글 조회를 막지 않는다. 정확성·손실 경계는 [Redis 캐시 전략](./redis-cache-strategy.md)과 [ADR-001](../decisions/adr-001-use-redis-for-view-count.md)을 따른다.
 - 게시글 수정·삭제는 owner 또는 ADMIN 권한을 검사한다. 삭제는 조회수 캐시를 정리한 뒤 게시글을 물리 삭제한다.
 - 좋아요는 Redis cooldown/rate guard를 거치고 DB unique constraint로 동일 관계의 중복 row 생성을 막는다. DB가 source of truth이며 Redis 장애 시 쓰기를 fail-closed한다.
 
