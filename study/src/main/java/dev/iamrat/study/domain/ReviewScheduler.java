@@ -41,6 +41,10 @@ public final class ReviewScheduler {
         return step(RECALL_INTERVALS, box, grade, now);
     }
 
+    public static int boxCount() {
+        return INTERVALS.size();
+    }
+
     public static LocalDateTime firstRecallAt(LocalDateTime now) {
         return now.plus(RECALL_INTERVALS.get(0));
     }

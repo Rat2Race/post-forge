@@ -62,6 +62,15 @@ article.post h1{font-size:1.4rem;font-weight:700;letter-spacing:-.02em;line-heig
 .q{font-size:1.12rem;font-weight:600;margin:.3rem 0 .8rem;letter-spacing:-.01em}
 .evidence{border-left:3px solid var(--accent);background:var(--accent-soft);padding:.55rem .8rem;white-space:pre-wrap;font-size:.88rem;margin:.5rem 0 .8rem}
 .row{display:flex;gap:.5rem;align-items:center;flex-wrap:wrap}
+.heat{display:grid;grid-template-rows:repeat(7,11px);grid-auto-flow:column;grid-auto-columns:11px;gap:3px;margin:.7rem 0 1rem}
+.heat i{border-radius:2px;background:var(--surface-2)}
+.heat i[data-l="1"]{background:color-mix(in srgb,var(--accent) 35%,var(--surface-2))}
+.heat i[data-l="2"]{background:color-mix(in srgb,var(--accent) 65%,var(--surface-2))}
+.heat i[data-l="3"]{background:var(--accent)}
+table.metrics{border-collapse:collapse;width:100%;font-size:.86rem;margin:.3rem 0 .9rem;word-break:keep-all}
+table.metrics td{padding:.3rem .6rem .3rem 0;border-bottom:1px solid var(--rule-soft)}
+table.metrics td:nth-child(2){font-family:var(--mono)}
+table.metrics td:nth-child(3){white-space:nowrap}
 .muted{color:var(--ink-3);font-size:.8rem}
 .source-body{white-space:pre-wrap;font-size:.86rem;max-height:20rem;overflow:auto;background:var(--surface-2);padding:.8rem;border-radius:3px;margin-top:.5rem}
 .keypoints{margin:.5rem 0 .9rem}
@@ -443,7 +452,35 @@ function actMake(s){
   };
 }
 
-/* ---------- 기록 ---------- */
+/* ---------- 기록: 잔디 · 연속 학습일 · 학습 지표 ---------- */
+const BOX = ['10분','1일','3일','7일','14일','30일'];
+const rate = r => r.total ? `${Math.round(r.hit * 100 / r.total)}% (${r.hit}/${r.total})` : '아직 없음';
+function statsPanel(st){
+  const counts = Object.fromEntries(st.days.map(d => [d.date, d.count]));
+  const today = Date.parse(st.today + 'T00:00:00Z');
+  // 오늘이 오른쪽 아래 칸에 오도록 84일(12주)을 열 단위로 채운다. 날짜는 서버가 준 Asia/Seoul 오늘 기준이다.
+  const cells = Array.from({ length: 84 }, (_, i) => {
+    const d = new Date(today - (83 - i) * 86400000).toISOString().slice(0, 10);
+    const n = counts[d] || 0;
+    return `<i data-d="${d}" data-l="${n === 0 ? 0 : n < 3 ? 1 : n < 6 ? 2 : 3}" title="${d} · ${n}회"></i>`;
+  }).join('');
+  return `<section class="panel" style="margin-bottom:1rem">
+    <div class="row"><b>연속 ${st.streak}일</b><span class="muted">${st.todayDone ? '오늘 했어요' : '오늘은 아직이에요'}</span></div>
+    <div class="heat" role="img" aria-label="최근 12주 동안 학습한 날">${cells}</div>
+    <div class="label">게이트 수치 · ADR-008</div>
+    <table class="metrics">
+      <tr><td>최근 11일 중 학습한 날</td><td>${st.activeDaysLast11}/11</td><td class="muted">기준 8일</td></tr>
+      <tr><td>7일 간격 복습에서 '알았음'</td><td>${rate(st.retentionSevenDay)}</td><td class="muted">기준 70%</td></tr>
+      <tr><td>AI 문제 근거 검증 통과</td><td>${rate(st.evidencePass)}</td><td class="muted">기준 80%</td></tr>
+    </table>
+    <div class="label">참고</div>
+    <table class="metrics">
+      <tr><td>하루 간격 복습에서 '알았음'</td><td>${rate(st.retentionOneDay)}</td></tr>
+      <tr><td>복습 중 '몰랐음'</td><td>${rate(st.unknown)}</td></tr>
+      <tr><td>상자별 문제 수</td><td>${st.boxCounts.map((n, i) => `${BOX[i]} ${n}`).join(' · ')}</td></tr>
+    </table>
+  </section>`;
+}
 function resultText(r){
   switch (r.kind) {
     case 'ANSWER': return '자가 평가 · ' + (GRADE[r.result] || r.result);
@@ -456,15 +493,17 @@ function resultText(r){
 }
 async function viewRecords(){
   $('#app').innerHTML = '<div class="loading">LOADING…</div>';
+  const loading = $('#app').firstElementChild;
   try {
-    const list = await api('/api/study/records');
-    $('#app').innerHTML = list.length ? `<div class="cards">${list.map(r => `<div class="card">
+    const [st, list] = await Promise.all([api('/api/study/stats'), api('/api/study/records')]);
+    if (!loading.isConnected) return;
+    $('#app').innerHTML = statsPanel(st) + (list.length ? `<div class="cards">${list.map(r => `<div class="card">
         <div class="badges"><span class="badge cat">${KIND[r.kind]}</span><span class="badge">${esc(r.sourceTitle)}</span></div>
         ${r.prompt ? `<h3>${esc(r.prompt)}</h3>` : ''}
         ${r.userText ? `<p class="sum">${esc(r.userText)}</p>` : ''}
         <div class="meta"><span>${esc(resultText(r))}</span><span>${dt(r.createdAt)}</span></div></div>`).join('')}</div>`
-      : '<div class="empty">아직 기록이 없어요. 문제를 풀거나 빈 페이지 정리를 해 보세요.</div>';
-  } catch(e){ $('#app').innerHTML = `<div class="empty">${esc(e.message)}</div>`; }
+      : '<div class="empty">아직 기록이 없어요. 문제를 풀거나 빈 페이지 정리를 해 보세요.</div>');
+  } catch(e){ if (loading.isConnected) $('#app').innerHTML = `<div class="empty">${esc(e.message)}</div>`; }
 }
 
 renderAuth();
