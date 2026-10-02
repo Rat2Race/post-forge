@@ -279,30 +279,32 @@ function showCard(){
     </div>
   </section>`;
   $('#reveal').onclick = () => { $('#after').hidden = false; $('#reveal').hidden = true; $('#answer').readOnly = true; };
+  // 꼬리질문과 평가 중 하나가 응답을 기다리는 동안 둘 다 막는다. 꼬리질문을 기다리는 사이 평가하면 이 카드가 빠져 꼬리질문이 다음 카드로 못 들어간다.
+  const fu = $('#followUp'), grades = [...app.querySelectorAll('[data-g]')];
+  let followed = false;
+  const busy = on => { grades.forEach(x => x.disabled = on); fu.disabled = on || followed; };
   // 버튼을 누를 때만 LLM을 한 번 부른다. 만든 문제는 지금 카드 바로 다음에 낸다.
-  const fu = $('#followUp');
   fu.onclick = async () => {
     if (fu.disabled) return;
-    fu.disabled = true; fu.textContent = '꼬리질문 만드는 중…';
+    busy(true); fu.textContent = '꼬리질문 만드는 중…';
     try {
       const f = await post(`/api/study/questions/${q.id}/follow-ups`, {});
       if (queue[0] === q) queue.splice(1, 0, { type:'QUESTION', id:f.id, sourceId:q.sourceId, sourceTitle:q.sourceTitle, question:f.question, evidence:f.evidence, box:0 });
-      if (fu.isConnected) fu.textContent = '다음 카드로 냈어요';
+      followed = true; fu.textContent = '다음 카드로 냈어요';
     } catch(e){
-      toast(e.message);
-      if (fu.isConnected) { fu.disabled = false; fu.textContent = '꼬리질문 받기'; }
+      toast(e.message); fu.textContent = '꼬리질문 받기';
     }
+    busy(false);
   };
-  const grades = [...app.querySelectorAll('[data-g]')];
   grades.forEach(b => b.onclick = async () => {
-    grades.forEach(x => x.disabled = true);
+    busy(true);
     try {
       const r = await post(`/api/study/questions/${q.id}/reviews`, { answer: $('#answer').value, grade: b.dataset.g });
       toast(`${GRADE[b.dataset.g]} · 다음 복습 ${later(r.dueAt)}`);
     } catch(e){
       // 실패하면 쓴 답을 지우지 않고 그대로 다시 고를 수 있게 둔다.
       toast(e.message);
-      grades.forEach(x => x.disabled = false);
+      busy(false);
       return;
     }
     if (b.isConnected) nextCard();
