@@ -282,6 +282,13 @@ class SecurityConfigRegressionTest {
     }
 
     @Test
+    @DisplayName("두 화면이 함께 쓰는 인증 스크립트는 로그인 전에도 받는다")
+    void sharedAuthScript_isPublic() throws Exception {
+        mockMvc.perform(get("/auth.js"))
+            .andExpect(status().isOk());
+    }
+
+    @Test
     @DisplayName("학습 화면은 로그인 전에도 열린다")
     void studyPage_isPublic() throws Exception {
         mockMvc.perform(get("/study.html"))
