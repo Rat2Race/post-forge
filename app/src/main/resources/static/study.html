@@ -195,25 +195,36 @@ function route(){
   if (h.startsWith('#/records')) return viewRecords();
   return viewToday();
 }
-document.querySelectorAll('#mainnav button').forEach(b => b.onclick = () => { location.hash = b.dataset.r; });
+// 지금 화면의 탭을 다시 누르면 hashchange가 없으므로 직접 다시 그린다. 건너뛴 빈 페이지를 다시 받을 때 쓴다.
+document.querySelectorAll('#mainnav button').forEach(b => b.onclick = () => { if (location.hash === b.dataset.r) route(); else location.hash = b.dataset.r; });
 window.addEventListener('hashchange', route);
 
 /* ---------- 오늘 할 것: 빈 페이지 정리 · 답하기 → 근거 확인 → 자가 평가 ---------- */
+// 응답을 기다린 뒤에는 요청을 보낸 화면의 노드가 아직 붙어 있을 때만 그린다. 그사이 다른 화면으로 갔으면 그 화면을 덮지 않는다.
 let queue = [], remaining = 0;
-async function loadToday(){
-  const t = await api('/api/study/today');
-  queue = t.items; remaining = t.remaining;
-}
 async function viewToday(){
   $('#app').innerHTML = '<div class="loading">LOADING…</div>';
-  try { await loadToday(); } catch(e){ $('#app').innerHTML = `<div class="empty">${esc(e.message)}</div>`; return; }
+  const loading = $('#app').firstElementChild;
+  let t;
+  try { t = await api('/api/study/today'); } catch(e){ if (loading.isConnected) $('#app').innerHTML = `<div class="empty">${esc(e.message)}</div>`; return; }
+  if (!loading.isConnected) return;
+  queue = t.items; remaining = t.remaining;
   showCard();
 }
-// 받아 온 목록을 다 풀면 다시 받는다. 그사이 10분 간격으로 돌아온 문제와 상한 밖의 것을 놓치지 않는다.
-async function nextCard(){
+// 다 풀어서 비면 다시 받는다. 그사이 10분 간격으로 돌아온 문제와 상한 밖의 것을 놓치지 않는다.
+// 건너뛰어서 비면 다시 받지 않는다. 받으면 방금 건너뛴 빈 페이지가 바로 또 나온다.
+async function nextCard(refetch = true){
+  const card = $('#app').firstElementChild;
   queue.shift();
-  if (!queue.length) {
-    try { await loadToday(); } catch(e){ toast(e.message); }
+  if (!queue.length && refetch) {
+    try {
+      const t = await api('/api/study/today');
+      if (!card.isConnected) return;
+      queue = t.items; remaining = t.remaining;
+    } catch(e){
+      if (!card.isConnected) return;
+      toast(e.message);
+    }
   }
   showCard();
 }
@@ -232,7 +243,7 @@ function showCard(){
       <div class="row"><button class="btn primary" id="startRecall">시작</button><button class="btn" id="skipRecall">나중에</button></div>
     </section>`;
     $('#startRecall').onclick = () => { location.hash = `#/sources/${q.sourceId}?act=recall`; };
-    $('#skipRecall').onclick = () => nextCard();
+    $('#skipRecall').onclick = () => { toast('나중에 다시 나와요'); nextCard(false); };
     return;
   }
   app.innerHTML = `<section class="panel">${head}
@@ -262,18 +273,19 @@ function showCard(){
       if (fu.isConnected) { fu.disabled = false; fu.textContent = '꼬리질문 받기'; }
     }
   };
-  app.querySelectorAll('[data-g]').forEach(b => b.onclick = async () => {
-    app.querySelectorAll('[data-g]').forEach(x => x.disabled = true);
+  const grades = [...app.querySelectorAll('[data-g]')];
+  grades.forEach(b => b.onclick = async () => {
+    grades.forEach(x => x.disabled = true);
     try {
       const r = await post(`/api/study/questions/${q.id}/reviews`, { answer: $('#answer').value, grade: b.dataset.g });
       toast(`${GRADE[b.dataset.g]} · 다음 복습 ${later(r.dueAt)}`);
     } catch(e){
       // 실패하면 쓴 답을 지우지 않고 그대로 다시 고를 수 있게 둔다.
       toast(e.message);
-      app.querySelectorAll('[data-g]').forEach(x => x.disabled = false);
+      grades.forEach(x => x.disabled = false);
       return;
     }
-    nextCard();
+    if (b.isConnected) nextCard();
   });
 }
 
@@ -287,36 +299,40 @@ async function viewSources(){
     </form>
     <h2 class="sect">내 자료</h2>
     <div id="srcList" class="loading">LOADING…</div>`;
+  const form = $('#srcForm'), titleEl = $('#srcTitle'), contentEl = $('#srcContent'), el = $('#srcList');
   $('#srcFile').onchange = async e => {
     const f = e.target.files[0];
     if (!f) return;
-    $('#srcContent').value = (await f.text()).slice(0, 20000);
-    if (!$('#srcTitle').value) $('#srcTitle').value = f.name.replace(/\.(md|txt)$/i, '').slice(0, 100);
+    contentEl.value = (await f.text()).slice(0, 20000);
+    if (!titleEl.value) titleEl.value = f.name.replace(/\.(md|txt)$/i, '').slice(0, 100);
   };
-  $('#srcForm').onsubmit = async e => {
+  form.onsubmit = async e => {
     e.preventDefault();
     try {
-      const r = await post('/api/study/sources', { title: $('#srcTitle').value, content: $('#srcContent').value });
-      location.hash = `#/sources/${r.id}`;
+      const r = await post('/api/study/sources', { title: titleEl.value, content: contentEl.value });
+      toast('자료를 올렸어요');
+      if (form.isConnected) location.hash = `#/sources/${r.id}`;
     } catch(err){ toast(err.message); }
   };
   try {
     const list = await api('/api/study/sources');
-    const el = $('#srcList');
     el.className = list.length ? 'cards' : 'empty';
     el.innerHTML = list.length ? list.map(s => `<a class="card" href="#/sources/${s.id}">
         <div class="badges"><span class="badge ${s.questionStatus === 'READY' ? 'cat' : ''}">${s.questionStatus === 'READY' ? '문제 준비됨' : '문제 만드는 중'}</span></div>
         <h3>${esc(s.title)}</h3><div class="meta">${dt(s.createdAt)}</div></a>`).join('')
       : '아직 올린 자료가 없어요.';
-  } catch(e){ $('#srcList').textContent = e.message; }
+  } catch(e){ el.textContent = e.message; }
 }
 
 /* ---------- 자료 상세: 문제 · 빈 페이지 정리 · 가르치기 · 문제 만들기 ---------- */
 let pollT;
 async function viewSource(id, act){
   clearTimeout(pollT);
+  $('#app').innerHTML = '<div class="loading">LOADING…</div>';
+  const loading = $('#app').firstElementChild;
   let s;
-  try { s = await api(`/api/study/sources/${id}`); } catch(e){ $('#app').innerHTML = `<div class="empty">${esc(e.message)}</div>`; return; }
+  try { s = await api(`/api/study/sources/${id}`); } catch(e){ if (loading.isConnected) $('#app').innerHTML = `<div class="empty">${esc(e.message)}</div>`; return; }
+  if (!loading.isConnected) return;
   $('#app').innerHTML = `<a class="back" href="#/sources">← 내 자료</a>
     <article class="post">
       <div class="badges" id="srcBadges"></div>
@@ -336,10 +352,11 @@ async function viewSource(id, act){
   const first = act && acts[act] ? act : 'questions';
   document.querySelectorAll('#acts button').forEach(x => x.classList.toggle('on', x.dataset.a === first));
   acts[first](s);
-  const here = () => (location.hash.match(/^#\/sources\/(\d+)/) || [])[1] === String(id);
+  const badges = $('#srcBadges');
   const poll = async () => {
-    if (!here()) return;
+    if (!badges.isConnected) return;
     const next = await api(`/api/study/sources/${id}`).catch(() => null);
+    if (!badges.isConnected) return;
     if (!next || next.questionStatus === 'GENERATING') { pollT = setTimeout(poll, 2000); return; }
     Object.assign(s, next);
     renderBadges(s);
@@ -442,12 +459,13 @@ function actMake(s){
     <label>문제</label><input type="text" id="mq" maxlength="500" required>
     <label>근거 문장 (자료에서 그대로)</label><textarea id="me" rows="3" maxlength="1000" required></textarea>
     <button class="btn primary" type="submit">복습 목록에 추가</button></form>`;
-  $('#makeForm').onsubmit = async e => {
+  const form = $('#makeForm');
+  form.onsubmit = async e => {
     e.preventDefault();
     try {
       await post(`/api/study/sources/${s.id}/questions`, { question: $('#mq').value, evidence: $('#me').value });
       toast('추가했어요. 오늘 할 것에 나옵니다');
-      viewSource(s.id);
+      if (form.isConnected) viewSource(s.id);
     } catch(err){ toast(err.message); }
   };
 }
