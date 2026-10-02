@@ -6,7 +6,6 @@ import dev.iamrat.board.comment.application.CommentCommandService;
 import dev.iamrat.board.comment.application.CommentInteractionService;
 import dev.iamrat.board.comment.application.CommentQueryService;
 import dev.iamrat.board.like.application.LikeResult;
-import dev.iamrat.board.like.presentation.LikeResponse;
 import dev.iamrat.core.global.dto.PageResponse;
 import dev.iamrat.core.account.UserPrincipal;
 import jakarta.validation.Valid;
@@ -87,24 +86,24 @@ public class CommentController {
 
     @PostMapping("/{commentId:\\d+}/like")
     @PreAuthorize("hasRole('USER')")
-    public ResponseEntity<LikeResponse> likeComment(
+    public ResponseEntity<LikeResult> likeComment(
             @PathVariable Long commentId,
             @AuthenticationPrincipal UserPrincipal user
     ) {
         LikeResult likeStatus = commentInteractionService.likeComment(commentId, accountId(user));
 
-        return ResponseEntity.ok(LikeResponse.from(likeStatus));
+        return ResponseEntity.ok(likeStatus);
     }
 
     @DeleteMapping("/{commentId:\\d+}/like")
     @PreAuthorize("hasRole('USER')")
-    public ResponseEntity<LikeResponse> unlikeComment(
+    public ResponseEntity<LikeResult> unlikeComment(
             @PathVariable Long commentId,
             @AuthenticationPrincipal UserPrincipal user
     ) {
         LikeResult likeStatus = commentInteractionService.unlikeComment(commentId, accountId(user));
 
-        return ResponseEntity.ok(LikeResponse.from(likeStatus));
+        return ResponseEntity.ok(likeStatus);
     }
 
     private static Long optionalAccountId(UserPrincipal user) {
