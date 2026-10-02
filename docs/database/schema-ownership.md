@@ -32,7 +32,7 @@
 | `board` | `comments` | `board/comment/domain/Comment.java` | 댓글/대댓글 tree; 작성자는 `accounts.id` 값을 `account_id` scalar로 보관 |
 | `board` | `post_like` | `board/like/domain/PostLike.java` | 게시글 좋아요 uniqueness: `(post_id, account_id)` |
 | `board` | `comment_like` | `board/like/domain/CommentLike.java` | 댓글 좋아요 uniqueness: `(comment_id, account_id)` |
-| `study` | `study_sources` | `study/domain/StudySource.java` | 사용자가 올린 학습 자료, 문제 생성 상태, LLM 문제 초안 수와 버린 수(근거 검증 통과율 기준), 빈 페이지 상자와 다음 예정 시각, 낙관적 잠금 `version`; 브랜치 마이그레이션 `V20261002_1` |
+| `study` | `study_sources` | `study/domain/StudySource.java` | 사용자가 올린 학습 자료, 문제 생성 상태, LLM 문제 초안 수와 버린 수(근거 검증 통과율 기준), 빈 페이지 상자와 다음 예정 시각, 낙관적 잠금 `version` |
 | `study` | `study_questions` | `study/domain/StudyQuestion.java` | 근거가 자료에 그대로 있는 복습 문제, 출처(LLM/RULE/USER), 라이트너 상자와 다음 복습 시각, 동시 채점용 `version` |
 | `study` | `study_records` | `study/domain/StudyRecord.java` | 덧붙이기만 하는 학습 기록. 자료 제목·질문 문장은 그때 모습으로 복사해 둔다. 복습 기록은 복습 직전 상자(`review_box`)를 남겨 간격별 유지율을 계산한다 |
 
@@ -51,7 +51,7 @@
 ## 마이그레이션 규칙
 
 런타임 마이그레이션은 `app/src/main/resources/db/migration/`의 `VNNNN__description.sql`에 둔다.
-현재 이력은 `V0000` 하나다(2026-09-30 재베이스라인, ADR-007). 이후 스키마 변경은 `V0001`부터 증분으로 쌓고, 브랜치 작업 중에는 번호 충돌을 피해 `V20260930_1__...` 같은 타임스탬프 버전을 쓴다. 신규 빈 DB는 `V0000` baseline부터 실행하고, production-like 환경은 Flyway 적용 후 Hibernate `validate`로 mapping 불일치를 잡는다.
+현재 이력은 `V0000` 하나다(2026-09-30 재베이스라인, ADR-007). 2026-10-02 뉴스 퇴역(ADR-008) 끝에 학습 표를 합쳐 동결했다. 이후 스키마 변경은 `V0001`부터 순번으로 쌓는다. 단독 개발이라 브랜치 사이 번호 충돌을 따로 막지 않는다. 신규 빈 DB는 `V0000` baseline부터 실행하고, production-like 환경은 Flyway 적용 후 Hibernate `validate`로 mapping 불일치를 잡는다.
 로컬 개발도 `application.yml` 기준으로 Flyway가 기본 활성화되고 Hibernate는 `validate`를 사용한다. 기존 non-empty DB 편입만 아래의 1회성 baseline 절차를 따른다.
 
 각 migration은 primary owner 하나를 갖고 다음 header에 호환성, rollback, 검증 방법을 남긴다.
