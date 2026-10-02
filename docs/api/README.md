@@ -45,7 +45,7 @@ Spring pageable resolver는 일부 잘못된 `page`/`size` 값을 `0`, 엔드포
 
 ### Fail
 
-전역·보안 handler가 처리하는 애플리케이션 오류는 다음 형태를 사용한다. `validation`은 Bean Validation 실패일 때만 포함된다. Spring 자체의 `405 Method Not Allowed`, `415 Unsupported Media Type` 응답은 이 형태가 보장되지 않는다.
+전역·보안 handler가 처리하는 애플리케이션 오류는 다음 형태를 사용한다. `validation`은 Bean Validation 실패일 때만 포함된다. 잘못된 method(`405 METHOD_NOT_ALLOWED`, `Allow` 헤더 포함)와 지원하지 않는 `Content-Type`(`415 UNSUPPORTED_MEDIA_TYPE`)도 같은 형태다. 보안 경로 규칙에 없는 method·경로 조합은 그 전에 `401`/`403`으로 막힌다.
 
 ```json
 {
@@ -65,7 +65,9 @@ Spring pageable resolver는 일부 잘못된 `page`/`size` 값을 `0`, 엔드포
 | `401` | `UNAUTHORIZED`, `INVALID_TOKEN`, `EXPIRED_TOKEN`, `INVALID_CREDENTIALS` | 인증 정보 없음, 토큰 또는 자격 증명 오류 |
 | `403` | `FORBIDDEN`, `ACCESS_DENIED`, `ACCOUNT_NOT_ACTIVE` | 역할·소유권 부족 또는 비활성 계정. Security filter의 직접 응답은 `FORBIDDEN`, MVC advice 경로는 `ACCESS_DENIED` |
 | `404` | `RESOURCE_NOT_FOUND` 또는 모듈별 `*_NOT_FOUND` | 대상 리소스 없음 |
+| `405` | `METHOD_NOT_ALLOWED` | 경로는 있지만 그 method는 지원하지 않음. `Allow` 헤더가 지원 method를 알린다 |
 | `409` | `DATA_INTEGRITY_VIOLATION`, `CONCURRENT_MODIFICATION` 또는 중복 코드 | unique 제약이나 동시 수정 충돌 |
+| `415` | `UNSUPPORTED_MEDIA_TYPE` | 본문의 `Content-Type`을 읽을 수 없음(JSON 본문을 받는 API에 다른 형식) |
 | `429` | `TOO_MANY_REQUESTS` | 이메일·로그인·좋아요 요청 보호 한도 초과 또는 보호 저장소 장애 시 fail-closed |
 | `500` | `INTERNAL_SERVER_ERROR` 또는 모듈별 오류 | 처리되지 않은 내부·외부 연동 오류 |
 

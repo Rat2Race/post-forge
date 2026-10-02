@@ -15,5 +15,6 @@ dependencies {
     testImplementation "org.springframework.boot:spring-boot-starter-test"
     testImplementation 'jakarta.servlet:jakarta.servlet-api'
     testImplementation 'org.testcontainers:junit-jupiter'
+    testImplementation 'org.springframework.boot:spring-boot-starter-json'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }

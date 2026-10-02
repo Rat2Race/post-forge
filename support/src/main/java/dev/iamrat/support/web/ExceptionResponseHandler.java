@@ -17,9 +17,12 @@ import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.OptimisticLockingFailureException;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.FieldError;
+import org.springframework.web.HttpMediaTypeNotSupportedException;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -35,6 +38,10 @@ public class ExceptionResponseHandler {
     private static final Pattern CONSTRAINT_NAME = Pattern.compile("constraint \"([^\"]+)\"");
 
     private ResponseEntity<ErrorResponse> buildErrorResponse(ErrorCode errorCode) {
+        return buildErrorResponse(errorCode, HttpHeaders.EMPTY);
+    }
+
+    private ResponseEntity<ErrorResponse> buildErrorResponse(ErrorCode errorCode, HttpHeaders headers) {
         ErrorResponse response = ErrorResponse.builder()
             .status(errorCode.getHttpStatus().value())
             .error(errorCode.name())
@@ -42,7 +49,7 @@ public class ExceptionResponseHandler {
             .timestamp(LocalDateTime.now())
             .build();
 
-        return ResponseEntity.status(errorCode.getHttpStatus()).body(response);
+        return ResponseEntity.status(errorCode.getHttpStatus()).headers(headers).body(response);
     }
 
     private ResponseEntity<ErrorResponse> buildValidationErrorResponse(
@@ -139,6 +146,19 @@ public class ExceptionResponseHandler {
     public ResponseEntity<ErrorResponse> handleIOException(IOException e) {
         log.error("IOException: {}", e.getMessage(), e);
         return buildErrorResponse(CommonErrorCode.INTERNAL_SERVER_ERROR);
+    }
+
+    // 둘 다 MVC 디스패치 중에 나서 아래 Exception 처리가 500으로 바꾼다. 먼저 잡아 405·415로 응답하고, 예외가 채운 Allow·Accept 헤더를 붙인다.
+    @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
+    public ResponseEntity<ErrorResponse> handleMethodNotSupported(HttpRequestMethodNotSupportedException e) {
+        log.warn("HttpRequestMethodNotSupportedException: {}", e.getMethod());
+        return buildErrorResponse(CommonErrorCode.METHOD_NOT_ALLOWED, e.getHeaders());
+    }
+
+    @ExceptionHandler(HttpMediaTypeNotSupportedException.class)
+    public ResponseEntity<ErrorResponse> handleMediaTypeNotSupported(HttpMediaTypeNotSupportedException e) {
+        log.warn("HttpMediaTypeNotSupportedException: {}", e.getContentType());
+        return buildErrorResponse(CommonErrorCode.UNSUPPORTED_MEDIA_TYPE, e.getHeaders());
     }
 
     @ExceptionHandler(Exception.class)
