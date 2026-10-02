@@ -33,6 +33,7 @@ dependencies {
     testImplementation "com.tngtech.archunit:archunit-junit5:${archunitVersion}"
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
     testRuntimeOnly 'org.testcontainers:postgresql'
+    testImplementation 'org.testcontainers:junit-jupiter'
 }
 
 tasks.named('bootJar') {
