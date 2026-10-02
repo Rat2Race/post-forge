@@ -2,10 +2,10 @@ package dev.iamrat.board.post.application;
 
 import dev.iamrat.board.post.domain.Post;
 import dev.iamrat.board.post.domain.PostPolicy;
+import dev.iamrat.board.post.domain.PostType;
 import dev.iamrat.board.post.presentation.PostSummaryResponse;
 import dev.iamrat.board.view.application.ViewCountService;
 import dev.iamrat.core.account.AccountProfileReader;
-import dev.iamrat.core.board.post.PostCategory;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -39,7 +39,7 @@ public class PostCommandService {
             content,
             null,
             tags,
-            PostCategory.GENERAL,
+            PostType.GENERAL,
             accountId,
             nickname
         );

@@ -1,12 +1,12 @@
 package dev.iamrat.board.post.application;
 
 import dev.iamrat.board.post.domain.Post;
+import dev.iamrat.board.post.domain.PostType;
 import dev.iamrat.board.post.presentation.PostSummaryResponse;
 import dev.iamrat.board.view.application.ViewCountService;
 import dev.iamrat.core.account.AccountProfile;
 import dev.iamrat.core.account.AccountProfileReader;
-import dev.iamrat.core.board.post.BoardCategory;
-import dev.iamrat.core.board.post.PostCategory;
+import dev.iamrat.core.board.post.NewsSection;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -88,8 +88,8 @@ class PostCommandServiceTest {
         ArgumentCaptor<Post> postCaptor = ArgumentCaptor.forClass(Post.class);
         verify(postStore).save(postCaptor.capture());
         assertThat(postCaptor.getValue().getSummary()).isNull();
-        assertThat(postCaptor.getValue().getCategory()).isEqualTo(PostCategory.GENERAL);
-        assertThat(postCaptor.getValue().getBoardCategory()).isEqualTo(BoardCategory.GENERAL);
+        assertThat(postCaptor.getValue().getCategory()).isEqualTo(PostType.GENERAL);
+        assertThat(postCaptor.getValue().getBoardCategory()).isEqualTo(NewsSection.GENERAL);
     }
 
     @Test
@@ -100,7 +100,7 @@ class PostCommandServiceTest {
             "old content",
             "internal summary",
             List.of("old"),
-            PostCategory.GENERAL,
+            PostType.GENERAL,
             1L,
             "writer"
         );
@@ -115,7 +115,7 @@ class PostCommandServiceTest {
         );
 
         assertThat(post.getSummary()).isEqualTo("internal summary");
-        assertThat(post.getCategory()).isEqualTo(PostCategory.GENERAL);
+        assertThat(post.getCategory()).isEqualTo(PostType.GENERAL);
         verify(postFileAppender).replaceFiles(post, List.of());
     }
 
@@ -127,7 +127,7 @@ class PostCommandServiceTest {
             "launch content",
             "launch summary",
             List.of("launch"),
-            PostCategory.PRODUCT_LAUNCH_NEWS,
+            PostType.PRODUCT_LAUNCH_NEWS,
             1L,
             "writer"
         );
@@ -141,7 +141,7 @@ class PostCommandServiceTest {
             List.of()
         );
 
-        assertThat(post.getCategory()).isEqualTo(PostCategory.PRODUCT_LAUNCH_NEWS);
+        assertThat(post.getCategory()).isEqualTo(PostType.PRODUCT_LAUNCH_NEWS);
         assertThat(post.getSummary()).isEqualTo("launch summary");
     }
 

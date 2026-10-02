@@ -83,10 +83,10 @@ docs/performance/runs/YYYYMMDD-HHMMSS-<target>-<scenario>/
 
 | Metric | 용도 |
 |---|---|
-| `external_naver_fetch_seconds` | 네이버 호출 시간, outcome/status별 성공·실패 분리 |
-| `external_naver_fetch_success_total` | 네이버 검색 성공 횟수 |
-| `external_naver_fetch_failure_total` | 예외·HTTP status별 실패 횟수(429/500 포함) |
-| `external_naver_fetch_items_total` | 정제·검증을 통과해 반환된 기사 수 |
+| `external_news_fetch_seconds` | 피드 호출 시간, outcome/status별 성공·실패 분리 |
+| `external_news_fetch_success_total` | 피드 조회 성공 횟수 |
+| `external_news_fetch_failure_total` | 예외·HTTP status별 실패 횟수(429/500 포함) |
+| `external_news_fetch_items_total` | 정제·검증을 통과해 반환된 기사 수 |
 | `ingest_documents_embeddings_stored_total` | 벡터 저장에 성공한 청크 수 |
 | `ingest_documents_embeddings_failed_total` | 벡터 저장에 실패한 청크 수 |
 | `ai_vector_search_success_total` | RAG 검색 성공 횟수 |
@@ -96,7 +96,7 @@ docs/performance/runs/YYYYMMDD-HHMMSS-<target>-<scenario>/
 | `ai_text_generation_prompt_tokens` | LLM input token 처리량 계산 |
 | `ai_text_generation_completion_tokens` | LLM output TPS 계산 |
 
-수집·적재·검색·생성 지표를 같은 시간 구간에서 비교하고, `displayCount`와 `dailyCap`을 별도로 기록한다. 데일리는 대상 분야·전날 게시글 수·생성 성공/건너뜀·완료 시간을 함께 남긴다. 스케줄은 [자동 게시 스케줄](../api/README.md#자동-게시-스케줄)을 따른다. 위 표는 계측 항목이며 실측 수치가 아니다. 외부 API를 호출하지 않는 테스트와 Naver/LLM 실호출 성능 측정을 구분한다.
+수집·적재·검색·생성 지표를 같은 시간 구간에서 비교하고, `displayCount`와 `dailyCap`을 별도로 기록한다. 데일리는 대상 분야·전날 게시글 수·생성 성공/건너뜀·완료 시간을 함께 남긴다. 스케줄은 [자동 게시 스케줄](../api/README.md#자동-게시-스케줄)을 따른다. 위 표는 계측 항목이며 실측 수치가 아니다. 외부 API를 호출하지 않는 테스트와 피드/LLM 실호출 성능 측정을 구분한다.
 
 ## 제외할 값
 

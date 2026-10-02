@@ -26,19 +26,24 @@ class LlmPropertiesTest {
 
         assertThat(properties.getChat().getConnectTimeout()).isEqualTo(Duration.ofSeconds(3));
         assertThat(properties.getChat().getReadTimeout()).isEqualTo(Duration.ofSeconds(60));
+        assertThat(properties.getChat().getPublishingReadTimeout()).isEqualTo(Duration.ofSeconds(210));
         assertThat(properties.getEmbedding().getConnectTimeout()).isEqualTo(Duration.ofSeconds(3));
         assertThat(properties.getEmbedding().getReadTimeout()).isEqualTo(Duration.ofSeconds(30));
 
         properties.getChat().setReadTimeout(Duration.ofSeconds(120));
+        properties.getChat().setPublishingReadTimeout(Duration.ofSeconds(240));
         properties.getEmbedding().setConnectTimeout(Duration.ofSeconds(5));
 
         assertThat(properties.getChat().getReadTimeout()).isEqualTo(Duration.ofSeconds(120));
+        assertThat(properties.getChat().getPublishingReadTimeout()).isEqualTo(Duration.ofSeconds(240));
         assertThat(properties.getEmbedding().getConnectTimeout()).isEqualTo(Duration.ofSeconds(5));
 
         properties.getChat().setReadTimeout(Duration.ZERO);
+        properties.getChat().setPublishingReadTimeout(Duration.ZERO);
         properties.getEmbedding().setConnectTimeout(null);
 
         assertThat(properties.getChat().getReadTimeout()).isEqualTo(Duration.ofSeconds(60));
+        assertThat(properties.getChat().getPublishingReadTimeout()).isEqualTo(Duration.ofSeconds(210));
         assertThat(properties.getEmbedding().getConnectTimeout()).isEqualTo(Duration.ofSeconds(3));
     }
 }

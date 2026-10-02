@@ -2,8 +2,8 @@ package dev.iamrat.board.post.infrastructure.persistence;
 
 import dev.iamrat.board.post.application.PostStore;
 import dev.iamrat.board.post.domain.Post;
-import dev.iamrat.core.board.post.BoardCategory;
-import dev.iamrat.core.board.post.PostCategory;
+import dev.iamrat.board.post.domain.PostType;
+import dev.iamrat.core.board.post.NewsSection;
 import dev.iamrat.core.board.post.PostPublishOrigin;
 import jakarta.persistence.criteria.Predicate;
 import java.time.LocalDateTime;
@@ -60,8 +60,8 @@ public class PostPersistenceAdapter implements PostStore {
 
     @Override
     public List<Post> findByCategoryAndBoardCategoryInRange(
-        PostCategory category,
-        BoardCategory boardCategory,
+        PostType category,
+        NewsSection boardCategory,
         LocalDateTime startInclusive,
         LocalDateTime endExclusive
     ) {
@@ -75,8 +75,8 @@ public class PostPersistenceAdapter implements PostStore {
 
     @Override
     public boolean existsByCategoryAndBoardCategoryAndTitle(
-        PostCategory category,
-        BoardCategory boardCategory,
+        PostType category,
+        NewsSection boardCategory,
         String title
     ) {
         return postRepository.existsByCategoryAndBoardCategoryAndTitle(category, boardCategory, title);
@@ -85,8 +85,8 @@ public class PostPersistenceAdapter implements PostStore {
     @Override
     public Page<Post> findByFilters(
         String keyword,
-        PostCategory category,
-        BoardCategory boardCategory,
+        PostType category,
+        NewsSection boardCategory,
         PostPublishOrigin publishOrigin,
         Pageable pageable
     ) {
@@ -105,8 +105,8 @@ public class PostPersistenceAdapter implements PostStore {
 
     private Specification<Post> filters(
         String keyword,
-        PostCategory category,
-        BoardCategory boardCategory,
+        PostType category,
+        NewsSection boardCategory,
         PostPublishOrigin publishOrigin
     ) {
         return (root, query, criteriaBuilder) -> {

@@ -53,7 +53,7 @@ modular monolith 선택 근거는 [ADR-003](../decisions/adr-003-modular-monolit
 | 들어가면 안 되는 것 | Redis/OpenAPI/S3/OpenAI/JPA 구현, feature service | 도메인 계약·규칙, feature service |
 | 참조 방식 | 기능 모듈이 컴파일 시 참조 | `app`이 조립하고 필요한 기능 모듈만 참조 |
 
-예를 들어 `PostWriter`와 `SourceDocumentCommand`는 모듈 간 약속이므로 `core`에 둔다. Redis TTL primitive와 MVC 예외 응답 변환은 공통 Spring 구현이므로 `support`에 둔다.
+예를 들어 `NewsPostPort`와 `SourceDocumentCommand`는 모듈 간 약속이므로 `core`에 둔다. Redis TTL primitive와 MVC 예외 응답 변환은 공통 Spring 구현이므로 `support`에 둔다.
 
 기능 모듈 내부의 `auth.support.error`, `board.support.error` 같은 패키지는 전역 `support` 모듈과 무관한 module-local namespace다. 다른 모듈도 알아야 하는 계약은 이 패키지에 두지 않고 `core`로 올린다.
 

@@ -1,8 +1,8 @@
 package dev.iamrat.board.post.application;
 
 import dev.iamrat.board.post.domain.Post;
-import dev.iamrat.core.board.post.BoardCategory;
-import dev.iamrat.core.board.post.PostCategory;
+import dev.iamrat.board.post.domain.PostType;
+import dev.iamrat.core.board.post.NewsSection;
 import dev.iamrat.core.board.post.PostPublishOrigin;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -27,18 +27,18 @@ public interface PostStore {
     Page<Post> findAll(Pageable pageable);
 
     List<Post> findByCategoryAndBoardCategoryInRange(
-        PostCategory category,
-        BoardCategory boardCategory,
+        PostType category,
+        NewsSection boardCategory,
         LocalDateTime startInclusive,
         LocalDateTime endExclusive
     );
 
-    boolean existsByCategoryAndBoardCategoryAndTitle(PostCategory category, BoardCategory boardCategory, String title);
+    boolean existsByCategoryAndBoardCategoryAndTitle(PostType category, NewsSection boardCategory, String title);
 
     Page<Post> findByFilters(
         String keyword,
-        PostCategory category,
-        BoardCategory boardCategory,
+        PostType category,
+        NewsSection boardCategory,
         PostPublishOrigin publishOrigin,
         Pageable pageable
     );

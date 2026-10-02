@@ -3,8 +3,7 @@ package dev.iamrat.board.post.domain;
 import dev.iamrat.board.support.persistence.AuditingFields;
 import dev.iamrat.board.comment.domain.Comment;
 import dev.iamrat.board.file.domain.PostFile;
-import dev.iamrat.core.board.post.BoardCategory;
-import dev.iamrat.core.board.post.PostCategory;
+import dev.iamrat.core.board.post.NewsSection;
 import dev.iamrat.core.board.post.PostPublishOrigin;
 import jakarta.persistence.*;
 import java.util.ArrayList;
@@ -60,12 +59,12 @@ public class Post extends AuditingFields {
 	@Enumerated(EnumType.STRING)
 	@Column(name = "category", nullable = false, length = 30)
 	@Builder.Default
-	private PostCategory category = PostCategory.GENERAL;
+	private PostType category = PostType.GENERAL;
 
 	@Enumerated(EnumType.STRING)
 	@Column(name = "board_category", nullable = false, length = 30)
 	@Builder.Default
-	private BoardCategory boardCategory = BoardCategory.GENERAL;
+	private NewsSection boardCategory = NewsSection.GENERAL;
 
 	@Enumerated(EnumType.STRING)
 	@Column(name = "publish_origin", nullable = false, length = 30, updatable = false)
@@ -98,7 +97,7 @@ public class Post extends AuditingFields {
 	private Set<PostFile> files = new LinkedHashSet<>();
 
 	public static Post general(String title, String content, Long accountId, String nickname) {
-		return create(title, content, null, null, PostCategory.GENERAL, accountId, nickname);
+		return create(title, content, null, null, PostType.GENERAL, accountId, nickname);
 	}
 
 	public static Post create(
@@ -106,7 +105,7 @@ public class Post extends AuditingFields {
 		String content,
 		String summary,
 		List<String> tags,
-		PostCategory category,
+		PostType category,
 		Long accountId,
 		String nickname
 	) {
@@ -118,7 +117,7 @@ public class Post extends AuditingFields {
 		String content,
 		String summary,
 		List<String> tags,
-		PostCategory category,
+		PostType category,
 		PostPublishOrigin publishOrigin,
 		Long accountId,
 		String nickname
@@ -131,8 +130,8 @@ public class Post extends AuditingFields {
 		String content,
 		String summary,
 		List<String> tags,
-		PostCategory category,
-		BoardCategory boardCategory,
+		PostType category,
+		NewsSection boardCategory,
 		PostPublishOrigin publishOrigin,
 		Long accountId,
 		String nickname
@@ -142,8 +141,8 @@ public class Post extends AuditingFields {
 			.content(content)
 			.summary(summary)
 			.tags(tags == null ? new ArrayList<>() : new ArrayList<>(tags))
-			.category(category == null ? PostCategory.GENERAL : category)
-			.boardCategory(boardCategory == null ? BoardCategory.GENERAL : boardCategory)
+			.category(category == null ? PostType.GENERAL : category)
+			.boardCategory(boardCategory == null ? NewsSection.GENERAL : boardCategory)
 			.publishOrigin(publishOrigin == null ? PostPublishOrigin.USER : publishOrigin)
 			.accountId(accountId)
 			.nickname(nickname)

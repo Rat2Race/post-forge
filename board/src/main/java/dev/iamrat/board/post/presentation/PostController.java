@@ -5,11 +5,10 @@ import dev.iamrat.board.like.presentation.LikeResponse;
 import dev.iamrat.board.post.application.PostCommandService;
 import dev.iamrat.board.post.application.PostInteractionService;
 import dev.iamrat.board.post.application.PostQueryService;
-import dev.iamrat.core.global.dto.MessageResponse;
 import dev.iamrat.core.global.dto.PageResponse;
 import dev.iamrat.core.account.UserPrincipal;
-import dev.iamrat.core.board.post.BoardCategory;
-import dev.iamrat.core.board.post.PostCategory;
+import dev.iamrat.core.board.post.NewsSection;
+import dev.iamrat.board.post.domain.PostType;
 import dev.iamrat.core.board.post.PostPublishOrigin;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -54,8 +53,8 @@ public class PostController {
     @GetMapping
     public ResponseEntity<PageResponse<PostDetailResponse>> getPosts(
         @RequestParam(required = false) String keyword,
-        @RequestParam(required = false) PostCategory category,
-        @RequestParam(required = false) BoardCategory boardCategory,
+        @RequestParam(required = false) PostType category,
+        @RequestParam(required = false) NewsSection boardCategory,
         @RequestParam(required = false) PostPublishOrigin publishOrigin,
         @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable,
         @AuthenticationPrincipal UserPrincipal user
@@ -104,12 +103,12 @@ public class PostController {
 
     @DeleteMapping("/{postId:\\d+}")
     @PreAuthorize("hasRole('ADMIN') or hasRole('USER') and @postCommandService.isOwner(#postId, principal.accountId)")
-    public ResponseEntity<MessageResponse> deletePost(
+    public ResponseEntity<Void> deletePost(
         @PathVariable("postId") Long postId
     ) {
         postCommandService.deletePost(postId);
 
-        return ResponseEntity.ok(MessageResponse.of("게시글 삭제 완료"));
+        return ResponseEntity.noContent().build();
     }
 
     @PostMapping("/{postId:\\d+}/like")

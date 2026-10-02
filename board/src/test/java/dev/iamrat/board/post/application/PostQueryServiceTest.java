@@ -5,12 +5,11 @@ import dev.iamrat.board.like.application.LikeResult;
 import dev.iamrat.board.like.application.PostLikeService;
 import dev.iamrat.board.post.domain.Post;
 import dev.iamrat.board.post.domain.PostReferenceLink;
+import dev.iamrat.board.post.domain.PostType;
 import dev.iamrat.board.post.presentation.PostDetailResponse;
 import dev.iamrat.board.view.application.ViewCountService;
-import dev.iamrat.core.board.post.BoardCategory;
-import dev.iamrat.core.board.post.PostCategory;
+import dev.iamrat.core.board.post.NewsSection;
 import dev.iamrat.core.board.post.PostPublishOrigin;
-import dev.iamrat.core.board.post.PostReferenceProvider;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
@@ -25,6 +24,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Page;
+import java.util.Set;
 
 @ExtendWith(MockitoExtension.class)
 class PostQueryServiceTest {
@@ -99,7 +102,6 @@ class PostQueryServiceTest {
         assertThat(response.references())
             .singleElement()
             .satisfies(reference -> {
-                assertThat(reference.provider()).isEqualTo(PostReferenceProvider.NAVER_NEWS);
                 assertThat(reference.canonicalUrl()).isEqualTo("https://news.example/article");
                 assertThat(reference.originalUrl()).isEqualTo("https://news.example/article?utm=1");
                 assertThat(reference.sourceName()).isEqualTo("Example News");
@@ -117,16 +119,16 @@ class PostQueryServiceTest {
             .accountId(1L)
             .nickname("writer")
             .build();
-        org.springframework.data.domain.Page<Post> page =
-            new org.springframework.data.domain.PageImpl<>(List.of(post));
+        Page<Post> page =
+            new PageImpl<>(List.of(post));
         given(postStore.findByFilters(
             null,
             null,
             null,
             null,
-            org.springframework.data.domain.Pageable.unpaged()
+            Pageable.unpaged()
         )).willReturn(page);
-        given(postLikeService.getLikedPostIds(List.of(3L), null)).willReturn(java.util.Set.of());
+        given(postLikeService.getLikedPostIds(List.of(3L), null)).willReturn(Set.of());
         given(viewCountService.getViewCounts(List.of(3L))).willReturn(Map.of(3L, 5L));
         given(postLikeService.getLikeCounts(List.of(3L))).willReturn(Map.of(3L, 0L));
         given(commentQueryService.getCommentCounts(List.of(3L))).willReturn(Map.of(3L, 0));
@@ -137,7 +139,7 @@ class PostQueryServiceTest {
             null,
             null,
             null,
-            org.springframework.data.domain.Pageable.unpaged(),
+            Pageable.unpaged(),
             null
         ).getContent().getFirst();
 
@@ -149,28 +151,28 @@ class PostQueryServiceTest {
     @Test
     @DisplayName("게시글 목록 조회는 조합 가능한 필터를 store에 위임한다")
     void getPosts_delegatesComposableFiltersToStore() {
-        org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.Pageable.unpaged();
+        Pageable pageable = Pageable.unpaged();
         given(postStore.findByFilters(
             "갤럭시북",
-            PostCategory.PRODUCT_LAUNCH_NEWS,
-            BoardCategory.DIGITAL,
+            PostType.PRODUCT_LAUNCH_NEWS,
+            NewsSection.TECHNOLOGY,
             PostPublishOrigin.SYSTEM_BATCH,
             pageable
-        )).willReturn(new org.springframework.data.domain.PageImpl<>(List.of()));
+        )).willReturn(new PageImpl<>(List.of()));
 
         postQueryService.getPosts(
             "  갤럭시북  ",
-            PostCategory.PRODUCT_LAUNCH_NEWS,
-            BoardCategory.DIGITAL,
+            PostType.PRODUCT_LAUNCH_NEWS,
+            NewsSection.TECHNOLOGY,
             PostPublishOrigin.SYSTEM_BATCH,
             pageable,
             null
         );
 
-        org.mockito.Mockito.verify(postStore).findByFilters(
+        verify(postStore).findByFilters(
             "갤럭시북",
-            PostCategory.PRODUCT_LAUNCH_NEWS,
-            BoardCategory.DIGITAL,
+            PostType.PRODUCT_LAUNCH_NEWS,
+            NewsSection.TECHNOLOGY,
             PostPublishOrigin.SYSTEM_BATCH,
             pageable
         );
@@ -181,13 +183,11 @@ class PostQueryServiceTest {
             .id(10L)
             .post(post)
             .keyword("갤럭시북")
-            .provider(PostReferenceProvider.NAVER_NEWS)
             .canonicalUrl("https://news.example/article")
             .originalUrl("https://news.example/article?utm=1")
             .sourceName("Example News")
             .publishedAt(LocalDateTime.of(2026, 6, 21, 10, 0))
             .titleSnapshot("갤럭시북 출시")
-            .publishOrigin(PostPublishOrigin.SYSTEM_BATCH)
             .build();
     }
 }

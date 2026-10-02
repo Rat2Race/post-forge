@@ -14,15 +14,13 @@ import dev.iamrat.board.integration.security.WithMockAccount;
 import dev.iamrat.board.post.application.PostQueryService;
 import dev.iamrat.board.post.domain.Post;
 import dev.iamrat.board.post.domain.PostReferenceLink;
+import dev.iamrat.board.post.domain.PostType;
 import dev.iamrat.board.post.infrastructure.persistence.PostReferenceLinkRepository;
 import dev.iamrat.board.post.infrastructure.persistence.PostRepository;
 import dev.iamrat.board.post.presentation.PostDetailResponse;
 import dev.iamrat.board.view.application.ViewCountService;
 import dev.iamrat.core.account.AccountProfileManager;
 import dev.iamrat.core.account.AccountProfileReader;
-import dev.iamrat.core.board.post.PostCategory;
-import dev.iamrat.core.board.post.PostPublishOrigin;
-import dev.iamrat.core.board.post.PostReferenceProvider;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
 import java.time.LocalDateTime;
@@ -173,7 +171,7 @@ class BoardNPlusOneRegressionTest {
             "게시글 본문입니다 " + index,
             "요약 " + index,
             List.of("tag-" + index),
-            PostCategory.GENERAL,
+            PostType.GENERAL,
             1L,
             "writer"
         );
@@ -194,13 +192,11 @@ class BoardNPlusOneRegressionTest {
         return PostReferenceLink.of(
             post,
             "keyword-" + index,
-            PostReferenceProvider.NAVER_NEWS,
             "https://news.example/product-" + productId + "/article-" + index,
             "https://news.example/product-" + productId + "/article-" + index + "?utm=1",
             "Example News",
             LocalDateTime.of(2026, 7, 1, 10, 0).plusMinutes(index),
-            "출시 기사 " + index,
-            PostPublishOrigin.USER
+            "출시 기사 " + index
         );
     }
 

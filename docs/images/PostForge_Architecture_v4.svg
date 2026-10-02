@@ -80,7 +80,7 @@
 <use xlink:href="#i-openai" href="#i-openai" x="1149.0" y="449.0" width="34" height="34" fill="#000000"/>
 <text x="1204" y="472" font-family="-apple-system, 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="16" font-weight="400" fill="#111" text-anchor="start">OpenAI API</text>
 <use xlink:href="#i-naver" href="#i-naver" x="1149.0" y="502.0" width="34" height="34" fill="#03C75A"/>
-<text x="1204" y="525" font-family="-apple-system, 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="16" font-weight="400" fill="#111" text-anchor="start">Naver API HUB (News)</text>
+<text x="1204" y="525" font-family="-apple-system, 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="16" font-weight="400" fill="#111" text-anchor="start">Google News RSS (News, 실험)</text>
 <path d="M1152 558 h28 l-4 28 h-20 z" fill="#569A31"/>
 <ellipse cx="1166" cy="558" rx="14" ry="4.5" fill="#7BC043"/>
 <text x="1204" y="578" font-family="-apple-system, 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="16" font-weight="400" fill="#111" text-anchor="start">AWS S3</text>

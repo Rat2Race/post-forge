@@ -20,6 +20,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import java.util.Collections;
 
 @Tag("unit")
 @ExtendWith(MockitoExtension.class)
@@ -96,7 +97,7 @@ class CommentLikeServiceTest {
     @DisplayName("댓글 좋아요 정보 조회 시 DB 기준 상태를 반환한다")
     void getLikeCounts_returnsCountMap() {
         List<Long> commentIds = List.of(5L, 6L);
-        List<Object[]> rows = java.util.Collections.singletonList(new Object[]{5L, 8L});
+        List<Object[]> rows = Collections.singletonList(new Object[]{5L, 8L});
 
         given(commentLikeStore.countByCommentIds(commentIds)).willReturn(rows);
 

@@ -9,15 +9,12 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import dev.iamrat.core.board.post.BoardCategory;
+import dev.iamrat.core.board.post.NewsSection;
 import dev.iamrat.core.board.post.PostPublishOrigin;
 import dev.iamrat.ingest.news.application.IngestProductNewsUseCase;
 import dev.iamrat.ingest.news.application.LaunchNewsPublishCommand;
 import dev.iamrat.ingest.news.application.LaunchNewsPublishResult;
-import dev.iamrat.ingest.news.application.LaunchNewsSkip;
-import dev.iamrat.ingest.news.application.LaunchNewsSkipReason;
 import dev.iamrat.ingest.news.application.DailyDigestPublishResult;
-import dev.iamrat.ingest.news.application.DailyDigestSkipReason;
 import dev.iamrat.ingest.news.application.ProductNewsIngestResult;
 import dev.iamrat.ingest.news.application.PublishDailyDigestUseCase;
 import dev.iamrat.ingest.news.application.PublishLaunchNewsUseCase;
@@ -65,7 +62,7 @@ class NewsAdminControllerTest {
         given(publishLaunchNewsUseCase.publish(any())).willReturn(new LaunchNewsPublishResult(
             "갤럭시북",
             List.of(42L),
-            List.of(new LaunchNewsSkip("https://news.example/duplicate", LaunchNewsSkipReason.DUPLICATE_ARTICLE))
+            List.of(new LaunchNewsPublishResult.Skip("https://news.example/duplicate", LaunchNewsPublishResult.SkipReason.DUPLICATE_ARTICLE))
         ));
 
         mockMvc.perform(post("/api/admin/launch-news/manual")
@@ -105,13 +102,13 @@ class NewsAdminControllerTest {
                     5,
                     3,
                     List.of("출시"),
-                    BoardCategory.DIGITAL
+                    NewsSection.TECHNOLOGY
                 ))))
             .andExpect(status().isOk());
 
         ArgumentCaptor<LaunchNewsPublishCommand> captor = ArgumentCaptor.forClass(LaunchNewsPublishCommand.class);
         verify(publishLaunchNewsUseCase).publish(captor.capture());
-        assertThat(captor.getValue().category()).isEqualTo(BoardCategory.DIGITAL);
+        assertThat(captor.getValue().category()).isEqualTo(NewsSection.TECHNOLOGY);
     }
 
     @Test
@@ -171,7 +168,7 @@ class NewsAdminControllerTest {
         given(publishDailyDigestUseCase.publish(LocalDate.of(2026, 8, 19))).willReturn(new DailyDigestPublishResult(
             LocalDate.of(2026, 8, 19),
             List.of(42L),
-            Map.of(BoardCategory.SPORTS, DailyDigestSkipReason.NO_SOURCE)
+            Map.of(NewsSection.SPORTS, DailyDigestPublishResult.SkipReason.NO_SOURCE)
         ));
 
         mockMvc.perform(post("/api/admin/news/digest")

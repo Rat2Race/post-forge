@@ -1,7 +1,7 @@
 package dev.iamrat.ingest.news.application;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import dev.iamrat.core.board.post.BoardCategory;
+import dev.iamrat.core.board.post.NewsSection;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
@@ -9,7 +9,7 @@ import java.util.Map;
 public record DailyDigestPublishResult(
     LocalDate newsDate,
     List<Long> createdPostIds,
-    Map<BoardCategory, DailyDigestSkipReason> skips
+    Map<NewsSection, SkipReason> skips
 ) {
     public DailyDigestPublishResult {
         createdPostIds = createdPostIds == null ? List.of() : List.copyOf(createdPostIds);
@@ -24,5 +24,12 @@ public record DailyDigestPublishResult(
     @JsonProperty
     public int skippedCount() {
         return skips.size();
+    }
+
+    /** 데일리는 분야 단위로 건너뛴다. */
+    public enum SkipReason {
+        NO_SOURCE,
+        ALREADY_PUBLISHED,
+        AI_GENERATION_FAILED
     }
 }
