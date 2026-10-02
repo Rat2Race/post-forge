@@ -134,21 +134,15 @@ class IngestProductNewsUseCaseTest {
     }
 
     @Test
-    @DisplayName("topics가 null이면 기본 주제로 검색한다")
-    void fallsBackToDefaultTopicsWhenTopicsIsNull() {
+    @DisplayName("topics가 null이면 키워드 단독 쿼리로 검색한다")
+    void searchesKeywordAloneWhenTopicsIsNull() {
         given(newsSourceClient.search(any(NewsSourceQuery.class)))
             .willReturn(List.of());
         IngestProductNewsUseCase useCase = useCase();
 
         ProductNewsIngestResult result = useCase.ingest("갤럭시북", 2, null);
 
-        assertThat(result.queries()).containsExactly(
-            "갤럭시북 신제품",
-            "갤럭시북 출시",
-            "갤럭시북 공개",
-            "갤럭시북 사전예약",
-            "갤럭시북 리뷰"
-        );
+        assertThat(result.queries()).containsExactly("갤럭시북");
         assertThat(result.newsCount()).isZero();
         verifyNoInteractions(ingestDocumentsUseCase);
     }

@@ -23,13 +23,6 @@ import org.springframework.stereotype.Service;
 public class IngestProductNewsUseCase {
 
     private static final String SOURCE = "google-news";
-    private static final List<String> DEFAULT_TOPICS = List.of(
-        "신제품",
-        "출시",
-        "공개",
-        "사전예약",
-        "리뷰"
-    );
 
     private final IngestDocumentsUseCase ingestDocumentsUseCase;
     private final NewsSourceClient newsSourceClient;
@@ -116,8 +109,8 @@ public class IngestProductNewsUseCase {
 
     private List<String> toQueries(String keyword, List<String> topics) {
         String normalizedKeyword = normalizeKeyword(keyword);
-        List<String> effectiveTopics = topics == null || topics.isEmpty()
-            ? DEFAULT_TOPICS
+        List<String> effectiveTopics = topics == null
+            ? List.<String>of()
             : topics.stream()
                 .filter(topic -> topic != null && !topic.isBlank())
                 .map(String::trim)

@@ -77,12 +77,13 @@ public class PublishDailyDigestUseCase {
     private String displayName(BoardCategory category) {
         return switch (category) {
             case GENERAL -> "일반";
-            case DIGITAL -> "디지털";
-            case APPLIANCE -> "가전";
-            case LIVING -> "리빙";
-            case HEALTH -> "헬스";
-            case BEAUTY -> "뷰티";
+            case NATION -> "대한민국";
+            case WORLD -> "세계";
+            case BUSINESS -> "비즈니스";
+            case TECHNOLOGY -> "과학/기술";
+            case ENTERTAINMENT -> "엔터테인먼트";
             case SPORTS -> "스포츠";
+            case HEALTH -> "건강";
         };
     }
 

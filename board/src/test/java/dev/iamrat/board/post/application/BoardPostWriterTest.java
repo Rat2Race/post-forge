@@ -118,13 +118,13 @@ class BoardPostWriterTest {
             null,
             "system",
             PostCategory.PRODUCT_LAUNCH_NEWS,
-            BoardCategory.DIGITAL,
+            BoardCategory.TECHNOLOGY,
             PostPublishOrigin.SYSTEM_BATCH
         ));
 
         ArgumentCaptor<Post> postCaptor = ArgumentCaptor.forClass(Post.class);
         verify(postStore).save(postCaptor.capture());
 
-        assertThat(postCaptor.getValue().getBoardCategory()).isEqualTo(BoardCategory.DIGITAL);
+        assertThat(postCaptor.getValue().getBoardCategory()).isEqualTo(BoardCategory.TECHNOLOGY);
     }
 }

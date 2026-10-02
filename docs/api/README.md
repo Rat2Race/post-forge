@@ -245,7 +245,7 @@ Board의 게시글·댓글 path ID는 `\d+` 경로만 매핑한다. 숫자가 �
 
 | 흐름 | 입력 계약 — 필요한 이유 | routing·처리 | 출력 계약 | 실패·현재 상태 |
 | --- | --- | --- | --- | --- |
-| 뉴스 검색 | `NewsSourceQuery(keyword, displayCount, sort)` — 검색어, 최대 결과 수, 정렬. count는 기본 10·최대 100, sort 기본 `date`, 허용값 `date`/`sim` | 현재는 단일 `GoogleNewsRssSourceClient`(실험용)가 `/rss/search?q=&hl=ko&gl=KR&ceid=KR:ko` 피드를 읽고, 제목의 " - 출처" 접미사 제거·HTML 제거·URL 검증·링크 중복 제거·metric 기록 수행. `date`는 pubDate 최신순, `sim`은 피드 순서. link와 originalLink는 모두 Google 리다이렉트 URL이고 description은 제목+출처명이다 | `List<NewsSourceItem>`; 정제 title/description/link/originalLink/publishedAt와 추적용 raw title/description | 기본 비활성. 키는 없다. 비활성 상태 호출은 source 예외. 피드는 개인·비상업 용도로 제한된다고 명시하므로 배포 소스로 쓰지 않는다 |
+| 뉴스 검색 | `NewsSourceQuery(keyword, displayCount, sort)` — 검색어 또는 섹션 이름, 최대 결과 수, 정렬. count는 기본 10·최대 100, sort 기본 `date`, 허용값 `date`/`sim` | 현재는 단일 `GoogleNewsRssSourceClient`(실험용)가 keyword가 `source.google-news.sections`에 있으면 주제 피드(`TECHNOLOGY` 같은 키워드형은 `/rss/headlines/section/topic/{TOPIC}`, `CAAq…` topics 식별자는 `/rss/topics/{ID}`), 아니면 검색 피드 `/rss/search?q=`를 읽고(둘 다 `hl=ko&gl=KR&ceid=KR:ko`), 제목의 " - 출처" 접미사 제거·HTML 제거·URL 검증·링크 중복 제거·metric 기록 수행. `date`는 pubDate 최신순, `sim`은 피드 순서. link와 originalLink는 모두 Google 리다이렉트 URL이고 description은 제목+출처명이다 | `List<NewsSourceItem>`; 정제 title/description/link/originalLink/publishedAt와 추적용 raw title/description | 기본 비활성. 키는 없다. 비활성 상태 호출은 source 예외. 피드는 개인·비상업 용도로 제한된다고 명시하므로 배포 소스로 쓰지 않는다 |
 
 Source는 “수집을 실행할지” 결정하지 않고, 결과를 DB에 저장하지도 않는다. 따라서 Source를 외부 데이터 보관소로 이해하면 안 되고, 외부 provider를 교체 가능하게 만드는 anti-corruption boundary로 이해하는 것이 정확하다.
 
@@ -271,11 +271,11 @@ Source는 “수집을 실행할지” 결정하지 않고, 결과를 DB에 저�
 | `DocumentIngestRequest.metadata` | 선택, `Map<String,String>` | news URL 등 검색·추적용 부가 정보 보존. `source` key가 있으면 별도 `source` 값을 덮어씀 |
 | `ProductNewsIngestRequest.keyword` | 필수, non-blank | 모든 뉴스 query의 기준어 |
 | `ProductNewsIngestRequest.displayCount` | 선택, 1~100, 기본 5 | topic별 뉴스 요청 건수 제한 |
-| `ProductNewsIngestRequest.topics` | 선택, 최대 10개·각 30자 | keyword에 붙일 검색 주제. `null`/빈 배열이면 기본 5개(`신제품/출시/공개/사전예약/리뷰`), 제공값이 모두 null/blank면 keyword 단독 query |
+| `ProductNewsIngestRequest.topics` | 선택, 최대 10개·각 30자 | keyword에 붙일 검색 주제. `null`/빈 배열이거나 모두 blank면 keyword 단독 query |
 | `LaunchNewsPublishRequest.keyword` | 필수, non-blank | 후보 검색, 중복·일일 한도 집계 기준 |
 | `LaunchNewsPublishRequest.displayCount` | 선택, 1~100, 기본 10 | topic별 후보 검색 건수 |
 | `LaunchNewsPublishRequest.dailyCap` | 선택, 1~20, 기본 3 | 같은 keyword+발행일 게시 수 제한 |
-| `LaunchNewsPublishRequest.topics` | 선택, 최대 10개·각 30자 | keyword에 붙일 후보 검색 주제. `null`/빈 배열이거나 null·blank 제거 후 비면 기본 4개(`신제품/출시/공개/사전예약`); 그 외 trim·중복 제거 후 최대 10개 사용 |
+| `LaunchNewsPublishRequest.topics` | 선택, 최대 10개·각 30자 | keyword에 붙일 후보 검색 주제. `null`/빈 배열이거나 blank 제거 후 비면 keyword 단독 query; 그 외 trim·중복 제거 후 최대 10개 사용 |
 | `LaunchNewsPublishRequest.category` | 선택, 기본 `GENERAL` | 생성 게시글에 저장할 분야(`BoardCategory`) 지정 |
 | `DailyDigestPublishRequest.newsDate` | 선택, 기본 어제(Asia/Seoul clock) | 요약 대상 출시뉴스 게시글의 작성일. 분야+날짜로 제목을 만들어 재실행 시 기존 글을 확인 |
 
@@ -288,9 +288,9 @@ Source는 “수집을 실행할지” 결정하지 않고, 결과를 DB에 저�
 | 뉴스 수집·초안 작성·자동 게시 | 10분마다 (`0 */10 * * * *`) | `GOOGLE_NEWS_ENABLED=true`, `INGEST_NEWS_LAUNCH_SCHEDULER_ENABLED=true` | `INGEST_NEWS_LAUNCH_CRON` |
 | 전날 뉴스의 데일리 포스트 게시 | 매일 **06:00** (`0 0 6 * * *`) | `INGEST_NEWS_DIGEST_SCHEDULER_ENABLED=true` | `INGEST_NEWS_DIGEST_CRON` |
 
-설정 위치는 `ingest.news.launch.scheduler.enabled`·`ingest.news.launch.cron`, `ingest.news.digest.scheduler.enabled`·`ingest.news.digest.cron`이다. 기본값과 전체 환경변수는 [application.yml](../../app/src/main/resources/application.yml), [.env.example](../../.env.example)을 따른다. 활성화 전 LLM, PostgreSQL/PgVector 연결과 수집 키워드를 준비한다. 데일리 실행 자체는 이미 게시된 글과 LLM을 사용하므로 뉴스 수집이 꺼져 있어도 실행할 수 있다.
+설정 위치는 `ingest.news.launch.scheduler.enabled`·`ingest.news.launch.cron`·`ingest.news.launch.sections`·`display-count`·`daily-cap`, `ingest.news.digest.scheduler.enabled`·`ingest.news.digest.cron`이다. 기본값과 전체 환경변수는 [application.yml](../../app/src/main/resources/application.yml), [.env.example](../../.env.example)을 따른다. 활성화 전 LLM, PostgreSQL/PgVector 연결과 수집 키워드를 준비한다. 데일리 실행 자체는 이미 게시된 글과 LLM을 사용하므로 뉴스 수집이 꺼져 있어도 실행할 수 있다.
 
-`tracked_keywords`는 뉴스 scheduler의 영속 실행 설정이다. 등록 API는 없고 DB에 직접 넣는다. 활성 row의 `keyword`, `displayCount`, `category`를 사용하며, 분야는 이 `category`(수동 게시에서는 요청의 `category`)로 정한다. LLM이 분야를 자동 판정하는 기능은 현재 없다. LLM은 선별된 기사의 본문·요약·태그 초안을 작성한다.
+자동 수집 대상은 `INGEST_NEWS_LAUNCH_SECTIONS`(기본 `TECHNOLOGY,BUSINESS`, 쉼표 구분)의 섹션 이름이고, 이름은 `BoardCategory`와 같아야 한다. `source.google-news.sections`가 각 이름을 Google 뉴스 한국판 섹션의 topics 식별자로 매핑하며(대한민국·세계·비즈니스·과학/기술·엔터테인먼트·스포츠·건강 7개), 키워드 검색이 아니므로 등록 테이블이 없다. 섹션마다 최신 `INGEST_NEWS_LAUNCH_DISPLAY_COUNT`건(기본 5)을 받아 같은 선별 정책을 거치고, 게시글 분야는 섹션 이름 그대로, 섹션+발행일당 `INGEST_NEWS_LAUNCH_DAILY_CAP`건(기본 3)까지 게시한다. LLM이 분야를 자동 판정하는 기능은 현재 없다. LLM은 선별된 기사의 본문·요약·태그 초안을 작성한다.
 
 뉴스 작업은 스케줄 실행 안에서 수집→벡터 적재→게시 후보 선별→LLM 초안→게시까지 처리한다. 수집 건수(`displayCount`, topic당 최대 100)와 게시 건수(`dailyCap`, 기본 3)는 별개다. 동일 수집 결과를 적재와 게시 후보에 함께 사용하되, 광고성 기사는 적재에서만 제외하고 게시 후보에는 남겨 `ADVERTISING` skip으로 보고한다. 초안을 저장해 별도 시각에 발행하는 예약 대기열은 없다.
 
@@ -315,7 +315,7 @@ Google News source가 비활성이면 두 news endpoint 호출은 현재 `500 IN
 | Enum | 값 |
 | --- | --- |
 | `PostCategory` | `GENERAL`, `DAILY_DIGEST`(분야별 데일리 뉴스 브리핑, system이 게시), `PRODUCT_LAUNCH_NEWS` |
-| `BoardCategory` | `GENERAL`, `DIGITAL`, `APPLIANCE`, `LIVING`, `HEALTH`, `BEAUTY`, `SPORTS` |
+| `BoardCategory` | `GENERAL`, `NATION`, `WORLD`, `BUSINESS`, `TECHNOLOGY`, `ENTERTAINMENT`, `SPORTS`, `HEALTH` — Google 뉴스 한국판 섹션과 1:1. `GENERAL`은 회원 글·미분류 |
 | `PostPublishOrigin` | `USER`, `SYSTEM_BATCH`, `ADMIN_BACKFILL` |
 | `PostReferenceProvider` | `NAVER_NEWS`(기존 행), `GOOGLE_NEWS` |
 | `LaunchNewsSkipReason` | `DUPLICATE_ARTICLE`, `ADVERTISING`, `UNKNOWN_SOURCE`, `MISSING_LAUNCH_KEYWORD`, `AI_GENERATION_FAILED`, `DAILY_CAP_EXCEEDED` |

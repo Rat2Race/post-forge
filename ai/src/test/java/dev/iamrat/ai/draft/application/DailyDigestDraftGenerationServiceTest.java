@@ -71,7 +71,7 @@ class DailyDigestDraftGenerationServiceTest {
 
         assertThat(draft).isPresent();
         assertThat(draft.get().content()).isEqualTo("오늘의 디지털 신제품 브리핑입니다.");
-        assertThat(draft.get().tags()).containsExactly("digital", "daily-digest");
+        assertThat(draft.get().tags()).containsExactly("technology", "daily-digest");
         ArgumentCaptor<String> systemPromptCaptor = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<String> userPromptCaptor = ArgumentCaptor.forClass(String.class);
         verify(textGenerationClient).generateForPublishing(systemPromptCaptor.capture(), userPromptCaptor.capture());
@@ -79,7 +79,7 @@ class DailyDigestDraftGenerationServiceTest {
             .contains("daily briefing")
             .contains("Do not invent specs, prices, availability, or purchase recommendations");
         assertThat(userPromptCaptor.getValue())
-            .contains("DIGITAL")
+            .contains("TECHNOLOGY")
             .contains("2026-08-20")
             .contains("1. 갤럭시북 출시 - 삼성이 갤럭시북 신제품을 공개했다.")
             .contains("2. 그램 출시 - LG가 그램 신제품을 공개했다.");
@@ -107,7 +107,7 @@ class DailyDigestDraftGenerationServiceTest {
 
     private DailyDigestDraftCommand command() {
         return new DailyDigestDraftCommand(
-            BoardCategory.DIGITAL,
+            BoardCategory.TECHNOLOGY,
             LocalDate.of(2026, 8, 20),
             List.of(
                 new DailyDigestSourceItem("갤럭시북 출시", "삼성이 갤럭시북 신제품을 공개했다."),

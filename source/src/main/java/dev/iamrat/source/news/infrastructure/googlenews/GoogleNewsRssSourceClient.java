@@ -18,6 +18,7 @@ import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import javax.xml.XMLConstants;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
@@ -34,6 +35,7 @@ import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
+import java.util.regex.Pattern;
 
 /**
  * Google News RSS 검색 피드 어댑터. 실험용이다.
@@ -45,6 +47,10 @@ import org.xml.sax.SAXException;
 public class GoogleNewsRssSourceClient implements NewsSourceClient {
 
     private static final String SEARCH_PATH = "/rss/search";
+    private static final String SECTION_PATH = "/rss/headlines/section/topic/{topic}";
+    private static final String TOPIC_ID_PATH = "/rss/topics/{topic}";
+    /** Google 뉴스 화면의 topics/… 식별자. 주제 MID·언어·국가를 base64로 감싼 값이라 같은 에디션이면 바뀌지 않는다. */
+    private static final Pattern TOPIC_ID = Pattern.compile("^CAAq[A-Za-z0-9_-]{20,}$");
     private static final String USER_AGENT = "PostForge/1.0 (+https://github.com/Rat2Race/post-forge)";
 
     private final GoogleNewsRssProperties properties;
@@ -63,14 +69,22 @@ public class GoogleNewsRssSourceClient implements NewsSourceClient {
         }
         Observation observation = metrics.start();
         try {
+            Optional<String> section = properties.sectionTopic(query.keyword());
             byte[] xml = restClient.get()
-                .uri(builder -> builder
-                    .path(SEARCH_PATH)
-                    .queryParam("q", "{keyword}")
-                    .queryParam("hl", properties.getLanguage())
-                    .queryParam("gl", properties.getCountry())
-                    .queryParam("ceid", properties.ceid())
-                    .build(query.keyword()))
+                .uri(builder -> section
+                    .map(topic -> builder
+                        .path(TOPIC_ID.matcher(topic).matches() ? TOPIC_ID_PATH : SECTION_PATH)
+                        .queryParam("hl", properties.getLanguage())
+                        .queryParam("gl", properties.getCountry())
+                        .queryParam("ceid", properties.ceid())
+                        .build(topic))
+                    .orElseGet(() -> builder
+                        .path(SEARCH_PATH)
+                        .queryParam("q", "{keyword}")
+                        .queryParam("hl", properties.getLanguage())
+                        .queryParam("gl", properties.getCountry())
+                        .queryParam("ceid", properties.ceid())
+                        .build(query.keyword())))
                 .header("Accept", "application/rss+xml, application/xml, text/xml")
                 .header("User-Agent", USER_AGENT)
                 .retrieve()
@@ -84,8 +98,8 @@ public class GoogleNewsRssSourceClient implements NewsSourceClient {
             }
             List<NewsSourceItem> items = ordered.stream().limit(query.displayCount()).toList();
             log.info(
-                "Google News RSS 검색 완료. keyword={}, requestedDisplay={}, sort={}, feedItems={}, itemCount={}",
-                query.keyword(), query.displayCount(), query.sort(), unique.size(), items.size()
+                "Google News RSS 조회 완료. keyword={}, section={}, requestedDisplay={}, sort={}, feedItems={}, itemCount={}",
+                query.keyword(), section.orElse("-"), query.displayCount(), query.sort(), unique.size(), items.size()
             );
             metrics.recordSuccess(items.size());
             observation.stopSuccess();

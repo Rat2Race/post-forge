@@ -12,8 +12,10 @@ import java.time.Clock;
 import java.time.LocalDateTime;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
+import lombok.RequiredArgsConstructor;
 
 @Component
+@RequiredArgsConstructor
 public class LaunchNewsPostRecorder {
 
     private static final Long SYSTEM_ACCOUNT_ID = 0L;
@@ -22,15 +24,6 @@ public class LaunchNewsPostRecorder {
     private final PostReferenceLinkWriter referenceLinkWriter;
     private final Clock clock;
 
-    public LaunchNewsPostRecorder(
-        PostWriter postWriter,
-        PostReferenceLinkWriter referenceLinkWriter,
-        Clock clock
-    ) {
-        this.postWriter = postWriter;
-        this.referenceLinkWriter = referenceLinkWriter;
-        this.clock = clock;
-    }
 
     @Transactional
     public Long record(LaunchNewsPostDraft draft, LaunchNewsCandidate candidate, PostPublishOrigin publishOrigin) {

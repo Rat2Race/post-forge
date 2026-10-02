@@ -152,7 +152,6 @@ erDiagram
 | 발행 출처 필터 | `posts(publish_origin)` |
 | 댓글 조회 | `comments(post_id, created_at)` |
 | 대댓글 조회 | `comments(parent_id)` |
-| 뉴스 자동 수집 대상 | `tracked_keywords(keyword)` unique |
 | 게시글별·provider별 뉴스 출처 조회 | `post_reference_links(post_id)`, `post_reference_links(provider)` |
 | 기사 URL 중복 게시 방지 | `post_reference_links(canonical_url)` unique |
 | 중복 좋아요 방지 | `post_like(post_id, account_id)`, `comment_like(comment_id, account_id)` unique |

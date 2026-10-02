@@ -23,11 +23,12 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
+import lombok.RequiredArgsConstructor;
 
 @Service
+@RequiredArgsConstructor
 public class PublishLaunchNewsUseCase {
 
-    private static final List<String> DEFAULT_TOPICS = List.of("신제품", "출시", "공개", "사전예약");
     private static final Set<String> TRACKING_PARAM_NAMES = Set.of("utm", "ntype", "sid", "fbclid", "gclid");
     private final IngestProductNewsUseCase ingestProductNewsUseCase;
     private final LaunchNewsEligibilityPolicy launchNewsEligibilityPolicy;
@@ -36,21 +37,6 @@ public class PublishLaunchNewsUseCase {
     private final LaunchNewsPostRecorder launchNewsPostRecorder;
     private final Clock clock;
 
-    public PublishLaunchNewsUseCase(
-        IngestProductNewsUseCase ingestProductNewsUseCase,
-        LaunchNewsEligibilityPolicy launchNewsEligibilityPolicy,
-        LaunchNewsPostDraftGenerator draftGenerator,
-        PostReferenceLinkReader referenceLinkReader,
-        LaunchNewsPostRecorder launchNewsPostRecorder,
-        Clock clock
-    ) {
-        this.ingestProductNewsUseCase = ingestProductNewsUseCase;
-        this.launchNewsEligibilityPolicy = launchNewsEligibilityPolicy;
-        this.draftGenerator = draftGenerator;
-        this.referenceLinkReader = referenceLinkReader;
-        this.launchNewsPostRecorder = launchNewsPostRecorder;
-        this.clock = clock;
-    }
 
     public LaunchNewsPublishResult publish(LaunchNewsPublishCommand command) {
         List<LaunchNewsCandidate> candidates = collectCandidates(command);
@@ -104,8 +90,7 @@ public class PublishLaunchNewsUseCase {
     }
 
     private List<LaunchNewsCandidate> collectCandidates(LaunchNewsPublishCommand command) {
-        List<String> topics = command.topics().isEmpty() ? DEFAULT_TOPICS : command.topics();
-        return ingestProductNewsUseCase.collectAndIngest(command.keyword(), command.displayCount(), topics)
+        return ingestProductNewsUseCase.collectAndIngest(command.keyword(), command.displayCount(), command.topics())
             .items()
             .stream()
             .map(item -> toCandidate(command, item))

@@ -79,14 +79,14 @@ class LaunchNewsEligibilityPolicyTest {
     }
 
     @Test
-    @DisplayName("출시 단어가 있어도 구독 키워드가 없으면 거절한다")
-    void rejectsWhenKeywordAbsentEvenWithLaunchWord() {
+    @DisplayName("본문에 수집 키워드가 없어도 출시 단어가 있으면 통과한다 (섹션 피드는 키워드가 본문에 없다)")
+    void acceptsWhenKeywordAbsentButLaunchWordPresent() {
         assertThat(policy.evaluate(candidate(
-            "아이폰",
+            "기술",
             "갤럭시북 신제품 출시",
             "삼성이 갤럭시북 신제품을 공개했다.",
-            "n.news.naver.com"
-        ))).contains(LaunchNewsSkipReason.MISSING_LAUNCH_KEYWORD);
+            "news.google.com"
+        ))).isEmpty();
     }
 
     @Test

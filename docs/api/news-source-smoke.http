@@ -41,7 +41,7 @@ Authorization: Bearer {{adminAccessToken}}
   "keyword": "아이폰 출시",
   "displayCount": 5,
   "dailyCap": 1,
-  "category": "DIGITAL",
+  "category": "TECHNOLOGY",
   "topics": [
     "출시",
     "공식 발표"

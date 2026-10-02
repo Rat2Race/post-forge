@@ -34,8 +34,7 @@
 | `board` | `comment_like` | `board/like/domain/CommentLike.java` | 댓글 좋아요 uniqueness: `(comment_id, account_id)` |
 | `board` | `post_file` | `board/file/domain/PostFile.java` | S3 object metadata and post attachment relation |
 | `board` | `post_reference_links` | `board/post/domain/PostReferenceLink.java` | 자동 게시 뉴스의 출처, canonical URL 중복 기준, publish_origin snapshot, keyword 일일 한도 metadata |
-| `ingest` | `tracked_keywords` | `ingest/news/domain/TrackedKeyword.java` | 뉴스 자동 수집 대상 키워드와 display policy, 수집 분야(category, 게시글 `board_category`로 전달) |
-| `ai` | `vector_store` | Spring AI PgVector mapping | RAG embeddings; 테이블과 HNSW 인덱스는 Flyway `V0000` baseline에 포함되고, `V0002`에서 embedding 차원을 1024로 바꾼다. Spring AI의 `initialize-schema: true`도 설정되어 있다. **1024는 provider 교체와 무관한 고정 계약이다** — `LLM_EMBEDDING_DIMENSIONS`가 pgvector와 임베딩 요청 양쪽에 같은 값으로 들어가므로, 로컬 `bge-m3`와 상용 `text-embedding-3-small/large` 모두 1024를 내도록 맞춰 쓴다. 차원 자체를 바꾸려면 새 migration과 전체 재적재가 필요하다 |
+| `ai` | `vector_store` | Spring AI PgVector mapping | RAG embeddings; 테이블(1024차원)과 HNSW 인덱스는 Flyway `V0000` baseline에 포함된다. Spring AI의 `initialize-schema: true`도 설정되어 있다. **1024는 provider 교체와 무관한 고정 계약이다** — `LLM_EMBEDDING_DIMENSIONS`가 pgvector와 임베딩 요청 양쪽에 같은 값으로 들어가므로, 로컬 `bge-m3`와 상용 `text-embedding-3-small/large` 모두 1024를 내도록 맞춰 쓴다. 차원 자체를 바꾸려면 새 migration과 전체 재적재가 필요하다 |
 
 ## Non-Relational Storage
 
@@ -59,7 +58,7 @@ Decision:
 ## 마이그레이션 규칙
 
 런타임 마이그레이션은 `app/src/main/resources/db/migration/`의 `VNNNN__description.sql`에 둔다.
-신규 빈 DB는 `V0000` baseline부터 실행하고, production-like 환경은 Flyway 적용 후 Hibernate `validate`로 mapping 불일치를 잡는다.
+현재 이력은 `V0000` 하나다(2026-09-30 재베이스라인, ADR-007). 이후 스키마 변경은 `V0001`부터 증분으로 쌓고, 브랜치 작업 중에는 번호 충돌을 피해 `V20260930_1__...` 같은 타임스탬프 버전을 쓴다. 신규 빈 DB는 `V0000` baseline부터 실행하고, production-like 환경은 Flyway 적용 후 Hibernate `validate`로 mapping 불일치를 잡는다.
 로컬 개발도 `application.yml` 기준으로 Flyway가 기본 활성화되고 Hibernate는 `validate`를 사용한다. 기존 non-empty DB 편입만 아래의 1회성 baseline 절차를 따른다.
 
 각 migration은 primary owner 하나를 갖고 다음 header에 호환성, rollback, 검증 방법을 남긴다.

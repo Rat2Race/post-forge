@@ -3,7 +3,6 @@ package dev.iamrat.ingest.news.application;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 
-import dev.iamrat.ingest.news.infrastructure.persistence.TrackedKeywordRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
@@ -11,7 +10,6 @@ import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 class LaunchNewsPublishSchedulerConditionTest {
 
     private final ApplicationContextRunner runner = new ApplicationContextRunner()
-        .withBean(TrackedKeywordRepository.class, () -> mock(TrackedKeywordRepository.class))
         .withBean(PublishLaunchNewsUseCase.class, () -> mock(PublishLaunchNewsUseCase.class))
         .withUserConfiguration(LaunchNewsPublishScheduler.class);
 

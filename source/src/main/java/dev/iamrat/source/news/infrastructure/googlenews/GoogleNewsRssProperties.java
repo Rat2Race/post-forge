@@ -1,6 +1,10 @@
 package dev.iamrat.source.news.infrastructure.googlenews;
 
 import java.time.Duration;
+import java.util.LinkedHashMap;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Optional;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -20,6 +24,8 @@ public class GoogleNewsRssProperties {
     private String baseUrl = DEFAULT_BASE_URL;
     private String language = "ko";
     private String country = "KR";
+    /** 검색어 대신 주제 헤드라인 피드를 읽을 이름 → Google News topic 코드. 예: 기술=TECHNOLOGY */
+    private Map<String, String> sections = new LinkedHashMap<>();
     private Duration connectTimeout = DEFAULT_CONNECT_TIMEOUT;
     private Duration readTimeout = DEFAULT_READ_TIMEOUT;
 
@@ -34,6 +40,23 @@ public class GoogleNewsRssProperties {
 
     public void setReadTimeout(Duration readTimeout) {
         this.readTimeout = positiveOrDefault(readTimeout, DEFAULT_READ_TIMEOUT);
+    }
+
+    public void setSections(Map<String, String> sections) {
+        Map<String, String> cleaned = new LinkedHashMap<>();
+        if (sections != null) {
+            sections.forEach((name, topic) -> {
+                if (name != null && !name.isBlank() && topic != null && !topic.isBlank()) {
+                    String value = topic.trim();
+                    cleaned.put(name.trim(), value.startsWith("CAAq") ? value : value.toUpperCase(Locale.ROOT));
+                }
+            });
+        }
+        this.sections = cleaned;
+    }
+
+    Optional<String> sectionTopic(String keyword) {
+        return Optional.ofNullable(sections.get(keyword == null ? "" : keyword.trim()));
     }
 
     String ceid() {
