@@ -360,7 +360,7 @@ Google News source가 비활성이면 두 news endpoint 호출은 현재 `500 IN
 | --- | --- |
 | `IdResponse` | `id` |
 | `SourceSummary` | `id`, `title`, `questionStatus`, `createdAt` |
-| `SourceDetail` | `id`, `title`, `content`, `questionStatus`, `draftedQuestionCount`(LLM이 낸 문제 초안 수), `discardedQuestionCount`(근거 검증·길이 검사에서 버린 LLM 문제 수), `keyPoints`, `questions`, `emptyReason`(문제가 0개일 때 이유와 자료를 고치는 방법, 그 밖에는 null), `createdAt` |
+| `SourceDetail` | `id`, `title`, `content`, `questionStatus`, `draftedQuestionCount`(LLM이 낸 문제 초안 수), `discardedQuestionCount`(근거가 자료에 그대로 없어 버린 LLM 문제 수. 근거는 맞지만 문제·근거 길이 상한을 넘어 못 쓴 초안은 세지 않는다), `keyPoints`, `questions`, `emptyReason`(문제가 0개일 때 이유와 자료를 고치는 방법, 그 밖에는 null), `createdAt` |
 | `QuestionView` | `id`, `question`, `evidence`, `origin`, `box`, `dueAt` |
 | `Today` | `items`(`TodayItem` 목록), `remaining`(상한 때문에 빠진 수) |
 | `TodayItem` | `type`(`QUESTION`·`RECALL`), `id`(문제 id, 빈 페이지면 자료 id), `sourceId`, `sourceTitle`, `question`·`evidence`(빈 페이지면 null), `box`(빈 페이지면 빈 페이지 상자) |

@@ -111,6 +111,18 @@ class StudyFlowTest {
     }
 
     @Test
+    @DisplayName("근거는 자료에 그대로 있지만 문제가 너무 길어 버린 초안은 근거 실패로 세지 않는다")
+    void tooLongQuestionWithVerbatimEvidenceIsNotAnEvidenceFailure() {
+        assistant.drafts = List.of(new QuestionDraft("가".repeat(501), "커밋된 데이터만 읽는다"));
+
+        Long sourceId = sources.create(me, "격리 수준", CONTENT);
+
+        SourceDetail detail = sources.get(me, sourceId);
+        assertThat(detail.draftedQuestionCount()).isEqualTo(1);
+        assertThat(detail.discardedQuestionCount()).isZero();
+    }
+
+    @Test
     @DisplayName("근거로 쓸 문장이 없는 짧은 자료는 문제 0개와 함께 이유를 알려 준다")
     void shortSourceExplainsWhyThereAreNoQuestions() {
         Long sourceId = sources.create(me, "메모", "짧은 메모");
