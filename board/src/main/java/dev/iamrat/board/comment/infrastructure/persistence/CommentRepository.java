@@ -20,7 +20,8 @@ public interface CommentRepository extends JpaRepository<Comment, Long> {
     @Query("SELECT c.post.id, COUNT(c) FROM Comment c WHERE c.post.id IN :postIds GROUP BY c.post.id")
     List<Object[]> countByPostIds(@Param("postIds") List<Long> postIds);
 
+    // 읽은 값을 다시 쓰지 않고 한 문장으로 더한다. 동시 요청은 행 잠금 순서대로 서로의 결과 위에 더한다.
     @Modifying
-    @Query("UPDATE Comment c SET c.likeCount = :likeCount WHERE c.id = :id")
-    void updateLikeCount(@Param("id") Long id, @Param("likeCount") long likeCount);
+    @Query("UPDATE Comment c SET c.likeCount = c.likeCount + :delta WHERE c.id = :id")
+    void addLikeCount(@Param("id") Long id, @Param("delta") long delta);
 }

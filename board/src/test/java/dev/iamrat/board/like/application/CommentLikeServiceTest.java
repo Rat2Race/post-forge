@@ -1,26 +1,22 @@
 package dev.iamrat.board.like.application;
 
-import dev.iamrat.board.comment.domain.Comment;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+
 import dev.iamrat.board.comment.application.CommentStore;
-import dev.iamrat.board.like.domain.CommentLike;
-import dev.iamrat.board.post.domain.Post;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.BDDMockito.given;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-import java.util.Collections;
 
 @Tag("unit")
 @ExtendWith(MockitoExtension.class)
@@ -36,61 +32,51 @@ class CommentLikeServiceTest {
     private CommentLikeService commentLikeService;
 
     @Test
-    @DisplayName("이미 좋아요 상태여도 like 요청은 현재 상태를 반환한다")
-    void like_whenAlreadyLiked_returnsCurrentState() {
-        Long commentId = 1L;
+    @DisplayName("좋아요 행을 새로 넣으면 카운터를 1 올리고 현재 수를 돌려준다")
+    void like_whenInserted_increasesCounter() {
+        given(commentLikeStore.insertIfAbsent(2L, 2L)).willReturn(true);
+        given(commentLikeStore.countByCommentId(2L)).willReturn(5L);
 
-        given(commentLikeStore.existsByCommentIdAndAccountId(commentId, 1L)).willReturn(true);
-        given(commentLikeStore.countByCommentId(commentId)).willReturn(2L);
+        LikeResult response = commentLikeService.like(2L, 2L);
 
-        LikeResult response = commentLikeService.like(commentId, 1L);
-
-        assertThat(response.isLiked()).isTrue();
-        assertThat(response.likeCount()).isEqualTo(2L);
-        verify(commentLikeStore, never()).save(any(CommentLike.class));
-        verify(commentStore).updateLikeCount(commentId, 2L);
+        assertThat(response).isEqualTo(new LikeResult(true, 5L));
+        verify(commentStore).addLikeCount(2L, 1L);
     }
 
     @Test
-    @DisplayName("좋아요 상태가 아니면 댓글 좋아요를 저장하고 true를 반환한다")
-    void like_whenNotLiked_savesLike() {
-        Long commentId = 2L;
-        Comment commentRef = Comment.builder()
-                .id(commentId)
-                .post(Post.builder().id(1L).title("title").content("content").accountId(9L).build())
-                .content("comment")
-                .accountId(2L)
-                .build();
+    @DisplayName("이미 좋아요한 상태면 카운터를 건드리지 않고 현재 수를 돌려준다")
+    void like_whenAlreadyLiked_keepsCounter() {
+        given(commentLikeStore.insertIfAbsent(1L, 1L)).willReturn(false);
+        given(commentLikeStore.countByCommentId(1L)).willReturn(4L);
 
-        given(commentLikeStore.existsByCommentIdAndAccountId(commentId, 2L)).willReturn(false);
-        given(commentStore.getReferenceById(commentId)).willReturn(commentRef);
-        given(commentLikeStore.countByCommentId(commentId)).willReturn(3L);
+        LikeResult response = commentLikeService.like(1L, 1L);
 
-        LikeResult response = commentLikeService.like(commentId, 2L);
-
-        assertThat(response.isLiked()).isTrue();
-        assertThat(response.likeCount()).isEqualTo(3L);
-
-        ArgumentCaptor<CommentLike> likeCaptor = ArgumentCaptor.forClass(CommentLike.class);
-        verify(commentLikeStore).save(likeCaptor.capture());
-        assertThat(likeCaptor.getValue().getComment()).isEqualTo(commentRef);
-        assertThat(likeCaptor.getValue().getAccountId()).isEqualTo(2L);
-        verify(commentStore).updateLikeCount(commentId, 3L);
+        assertThat(response).isEqualTo(new LikeResult(true, 4L));
+        verify(commentStore, never()).addLikeCount(anyLong(), anyLong());
     }
 
     @Test
-    @DisplayName("unlike 요청은 댓글 좋아요를 삭제하고 false를 반환한다")
-    void unlike_removesLike() {
-        Long commentId = 4L;
+    @DisplayName("좋아요를 지우면 카운터를 1 내리고 false를 돌려준다")
+    void unlike_whenDeleted_decreasesCounter() {
+        given(commentLikeStore.deleteByCommentIdAndAccountId(9L, 9L)).willReturn(1L);
+        given(commentLikeStore.countByCommentId(9L)).willReturn(2L);
 
-        given(commentLikeStore.deleteByCommentIdAndAccountId(commentId, 4L)).willReturn(1L);
-        given(commentLikeStore.countByCommentId(commentId)).willReturn(1L);
+        LikeResult response = commentLikeService.unlike(9L, 9L);
 
-        LikeResult response = commentLikeService.unlike(commentId, 4L);
+        assertThat(response).isEqualTo(new LikeResult(false, 2L));
+        verify(commentStore).addLikeCount(9L, -1L);
+    }
 
-        assertThat(response.isLiked()).isFalse();
-        assertThat(response.likeCount()).isEqualTo(1L);
-        verify(commentStore).updateLikeCount(commentId, 1L);
+    @Test
+    @DisplayName("이미 취소한 좋아요를 다시 취소하면 카운터를 건드리지 않는다")
+    void unlike_whenNotLiked_keepsCounter() {
+        given(commentLikeStore.deleteByCommentIdAndAccountId(9L, 9L)).willReturn(0L);
+        given(commentLikeStore.countByCommentId(9L)).willReturn(2L);
+
+        LikeResult response = commentLikeService.unlike(9L, 9L);
+
+        assertThat(response).isEqualTo(new LikeResult(false, 2L));
+        verify(commentStore, never()).addLikeCount(anyLong(), anyLong());
     }
 
     @Test
@@ -106,5 +92,4 @@ class CommentLikeServiceTest {
         assertThat(result).containsEntry(5L, 8L)
                 .containsEntry(6L, 0L);
     }
-
 }

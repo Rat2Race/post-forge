@@ -51,7 +51,7 @@ public class CommentPersistenceAdapter implements CommentStore {
     }
 
     @Override
-    public void updateLikeCount(Long commentId, long likeCount) {
-        commentRepository.updateLikeCount(commentId, likeCount);
+    public void addLikeCount(Long commentId, long delta) {
+        commentRepository.addLikeCount(commentId, delta);
     }
 }
