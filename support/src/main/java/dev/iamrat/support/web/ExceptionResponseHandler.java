@@ -99,8 +99,9 @@ public class ExceptionResponseHandler {
 
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
     public ResponseEntity<ErrorResponse> handleMethodArgumentTypeMismatchException(MethodArgumentTypeMismatchException e) {
+        // 보낸 값에 토큰 같은 비밀값이 들어올 수 있어 변수 이름과 기대 타입만 남긴다.
         log.warn("Invalid path variable: {} cannot be converted to {}",
-            e.getValue(), e.getRequiredType() != null ? e.getRequiredType().getSimpleName() : "unknown");
+            e.getName(), e.getRequiredType() != null ? e.getRequiredType().getSimpleName() : "unknown");
         return buildErrorResponse(CommonErrorCode.INVALID_INPUT);
     }
 

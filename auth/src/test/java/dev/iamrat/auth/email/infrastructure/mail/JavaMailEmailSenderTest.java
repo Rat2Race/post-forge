@@ -1,6 +1,7 @@
 package dev.iamrat.auth.email.infrastructure.mail;
 
 import jakarta.mail.BodyPart;
+import jakarta.mail.MessagingException;
 import jakarta.mail.Multipart;
 import jakarta.mail.Session;
 import jakarta.mail.internet.InternetAddress;
@@ -14,9 +15,15 @@ import org.springframework.boot.test.system.CapturedOutput;
 import org.springframework.boot.test.system.OutputCaptureExtension;
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
+import dev.iamrat.auth.support.error.AuthErrorCode;
+import dev.iamrat.core.global.exception.CustomException;
+import org.springframework.mail.MailSendException;
 import org.springframework.mail.javamail.JavaMailSender;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.BDDMockito.willThrow;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -73,6 +80,40 @@ class JavaMailEmailSenderTest {
         }
 
         assertThat(output.getAll()).doesNotContain("leak@example.com").doesNotContain("leak-token-123");
+    }
+
+    @Test
+    @DisplayName("메일 작성 중 MessagingException이 나도 이메일 발송 실패로 바꾸고, 예외 메시지(주소·토큰)는 로그에 남기지 않는다")
+    void messagingFailure_becomesEmailSendFailedWithoutLeakingMessage(CapturedOutput output) {
+        given(mailSender.createMimeMessage()).willReturn(new MimeMessage(Session.getInstance(new Properties())) {
+            @Override
+            public void setContent(Multipart multipart) throws MessagingException {
+                throw new MessagingException("leak@example.invalid secret-token-123");
+            }
+        });
+
+        assertThatThrownBy(() -> sender().sendVerificationEmail("leak@example.invalid", "secret-token-123"))
+            .isInstanceOfSatisfying(CustomException.class, e -> assertThat(e.getErrorCode()).isEqualTo(AuthErrorCode.EMAIL_SEND_FAILED));
+        assertThat(output.getAll()).doesNotContain("leak@example.invalid").doesNotContain("secret-token-123");
+    }
+
+    @Test
+    @DisplayName("메일 서버 런타임 오류(MailException)도 이메일 발송 실패로 바꾸고, 예외 메시지는 로그에 남기지 않는다")
+    void mailServerFailure_becomesEmailSendFailedWithoutLeakingMessage(CapturedOutput output) {
+        given(mailSender.createMimeMessage()).willReturn(new MimeMessage(Session.getInstance(new Properties())));
+        willThrow(new MailSendException("leak@example.invalid secret-token-123")).given(mailSender).send(any(MimeMessage.class));
+
+        assertThatThrownBy(() -> sender().sendVerificationEmail("leak@example.invalid", "secret-token-123"))
+            .isInstanceOfSatisfying(CustomException.class, e -> assertThat(e.getErrorCode()).isEqualTo(AuthErrorCode.EMAIL_SEND_FAILED));
+        assertThat(output.getAll()).doesNotContain("leak@example.invalid").doesNotContain("secret-token-123");
+    }
+
+    private JavaMailEmailSender sender() {
+        EmailVerificationProperties emailVerificationProperties = new EmailVerificationProperties();
+        emailVerificationProperties.setVerificationBaseUrl("https://front.example/email/verify");
+        MailSenderProperties mailSenderProperties = new MailSenderProperties();
+        mailSenderProperties.setUsername("noreply@example.com");
+        return new JavaMailEmailSender(mailSender, emailVerificationProperties, mailSenderProperties);
     }
 
     private String messageContent(MimeMessage message) throws Exception {
