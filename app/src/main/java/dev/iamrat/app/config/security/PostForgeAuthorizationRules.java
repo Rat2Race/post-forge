@@ -12,6 +12,7 @@ public class PostForgeAuthorizationRules {
             "/",
             "/index.html",
             "/study.html",
+            "/auth.js",
             "/favicon.ico",
             "/images/**",
             "/v3/api-docs/**",
