@@ -93,4 +93,10 @@ public class StudySource {
         this.draftedQuestionCount = draftedQuestionCount;
         this.discardedQuestionCount = discardedQuestionCount;
     }
+
+    /** 꼬리질문에서 LLM이 낸 초안도 근거 검증 통과율(ADR-008 게이트)에 더한다. */
+    public void followUpDrafted(int draftedQuestionCount, int discardedQuestionCount) {
+        this.draftedQuestionCount += draftedQuestionCount;
+        this.discardedQuestionCount += discardedQuestionCount;
+    }
 }

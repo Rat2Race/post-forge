@@ -337,7 +337,7 @@ Google News source가 비활성이면 두 news endpoint 호출은 현재 `500 IN
 | `POST /api/study/sources/{sourceId}/teachings` | USER | body `TeachRequest` — 자료를 설명한 글 | `200 TeachResponse`; LLM이 실패하면 설명에 빠진 핵심 항목을 되묻는 질문으로 대체 | `404 SOURCE_NOT_FOUND` |
 | `GET /api/study/today` | USER | 없음 | `200 Today`; 오늘 할 빈 페이지 정리와 문제를 섞은 최대 20개와 남은 수(아래 규칙) | 인증 `401/403` |
 | `POST /api/study/questions/{questionId}/reviews` | USER | body `ReviewRequest` — 내 답과 자가 평가 | `200 ReviewResult`; 다음 상자와 복습 시각 | 아직 예정 전(중복 제출 포함, 아래 규칙) `409 NOT_DUE_YET`; 동시 제출의 패자 `409 CONCURRENT_MODIFICATION`; `404 QUESTION_NOT_FOUND` |
-| `POST /api/study/questions/{questionId}/follow-ups` | USER | 없음 — 버튼을 누를 때만 호출 | `201 FollowUp`; 근거가 자료에 그대로 있는 새 문제 1개, 바로 복습 대상 | `404 QUESTION_NOT_FOUND` |
+| `POST /api/study/questions/{questionId}/follow-ups` | USER | 없음 — 버튼을 누를 때만 호출 | `201 FollowUp`; 근거가 자료에 그대로 있는 새 문제 1개, 바로 복습 대상 | `404 QUESTION_NOT_FOUND`; 같은 자료에 없는 새 문장을 만들지 못함 `409 NO_NEW_FOLLOW_UP` |
 | `GET /api/study/stats` | USER | 없음 | `200 StudyStats`; 잔디·연속 학습일과 ADR-008 게이트 수치. LLM을 쓰지 않는다 | 인증 `401/403` |
 | `GET /api/study/records` | USER | 없음 | `200 List<RecordView>` 최신순 50개 | 인증 `401/403` |
 
@@ -362,7 +362,7 @@ Google News source가 비활성이면 두 news endpoint 호출은 현재 `500 IN
 | --- | --- |
 | `IdResponse` | `id` |
 | `SourceSummary` | `id`, `title`, `questionStatus`, `createdAt` |
-| `SourceDetail` | `id`, `title`, `content`, `questionStatus`, `draftedQuestionCount`(LLM이 낸 문제 초안 수), `discardedQuestionCount`(근거가 자료에 그대로 없어 버린 LLM 문제 수. 근거는 맞지만 문제·근거 길이 상한을 넘어 못 쓴 초안은 세지 않는다), `keyPoints`, `questions`, `emptyReason`(문제가 0개일 때 이유와 자료를 고치는 방법, 그 밖에는 null), `createdAt` |
+| `SourceDetail` | `id`, `title`, `content`, `questionStatus`, `draftedQuestionCount`(LLM이 낸 문제 초안 수, 꼬리질문 초안 포함), `discardedQuestionCount`(근거가 자료에 그대로 없어 버린 LLM 문제 수. 근거는 맞지만 문제·근거 길이 상한을 넘어 못 쓴 초안은 세지 않는다), `keyPoints`, `questions`, `emptyReason`(문제가 0개일 때 이유와 자료를 고치는 방법, 그 밖에는 null), `createdAt` |
 | `QuestionView` | `id`, `question`, `evidence`, `origin`, `box`, `dueAt` |
 | `Today` | `items`(`TodayItem` 목록), `remaining`(상한 때문에 빠진 수) |
 | `TodayItem` | `type`(`QUESTION`·`RECALL`), `id`(문제 id, 빈 페이지면 자료 id), `sourceId`, `sourceTitle`, `question`·`evidence`(빈 페이지면 null), `box`(빈 페이지면 빈 페이지 상자) |
@@ -387,7 +387,7 @@ Google News source가 비활성이면 두 news endpoint 호출은 현재 `500 IN
 | 오늘 할 것 섞기 | 빈 페이지는 응답마다가 아니라 하루 3개까지다. 그날 이미 한 빈 페이지 정리(자료 화면에서 직접 한 것 포함)를 빼고 남은 만큼만, 예정이 이른 자료부터 넣고 같은 자료의 문제보다 먼저 둔다(문제를 먼저 풀면 단서가 생겨 자유 회상이 오염된다). 빈 페이지 묶음과 나머지 문제를 가장 이른 예정 시각 순으로 놓고 전체 20개로 자른다 |
 | 중복·동시 제출 | 복습 시각 전 문제는 받지 않는다. 동시에 들어온 두 제출은 `@Version`으로 한 번만 반영하고, 기록도 하나만 남는다 |
 | 빈 페이지 제안 | 핵심 항목마다 두 글자 조각의 절반 이상이 글에 나오면 '언급한 것 같아요' 후보로 낸다. 화면은 후보를 미리 체크해 보여 주고, 기록되는 것은 사용자가 최종 체크한 번호다 |
-| 꼬리질문 | LLM을 한 번 부른다. 앞 문제·앞 근거와 근거 주변 자료 ±1500자를 보내고, 사용자의 답은 보내지 않는다. 근거가 자료에 그대로 없으면 버리고 앞 근거로 예를 묻는 규칙 문제를 만든다. 기록 종류는 `FOLLOW_UP`이다 |
+| 꼬리질문 | LLM을 한 번 부른다. 앞 문제·앞 근거와 근거 주변 자료 ±1500자를 보내고, 사용자의 답은 보내지 않는다. 근거가 자료에 그대로 없거나 같은 자료에 이미 있는 문제(공백·NFC 정규화 후 같은 문장)면 버리고, 앞 근거로 예를 묻는 규칙 문제를, 그것도 있으면 이유를 묻는 규칙 문제를 만든다. 둘 다 있으면 만들지 않고 `409 NO_NEW_FOLLOW_UP`이다. 꼬리질문 초안도 자료의 LLM 초안 수와 근거 실패 수에 더해 근거 검증 통과율에 들어간다. 기록 종류는 `FOLLOW_UP`이다 |
 | 학습 현황 | 날짜는 Asia/Seoul 기준이다. 학습한 날은 답하기·빈 페이지 정리·가르치기·문제 만들기 기록이 있는 날이다. 꼬리질문은 버튼만 누른 것이라 세지 않고, 그 문제를 푼 답하기가 따로 남는다. 연속 학습일은 오늘을 아직 안 했으면 어제부터 센다(오늘 미완료는 끊김이 아니다). 잔디와 연속 학습일은 최근 84일 기록으로 센다. 유지율은 복습 직전 상자로 나누므로 이 값이 없는 이전 기록은 빠지고, 근거 통과율은 LLM 초안 수가 없는 이전 자료를 뺀다 |
 | 가르치기 | LLM 호출은 트랜잭션 밖에서 한다. 학생 질문은 최대 3개이며 판정·정답 제시는 하지 않는다. 기록에는 질문을 2000자까지만 남긴다 |
 
