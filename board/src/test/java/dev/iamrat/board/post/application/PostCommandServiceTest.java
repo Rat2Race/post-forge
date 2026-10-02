@@ -1,7 +1,6 @@
 package dev.iamrat.board.post.application;
 
 import dev.iamrat.board.post.domain.Post;
-import dev.iamrat.board.post.presentation.PostSummaryResponse;
 import dev.iamrat.board.view.application.ViewCountService;
 import dev.iamrat.core.account.AccountProfile;
 import dev.iamrat.core.account.AccountProfileReader;
@@ -50,7 +49,7 @@ class PostCommandServiceTest {
     void savePost_usesAccountProfileNickname() {
         given(accountProfileReader.getProfile(1L)).willReturn(new AccountProfile(1L, "포트닉네임"));
 
-        PostSummaryResponse response = postCommandService.savePost(
+        PostSummary response = postCommandService.savePost(
             "title",
             "content",
             null,

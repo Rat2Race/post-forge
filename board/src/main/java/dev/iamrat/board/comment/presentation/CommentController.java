@@ -1,5 +1,7 @@
 package dev.iamrat.board.comment.presentation;
 
+import dev.iamrat.board.comment.application.CommentSummary;
+import dev.iamrat.board.comment.application.CommentDetail;
 import dev.iamrat.board.comment.application.CommentCommandService;
 import dev.iamrat.board.comment.application.CommentInteractionService;
 import dev.iamrat.board.comment.application.CommentQueryService;
@@ -30,12 +32,12 @@ public class CommentController {
 
     @PostMapping
     @PreAuthorize("hasRole('USER')")
-    public ResponseEntity<CommentSummaryResponse> createComment(
+    public ResponseEntity<CommentSummary> createComment(
             @PathVariable Long postId,
             @RequestBody @Valid CommentRequest commentRequest,
             @AuthenticationPrincipal UserPrincipal user
     ) {
-        CommentSummaryResponse savedComment = commentCommandService.saveComment(
+        CommentSummary savedComment = commentCommandService.saveComment(
                 postId,
                 commentRequest.parentId(),
                 commentRequest.content(),
@@ -48,24 +50,24 @@ public class CommentController {
     }
 
     @GetMapping
-    public ResponseEntity<PageResponse<CommentDetailResponse>> getComments(
+    public ResponseEntity<PageResponse<CommentDetail>> getComments(
             @PathVariable Long postId,
             @PageableDefault(size = 50, sort = "createdAt", direction = Direction.ASC) Pageable pageable,
             @AuthenticationPrincipal UserPrincipal user
     ) {
         Long accountId = optionalAccountId(user);
-        Page<CommentDetailResponse> commentsByPost = commentQueryService.getCommentsByPost(postId, pageable, accountId);
+        Page<CommentDetail> commentsByPost = commentQueryService.getCommentsByPost(postId, pageable, accountId);
 
         return ResponseEntity.ok(PageResponse.from(commentsByPost));
     }
 
     @PutMapping("/{commentId:\\d+}")
     @PreAuthorize("hasRole('ADMIN') or hasRole('USER') and @commentCommandService.isCommentOwner(#commentId, principal.accountId)")
-    public ResponseEntity<CommentSummaryResponse> updateComment(
+    public ResponseEntity<CommentSummary> updateComment(
             @PathVariable Long commentId,
             @RequestBody @Valid CommentRequest commentRequest
     ) {
-        CommentSummaryResponse modifiedComment = commentCommandService.updateComment(
+        CommentSummary modifiedComment = commentCommandService.updateComment(
                 commentId,
                 commentRequest.content()
         );

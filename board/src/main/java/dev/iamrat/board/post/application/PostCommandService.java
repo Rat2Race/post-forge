@@ -2,7 +2,6 @@ package dev.iamrat.board.post.application;
 
 import dev.iamrat.board.post.domain.Post;
 import dev.iamrat.board.post.domain.PostPolicy;
-import dev.iamrat.board.post.presentation.PostSummaryResponse;
 import dev.iamrat.board.view.application.ViewCountService;
 import dev.iamrat.core.account.AccountProfileReader;
 import java.util.List;
@@ -22,7 +21,7 @@ public class PostCommandService {
     private final PostPolicy postPolicy = new PostPolicy();
 
     @Transactional
-    public PostSummaryResponse savePost(
+    public PostSummary savePost(
         String title,
         String content,
         List<String> tags,
@@ -35,11 +34,11 @@ public class PostCommandService {
 
         postStore.save(newPost);
 
-        return PostSummaryResponse.from(newPost);
+        return PostSummary.from(newPost);
     }
 
     @Transactional
-    public PostSummaryResponse updatePost(
+    public PostSummary updatePost(
         Long postId,
         String title,
         String content,
@@ -49,7 +48,7 @@ public class PostCommandService {
 
         post.update(title, content, tags);
 
-        return PostSummaryResponse.from(post);
+        return PostSummary.from(post);
     }
 
     @Transactional

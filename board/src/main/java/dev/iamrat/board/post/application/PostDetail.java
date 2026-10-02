@@ -1,10 +1,10 @@
-package dev.iamrat.board.post.presentation;
+package dev.iamrat.board.post.application;
 
 import dev.iamrat.board.post.domain.Post;
 import java.time.LocalDateTime;
 import java.util.List;
 
-public record PostDetailResponse(
+public record PostDetail(
     Long id,
     String title,
     String content,
@@ -18,12 +18,12 @@ public record PostDetailResponse(
     LocalDateTime createdAt,
     LocalDateTime modifiedAt
 ) {
-    public static PostDetailResponse from(Post post, boolean isLiked, Long likeCount, int commentCount) {
+    public static PostDetail from(Post post, boolean isLiked, Long likeCount, int commentCount) {
         return from(post, isLiked, likeCount, commentCount, post.getViews());
     }
 
-    public static PostDetailResponse from(Post post, boolean isLiked, Long likeCount, int commentCount, long views) {
-        return new PostDetailResponse(
+    public static PostDetail from(Post post, boolean isLiked, Long likeCount, int commentCount, long views) {
+        return new PostDetail(
             post.getId(),
             post.getTitle(),
             post.getContent(),

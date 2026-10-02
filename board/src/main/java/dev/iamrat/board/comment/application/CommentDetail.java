@@ -1,9 +1,9 @@
-package dev.iamrat.board.comment.presentation;
+package dev.iamrat.board.comment.application;
 
 import dev.iamrat.board.comment.domain.Comment;
 import java.time.LocalDateTime;
 
-public record CommentDetailResponse(
+public record CommentDetail(
     Long id,
     String content,
     Long accountId,
@@ -16,8 +16,8 @@ public record CommentDetailResponse(
     LocalDateTime modifiedAt
 ) {
 
-    public static CommentDetailResponse from(Comment comment, Long likeCount, boolean isLiked) {
-        return new CommentDetailResponse(
+    public static CommentDetail from(Comment comment, Long likeCount, boolean isLiked) {
+        return new CommentDetail(
             comment.getId(),
             comment.getContent(),
             comment.getAccountId(),

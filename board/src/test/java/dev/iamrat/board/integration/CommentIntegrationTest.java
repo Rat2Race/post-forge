@@ -1,12 +1,12 @@
 package dev.iamrat.board.integration;
 
+import dev.iamrat.board.post.application.PostSummary;
+import dev.iamrat.board.comment.application.CommentSummary;
+import dev.iamrat.board.comment.application.CommentDetail;
 import dev.iamrat.board.comment.application.CommentCommandService;
 import dev.iamrat.board.comment.application.CommentQueryService;
-import dev.iamrat.board.comment.presentation.CommentDetailResponse;
-import dev.iamrat.board.comment.presentation.CommentSummaryResponse;
 import dev.iamrat.board.integration.security.WithMockAccount;
 import dev.iamrat.board.post.application.PostCommandService;
-import dev.iamrat.board.post.presentation.PostSummaryResponse;
 import dev.iamrat.core.account.AccountProfile;
 import dev.iamrat.core.account.AccountProfileManager;
 import dev.iamrat.core.account.AccountProfileReader;
@@ -55,21 +55,21 @@ class CommentIntegrationTest {
         given(accountProfileReader.getProfile(1L)).willReturn(new AccountProfile(1L, "테스터"));
         given(accountProfileReader.getProfile(2L)).willReturn(new AccountProfile(2L, "댓글러"));
 
-        PostSummaryResponse savedPost = postCommandService.savePost(
+        PostSummary savedPost = postCommandService.savePost(
             "댓글 통합 테스트",
             "댓글 통합 테스트용 게시글 본문입니다.",
             null,
             1L
         );
 
-        CommentSummaryResponse savedComment = commentCommandService.saveComment(
+        CommentSummary savedComment = commentCommandService.saveComment(
             savedPost.id(),
             null,
             "자동 답변 없이 남아야 하는 일반 댓글입니다.",
             2L
         );
 
-        Page<CommentDetailResponse> comments = commentQueryService.getCommentsByPost(
+        Page<CommentDetail> comments = commentQueryService.getCommentsByPost(
             savedPost.id(),
             PageRequest.of(0, 20, Sort.by(Sort.Direction.ASC, "createdAt")),
             2L
