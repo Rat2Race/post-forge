@@ -16,6 +16,9 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
 
 @Tag("unit")
 @ExtendWith(MockitoExtension.class)
@@ -34,7 +37,7 @@ class OAuth2CodeServiceTest {
 
         assertThat(code).isNotBlank();
         ArgumentCaptor<String> codeCaptor = ArgumentCaptor.forClass(String.class);
-        verify(oAuth2CodeStore).save(codeCaptor.capture(), org.mockito.ArgumentMatchers.eq(1L));
+        verify(oAuth2CodeStore).save(codeCaptor.capture(), eq(1L));
         assertThat(codeCaptor.getValue()).isEqualTo(code);
     }
 
@@ -76,6 +79,6 @@ class OAuth2CodeServiceTest {
             .satisfies(exception -> assertThat(((CustomException) exception).getErrorCode())
                 .isEqualTo(AuthErrorCode.INVALID_TOKEN));
 
-        verify(oAuth2CodeStore, org.mockito.Mockito.never()).save(anyString(), org.mockito.ArgumentMatchers.any());
+        verify(oAuth2CodeStore, never()).save(anyString(), any());
     }
 }

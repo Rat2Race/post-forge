@@ -24,6 +24,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.willThrow;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 
 @ExtendWith(MockitoExtension.class)
 class LlmTextGenerationAdapterTest {
@@ -123,7 +124,7 @@ class LlmTextGenerationAdapterTest {
         assertThat(adapter.generateForPublishing("system", "user")).isEqualTo("발행 초안");
 
         verify(publishingChatModel).call(any(Prompt.class));
-        org.mockito.Mockito.verifyNoInteractions(chatModel);
+        verifyNoInteractions(chatModel);
     }
 
     private LlmTextGenerationAdapter adapter(String provider) {

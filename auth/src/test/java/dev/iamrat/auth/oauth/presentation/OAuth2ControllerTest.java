@@ -20,6 +20,8 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 
 @Tag("webmvc")
 @WebMvcTest(controllers = OAuth2Controller.class)
@@ -65,8 +67,8 @@ class OAuth2ControllerTest {
                 .andExpect(jsonPath("$.refreshToken").doesNotExist());
 
             verify(cookieProvider).addRefreshTokenCookie(
-                org.mockito.ArgumentMatchers.any(),
-                org.mockito.ArgumentMatchers.eq("oauth-refresh-token")
+                any(),
+                eq("oauth-refresh-token")
             );
         }
 

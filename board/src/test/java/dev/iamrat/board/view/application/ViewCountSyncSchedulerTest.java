@@ -12,6 +12,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.doThrow;
 
 @ExtendWith(MockitoExtension.class)
 class ViewCountSyncSchedulerTest {
@@ -32,7 +33,7 @@ class ViewCountSyncSchedulerTest {
             .willReturn(Optional.of("post:views:dirty:processing"));
         given(viewCountStore.findDirtyIds("post:views:dirty:processing")).willReturn(Set.of("1"));
         given(viewCountStore.findViewCount(1L)).willReturn(Optional.of(10L));
-        org.mockito.Mockito.doThrow(new RuntimeException("db down"))
+        doThrow(new RuntimeException("db down"))
             .when(postViewCountService).updateViewCount(1L, 10L);
 
         scheduler.syncViewCountsToDb();
