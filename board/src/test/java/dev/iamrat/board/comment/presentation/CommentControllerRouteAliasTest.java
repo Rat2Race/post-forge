@@ -44,6 +44,7 @@ import org.springframework.web.context.request.NativeWebRequest;
 import org.springframework.web.method.support.HandlerMethodArgumentResolver;
 import org.springframework.web.method.support.ModelAndViewContainer;
 import org.springframework.web.servlet.NoHandlerFoundException;
+import org.springframework.web.bind.support.WebDataBinderFactory;
 
 @ExtendWith(MockitoExtension.class)
 class CommentControllerRouteAliasTest {
@@ -217,7 +218,7 @@ class CommentControllerRouteAliasTest {
             MethodParameter parameter,
             ModelAndViewContainer mavContainer,
             NativeWebRequest webRequest,
-            org.springframework.web.bind.support.WebDataBinderFactory binderFactory
+            WebDataBinderFactory binderFactory
         ) {
             HttpServletRequest request = webRequest.getNativeRequest(HttpServletRequest.class);
             if (request == null || request.getSession(false) == null) {

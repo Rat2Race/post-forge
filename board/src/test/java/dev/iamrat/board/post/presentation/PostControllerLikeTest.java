@@ -31,6 +31,8 @@ import static org.mockito.BDDMockito.given;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.support.WebDataBinderFactory;
 
 @ExtendWith(MockitoExtension.class)
 class PostControllerLikeTest {
@@ -97,13 +99,13 @@ class PostControllerLikeTest {
     private static class TestUserPrincipalResolver implements HandlerMethodArgumentResolver {
         @Override
         public boolean supportsParameter(MethodParameter parameter) {
-            return parameter.hasParameterAnnotation(org.springframework.security.core.annotation.AuthenticationPrincipal.class)
+            return parameter.hasParameterAnnotation(AuthenticationPrincipal.class)
                     && UserPrincipal.class.isAssignableFrom(parameter.getParameterType());
         }
 
         @Override
         public Object resolveArgument(MethodParameter parameter, ModelAndViewContainer mavContainer,
-                                      NativeWebRequest webRequest, org.springframework.web.bind.support.WebDataBinderFactory binderFactory) {
+                                      NativeWebRequest webRequest, WebDataBinderFactory binderFactory) {
             HttpServletRequest request = webRequest.getNativeRequest(HttpServletRequest.class);
             if (request == null || request.getSession(false) == null) {
                 return null;

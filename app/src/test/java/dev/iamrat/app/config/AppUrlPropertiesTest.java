@@ -10,6 +10,7 @@ import org.springframework.boot.autoconfigure.validation.ValidationAutoConfigura
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.boot.autoconfigure.AutoConfigurations;
 
 /**
  * 도메인 환경변수는 기본값을 두지 않는다.
@@ -19,7 +20,7 @@ import org.springframework.context.annotation.Configuration;
 class AppUrlPropertiesTest {
 
     private final ApplicationContextRunner runner = new ApplicationContextRunner()
-        .withConfiguration(org.springframework.boot.autoconfigure.AutoConfigurations.of(
+        .withConfiguration(AutoConfigurations.of(
             ConfigurationPropertiesAutoConfiguration.class,
             ValidationAutoConfiguration.class))
         .withUserConfiguration(TestConfig.class);

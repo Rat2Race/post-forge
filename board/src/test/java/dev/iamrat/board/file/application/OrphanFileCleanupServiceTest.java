@@ -11,6 +11,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+import org.mockito.ArgumentCaptor;
 
 class OrphanFileCleanupServiceTest {
 
@@ -25,7 +26,7 @@ class OrphanFileCleanupServiceTest {
 
         cleanupService.cleanupOrphanFiles();
 
-        var thresholdCaptor = org.mockito.ArgumentCaptor.forClass(LocalDateTime.class);
+        var thresholdCaptor = ArgumentCaptor.forClass(LocalDateTime.class);
         verify(fileStore).deleteOrphanFilesBefore(thresholdCaptor.capture());
         LocalDateTime threshold = thresholdCaptor.getValue();
         assertThat(Duration.between(before, threshold)).isBetween(Duration.ZERO, Duration.ofSeconds(2));
