@@ -1,6 +1,5 @@
 package dev.iamrat.board.like.application;
 
-import dev.iamrat.board.like.domain.PostLike;
 import java.util.List;
 import java.util.Set;
 
@@ -8,7 +7,7 @@ public interface PostLikeStore {
 
     boolean existsByPostIdAndAccountId(Long postId, Long accountId);
 
-    PostLike save(PostLike postLike);
+    boolean insertIfAbsent(Long postId, Long accountId);
 
     long countByPostId(Long postId);
 

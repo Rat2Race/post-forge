@@ -1,8 +1,8 @@
 package dev.iamrat.board.post.application;
 
+import dev.iamrat.board.post.domain.PostRepository;
 import dev.iamrat.board.post.domain.Post;
 import dev.iamrat.board.post.domain.PostPolicy;
-import dev.iamrat.board.post.presentation.PostSummaryResponse;
 import dev.iamrat.board.view.application.ViewCountService;
 import dev.iamrat.core.account.AccountProfileReader;
 import java.util.List;
@@ -15,14 +15,14 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional(readOnly = true)
 public class PostCommandService {
 
-    private final PostStore postStore;
+    private final PostRepository postRepository;
     private final PostReader postReader;
     private final ViewCountService viewCountService;
     private final AccountProfileReader accountProfileReader;
     private final PostPolicy postPolicy = new PostPolicy();
 
     @Transactional
-    public PostSummaryResponse savePost(
+    public PostSummary savePost(
         String title,
         String content,
         List<String> tags,
@@ -33,13 +33,13 @@ public class PostCommandService {
 
         Post newPost = Post.create(title, content, tags, accountId, nickname);
 
-        postStore.save(newPost);
+        postRepository.save(newPost);
 
-        return PostSummaryResponse.from(newPost);
+        return PostSummary.from(newPost);
     }
 
     @Transactional
-    public PostSummaryResponse updatePost(
+    public PostSummary updatePost(
         Long postId,
         String title,
         String content,
@@ -49,7 +49,7 @@ public class PostCommandService {
 
         post.update(title, content, tags);
 
-        return PostSummaryResponse.from(post);
+        return PostSummary.from(post);
     }
 
     @Transactional
@@ -58,7 +58,7 @@ public class PostCommandService {
 
         viewCountService.deleteViewCount(postId);
 
-        postStore.delete(post);
+        postRepository.delete(post);
     }
 
     public boolean isOwner(Long postId, Long accountId) {

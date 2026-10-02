@@ -113,12 +113,14 @@ prod:  PostForge app -> OpenAI-compatible LLM gateway -> Ollama -> qwen3:8b
 # 전체 테스트
 ./gradlew test
 
-# 통합 테스트 제외
-./gradlew test -PexcludeTags=integration
+# 태그 제외(쉼표로 여러 개). CI는 LLM이 필요한 평가 테스트용 eval만 뺀다
+./gradlew test -PexcludeTags=integration,persistence
 
 # 실행 jar 생성
 ./gradlew :app:bootJar -PexcludeTags=integration
 ```
+
+테스트는 Testcontainers로 운영과 같은 PostgreSQL 이미지(`pgvector/pgvector:0.8.2-pg18-trixie`)를 띄워 Flyway `V0000`을 적용하고 `ddl-auto=validate`로 엔티티와 대조하므로 Docker가 필요합니다. 2026-10-02 로컬 기준 전체 테스트 426개가 H2일 때 37초, PostgreSQL 컨테이너로 51초 걸렸습니다.
 
 이 저장소에는 현재 전용 부하 테스트 runner가 없습니다. 과거 k6/Bruno/Grafana/API smoke 산출물은
 [성능 리포트](./docs/performance/README.md)에 historical evidence로 보관합니다.

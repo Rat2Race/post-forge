@@ -14,6 +14,8 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.springframework.boot.test.system.CapturedOutput;
+import org.springframework.boot.test.system.OutputCaptureExtension;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -35,6 +37,7 @@ import static org.mockito.Mockito.verify;
 
 @Tag("unit")
 @ExtendWith(MockitoExtension.class)
+@ExtendWith(OutputCaptureExtension.class)
 class CustomOAuth2UserServiceTest {
     
     @Mock
@@ -74,6 +77,21 @@ class CustomOAuth2UserServiceTest {
         assertThat(result.getName()).isEqualTo("1");
         
         verify(oAuth2AccountService).getOrCreateAccount(eq("GOOGLE"), any());
+    }
+
+    @Test
+    @DisplayName("OAuth2 로그인 로그에는 이메일과 닉네임을 남기지 않는다")
+    void oauth2Login_doesNotLogEmailOrNickname(CapturedOutput output) {
+        ClientRegistration googleClient = mock(ClientRegistration.class);
+        given(googleClient.getRegistrationId()).willReturn("google");
+        given(userRequest.getClientRegistration()).willReturn(googleClient);
+        stubOAuth2User(Map.of("sub", "google-user-123", "name", "홍길동", "email", "test@gmail.com"), "sub");
+        Account created = account("user-uuid-123", "leaknick");
+        given(oAuth2AccountService.getOrCreateAccount(eq("GOOGLE"), any())).willReturn(created);
+
+        customOAuth2UserService.loadUser(userRequest);
+
+        assertThat(output.getAll()).doesNotContain(created.getEmail()).doesNotContain("leaknick");
     }
 
     @Test

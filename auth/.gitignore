@@ -38,3 +38,5 @@ out/
 
 ### yml 파일 ###
 *.yml
+# 테스트 설정에는 비밀값이 없다. Testcontainers PostgreSQL 설정을 함께 커밋한다.
+!src/test/resources/application-test.yml

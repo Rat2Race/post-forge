@@ -1,7 +1,7 @@
 package dev.iamrat.board.comment.application;
 
+import dev.iamrat.board.comment.domain.CommentRepository;
 import dev.iamrat.board.comment.domain.Comment;
-import dev.iamrat.board.comment.presentation.CommentDetailResponse;
 import dev.iamrat.board.like.application.CommentLikeService;
 import java.util.List;
 import java.util.Map;
@@ -19,11 +19,11 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional(readOnly = true)
 public class CommentQueryService {
 
-    private final CommentStore commentStore;
+    private final CommentRepository commentRepository;
     private final CommentLikeService commentLikeService;
 
-    public Page<CommentDetailResponse> getCommentsByPost(Long postId, Pageable pageable, Long accountId) {
-        Page<Comment> comments = commentStore.findByPostId(postId, pageable);
+    public Page<CommentDetail> getCommentsByPost(Long postId, Pageable pageable, Long accountId) {
+        Page<Comment> comments = commentRepository.findByPostId(postId, pageable);
         List<Comment> commentList = comments.getContent();
         List<Long> commentIds = commentList.stream()
             .map(Comment::getId)
@@ -34,7 +34,7 @@ public class CommentQueryService {
 
         return new PageImpl<>(
             commentList.stream()
-                .map(comment -> CommentDetailResponse.from(
+                .map(comment -> CommentDetail.from(
                     comment,
                     likeCounts.getOrDefault(comment.getId(), 0L),
                     likedIds.contains(comment.getId())
@@ -46,11 +46,11 @@ public class CommentQueryService {
     }
 
     public int getCommentCount(Long postId) {
-        return commentStore.countByPostId(postId);
+        return commentRepository.countByPostId(postId);
     }
 
     public Map<Long, Integer> getCommentCounts(List<Long> postIds) {
-        return commentStore.countByPostIds(postIds).stream()
+        return commentRepository.countByPostIds(postIds).stream()
             .collect(Collectors.toMap(
                 row -> (Long) row[0],
                 row -> ((Long) row[1]).intValue()

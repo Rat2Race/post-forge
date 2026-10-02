@@ -51,7 +51,8 @@ subprojects {
         tasks.named('test') {
             useJUnitPlatform {
                 if (project.hasProperty('excludeTags')) {
-                    excludeTags project.property('excludeTags')
+                    // 쉼표 목록을 받는다: -PexcludeTags=eval,persistence
+                    excludeTags(*project.property('excludeTags').toString().split(',')*.trim())
                 }
             }
         }

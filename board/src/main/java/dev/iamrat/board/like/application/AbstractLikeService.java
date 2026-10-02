@@ -2,7 +2,6 @@ package dev.iamrat.board.like.application;
 
 import dev.iamrat.core.global.error.CommonErrorCode;
 import dev.iamrat.core.global.exception.CustomException;
-import org.springframework.dao.DataIntegrityViolationException;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -12,31 +11,25 @@ import java.util.Set;
 
 public abstract class AbstractLikeService {
 
+    // 행을 실제로 넣거나 지운 요청만 카운터를 1 옮긴다. 이미 그 상태면 아무것도 바꾸지 않고 현재 수를 돌려준다(멱등).
     protected LikeResult likeTarget(Long targetId, Long accountId) {
         validateTargetAndAccount(targetId, accountId);
 
-        if (!existsByTargetIdAndAccountId(targetId, accountId)) {
-            try {
-                saveLike(targetId, accountId);
-            } catch (DataIntegrityViolationException ignored) {
-            }
+        if (insertLikeIfAbsent(targetId, accountId)) {
+            addLikeCount(targetId, 1);
         }
 
-        long likeCount = countByTargetId(targetId);
-        updateLikeCount(targetId, likeCount);
-
-        return new LikeResult(true, likeCount);
+        return new LikeResult(true, countByTargetId(targetId));
     }
 
     protected LikeResult unlikeTarget(Long targetId, Long accountId) {
         validateTargetAndAccount(targetId, accountId);
 
-        deleteByTargetIdAndAccountId(targetId, accountId);
+        if (deleteLike(targetId, accountId)) {
+            addLikeCount(targetId, -1);
+        }
 
-        long likeCount = countByTargetId(targetId);
-        updateLikeCount(targetId, likeCount);
-
-        return new LikeResult(false, likeCount);
+        return new LikeResult(false, countByTargetId(targetId));
     }
 
     protected Map<Long, Long> getLikeCountMap(List<Long> targetIds) {
@@ -78,15 +71,13 @@ public abstract class AbstractLikeService {
         }
     }
 
-    protected abstract boolean existsByTargetIdAndAccountId(Long targetId, Long accountId);
+    protected abstract boolean insertLikeIfAbsent(Long targetId, Long accountId);
 
-    protected abstract void saveLike(Long targetId, Long accountId);
+    protected abstract boolean deleteLike(Long targetId, Long accountId);
+
+    protected abstract void addLikeCount(Long targetId, long delta);
 
     protected abstract long countByTargetId(Long targetId);
-
-    protected abstract void updateLikeCount(Long targetId, long likeCount);
-
-    protected abstract void deleteByTargetIdAndAccountId(Long targetId, Long accountId);
 
     protected abstract List<Object[]> countByTargetIds(List<Long> targetIds);
 

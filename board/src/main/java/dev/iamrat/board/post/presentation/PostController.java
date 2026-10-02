@@ -1,5 +1,7 @@
 package dev.iamrat.board.post.presentation;
 
+import dev.iamrat.board.post.application.PostSummary;
+import dev.iamrat.board.post.application.PostDetail;
 import dev.iamrat.board.like.application.LikeResult;
 import dev.iamrat.board.like.presentation.LikeResponse;
 import dev.iamrat.board.post.application.PostCommandService;
@@ -30,11 +32,11 @@ public class PostController {
 
     @PostMapping
     @PreAuthorize("hasRole('USER')")
-    public ResponseEntity<PostSummaryResponse> createPost(
+    public ResponseEntity<PostSummary> createPost(
         @RequestBody @Valid PostRequest postRequest,
         @AuthenticationPrincipal UserPrincipal user
     ) {
-        PostSummaryResponse savedPost = postCommandService.savePost(
+        PostSummary savedPost = postCommandService.savePost(
             postRequest.title(),
             postRequest.content(),
             postRequest.tags(),
@@ -47,36 +49,36 @@ public class PostController {
     }
 
     @GetMapping
-    public ResponseEntity<PageResponse<PostDetailResponse>> getPosts(
+    public ResponseEntity<PageResponse<PostDetail>> getPosts(
         @RequestParam(required = false) String keyword,
         @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable,
         @AuthenticationPrincipal UserPrincipal user
     ) {
         Long accountId = optionalAccountId(user);
 
-        Page<PostDetailResponse> posts = postQueryService.getPosts(keyword, pageable, accountId);
+        Page<PostDetail> posts = postQueryService.getPosts(keyword, pageable, accountId);
 
         return ResponseEntity.ok(PageResponse.from(posts));
     }
 
     @GetMapping("/{postId:\\d+}")
-    public ResponseEntity<PostDetailResponse> getPost(
+    public ResponseEntity<PostDetail> getPost(
         @PathVariable("postId") Long postId,
         @AuthenticationPrincipal UserPrincipal user
     ) {
         Long accountId = optionalAccountId(user);
-        PostDetailResponse post = postQueryService.readPost(postId, accountId);
+        PostDetail post = postQueryService.readPost(postId, accountId);
 
         return ResponseEntity.ok(post);
     }
 
     @PutMapping("/{postId:\\d+}")
     @PreAuthorize("hasRole('ADMIN') or hasRole('USER') and @postCommandService.isOwner(#postId, principal.accountId)")
-    public ResponseEntity<PostSummaryResponse> updatePost(
+    public ResponseEntity<PostSummary> updatePost(
         @PathVariable("postId") Long postId,
         @RequestBody @Valid PostRequest postRequest
     ) {
-        PostSummaryResponse modifiedPost = postCommandService.updatePost(
+        PostSummary modifiedPost = postCommandService.updatePost(
             postId,
             postRequest.title(),
             postRequest.content(),

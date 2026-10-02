@@ -1,5 +1,7 @@
 package dev.iamrat.board.comment.presentation;
 
+import dev.iamrat.board.comment.application.CommentSummary;
+import dev.iamrat.board.comment.application.CommentDetail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
@@ -162,9 +164,9 @@ class CommentControllerRouteAliasTest {
         verifyNoInteractions(commentQueryService);
     }
 
-    private CommentDetailResponse commentDetail() {
+    private CommentDetail commentDetail() {
         LocalDateTime now = LocalDateTime.of(2026, 6, 22, 14, 0);
-        return new CommentDetailResponse(
+        return new CommentDetail(
             2L,
             "댓글 본문",
             9L,
@@ -178,13 +180,13 @@ class CommentControllerRouteAliasTest {
         );
     }
 
-    private CommentSummaryResponse commentSummary() {
+    private CommentSummary commentSummary() {
         return commentSummary("새 댓글");
     }
 
-    private CommentSummaryResponse commentSummary(String content) {
+    private CommentSummary commentSummary(String content) {
         LocalDateTime now = LocalDateTime.of(2026, 6, 22, 14, 0);
-        return new CommentSummaryResponse(2L, content, 9L, "tester", null, now, now);
+        return new CommentSummary(2L, content, 9L, "tester", null, now, now);
     }
 
     private RequestPostProcessor user(Long accountId) {

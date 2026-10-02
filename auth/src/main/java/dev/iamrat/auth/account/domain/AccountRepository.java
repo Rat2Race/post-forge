@@ -1,6 +1,5 @@
-package dev.iamrat.auth.account.infrastructure.persistence;
+package dev.iamrat.auth.account.domain;
 
-import dev.iamrat.auth.account.domain.Account;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;

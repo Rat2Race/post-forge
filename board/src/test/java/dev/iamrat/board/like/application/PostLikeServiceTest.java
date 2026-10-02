@@ -1,25 +1,21 @@
 package dev.iamrat.board.like.application;
 
-import dev.iamrat.board.like.domain.PostLike;
-import dev.iamrat.board.post.application.PostStore;
-import dev.iamrat.board.post.domain.Post;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+
+import dev.iamrat.board.post.domain.PostRepository;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.dao.DataIntegrityViolationException;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.BDDMockito.given;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
 
 @Tag("unit")
 @ExtendWith(MockitoExtension.class)
@@ -29,81 +25,57 @@ class PostLikeServiceTest {
     private PostLikeStore postLikeStore;
 
     @Mock
-    private PostStore postStore;
+    private PostRepository postRepository;
 
     @InjectMocks
     private PostLikeService postLikeService;
 
     @Test
-    @DisplayName("이미 좋아요 상태여도 like 요청은 저장하지 않고 true를 반환한다")
-    void like_whenAlreadyLiked_returnsCurrentState() {
-        Long postId = 1L;
+    @DisplayName("좋아요 행을 새로 넣으면 카운터를 1 올리고 현재 수를 돌려준다")
+    void like_whenInserted_increasesCounter() {
+        given(postLikeStore.insertIfAbsent(2L, 2L)).willReturn(true);
+        given(postLikeStore.countByPostId(2L)).willReturn(5L);
 
-        given(postLikeStore.existsByPostIdAndAccountId(postId, 1L)).willReturn(true);
-        given(postLikeStore.countByPostId(postId)).willReturn(4L);
+        LikeResult response = postLikeService.like(2L, 2L);
 
-        LikeResult response = postLikeService.like(postId, 1L);
-
-        assertThat(response.isLiked()).isTrue();
-        assertThat(response.likeCount()).isEqualTo(4L);
-        verify(postLikeStore, never()).save(any(PostLike.class));
-        verify(postStore).updateLikeCount(postId, 4L);
+        assertThat(response).isEqualTo(new LikeResult(true, 5L));
+        verify(postRepository).addLikeCount(2L, 1L);
     }
 
     @Test
-    @DisplayName("좋아요 상태가 아니면 DB에 저장하고 true를 반환한다")
-    void like_whenNotLiked_savesLike() {
-        Long postId = 2L;
-        Post postRef = Post.builder().id(postId).title("title").content("content").accountId(9L).build();
+    @DisplayName("이미 좋아요한 상태면 카운터를 건드리지 않고 현재 수를 돌려준다")
+    void like_whenAlreadyLiked_keepsCounter() {
+        given(postLikeStore.insertIfAbsent(1L, 1L)).willReturn(false);
+        given(postLikeStore.countByPostId(1L)).willReturn(4L);
 
-        given(postLikeStore.existsByPostIdAndAccountId(postId, 2L)).willReturn(false);
-        given(postStore.getReferenceById(postId)).willReturn(postRef);
-        given(postLikeStore.countByPostId(postId)).willReturn(5L);
+        LikeResult response = postLikeService.like(1L, 1L);
 
-        LikeResult response = postLikeService.like(postId, 2L);
-
-        assertThat(response.isLiked()).isTrue();
-        assertThat(response.likeCount()).isEqualTo(5L);
-
-        ArgumentCaptor<PostLike> likeCaptor = ArgumentCaptor.forClass(PostLike.class);
-        verify(postLikeStore).save(likeCaptor.capture());
-        assertThat(likeCaptor.getValue().getPost()).isEqualTo(postRef);
-        assertThat(likeCaptor.getValue().getAccountId()).isEqualTo(2L);
-        verify(postStore).updateLikeCount(postId, 5L);
+        assertThat(response).isEqualTo(new LikeResult(true, 4L));
+        verify(postRepository, never()).addLikeCount(anyLong(), anyLong());
     }
 
     @Test
-    @DisplayName("동시 요청으로 저장이 중복 제약에 걸려도 예외를 삼키고 현재 카운트를 반환한다")
-    void like_whenConcurrentInsertConflicts_swallowsExceptionAndRecounts() {
-        Long postId = 4L;
-        Post postRef = Post.builder().id(postId).title("title").content("content").accountId(9L).build();
+    @DisplayName("좋아요를 지우면 카운터를 1 내리고 false를 돌려준다")
+    void unlike_whenDeleted_decreasesCounter() {
+        given(postLikeStore.deleteByPostIdAndAccountId(9L, 9L)).willReturn(1L);
+        given(postLikeStore.countByPostId(9L)).willReturn(2L);
 
-        given(postLikeStore.existsByPostIdAndAccountId(postId, 4L)).willReturn(false);
-        given(postStore.getReferenceById(postId)).willReturn(postRef);
-        given(postLikeStore.save(any(PostLike.class)))
-                .willThrow(new DataIntegrityViolationException("duplicate key"));
-        given(postLikeStore.countByPostId(postId)).willReturn(3L);
+        LikeResult response = postLikeService.unlike(9L, 9L);
 
-        LikeResult response = postLikeService.like(postId, 4L);
-
-        assertThat(response.isLiked()).isTrue();
-        assertThat(response.likeCount()).isEqualTo(3L);
-        verify(postStore).updateLikeCount(postId, 3L);
+        assertThat(response).isEqualTo(new LikeResult(false, 2L));
+        verify(postRepository).addLikeCount(9L, -1L);
     }
 
     @Test
-    @DisplayName("unlike 요청은 좋아요를 삭제하고 false를 반환한다")
-    void unlike_removesLike() {
-        Long postId = 9L;
+    @DisplayName("이미 취소한 좋아요를 다시 취소하면 카운터를 건드리지 않는다")
+    void unlike_whenNotLiked_keepsCounter() {
+        given(postLikeStore.deleteByPostIdAndAccountId(9L, 9L)).willReturn(0L);
+        given(postLikeStore.countByPostId(9L)).willReturn(2L);
 
-        given(postLikeStore.deleteByPostIdAndAccountId(postId, 9L)).willReturn(1L);
-        given(postLikeStore.countByPostId(postId)).willReturn(2L);
+        LikeResult response = postLikeService.unlike(9L, 9L);
 
-        LikeResult response = postLikeService.unlike(postId, 9L);
-
-        assertThat(response.isLiked()).isFalse();
-        assertThat(response.likeCount()).isEqualTo(2L);
-        verify(postStore).updateLikeCount(postId, 2L);
+        assertThat(response).isEqualTo(new LikeResult(false, 2L));
+        verify(postRepository, never()).addLikeCount(anyLong(), anyLong());
     }
 
     @Test
@@ -137,5 +109,4 @@ class PostLikeServiceTest {
                 .containsEntry(20L, 0L)
                 .containsEntry(30L, 4L);
     }
-
 }

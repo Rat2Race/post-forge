@@ -1,9 +1,7 @@
-package dev.iamrat.auth.account.infrastructure.persistence;
+package dev.iamrat.auth.account.domain;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import dev.iamrat.auth.account.domain.Account;
-import dev.iamrat.auth.account.domain.AccountRole;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
 import java.util.Optional;
@@ -13,6 +11,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
@@ -22,6 +21,7 @@ import org.springframework.test.context.TestConstructor;
 
 @Tag("persistence")
 @DataJpaTest(properties = "spring.jpa.properties.hibernate.generate_statistics=true")
+@ActiveProfiles("test")
 @Import(AccountRepositoryNPlusOneRegressionTest.JpaAuditingTestConfig.class)
 @TestConstructor(autowireMode = TestConstructor.AutowireMode.ALL)
 class AccountRepositoryNPlusOneRegressionTest {

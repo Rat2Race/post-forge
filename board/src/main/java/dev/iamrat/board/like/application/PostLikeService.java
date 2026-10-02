@@ -1,7 +1,6 @@
 package dev.iamrat.board.like.application;
 
-import dev.iamrat.board.like.domain.PostLike;
-import dev.iamrat.board.post.application.PostStore;
+import dev.iamrat.board.post.domain.PostRepository;
 import dev.iamrat.core.global.error.CommonErrorCode;
 import dev.iamrat.core.global.exception.CustomException;
 import java.util.List;
@@ -15,7 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class PostLikeService extends AbstractLikeService {
     private final PostLikeStore postLikeStore;
-    private final PostStore postStore;
+    private final PostRepository postRepository;
 
     @Transactional
     public LikeResult like(Long postId, Long accountId) {
@@ -47,28 +46,23 @@ public class PostLikeService extends AbstractLikeService {
     }
 
     @Override
-    protected boolean existsByTargetIdAndAccountId(Long targetId, Long accountId) {
-        return postLikeStore.existsByPostIdAndAccountId(targetId, accountId);
+    protected boolean insertLikeIfAbsent(Long targetId, Long accountId) {
+        return postLikeStore.insertIfAbsent(targetId, accountId);
     }
 
     @Override
-    protected void saveLike(Long targetId, Long accountId) {
-        postLikeStore.save(PostLike.of(postStore.getReferenceById(targetId), accountId));
+    protected boolean deleteLike(Long targetId, Long accountId) {
+        return postLikeStore.deleteByPostIdAndAccountId(targetId, accountId) > 0;
+    }
+
+    @Override
+    protected void addLikeCount(Long targetId, long delta) {
+        postRepository.addLikeCount(targetId, delta);
     }
 
     @Override
     protected long countByTargetId(Long targetId) {
         return postLikeStore.countByPostId(targetId);
-    }
-
-    @Override
-    protected void updateLikeCount(Long targetId, long likeCount) {
-        postStore.updateLikeCount(targetId, likeCount);
-    }
-
-    @Override
-    protected void deleteByTargetIdAndAccountId(Long targetId, Long accountId) {
-        postLikeStore.deleteByPostIdAndAccountId(targetId, accountId);
     }
 
     @Override

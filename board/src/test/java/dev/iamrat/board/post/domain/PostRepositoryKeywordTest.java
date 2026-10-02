@@ -1,8 +1,7 @@
-package dev.iamrat.board.post.infrastructure.persistence;
+package dev.iamrat.board.post.domain;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import dev.iamrat.board.post.domain.Post;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -22,15 +21,15 @@ import org.springframework.test.context.TestConstructor;
 @Tag("persistence")
 @DataJpaTest
 @ActiveProfiles("test")
-@Import({PostPersistenceAdapter.class, PostPersistenceAdapterFilterTest.JpaAuditingTestConfig.class})
+@Import(PostRepositoryKeywordTest.JpaAuditingTestConfig.class)
 @TestConstructor(autowireMode = TestConstructor.AutowireMode.ALL)
-class PostPersistenceAdapterFilterTest {
+class PostRepositoryKeywordTest {
 
-    private final PostPersistenceAdapter adapter;
+    private final PostRepository postRepository;
     private final TestEntityManager entityManager;
 
-    PostPersistenceAdapterFilterTest(PostPersistenceAdapter adapter, TestEntityManager entityManager) {
-        this.adapter = adapter;
+    PostRepositoryKeywordTest(PostRepository postRepository, TestEntityManager entityManager) {
+        this.postRepository = postRepository;
         this.entityManager = entityManager;
     }
 
@@ -44,7 +43,7 @@ class PostPersistenceAdapterFilterTest {
     @Test
     @DisplayName("keyword는 제목과 본문을 대소문자 구분 없이 함께 검색한다")
     void filtersByKeywordOnTitleOrContent() {
-        assertThat(adapter.findByKeyword("Galaxy", PageRequest.of(0, 10)))
+        assertThat(postRepository.findByKeyword("Galaxy", PageRequest.of(0, 10)))
             .extracting(Post::getTitle)
             .containsExactlyInAnyOrder("Galaxy Book 리뷰", "일반 글");
     }
@@ -52,7 +51,7 @@ class PostPersistenceAdapterFilterTest {
     @Test
     @DisplayName("빈 keyword면 조건 없이 전체를 조회한다")
     void returnsAllWhenKeywordIsBlank() {
-        assertThat(adapter.findByKeyword("   ", PageRequest.of(0, 10)))
+        assertThat(postRepository.findByKeyword("   ", PageRequest.of(0, 10)))
             .extracting(Post::getTitle)
             .containsExactlyInAnyOrder("Galaxy Book 리뷰", "일반 글", "무관한 글");
     }

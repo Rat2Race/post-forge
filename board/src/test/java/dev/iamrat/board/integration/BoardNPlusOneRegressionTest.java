@@ -1,18 +1,18 @@
 package dev.iamrat.board.integration;
 
+import dev.iamrat.board.post.application.PostDetail;
+import dev.iamrat.board.comment.application.CommentDetail;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.BDDMockito.given;
 
 import dev.iamrat.board.comment.application.CommentQueryService;
 import dev.iamrat.board.comment.domain.Comment;
-import dev.iamrat.board.comment.infrastructure.persistence.CommentRepository;
-import dev.iamrat.board.comment.presentation.CommentDetailResponse;
+import dev.iamrat.board.comment.domain.CommentRepository;
 import dev.iamrat.board.integration.security.WithMockAccount;
 import dev.iamrat.board.post.application.PostQueryService;
 import dev.iamrat.board.post.domain.Post;
-import dev.iamrat.board.post.infrastructure.persistence.PostRepository;
-import dev.iamrat.board.post.presentation.PostDetailResponse;
+import dev.iamrat.board.post.domain.PostRepository;
 import dev.iamrat.board.view.application.ViewCountService;
 import dev.iamrat.core.account.AccountProfileManager;
 import dev.iamrat.core.account.AccountProfileReader;
@@ -92,11 +92,11 @@ class BoardNPlusOneRegressionTest {
         seedPosts(20);
 
         long smallCount = countQueries(() -> {
-            Page<PostDetailResponse> responses = postQueryService.getPosts(null, pageable(1), null);
+            Page<PostDetail> responses = postQueryService.getPosts(null, pageable(1), null);
             assertThat(responses.getContent()).hasSize(1);
         });
         long largeCount = countQueries(() -> {
-            Page<PostDetailResponse> responses = postQueryService.getPosts(null, pageable(20), null);
+            Page<PostDetail> responses = postQueryService.getPosts(null, pageable(20), null);
             assertThat(responses.getContent()).hasSize(20);
         });
 
@@ -111,11 +111,11 @@ class BoardNPlusOneRegressionTest {
         seedComments(post, 20);
 
         long smallCount = countQueries(() -> {
-            Page<CommentDetailResponse> responses = commentQueryService.getCommentsByPost(post.getId(), pageable(1), null);
+            Page<CommentDetail> responses = commentQueryService.getCommentsByPost(post.getId(), pageable(1), null);
             assertThat(responses.getContent()).hasSize(1);
         });
         long largeCount = countQueries(() -> {
-            Page<CommentDetailResponse> responses = commentQueryService.getCommentsByPost(post.getId(), pageable(20), null);
+            Page<CommentDetail> responses = commentQueryService.getCommentsByPost(post.getId(), pageable(20), null);
             assertThat(responses.getContent()).hasSize(20);
         });
 

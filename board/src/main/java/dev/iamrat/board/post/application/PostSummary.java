@@ -1,10 +1,10 @@
-package dev.iamrat.board.post.presentation;
+package dev.iamrat.board.post.application;
 
 import dev.iamrat.board.post.domain.Post;
 import java.time.LocalDateTime;
 import java.util.List;
 
-public record PostSummaryResponse(
+public record PostSummary(
     Long id,
     String title,
     List<String> tags,
@@ -14,11 +14,11 @@ public record PostSummaryResponse(
     LocalDateTime modifiedAt
 ) {
 
-    public static PostSummaryResponse from(Post post) {
-        return new PostSummaryResponse(
+    public static PostSummary from(Post post) {
+        return new PostSummary(
             post.getId(),
             post.getTitle(),
-            post.getTags(),
+            List.copyOf(post.getTags()),
             post.getAccountId(),
             post.getNickname(),
             post.getCreatedAt(),

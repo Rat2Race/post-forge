@@ -10,6 +10,7 @@ import java.nio.charset.StandardCharsets;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.ClassPathResource;
+import org.springframework.mail.MailException;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
@@ -27,8 +28,8 @@ public class JavaMailEmailSender implements EmailSender {
     public void sendVerificationEmail(String toEmail, String token) {
         String verificationUrl = emailVerificationProperties.getVerificationBaseUrl() + "?token=" + token;
 
-        log.info("이메일 인증 링크 발송 - 수신자: {}", toEmail);
-        log.debug("인증 URL: {}", verificationUrl);
+        // 수신자 주소는 개인정보이고 인증 URL에는 일회용 토큰이 있어 둘 다 로그에 남기지 않는다.
+        log.info("이메일 인증 링크 발송");
 
         try {
             MimeMessage message = mailSender.createMimeMessage();
@@ -43,8 +44,9 @@ public class JavaMailEmailSender implements EmailSender {
 
             mailSender.send(message);
 
-        } catch (MessagingException e) {
-            log.error("이메일 발송 실패 - 수신자: {}", toEmail, e);
+        } catch (MailException | MessagingException e) {
+            // 메일 예외 메시지에는 수신자 주소·인증 링크가 실릴 수 있어 실패 종류만 남긴다.
+            log.error("이메일 발송 실패: {}", e.getClass().getSimpleName());
             throw new CustomException(AuthErrorCode.EMAIL_SEND_FAILED);
         }
     }

@@ -1,5 +1,6 @@
 package dev.iamrat.board.post.application;
 
+import dev.iamrat.board.post.domain.PostRepository;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.BDDMockito.given;
@@ -23,7 +24,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 class PostViewCountServiceTest {
 
     @Mock
-    private PostStore postStore;
+    private PostRepository postRepository;
 
     @InjectMocks
     private PostViewCountService postViewCountService;
@@ -31,7 +32,7 @@ class PostViewCountServiceTest {
     @Test
     @DisplayName("없는 게시글 조회수 조회는 POST_NOT_FOUND 예외를 던진다")
     void getViewCount_missingPost_throwsPostNotFound() {
-        given(postStore.findById(1L)).willReturn(Optional.empty());
+        given(postRepository.findById(1L)).willReturn(Optional.empty());
 
         assertThatThrownBy(() -> postViewCountService.getViewCount(1L))
             .isInstanceOf(CustomException.class)
@@ -42,7 +43,7 @@ class PostViewCountServiceTest {
     @Test
     @DisplayName("postIds로 현재 DB 조회수를 일괄 조회한다")
     void findViewCounts_existingPosts_returnsIdToViews() {
-        given(postStore.findAllById(List.of(1L, 2L)))
+        given(postRepository.findAllById(List.of(1L, 2L)))
             .willReturn(List.of(post(1L, 12L), post(2L, 7L)));
 
         assertThat(postViewCountService.findViewCounts(List.of(1L, 2L)))
