@@ -8,7 +8,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
 
 @Slf4j
 @Component
@@ -17,8 +16,9 @@ public class ViewCountSyncScheduler {
     private final ViewCountStore viewCountStore;
     private final PostViewCountService postViewCountService;
 
+    // 트랜잭션을 걸지 않는다. 글마다 updateViewCount가 따로 커밋한 뒤에 dirty 집합에서 지운다.
+    // 하나로 묶으면 한 글의 실패가 전체를 롤백시키는데, 지우기(Redis)는 이미 끝나 그 글들의 조회수가 DB에 영영 반영되지 않는다.
     @Scheduled(fixedRate = 300_000)
-    @Transactional
     public void syncViewCountsToDb() {
         Optional<String> claimedProcessingKey = viewCountStore.claimDirtyIdsForProcessing();
         if (claimedProcessingKey.isEmpty()) {
