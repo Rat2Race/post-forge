@@ -1,5 +1,6 @@
 package dev.iamrat.board.comment.application;
 
+import dev.iamrat.board.comment.domain.CommentRepository;
 import dev.iamrat.board.comment.domain.Comment;
 import dev.iamrat.board.comment.domain.CommentPolicy;
 import dev.iamrat.board.post.application.PostReader;
@@ -14,7 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional(readOnly = true)
 public class CommentCommandService {
 
-    private final CommentStore commentStore;
+    private final CommentRepository commentRepository;
     private final CommentReader commentReader;
     private final PostReader postReader;
     private final AccountProfileReader accountProfileReader;
@@ -35,7 +36,7 @@ public class CommentCommandService {
         }
 
         post.addComment(newComment);
-        commentStore.save(newComment);
+        commentRepository.save(newComment);
 
         return CommentSummary.from(newComment);
     }
@@ -51,7 +52,7 @@ public class CommentCommandService {
 
     @Transactional
     public void deleteComment(Long commentId) {
-        commentStore.delete(commentReader.getById(commentId));
+        commentRepository.delete(commentReader.getById(commentId));
     }
 
     public boolean isCommentOwner(Long commentId, Long accountId) {

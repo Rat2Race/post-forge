@@ -2,7 +2,7 @@ package dev.iamrat.board.integration;
 
 import dev.iamrat.board.post.application.PostSummary;
 import dev.iamrat.board.post.application.PostDetail;
-import dev.iamrat.board.post.application.PostStore;
+import dev.iamrat.board.post.domain.PostRepository;
 import dev.iamrat.board.post.domain.Post;
 import dev.iamrat.board.support.error.BoardErrorCode;
 import dev.iamrat.board.post.application.PostCommandService;
@@ -46,7 +46,7 @@ class PostIntegrationTest {
     private PostQueryService postQueryService;
 
     @Autowired
-    private PostStore postStore;
+    private PostRepository postRepository;
 
     @MockitoBean
     private ViewCountService viewCountService;
@@ -95,10 +95,10 @@ class PostIntegrationTest {
     @DisplayName("검색어 필터는 제목이나 본문에 검색어가 있는 게시글만 반환한다")
     @Transactional
     void getPosts_filtersByKeyword() {
-        Long matchingPostId = postStore.save(Post.create(
+        Long matchingPostId = postRepository.save(Post.create(
             "격리 수준 정리", "READ COMMITTED와 REPEATABLE READ", null, 1L, "테스터"
         )).getId();
-        Long otherPostId = postStore.save(Post.create(
+        Long otherPostId = postRepository.save(Post.create(
             "인덱스 정리", "B-tree 인덱스", null, 1L, "테스터"
         )).getId();
         given(viewCountService.getViewCounts(anyList()))

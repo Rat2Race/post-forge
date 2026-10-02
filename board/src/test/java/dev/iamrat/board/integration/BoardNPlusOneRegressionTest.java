@@ -8,11 +8,11 @@ import static org.mockito.BDDMockito.given;
 
 import dev.iamrat.board.comment.application.CommentQueryService;
 import dev.iamrat.board.comment.domain.Comment;
-import dev.iamrat.board.comment.infrastructure.persistence.CommentRepository;
+import dev.iamrat.board.comment.domain.CommentRepository;
 import dev.iamrat.board.integration.security.WithMockAccount;
 import dev.iamrat.board.post.application.PostQueryService;
 import dev.iamrat.board.post.domain.Post;
-import dev.iamrat.board.post.infrastructure.persistence.PostRepository;
+import dev.iamrat.board.post.domain.PostRepository;
 import dev.iamrat.board.view.application.ViewCountService;
 import dev.iamrat.core.account.AccountProfileManager;
 import dev.iamrat.core.account.AccountProfileReader;

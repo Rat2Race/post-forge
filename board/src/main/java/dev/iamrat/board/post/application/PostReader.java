@@ -1,5 +1,6 @@
 package dev.iamrat.board.post.application;
 
+import dev.iamrat.board.post.domain.PostRepository;
 import dev.iamrat.board.post.domain.Post;
 import dev.iamrat.board.support.error.BoardErrorCode;
 import dev.iamrat.core.global.error.CommonErrorCode;
@@ -13,13 +14,13 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional(readOnly = true)
 public class PostReader {
 
-    private final PostStore postStore;
+    private final PostRepository postRepository;
 
     public Post getById(Long postId) {
         if (postId == null) {
             throw new CustomException(CommonErrorCode.INVALID_INPUT);
         }
-        return postStore.findById(postId)
+        return postRepository.findById(postId)
             .orElseThrow(() -> new CustomException(BoardErrorCode.POST_NOT_FOUND));
     }
 
@@ -27,7 +28,7 @@ public class PostReader {
         if (postId == null) {
             throw new CustomException(CommonErrorCode.INVALID_INPUT);
         }
-        if (!postStore.existsById(postId)) {
+        if (!postRepository.existsById(postId)) {
             throw new CustomException(BoardErrorCode.POST_NOT_FOUND);
         }
     }

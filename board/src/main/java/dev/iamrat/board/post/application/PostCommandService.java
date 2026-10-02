@@ -1,5 +1,6 @@
 package dev.iamrat.board.post.application;
 
+import dev.iamrat.board.post.domain.PostRepository;
 import dev.iamrat.board.post.domain.Post;
 import dev.iamrat.board.post.domain.PostPolicy;
 import dev.iamrat.board.view.application.ViewCountService;
@@ -14,7 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional(readOnly = true)
 public class PostCommandService {
 
-    private final PostStore postStore;
+    private final PostRepository postRepository;
     private final PostReader postReader;
     private final ViewCountService viewCountService;
     private final AccountProfileReader accountProfileReader;
@@ -32,7 +33,7 @@ public class PostCommandService {
 
         Post newPost = Post.create(title, content, tags, accountId, nickname);
 
-        postStore.save(newPost);
+        postRepository.save(newPost);
 
         return PostSummary.from(newPost);
     }
@@ -57,7 +58,7 @@ public class PostCommandService {
 
         viewCountService.deleteViewCount(postId);
 
-        postStore.delete(post);
+        postRepository.delete(post);
     }
 
     public boolean isOwner(Long postId, Long accountId) {

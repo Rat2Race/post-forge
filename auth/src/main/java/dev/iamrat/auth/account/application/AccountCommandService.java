@@ -1,5 +1,6 @@
 package dev.iamrat.auth.account.application;
 
+import dev.iamrat.auth.account.domain.AccountRepository;
 import dev.iamrat.auth.account.domain.Account;
 import dev.iamrat.auth.account.domain.AccountPolicy;
 import dev.iamrat.auth.account.domain.AccountRole;
@@ -18,7 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class AccountCommandService {
-    private final AccountStore accountStore;
+    private final AccountRepository accountRepository;
     private final AccountQueryService accountQueryService;
     private final PasswordEncoder passwordEncoder;
     private final RefreshTokenStore refreshTokenStore;
@@ -33,7 +34,7 @@ public class AccountCommandService {
             nickname
         );
 
-        return accountStore.saveAndFlush(account);
+        return accountRepository.saveAndFlush(account);
     }
 
     @Transactional
@@ -45,7 +46,7 @@ public class AccountCommandService {
             nickname
         );
 
-        return accountStore.saveAndFlush(account);
+        return accountRepository.saveAndFlush(account);
     }
 
     @Transactional
@@ -53,12 +54,12 @@ public class AccountCommandService {
         Account account = findWithRolesById(accountId);
         accountPolicy.requireActive(account);
 
-        if (accountStore.existsByNickname(nickname)) {
+        if (accountRepository.existsByNickname(nickname)) {
             throw new CustomException(AuthErrorCode.DUPLICATE_NICKNAME);
         }
 
         account.updateNickname(nickname);
-        accountStore.flush();
+        accountRepository.flush();
     }
 
     @Transactional
@@ -99,7 +100,7 @@ public class AccountCommandService {
         accountPolicy.requireActive(target);
         if (!target.getRoles().contains(AccountRole.ADMIN)) {
             target.addRole(AccountRole.ADMIN);
-            accountStore.flush();
+            accountRepository.flush();
         }
     }
 

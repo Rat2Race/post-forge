@@ -6,7 +6,7 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
-import dev.iamrat.board.comment.application.CommentStore;
+import dev.iamrat.board.comment.domain.CommentRepository;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -26,7 +26,7 @@ class CommentLikeServiceTest {
     private CommentLikeStore commentLikeStore;
 
     @Mock
-    private CommentStore commentStore;
+    private CommentRepository commentRepository;
 
     @InjectMocks
     private CommentLikeService commentLikeService;
@@ -40,7 +40,7 @@ class CommentLikeServiceTest {
         LikeResult response = commentLikeService.like(2L, 2L);
 
         assertThat(response).isEqualTo(new LikeResult(true, 5L));
-        verify(commentStore).addLikeCount(2L, 1L);
+        verify(commentRepository).addLikeCount(2L, 1L);
     }
 
     @Test
@@ -52,7 +52,7 @@ class CommentLikeServiceTest {
         LikeResult response = commentLikeService.like(1L, 1L);
 
         assertThat(response).isEqualTo(new LikeResult(true, 4L));
-        verify(commentStore, never()).addLikeCount(anyLong(), anyLong());
+        verify(commentRepository, never()).addLikeCount(anyLong(), anyLong());
     }
 
     @Test
@@ -64,7 +64,7 @@ class CommentLikeServiceTest {
         LikeResult response = commentLikeService.unlike(9L, 9L);
 
         assertThat(response).isEqualTo(new LikeResult(false, 2L));
-        verify(commentStore).addLikeCount(9L, -1L);
+        verify(commentRepository).addLikeCount(9L, -1L);
     }
 
     @Test
@@ -76,7 +76,7 @@ class CommentLikeServiceTest {
         LikeResult response = commentLikeService.unlike(9L, 9L);
 
         assertThat(response).isEqualTo(new LikeResult(false, 2L));
-        verify(commentStore, never()).addLikeCount(anyLong(), anyLong());
+        verify(commentRepository, never()).addLikeCount(anyLong(), anyLong());
     }
 
     @Test

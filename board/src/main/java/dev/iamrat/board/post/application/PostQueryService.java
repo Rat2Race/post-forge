@@ -1,5 +1,6 @@
 package dev.iamrat.board.post.application;
 
+import dev.iamrat.board.post.domain.PostRepository;
 import dev.iamrat.board.comment.application.CommentQueryService;
 import dev.iamrat.board.like.application.LikeResult;
 import dev.iamrat.board.like.application.PostLikeService;
@@ -20,14 +21,14 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional(readOnly = true)
 public class PostQueryService {
 
-    private final PostStore postStore;
+    private final PostRepository postRepository;
     private final PostReader postReader;
     private final PostLikeService postLikeService;
     private final CommentQueryService commentQueryService;
     private final ViewCountService viewCountService;
 
     public Page<PostDetail> getPosts(String keyword, Pageable pageable, Long accountId) {
-        Page<Post> posts = postStore.findByKeyword(normalizeKeyword(keyword), pageable);
+        Page<Post> posts = postRepository.findByKeyword(normalizeKeyword(keyword), pageable);
         return toDetailPage(posts, pageable, accountId);
     }
 

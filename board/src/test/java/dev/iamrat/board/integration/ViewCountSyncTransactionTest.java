@@ -8,9 +8,8 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
-import dev.iamrat.board.post.application.PostStore;
+import dev.iamrat.board.post.domain.PostRepository;
 import dev.iamrat.board.post.domain.Post;
-import dev.iamrat.board.post.infrastructure.persistence.PostPersistenceAdapter;
 import dev.iamrat.board.view.application.ViewCountStore;
 import dev.iamrat.board.view.application.ViewCountSyncScheduler;
 import dev.iamrat.core.account.AccountProfileManager;
@@ -26,6 +25,7 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.mockito.AdditionalAnswers;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
@@ -49,7 +49,7 @@ class ViewCountSyncTransactionTest {
     private ViewCountSyncScheduler viewCountSyncScheduler;
 
     @Autowired
-    private PostStore postStore;
+    private PostRepository postRepository;
 
     @Autowired
     private JdbcTemplate jdbcTemplate;
@@ -81,7 +81,7 @@ class ViewCountSyncTransactionTest {
         given(viewCountStore.findViewCount(synced)).willReturn(Optional.of(42L));
         given(viewCountStore.findViewCount(failing)).willReturn(Optional.of(7L));
         // 행 잠금 대기 시간 초과처럼 한 글의 갱신만 실패시킨다.
-        doThrow(new CannotAcquireLockException("lock timeout")).when(postStore).updateViews(eq(failing), anyLong());
+        doThrow(new CannotAcquireLockException("lock timeout")).when(postRepository).updateViews(eq(failing), anyLong());
 
         viewCountSyncScheduler.syncViewCountsToDb();
 
@@ -90,7 +90,7 @@ class ViewCountSyncTransactionTest {
     }
 
     private Long createPost(String title) {
-        Long id = postStore.save(Post.create(title, "본문", null, 1L, "writer")).getId();
+        Long id = postRepository.save(Post.create(title, "본문", null, 1L, "writer")).getId();
         postIds.add(id);
         return id;
     }
@@ -101,8 +101,8 @@ class ViewCountSyncTransactionTest {
         // 실제 저장소에 위임하되, 테스트가 특정 글의 갱신만 실패시킬 수 있게 한다.
         @Bean
         @Primary
-        PostStore failablePostStore(PostPersistenceAdapter adapter) {
-            return mock(PostStore.class, AdditionalAnswers.delegatesTo(adapter));
+        PostRepository failablePostRepository(@Qualifier("postRepository") PostRepository repository) {
+            return mock(PostRepository.class, AdditionalAnswers.delegatesTo(repository));
         }
     }
 }

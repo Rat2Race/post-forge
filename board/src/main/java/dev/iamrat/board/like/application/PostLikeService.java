@@ -1,6 +1,6 @@
 package dev.iamrat.board.like.application;
 
-import dev.iamrat.board.post.application.PostStore;
+import dev.iamrat.board.post.domain.PostRepository;
 import dev.iamrat.core.global.error.CommonErrorCode;
 import dev.iamrat.core.global.exception.CustomException;
 import java.util.List;
@@ -14,7 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class PostLikeService extends AbstractLikeService {
     private final PostLikeStore postLikeStore;
-    private final PostStore postStore;
+    private final PostRepository postRepository;
 
     @Transactional
     public LikeResult like(Long postId, Long accountId) {
@@ -57,7 +57,7 @@ public class PostLikeService extends AbstractLikeService {
 
     @Override
     protected void addLikeCount(Long targetId, long delta) {
-        postStore.addLikeCount(targetId, delta);
+        postRepository.addLikeCount(targetId, delta);
     }
 
     @Override
