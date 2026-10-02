@@ -358,7 +358,7 @@ Google News source가 비활성이면 두 news endpoint 호출은 현재 `500 IN
 | --- | --- |
 | `IdResponse` | `id` |
 | `SourceSummary` | `id`, `title`, `questionStatus`, `createdAt` |
-| `SourceDetail` | `id`, `title`, `content`, `questionStatus`, `draftedQuestionCount`(LLM이 낸 문제 초안 수), `discardedQuestionCount`(근거 검증·길이 검사에서 버린 LLM 문제 수), `keyPoints`, `questions`, `createdAt` |
+| `SourceDetail` | `id`, `title`, `content`, `questionStatus`, `draftedQuestionCount`(LLM이 낸 문제 초안 수), `discardedQuestionCount`(근거 검증·길이 검사에서 버린 LLM 문제 수), `keyPoints`, `questions`, `emptyReason`(문제가 0개일 때 이유와 자료를 고치는 방법, 그 밖에는 null), `createdAt` |
 | `QuestionView` | `id`, `question`, `evidence`, `origin`, `box`, `dueAt` |
 | `DueQuestion` | `id`, `sourceId`, `sourceTitle`, `question`, `evidence`, `box` |
 | `ReviewResult` | `box`, `dueAt` |

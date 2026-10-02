@@ -39,6 +39,7 @@ public class StudySourceService {
         int discardedQuestionCount,
         List<String> keyPoints,
         List<QuestionView> questions,
+        String emptyReason,
         LocalDateTime createdAt
     ) {
     }
@@ -107,7 +108,7 @@ public class StudySourceService {
             .toList();
         return new SourceDetail(source.getId(), source.getTitle(), source.getContent(),
             source.getQuestionStatus().name(), source.getDraftedQuestionCount(), source.getDiscardedQuestionCount(),
-            KeyPointExtractor.extract(source.getContent()), questions, source.getCreatedAt());
+            KeyPointExtractor.extract(source.getContent()), questions, emptyReason(source, questions), source.getCreatedAt());
     }
 
     @Transactional
@@ -136,6 +137,19 @@ public class StudySourceService {
                 StudyQuestion.create(source, draft.question(), draft.evidence(), origin, now)));
             sourceRepository.findById(source.getId()).orElseThrow().questionsReady(drafts.size(), discarded);
         });
+    }
+
+    /** 문제가 0개면 왜 그런지, 자료를 어떻게 고치면 되는지 알려 준다. */
+    private static String emptyReason(StudySource source, List<QuestionView> questions) {
+        if (source.getQuestionStatus() != StudySource.QuestionStatus.READY || !questions.isEmpty()) {
+            return null;
+        }
+        String fix = "근거로 쓸 8자 이상의 문장이나 마크다운 제목(#)·목록(-)을 찾지 못했어요. 내용을 더 붙이거나 제목·목록으로 나눠 주세요.";
+        int drafted = source.getDraftedQuestionCount();
+        if (drafted > 0 && source.getDiscardedQuestionCount() == drafted) {
+            return "AI가 낸 문제 " + drafted + "개는 근거가 자료에 그대로 없어 모두 버렸고, " + fix;
+        }
+        return fix;
     }
 
     // 길이 상한은 study_questions 컬럼 길이와 같다.
