@@ -19,7 +19,6 @@ import org.springframework.http.client.ClientHttpRequestFactory;
 import org.springframework.http.client.JdkClientHttpRequestFactory;
 import org.springframework.util.StringUtils;
 import org.springframework.web.client.RestClient;
-import org.springframework.retry.support.RetryTemplate;
 
 @Configuration
 @EnableConfigurationProperties(LlmProperties.class)
@@ -40,17 +39,6 @@ public class LlmConfig {
     }
 
     @Bean
-    @Qualifier("llmPublishingApi")
-    public OpenAiApi llmPublishingApi() {
-        return compatibleApi(
-            llmProperties.getChat().getBaseUrl(),
-            llmProperties.chatApiKey(),
-            llmProperties.getChat().getConnectTimeout(),
-            llmProperties.getChat().getPublishingReadTimeout()
-        );
-    }
-
-    @Bean
     @Qualifier("llmEmbeddingApi")
     public OpenAiApi llmEmbeddingApi() {
         return compatibleApi(
@@ -67,15 +55,6 @@ public class LlmConfig {
         return OpenAiChatModel.builder()
             .openAiApi(compatibleApi)
             .defaultOptions(chatOptions())
-            .build();
-    }
-
-    @Bean
-    public OpenAiChatModel llmPublishingChatModel(@Qualifier("llmPublishingApi") OpenAiApi compatibleApi) {
-        return OpenAiChatModel.builder()
-            .openAiApi(compatibleApi)
-            .defaultOptions(chatOptions())
-            .retryTemplate(RetryTemplate.builder().maxAttempts(1).build())
             .build();
     }
 

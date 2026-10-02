@@ -27,8 +27,8 @@ class PromptResourceLoaderTest {
     @DisplayName("공통 AI 프롬프트 리소스를 모두 읽을 수 있다")
     void load_readsCommonAiPromptResources() {
         assertThat(loader.load("prompts/safety-policy.md")).contains("공통 보안 정책");
-        assertThat(loader.load("prompts/launch-news-draft-system.md"))
-            .contains("verified new-product launch news article");
+        assertThat(loader.load("prompts/study-question-system.md"))
+            .contains("학습자가 올린 자료로 복습 문제를 만드는 출제자");
         assertThat(loader.load("prompts/refusal-security.md")).contains("보안상 민감한 정보");
     }
 
