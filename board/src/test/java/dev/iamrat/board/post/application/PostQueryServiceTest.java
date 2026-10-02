@@ -5,12 +5,11 @@ import dev.iamrat.board.like.application.LikeResult;
 import dev.iamrat.board.like.application.PostLikeService;
 import dev.iamrat.board.post.domain.Post;
 import dev.iamrat.board.post.domain.PostReferenceLink;
+import dev.iamrat.board.post.domain.PostType;
 import dev.iamrat.board.post.presentation.PostDetailResponse;
 import dev.iamrat.board.view.application.ViewCountService;
-import dev.iamrat.core.board.post.BoardCategory;
-import dev.iamrat.core.board.post.PostCategory;
+import dev.iamrat.core.board.post.NewsSection;
 import dev.iamrat.core.board.post.PostPublishOrigin;
-import dev.iamrat.core.board.post.PostReferenceProvider;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
@@ -103,7 +102,6 @@ class PostQueryServiceTest {
         assertThat(response.references())
             .singleElement()
             .satisfies(reference -> {
-                assertThat(reference.provider()).isEqualTo(PostReferenceProvider.NAVER_NEWS);
                 assertThat(reference.canonicalUrl()).isEqualTo("https://news.example/article");
                 assertThat(reference.originalUrl()).isEqualTo("https://news.example/article?utm=1");
                 assertThat(reference.sourceName()).isEqualTo("Example News");
@@ -156,16 +154,16 @@ class PostQueryServiceTest {
         Pageable pageable = Pageable.unpaged();
         given(postStore.findByFilters(
             "갤럭시북",
-            PostCategory.PRODUCT_LAUNCH_NEWS,
-            BoardCategory.TECHNOLOGY,
+            PostType.PRODUCT_LAUNCH_NEWS,
+            NewsSection.TECHNOLOGY,
             PostPublishOrigin.SYSTEM_BATCH,
             pageable
         )).willReturn(new PageImpl<>(List.of()));
 
         postQueryService.getPosts(
             "  갤럭시북  ",
-            PostCategory.PRODUCT_LAUNCH_NEWS,
-            BoardCategory.TECHNOLOGY,
+            PostType.PRODUCT_LAUNCH_NEWS,
+            NewsSection.TECHNOLOGY,
             PostPublishOrigin.SYSTEM_BATCH,
             pageable,
             null
@@ -173,8 +171,8 @@ class PostQueryServiceTest {
 
         verify(postStore).findByFilters(
             "갤럭시북",
-            PostCategory.PRODUCT_LAUNCH_NEWS,
-            BoardCategory.TECHNOLOGY,
+            PostType.PRODUCT_LAUNCH_NEWS,
+            NewsSection.TECHNOLOGY,
             PostPublishOrigin.SYSTEM_BATCH,
             pageable
         );
@@ -185,13 +183,11 @@ class PostQueryServiceTest {
             .id(10L)
             .post(post)
             .keyword("갤럭시북")
-            .provider(PostReferenceProvider.NAVER_NEWS)
             .canonicalUrl("https://news.example/article")
             .originalUrl("https://news.example/article?utm=1")
             .sourceName("Example News")
             .publishedAt(LocalDateTime.of(2026, 6, 21, 10, 0))
             .titleSnapshot("갤럭시북 출시")
-            .publishOrigin(PostPublishOrigin.SYSTEM_BATCH)
             .build();
     }
 }

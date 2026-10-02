@@ -20,10 +20,10 @@ INSERT INTO posts (id,account_id,created_at,modified_at,created_by,modified_by,l
 (9006,0,now()-interval '2 hours',now()-interval '2 hours','sys','sys',2,60,'아이폰 17 에어 사전예약 시작','애플 아이폰 17 에어의 국내 사전예약이 오늘 시작됐다.','아이폰 17 에어 국내 사전예약 시작.','PRODUCT_LAUNCH_NEWS','TECHNOLOGY','SYSTEM_BATCH','PostForge News Bot')
 ON CONFLICT (id) DO NOTHING;
 
-INSERT INTO post_reference_links (id,post_id,provider,publish_origin,keyword,source_name,title_snapshot,canonical_url,original_url,published_at) VALUES
-(9001,9001,'NAVER_NEWS','SYSTEM_BATCH','갤럭시','etnews.com','갤럭시 Z 폴드8 전격 공개','https://demo.example/a/9001','https://demo.example/a/9001?utm=n',now()-interval '27 hours'),
-(9002,9002,'NAVER_NEWS','SYSTEM_BATCH','스탠바이미','zdnet.co.kr','LG 스탠바이미 3세대','https://demo.example/a/9002','https://demo.example/a/9002',now()-interval '26 hours'),
-(9003,9006,'NAVER_NEWS','SYSTEM_BATCH','아이폰','inews24.com','아이폰 17 에어 사전예약','https://demo.example/a/9006','https://demo.example/a/9006',now()-interval '3 hours')
+INSERT INTO post_reference_links (id,post_id,keyword,source_name,title_snapshot,canonical_url,original_url,published_at) VALUES
+(9001,9001,'갤럭시','etnews.com','갤럭시 Z 폴드8 전격 공개','https://demo.example/a/9001','https://demo.example/a/9001?utm=n',now()-interval '27 hours'),
+(9002,9002,'스탠바이미','zdnet.co.kr','LG 스탠바이미 3세대','https://demo.example/a/9002','https://demo.example/a/9002',now()-interval '26 hours'),
+(9003,9006,'아이폰','inews24.com','아이폰 17 에어 사전예약','https://demo.example/a/9006','https://demo.example/a/9006',now()-interval '3 hours')
 ON CONFLICT (id) DO NOTHING;
 
 -- 데일리 요약 1건 + 자유게시판 글 1건

@@ -2,7 +2,8 @@ package dev.iamrat.ingest.news.application;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import dev.iamrat.core.board.post.BoardCategory;
+import dev.iamrat.core.board.post.NewsSection;
+import dev.iamrat.ingest.news.application.LaunchNewsPublishResult.SkipReason;
 import dev.iamrat.source.news.application.NewsSourceItem;
 import java.time.LocalDateTime;
 import org.junit.jupiter.api.DisplayName;
@@ -31,7 +32,7 @@ class LaunchNewsEligibilityPolicyTest {
             "갤럭시북 신제품 특가 이벤트",
             "쿠폰 할인 혜택을 제공한다.",
             "n.news.naver.com"
-        ))).contains(LaunchNewsSkipReason.ADVERTISING);
+        ))).contains(SkipReason.ADVERTISING);
     }
 
     @Test
@@ -42,7 +43,7 @@ class LaunchNewsEligibilityPolicyTest {
             "갤럭시북 신제품 출시",
             "삼성이 갤럭시북 신제품을 공개했다.",
             ""
-        ))).contains(LaunchNewsSkipReason.UNKNOWN_SOURCE);
+        ))).contains(SkipReason.UNKNOWN_SOURCE);
     }
 
     @Test
@@ -53,7 +54,7 @@ class LaunchNewsEligibilityPolicyTest {
             "노트북 시장 점유율 확대",
             "삼성이 노트북 시장에서 점유율을 높였다.",
             "n.news.naver.com"
-        ))).contains(LaunchNewsSkipReason.MISSING_LAUNCH_KEYWORD);
+        ))).contains(SkipReason.MISSING_LAUNCH_KEYWORD);
     }
 
     @Test
@@ -64,7 +65,7 @@ class LaunchNewsEligibilityPolicyTest {
             "갤럭시북 신제품 출시",
             "삼성이 갤럭시북 신제품을 공개했다.",
             "blog.naver.com"
-        ))).contains(LaunchNewsSkipReason.UNKNOWN_SOURCE);
+        ))).contains(SkipReason.UNKNOWN_SOURCE);
     }
 
     @Test
@@ -75,7 +76,7 @@ class LaunchNewsEligibilityPolicyTest {
             "갤럭시북 신제품 출시",
             "삼성이 갤럭시북 신제품을 공개했다.",
             "unknownsource"
-        ))).contains(LaunchNewsSkipReason.UNKNOWN_SOURCE);
+        ))).contains(SkipReason.UNKNOWN_SOURCE);
     }
 
     @Test
@@ -97,7 +98,7 @@ class LaunchNewsEligibilityPolicyTest {
             "갤럭시북 노트북 판매량 증가",
             "삼성이 갤럭시북 판매량을 늘렸다.",
             "n.news.naver.com"
-        ))).contains(LaunchNewsSkipReason.MISSING_LAUNCH_KEYWORD);
+        ))).contains(SkipReason.MISSING_LAUNCH_KEYWORD);
     }
 
     private LaunchNewsCandidate candidate(String keyword, String title, String description, String sourceName) {
@@ -108,7 +109,7 @@ class LaunchNewsEligibilityPolicyTest {
             "https://n.news.naver.com/article/001/1",
             sourceName,
             LocalDateTime.of(2026, 6, 21, 10, 0),
-            BoardCategory.GENERAL
+            NewsSection.GENERAL
         );
     }
 }

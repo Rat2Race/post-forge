@@ -2,6 +2,8 @@
 -- Purpose: 재베이스라인(2차). 뉴스 도메인을 떠나는 시점(ADR-007)을 새 출발로 보고, 이전 이력
 --          V0000(2026-08-21 baseline)~V0003(GOOGLE_NEWS provider)을 단일 baseline으로 교체한다.
 --          2026-09-30 기준 postforge_google DB(V0000~V0003 적용본)에서 pg_dump --schema-only로 뽑았다.
+--          2026-10-02: post_reference_links의 provider(수집원이 Google News 하나뿐)와
+--          publish_origin(posts.publish_origin과 같은 값)을 덤프에서 뺐다.
 -- Tables: accounts, account_roles, posts, post_tags, comments, comment_like, post_like,
 --         post_file, post_reference_links, vector_store
 -- Data: 뉴스봇 계정(id 0, SYSTEM_ACCOUNT_ID=0L)을 함께 시드한다. 옛 V0001의 내용이다.
@@ -251,15 +253,11 @@ CREATE TABLE public.post_reference_links (
     id bigint NOT NULL,
     post_id bigint NOT NULL,
     published_at timestamp(6) without time zone,
-    provider character varying(30) NOT NULL,
-    publish_origin character varying(30) NOT NULL,
     keyword character varying(100) NOT NULL,
     source_name character varying(100) NOT NULL,
     title_snapshot character varying(500) NOT NULL,
     canonical_url character varying(1000) NOT NULL,
-    original_url character varying(1000) NOT NULL,
-    CONSTRAINT post_reference_links_provider_check CHECK (((provider)::text = ANY ((ARRAY['NAVER_NEWS'::character varying, 'GOOGLE_NEWS'::character varying])::text[]))),
-    CONSTRAINT post_reference_links_publish_origin_check CHECK (((publish_origin)::text = ANY (ARRAY[('USER'::character varying)::text, ('SYSTEM_BATCH'::character varying)::text, ('ADMIN_BACKFILL'::character varying)::text])))
+    original_url character varying(1000) NOT NULL
 );
 
 
@@ -514,13 +512,6 @@ CREATE INDEX idx_post_like_account_post ON public.post_like USING btree (account
 --
 
 CREATE INDEX idx_post_reference_links_post_id ON public.post_reference_links USING btree (post_id);
-
-
---
--- Name: idx_post_reference_links_provider; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idx_post_reference_links_provider ON public.post_reference_links USING btree (provider);
 
 
 --

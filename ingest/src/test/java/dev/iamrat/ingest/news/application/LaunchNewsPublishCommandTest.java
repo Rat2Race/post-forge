@@ -3,7 +3,7 @@ package dev.iamrat.ingest.news.application;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-import dev.iamrat.core.board.post.BoardCategory;
+import dev.iamrat.core.board.post.NewsSection;
 import dev.iamrat.core.board.post.PostPublishOrigin;
 import java.util.Arrays;
 import java.util.List;
@@ -24,7 +24,7 @@ class LaunchNewsPublishCommandTest {
             PostPublishOrigin.SYSTEM_BATCH
         );
 
-        assertThat(command.category()).isEqualTo(BoardCategory.GENERAL);
+        assertThat(command.category()).isEqualTo(NewsSection.GENERAL);
     }
 
     @Test
@@ -128,7 +128,7 @@ class LaunchNewsPublishCommandTest {
             displayCount,
             dailyCap,
             topics,
-            BoardCategory.GENERAL,
+            NewsSection.GENERAL,
             publishOrigin
         );
     }

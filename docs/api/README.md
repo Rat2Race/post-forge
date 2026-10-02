@@ -229,7 +229,7 @@ Board의 게시글·댓글 path ID는 `\d+` 경로만 매핑한다. 숫자가 �
 | --- | --- |
 | `PostDetailResponse` | `id`, `title`, `content`, `summary`, `tags`, `category`, `boardCategory`, `publishOrigin`, `accountId`, `nickname`, `views`, `commentCount`, `likeCount`, `isLiked`, `references`, `files`, `createdAt`, `modifiedAt` |
 | `PostSummaryResponse` | `id`, `title`, `summary`, `tags`, `category`, `publishOrigin`, `accountId`, `nickname`, `createdAt`, `modifiedAt` |
-| `PostReferenceLinkResponse` | `id`, `keyword`, `provider`, `canonicalUrl`, `originalUrl`, `sourceName`, `publishedAt`, `titleSnapshot`, `publishOrigin` |
+| `PostReferenceLinkResponse` | `id`, `keyword`, `canonicalUrl`, `originalUrl`, `sourceName`, `publishedAt`, `titleSnapshot` |
 | `FileInfoResponse` | `fileId`, `originalFileName`, `fileType` |
 | `CommentDetailResponse` | `id`, `content`, `accountId`, `nickname`, `parentId`, `replyCount`, `likeCount`, `isLiked`, `createdAt`, `modifiedAt` |
 | `CommentSummaryResponse` | `id`, `content`, `accountId`, `nickname`, `parentId`, `createdAt`, `modifiedAt` |
@@ -275,7 +275,7 @@ Source는 “수집을 실행할지” 결정하지 않고, 결과를 DB에 저�
 | `LaunchNewsPublishRequest.displayCount` | 선택, 1~100, 기본 10 | topic별 후보 검색 건수 |
 | `LaunchNewsPublishRequest.dailyCap` | 선택, 1~20, 기본 3 | 같은 keyword+발행일 게시 수 제한 |
 | `LaunchNewsPublishRequest.topics` | 선택, 최대 10개·각 30자 | keyword에 붙일 후보 검색 주제. `null`/빈 배열이거나 blank 제거 후 비면 keyword 단독 query; 그 외 trim·중복 제거 후 최대 10개 사용 |
-| `LaunchNewsPublishRequest.category` | 선택, 기본 `GENERAL` | 생성 게시글에 저장할 분야(`BoardCategory`) 지정 |
+| `LaunchNewsPublishRequest.category` | 선택, 기본 `GENERAL` | 생성 게시글에 저장할 분야(`NewsSection`) 지정 |
 | `DailyDigestPublishRequest.newsDate` | 선택, 기본 어제(Asia/Seoul clock) | 요약 대상 출시뉴스 게시글의 작성일. 분야+날짜로 제목을 만들어 재실행 시 기존 글을 확인 |
 
 ### 자동 게시 스케줄
@@ -306,16 +306,15 @@ Google News source가 비활성이면 두 news endpoint 호출은 현재 `500 IN
 | `DocumentIngestResult` | `documentCount`, `chunkCount` |
 | `ProductNewsIngestResult` | `keyword`, `queries`, `newsCount`, `chunkCount` |
 | `LaunchNewsPublishResult` | `keyword`, `publishedCount`, `skippedCount`, `createdPostIds`, `skips` |
-| `LaunchNewsSkip` | `url`, `reason` |
-| `DailyDigestPublishResult` | `newsDate`, `publishedCount`, `skippedCount`, `createdPostIds`, `skips`(분야 → `DailyDigestSkipReason`) |
+| `LaunchNewsPublishResult.Skip` | `url`, `reason` |
+| `DailyDigestPublishResult` | `newsDate`, `publishedCount`, `skippedCount`, `createdPostIds`, `skips`(분야 → `DailyDigestPublishResult.SkipReason`) |
 
 ### 주요 enum
 
 | Enum | 값 |
 | --- | --- |
-| `PostCategory` | `GENERAL`, `DAILY_DIGEST`(분야별 데일리 뉴스 브리핑, system이 게시), `PRODUCT_LAUNCH_NEWS` |
-| `BoardCategory` | `GENERAL`, `NATION`, `WORLD`, `BUSINESS`, `TECHNOLOGY`, `ENTERTAINMENT`, `SPORTS`, `HEALTH` — Google 뉴스 한국판 섹션과 1:1. `GENERAL`은 회원 글·미분류 |
+| `PostType` | `GENERAL`, `DAILY_DIGEST`(분야별 데일리 뉴스 브리핑, system이 게시), `PRODUCT_LAUNCH_NEWS` |
+| `NewsSection` | `GENERAL`, `NATION`, `WORLD`, `BUSINESS`, `TECHNOLOGY`, `ENTERTAINMENT`, `SPORTS`, `HEALTH` — Google 뉴스 한국판 섹션과 1:1. `GENERAL`은 회원 글·미분류 |
 | `PostPublishOrigin` | `USER`, `SYSTEM_BATCH`, `ADMIN_BACKFILL` |
-| `PostReferenceProvider` | `NAVER_NEWS`(기존 행), `GOOGLE_NEWS` |
-| `LaunchNewsSkipReason` | `DUPLICATE_ARTICLE`, `ADVERTISING`, `UNKNOWN_SOURCE`, `MISSING_LAUNCH_KEYWORD`, `AI_GENERATION_FAILED`, `DAILY_CAP_EXCEEDED` |
-| `DailyDigestSkipReason` | `NO_SOURCE`, `ALREADY_PUBLISHED`, `AI_GENERATION_FAILED` |
+| `LaunchNewsPublishResult.SkipReason` | `DUPLICATE_ARTICLE`, `ADVERTISING`, `UNKNOWN_SOURCE`, `MISSING_LAUNCH_KEYWORD`, `AI_GENERATION_FAILED`, `DAILY_CAP_EXCEEDED` |
+| `DailyDigestPublishResult.SkipReason` | `NO_SOURCE`, `ALREADY_PUBLISHED`, `AI_GENERATION_FAILED` |

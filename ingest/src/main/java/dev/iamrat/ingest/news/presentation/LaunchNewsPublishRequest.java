@@ -1,6 +1,6 @@
 package dev.iamrat.ingest.news.presentation;
 
-import dev.iamrat.core.board.post.BoardCategory;
+import dev.iamrat.core.board.post.NewsSection;
 import dev.iamrat.core.board.post.PostPublishOrigin;
 import dev.iamrat.ingest.news.application.LaunchNewsPublishCommand;
 import jakarta.validation.constraints.Max;
@@ -14,7 +14,7 @@ public record LaunchNewsPublishRequest(
     @Min(1) @Max(100) Integer displayCount,
     @Min(1) @Max(20) Integer dailyCap,
     @Size(max = 10) List<@Size(max = 30) String> topics,
-    BoardCategory category
+    NewsSection category
 ) {
     public LaunchNewsPublishCommand toCommand() {
         return new LaunchNewsPublishCommand(

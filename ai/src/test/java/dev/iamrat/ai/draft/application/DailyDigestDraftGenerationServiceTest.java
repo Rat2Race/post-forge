@@ -12,10 +12,10 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import dev.iamrat.ai.support.application.AiSafetyGuard;
 import dev.iamrat.ai.support.application.TextGenerationClient;
 import dev.iamrat.ai.support.prompt.PromptResourceLoader;
-import dev.iamrat.core.board.post.BoardCategory;
 import dev.iamrat.core.board.post.DailyDigestDraft;
 import dev.iamrat.core.board.post.DailyDigestDraftCommand;
 import dev.iamrat.core.board.post.DailyDigestSourceItem;
+import dev.iamrat.core.board.post.NewsSection;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
@@ -107,7 +107,7 @@ class DailyDigestDraftGenerationServiceTest {
 
     private DailyDigestDraftCommand command() {
         return new DailyDigestDraftCommand(
-            BoardCategory.TECHNOLOGY,
+            NewsSection.TECHNOLOGY,
             LocalDate.of(2026, 8, 20),
             List.of(
                 new DailyDigestSourceItem("갤럭시북 출시", "삼성이 갤럭시북 신제품을 공개했다."),

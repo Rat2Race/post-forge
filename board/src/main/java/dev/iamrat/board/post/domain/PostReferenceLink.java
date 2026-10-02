@@ -1,11 +1,7 @@
 package dev.iamrat.board.post.domain;
 
-import dev.iamrat.core.board.post.PostPublishOrigin;
-import dev.iamrat.core.board.post.PostReferenceProvider;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -32,10 +28,7 @@ import org.hibernate.annotations.OnDeleteAction;
         name = "uk_post_reference_links_canonical_url",
         columnNames = "canonical_url"
     ),
-    indexes = {
-        @Index(name = "idx_post_reference_links_post_id", columnList = "post_id"),
-        @Index(name = "idx_post_reference_links_provider", columnList = "provider")
-    }
+    indexes = @Index(name = "idx_post_reference_links_post_id", columnList = "post_id")
 )
 @Getter
 @Builder
@@ -55,10 +48,6 @@ public class PostReferenceLink {
     @Column(name = "keyword", nullable = false, length = 100)
     private String keyword;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "provider", nullable = false, length = 30)
-    private PostReferenceProvider provider;
-
     @Column(name = "canonical_url", nullable = false, length = 1000, updatable = false)
     private String canonicalUrl;
 
@@ -74,31 +63,23 @@ public class PostReferenceLink {
     @Column(name = "title_snapshot", nullable = false, length = 500)
     private String titleSnapshot;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "publish_origin", nullable = false, length = 30, updatable = false)
-    private PostPublishOrigin publishOrigin;
-
     public static PostReferenceLink of(
         Post post,
         String keyword,
-        PostReferenceProvider provider,
         String canonicalUrl,
         String originalUrl,
         String sourceName,
         LocalDateTime publishedAt,
-        String titleSnapshot,
-        PostPublishOrigin publishOrigin
+        String titleSnapshot
     ) {
         return PostReferenceLink.builder()
             .post(post)
             .keyword(normalizeKeyword(keyword))
-            .provider(provider)
             .canonicalUrl(canonicalUrl)
             .originalUrl(originalUrl)
             .sourceName(sourceName)
             .publishedAt(publishedAt)
             .titleSnapshot(titleSnapshot)
-            .publishOrigin(publishOrigin == null ? PostPublishOrigin.USER : publishOrigin)
             .build();
     }
 
