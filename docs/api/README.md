@@ -345,11 +345,11 @@ Google News source가 비활성이면 두 news endpoint 호출은 현재 `500 IN
 | `SourceRequest.title` | 필수, 100자 이하 | 목록과 기록에 표시 |
 | `SourceRequest.content` | 필수, 20000자 이하 | 문제·핵심 항목·근거 검증의 원문. LLM에는 앞 4000자만 보낸다 |
 | `QuestionRequest.question` | 필수, 500자 이하 | 문제를 직접 만드는 활동(생성 효과) |
-| `QuestionRequest.evidence` | 필수, 1000자 이하, 공백 차이를 빼고 자료에 그대로 있어야 함 | 어디서 온 문제든 근거가 자료에 있어야 복습 목록에 들어간다 |
+| `QuestionRequest.evidence` | 필수, 1000자 이하, 공백(줄바꿈 없는 공백·전각 공백 포함)과 한글 조합형(NFC/NFD) 차이를 빼고 자료에 그대로 있어야 함 | 어디서 온 문제든 근거가 자료에 있어야 복습 목록에 들어간다 |
 | `ReviewRequest.answer` | 10000자 이하, 선택 | 근거를 보기 전에 쓴 내 답을 기록 |
 | `ReviewRequest.grade` | 필수, `AGAIN`·`HARD`·`GOOD` | 시스템이 아니라 학습자가 판단한다 |
 | `RecallRequest.text` | 필수, 10000자 이하 | 빈 페이지에 떠올린 내용 |
-| `RecallRequest.recalledIndexes` | 선택, `SourceDetail.keyPoints`의 번호 | 자료와 대조해 학습자가 직접 체크한 항목 |
+| `RecallRequest.recalledIndexes` | 선택, `SourceDetail.keyPoints`의 번호. 범위 밖이거나 null이면 `400 INVALID_KEY_POINT` | 자료와 대조해 학습자가 직접 체크한 항목 |
 | `TeachRequest.explanation` | 필수, 10000자 이하 | AI 학생이 되물을 설명 |
 
 ### 응답 DTO
@@ -370,10 +370,10 @@ Google News source가 비활성이면 두 news endpoint 호출은 현재 `500 IN
 
 | 규칙 | 내용 |
 | --- | --- |
-| 문제 생성 | 자료 저장을 커밋한 뒤 메모리 실행기에서 LLM을 부른다. LLM 문제 중 근거가 자료에 그대로 없는 것은 버리고 수를 남긴다. 하나도 남지 않으면 마크다운 제목·목록(없으면 문단 첫 문장)으로 규칙 문제를 만든다. 재시작하면 진행 중이던 생성은 사라지고 `GENERATING`에 머문다 |
+| 문제 생성 | 자료 저장을 커밋한 뒤 메모리 실행기에서 LLM을 부른다. LLM 문제 중 근거가 자료에 그대로 없는 것은 버리고 수를 남긴다. 하나도 남지 않으면 마크다운 제목·목록(없으면 문단 첫 문장)으로 규칙 문제를 만든다. 규칙 문제도 문제 500자·근거 1000자 상한과 근거 검증을 똑같이 거친다. 재시작하면 진행 중이던 생성은 사라지고 `GENERATING`에 머문다 |
 | 간격 반복 | 라이트너 상자 0~5, 간격 10분·1일·3일·7일·14일·30일. `GOOD`은 한 칸 위, `HARD`는 제자리, `AGAIN`은 0칸 |
 | 중복·동시 제출 | 복습 시각 전 문제는 받지 않는다. 동시에 들어온 두 제출은 `@Version`으로 한 번만 반영하고, 기록도 하나만 남는다 |
-| 가르치기 | LLM 호출은 트랜잭션 밖에서 한다. 학생 질문은 최대 3개이며 판정·정답 제시는 하지 않는다 |
+| 가르치기 | LLM 호출은 트랜잭션 밖에서 한다. 학생 질문은 최대 3개이며 판정·정답 제시는 하지 않는다. 기록에는 질문을 2000자까지만 남긴다 |
 
 ### 주요 enum
 

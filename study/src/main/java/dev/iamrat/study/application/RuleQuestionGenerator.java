@@ -1,7 +1,6 @@
 package dev.iamrat.study.application;
 
 import dev.iamrat.core.study.QuestionDraft;
-import dev.iamrat.study.domain.EvidenceVerifier;
 import dev.iamrat.study.domain.KeyPointExtractor;
 import java.util.List;
 
@@ -15,9 +14,9 @@ final class RuleQuestionGenerator {
 
     static List<QuestionDraft> generate(String content, int limit) {
         return KeyPointExtractor.extract(content).stream()
-            .filter(point -> EvidenceVerifier.isQuoted(content, point))
-            .limit(limit)
             .map(point -> new QuestionDraft("'" + point + "'에 대해 설명해 보세요.", point))
+            .filter(draft -> StudySourceService.isUsable(content, draft))
+            .limit(limit)
             .toList();
     }
 }

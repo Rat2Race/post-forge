@@ -29,6 +29,8 @@ import org.springframework.transaction.annotation.Transactional;
 public class StudyPracticeService {
 
     private static final int STUDENT_QUESTION_LIMIT = 3;
+    // study_records.result 컬럼 길이
+    private static final int RESULT_MAX = 2000;
 
     public record DueQuestion(Long id, Long sourceId, String sourceTitle, String question, String evidence, int box) {
     }
@@ -87,7 +89,7 @@ public class StudyPracticeService {
         StudySource source = sourceRepository.getOwned(sourceId, ownerAccountId);
         List<String> keyPoints = KeyPointExtractor.extract(source.getContent());
         Set<Integer> recalled = new HashSet<>(recalledIndexes);
-        if (recalled.stream().anyMatch(index -> index < 0 || index >= keyPoints.size())) {
+        if (recalled.stream().anyMatch(index -> index == null || index < 0 || index >= keyPoints.size())) {
             throw new CustomException(StudyErrorCode.INVALID_KEY_POINT);
         }
         List<String> missed = IntStream.range(0, keyPoints.size())
@@ -107,7 +109,7 @@ public class StudyPracticeService {
             .limit(STUDENT_QUESTION_LIMIT)
             .toList();
         List<String> questions = asked.isEmpty() ? gapQuestions(source.getContent(), explanation) : asked;
-        recordRepository.save(StudyRecord.teaching(source, explanation, String.join("\n", questions), now()));
+        recordRepository.save(StudyRecord.teaching(source, explanation, cut(String.join("\n", questions), RESULT_MAX), now()));
         return questions;
     }
 
@@ -129,6 +131,14 @@ public class StudyPracticeService {
             .limit(STUDENT_QUESTION_LIMIT)
             .map(gap -> "'" + gap + "' 부분은 설명에 안 나왔어요. 어떤 뜻인가요?")
             .toList();
+    }
+
+    private static String cut(String text, int max) {
+        if (text.length() <= max) {
+            return text;
+        }
+        int end = Character.isHighSurrogate(text.charAt(max - 1)) ? max - 1 : max;
+        return text.substring(0, end);
     }
 
     private LocalDateTime now() {
