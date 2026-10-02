@@ -4,13 +4,8 @@ import dev.iamrat.board.comment.application.CommentQueryService;
 import dev.iamrat.board.like.application.LikeResult;
 import dev.iamrat.board.like.application.PostLikeService;
 import dev.iamrat.board.post.domain.Post;
-import dev.iamrat.board.post.domain.PostReferenceLink;
-import dev.iamrat.board.post.domain.PostType;
 import dev.iamrat.board.post.presentation.PostDetailResponse;
 import dev.iamrat.board.view.application.ViewCountService;
-import dev.iamrat.core.board.post.NewsSection;
-import dev.iamrat.core.board.post.PostPublishOrigin;
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.DisplayName;
@@ -26,7 +21,6 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Page;
 import java.util.Set;
 
 @ExtendWith(MockitoExtension.class)
@@ -47,9 +41,6 @@ class PostQueryServiceTest {
     @Mock
     private ViewCountService viewCountService;
 
-    @Mock
-    private PostReferenceLinkStore postReferenceLinkStore;
-
     @InjectMocks
     private PostQueryService postQueryService;
 
@@ -61,7 +52,6 @@ class PostQueryServiceTest {
             .id(postId)
             .title("title")
             .content("content")
-            .summary("summary")
             .tags(List.of("tag"))
             .accountId(1L)
             .nickname("writer")
@@ -71,7 +61,6 @@ class PostQueryServiceTest {
         given(viewCountService.getViewCount(postId)).willReturn(3L);
         given(postLikeService.getLikeInfo(postId, null)).willReturn(new LikeResult(false, 1L));
         given(commentQueryService.getCommentCount(postId)).willReturn(2);
-        given(postReferenceLinkStore.findByPostId(postId)).willReturn(List.of());
 
         PostDetailResponse response = postQueryService.readPost(postId, null);
 
@@ -81,113 +70,35 @@ class PostQueryServiceTest {
     }
 
     @Test
-    @DisplayName("게시글 상세 조회는 참조 근거를 포함한다")
-    void getPost_includesReferenceEvidence() {
-        Long postId = 2L;
-        Post post = Post.builder()
-            .id(postId)
-            .title("launch")
-            .content("content")
-            .accountId(1L)
-            .nickname("writer")
-            .build();
-        given(postReader.getById(postId)).willReturn(post);
-        given(viewCountService.getViewCount(postId)).willReturn(1L);
-        given(postLikeService.getLikeInfo(postId, 9L)).willReturn(new LikeResult(false, 0L));
-        given(commentQueryService.getCommentCount(postId)).willReturn(0);
-        given(postReferenceLinkStore.findByPostId(postId)).willReturn(List.of(referenceLink(post)));
-
-        PostDetailResponse response = postQueryService.getPost(postId, 9L);
-
-        assertThat(response.references())
-            .singleElement()
-            .satisfies(reference -> {
-                assertThat(reference.canonicalUrl()).isEqualTo("https://news.example/article");
-                assertThat(reference.originalUrl()).isEqualTo("https://news.example/article?utm=1");
-                assertThat(reference.sourceName()).isEqualTo("Example News");
-                assertThat(reference.titleSnapshot()).isEqualTo("갤럭시북 출시");
-            });
-    }
-
-    @Test
-    @DisplayName("게시글 목록 조회는 외부 호출 없이 참조 근거를 포함한다")
-    void getPosts_includesReferenceEvidenceWithoutExternalCalls() {
+    @DisplayName("게시글 목록 조회는 외부 호출 없이 좋아요·조회수·댓글 수를 한 번에 묶어 채운다")
+    void getPosts_batchesCountsWithoutExternalCalls() {
         Post post = Post.builder()
             .id(3L)
-            .title("launch")
+            .title("title")
             .content("content")
             .accountId(1L)
             .nickname("writer")
             .build();
-        Page<Post> page =
-            new PageImpl<>(List.of(post));
-        given(postStore.findByFilters(
-            null,
-            null,
-            null,
-            null,
-            Pageable.unpaged()
-        )).willReturn(page);
+        given(postStore.findByKeyword(null, Pageable.unpaged())).willReturn(new PageImpl<>(List.of(post)));
         given(postLikeService.getLikedPostIds(List.of(3L), null)).willReturn(Set.of());
         given(viewCountService.getViewCounts(List.of(3L))).willReturn(Map.of(3L, 5L));
         given(postLikeService.getLikeCounts(List.of(3L))).willReturn(Map.of(3L, 0L));
         given(commentQueryService.getCommentCounts(List.of(3L))).willReturn(Map.of(3L, 0));
-        given(postReferenceLinkStore.findByPostIds(List.of(3L))).willReturn(List.of(referenceLink(post)));
 
-        PostDetailResponse response = postQueryService.getPosts(
-            null,
-            null,
-            null,
-            null,
-            Pageable.unpaged(),
-            null
-        ).getContent().getFirst();
+        PostDetailResponse response = postQueryService.getPosts(null, Pageable.unpaged(), null).getContent().getFirst();
 
-        assertThat(response.references()).hasSize(1);
-        assertThat(response.references().getFirst().canonicalUrl()).isEqualTo("https://news.example/article");
-        assertThat(response.publishOrigin()).isEqualTo(PostPublishOrigin.USER);
+        assertThat(response.views()).isEqualTo(5L);
+        assertThat(response.commentCount()).isZero();
     }
 
     @Test
-    @DisplayName("게시글 목록 조회는 조합 가능한 필터를 store에 위임한다")
-    void getPosts_delegatesComposableFiltersToStore() {
+    @DisplayName("게시글 목록 조회는 앞뒤 공백을 지운 검색어를 store에 넘긴다")
+    void getPosts_trimsKeywordBeforeDelegating() {
         Pageable pageable = Pageable.unpaged();
-        given(postStore.findByFilters(
-            "갤럭시북",
-            PostType.PRODUCT_LAUNCH_NEWS,
-            NewsSection.TECHNOLOGY,
-            PostPublishOrigin.SYSTEM_BATCH,
-            pageable
-        )).willReturn(new PageImpl<>(List.of()));
+        given(postStore.findByKeyword("격리 수준", pageable)).willReturn(new PageImpl<>(List.of()));
 
-        postQueryService.getPosts(
-            "  갤럭시북  ",
-            PostType.PRODUCT_LAUNCH_NEWS,
-            NewsSection.TECHNOLOGY,
-            PostPublishOrigin.SYSTEM_BATCH,
-            pageable,
-            null
-        );
+        postQueryService.getPosts("  격리 수준  ", pageable, null);
 
-        verify(postStore).findByFilters(
-            "갤럭시북",
-            PostType.PRODUCT_LAUNCH_NEWS,
-            NewsSection.TECHNOLOGY,
-            PostPublishOrigin.SYSTEM_BATCH,
-            pageable
-        );
-    }
-
-    private PostReferenceLink referenceLink(Post post) {
-        return PostReferenceLink.builder()
-            .id(10L)
-            .post(post)
-            .keyword("갤럭시북")
-            .canonicalUrl("https://news.example/article")
-            .originalUrl("https://news.example/article?utm=1")
-            .sourceName("Example News")
-            .publishedAt(LocalDateTime.of(2026, 6, 21, 10, 0))
-            .titleSnapshot("갤럭시북 출시")
-            .build();
+        verify(postStore).findByKeyword("격리 수준", pageable);
     }
 }

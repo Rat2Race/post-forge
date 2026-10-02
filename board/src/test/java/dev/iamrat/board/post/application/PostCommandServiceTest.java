@@ -1,12 +1,10 @@
 package dev.iamrat.board.post.application;
 
 import dev.iamrat.board.post.domain.Post;
-import dev.iamrat.board.post.domain.PostType;
 import dev.iamrat.board.post.presentation.PostSummaryResponse;
 import dev.iamrat.board.view.application.ViewCountService;
 import dev.iamrat.core.account.AccountProfile;
 import dev.iamrat.core.account.AccountProfileReader;
-import dev.iamrat.core.board.post.NewsSection;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -68,42 +66,13 @@ class PostCommandServiceTest {
         verify(postStore).save(postCaptor.capture());
         verify(postFileAppender).appendFiles(postCaptor.getValue(), List.of());
         assertThat(postCaptor.getValue().getNickname()).isEqualTo("포트닉네임");
-        assertThat(postCaptor.getValue().getSummary()).isNull();
         assertThat(response.nickname()).isEqualTo("포트닉네임");
     }
 
     @Test
-    @DisplayName("게시글 생성 시 사용자 요약은 저장하지 않는다")
-    void savePost_ignoresUserSummary() {
-        given(accountProfileReader.getProfile(1L)).willReturn(new AccountProfile(1L, "포트닉네임"));
-
-        postCommandService.savePost(
-            "title",
-            "content",
-            List.of("tag"),
-            1L,
-            List.of()
-        );
-
-        ArgumentCaptor<Post> postCaptor = ArgumentCaptor.forClass(Post.class);
-        verify(postStore).save(postCaptor.capture());
-        assertThat(postCaptor.getValue().getSummary()).isNull();
-        assertThat(postCaptor.getValue().getCategory()).isEqualTo(PostType.GENERAL);
-        assertThat(postCaptor.getValue().getBoardCategory()).isEqualTo(NewsSection.GENERAL);
-    }
-
-    @Test
-    @DisplayName("게시글 수정 시 내부 요약을 보존한다")
-    void updatePost_preservesExistingSummary() {
-        Post post = Post.create(
-            "old title",
-            "old content",
-            "internal summary",
-            List.of("old"),
-            PostType.GENERAL,
-            1L,
-            "writer"
-        );
+    @DisplayName("게시글 수정 시 제목·내용·태그를 바꾸고 첨부 파일을 교체한다")
+    void updatePost_changesFieldsAndReplacesFiles() {
+        Post post = Post.create("old title", "old content", List.of("old"), 1L, "writer");
         given(postReader.getById(10L)).willReturn(post);
 
         postCommandService.updatePost(
@@ -114,35 +83,9 @@ class PostCommandServiceTest {
             List.of()
         );
 
-        assertThat(post.getSummary()).isEqualTo("internal summary");
-        assertThat(post.getCategory()).isEqualTo(PostType.GENERAL);
+        assertThat(post.getTitle()).isEqualTo("new title");
+        assertThat(post.getTags()).containsExactly("new");
         verify(postFileAppender).replaceFiles(post, List.of());
-    }
-
-    @Test
-    @DisplayName("게시글 수정 시 기존 카테고리를 건드리지 않는다")
-    void updatePost_preservesExistingCategory() {
-        Post post = Post.create(
-            "launch title",
-            "launch content",
-            "launch summary",
-            List.of("launch"),
-            PostType.PRODUCT_LAUNCH_NEWS,
-            1L,
-            "writer"
-        );
-        given(postReader.getById(10L)).willReturn(post);
-
-        postCommandService.updatePost(
-            10L,
-            "edited title",
-            "edited content",
-            List.of("edited"),
-            List.of()
-        );
-
-        assertThat(post.getCategory()).isEqualTo(PostType.PRODUCT_LAUNCH_NEWS);
-        assertThat(post.getSummary()).isEqualTo("launch summary");
     }
 
     @Test

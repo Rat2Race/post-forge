@@ -3,9 +3,6 @@ package dev.iamrat.board.post.infrastructure.persistence;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import dev.iamrat.board.post.domain.Post;
-import dev.iamrat.board.post.domain.PostType;
-import dev.iamrat.core.board.post.NewsSection;
-import dev.iamrat.core.board.post.PostPublishOrigin;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -39,65 +36,29 @@ class PostPersistenceAdapterFilterTest {
 
     @BeforeEach
     void setUp() {
-        entityManager.persistAndFlush(post(
-            "Galaxy Book 출시", "신제품 소개", PostType.PRODUCT_LAUNCH_NEWS,
-            NewsSection.TECHNOLOGY, PostPublishOrigin.SYSTEM_BATCH));
-        entityManager.persistAndFlush(post(
-            "일반 글", "galaxy book 사용 후기", PostType.GENERAL,
-            NewsSection.GENERAL, PostPublishOrigin.USER));
-        entityManager.persistAndFlush(post(
-            "무관한 글", "관계 없는 본문", PostType.DAILY_DIGEST,
-            NewsSection.NATION, PostPublishOrigin.ADMIN_BACKFILL));
+        entityManager.persistAndFlush(post("Galaxy Book 리뷰", "가벼운 노트북"));
+        entityManager.persistAndFlush(post("일반 글", "galaxy book 사용 후기"));
+        entityManager.persistAndFlush(post("무관한 글", "관계 없는 본문"));
     }
 
     @Test
     @DisplayName("keyword는 제목과 본문을 대소문자 구분 없이 함께 검색한다")
     void filtersByKeywordOnTitleOrContent() {
-        assertThat(adapter.findByFilters("Galaxy", null, null, null, PageRequest.of(0, 10)))
+        assertThat(adapter.findByKeyword("Galaxy", PageRequest.of(0, 10)))
             .extracting(Post::getTitle)
-            .containsExactlyInAnyOrder("Galaxy Book 출시", "일반 글");
+            .containsExactlyInAnyOrder("Galaxy Book 리뷰", "일반 글");
     }
 
     @Test
-    @DisplayName("category가 있으면 해당 category만 조회한다")
-    void filtersByCategory() {
-        assertThat(adapter.findByFilters(null, PostType.PRODUCT_LAUNCH_NEWS, null, null, PageRequest.of(0, 10)))
+    @DisplayName("빈 keyword면 조건 없이 전체를 조회한다")
+    void returnsAllWhenKeywordIsBlank() {
+        assertThat(adapter.findByKeyword("   ", PageRequest.of(0, 10)))
             .extracting(Post::getTitle)
-            .containsExactly("Galaxy Book 출시");
+            .containsExactlyInAnyOrder("Galaxy Book 리뷰", "일반 글", "무관한 글");
     }
 
-    @Test
-    @DisplayName("boardCategory가 있으면 해당 boardCategory만 조회한다")
-    void filtersByBoardCategory() {
-        assertThat(adapter.findByFilters(null, null, NewsSection.NATION, null, PageRequest.of(0, 10)))
-            .extracting(Post::getTitle)
-            .containsExactly("무관한 글");
-    }
-
-    @Test
-    @DisplayName("publishOrigin이 있으면 해당 publishOrigin만 조회한다")
-    void filtersByPublishOrigin() {
-        assertThat(adapter.findByFilters(null, null, null, PostPublishOrigin.SYSTEM_BATCH, PageRequest.of(0, 10)))
-            .extracting(Post::getTitle)
-            .containsExactly("Galaxy Book 출시");
-    }
-
-    @Test
-    @DisplayName("빈 keyword와 null 필터만 있으면 조건 없이 전체를 조회한다")
-    void returnsAllWhenNoFilterApplied() {
-        assertThat(adapter.findByFilters("   ", null, null, null, PageRequest.of(0, 10)))
-            .extracting(Post::getTitle)
-            .containsExactlyInAnyOrder("Galaxy Book 출시", "일반 글", "무관한 글");
-    }
-
-    private static Post post(
-        String title,
-        String content,
-        PostType category,
-        NewsSection boardCategory,
-        PostPublishOrigin publishOrigin
-    ) {
-        return Post.create(title, content, null, null, category, boardCategory, publishOrigin, 1L, "writer");
+    private static Post post(String title, String content) {
+        return Post.create(title, content, null, 1L, "writer");
     }
 
     @TestConfiguration
