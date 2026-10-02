@@ -79,7 +79,7 @@ PostForge 계정 정책은 회원가입, 로그인, 프로필, 닉네임 변경,
 - 회원은 본인 프로필만 조회할 수 있다.
 - 프로필 응답 필드 집합의 정본은 [API 명세 Auth](./api/README.md#auth)의 `AccountResponse`·`ProfileResponse`다.
 - 비밀번호 해시, refresh token, provider access token 같은 민감 정보는 응답하지 않는다.
-- 로그에는 요청 값(비밀번호 등), 이메일·닉네임, 인증 토큰과 그 URL을 남기지 않는다. 검증 실패는 필드 이름과 위반 코드만, 무결성 위반은 SQLState와 제약 이름만 남긴다.
+- 로그에는 요청 값(비밀번호 등), 이메일·닉네임, 인증 토큰과 그 URL을 남기지 않는다. 검증 실패는 필드 이름과 위반 코드만, 경로 변수 변환 실패는 변수 이름과 기대 타입만, 무결성 위반은 SQLState와 제약 이름만, 메일 발송 실패는 예외 종류만 남긴다.
 
 ### Current: Nickname
 

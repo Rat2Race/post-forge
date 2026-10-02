@@ -181,6 +181,22 @@ class ExceptionResponseHandlerTest {
     }
 
     @Test
+    @DisplayName("경로 변수 타입 변환 실패 로그에는 변수 이름과 기대 타입만 남기고 보낸 값은 남기지 않는다")
+    void handleMethodArgumentTypeMismatchException_doesNotLogValue(CapturedOutput output) throws Exception {
+        MethodParameter parameter = new MethodParameter(
+            ExceptionResponseHandlerTest.class.getDeclaredMethod("validatedMethod", String.class),
+            0
+        );
+        MethodArgumentTypeMismatchException exception = new MethodArgumentTypeMismatchException(
+            "private-token-123", Long.class, "sourceId", parameter, new NumberFormatException("For input string: \"private-token-123\"")
+        );
+
+        handler.handleMethodArgumentTypeMismatchException(exception);
+
+        assertThat(output).contains("sourceId").contains("Long").doesNotContain("private-token-123");
+    }
+
+    @Test
     @DisplayName("경로 변수 타입 변환 실패는 400 INVALID_INPUT으로 응답한다")
     void handleMethodArgumentTypeMismatchException_returnsBadRequest() throws Exception {
         MethodParameter parameter = new MethodParameter(

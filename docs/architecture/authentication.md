@@ -23,6 +23,7 @@
 - OAuth2 redirect URL에는 refresh token이나 access token을 노출하지 않는다.
 - 로그인 실패, 이메일 인증, OAuth2 exchange code는 Redis guard/TTL state로 보호한다.
 - refresh token, 로그인 guard, 이메일 인증, OAuth2 exchange code의 Redis state 장애는 인증 안전성을 위해 fail-closed로 처리한다.
+- 인증 메일 발송이 실패하면(`MessagingException`·`MailException` 모두) `EMAIL_SEND_FAILED`로 응답하고, 요청 가드의 쿨다운은 이미 쓴 것으로 둔다. 메일 서버 장애는 대개 한동안 이어지므로 바로 다시 보내게 하면 실패만 쌓인다. 사용자는 쿨다운이 끝난 뒤 다시 요청한다.
 - 계정 비활성 상태는 login, token reissue, OAuth2 exchange에서 거절한다.
 - 존재하지 않는 username과 잘못된 password는 모두 `INVALID_CREDENTIALS`로 응답해 계정 존재 여부를 노출하지 않는다.
 
