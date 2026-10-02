@@ -300,6 +300,19 @@ class StudyFlowTest {
     }
 
     @Test
+    @DisplayName("빈 페이지 글에서 언급한 것 같은 핵심 항목을 LLM 없이 제안하고, 기록은 남기지 않는다")
+    void suggestsMentionedKeyPointsWithoutLlmOrRecord() {
+        Long sourceId = sources.create(me, "격리 수준", CONTENT);
+        int llmCallsBefore = assistant.calls;
+
+        List<Integer> suggested = practice.suggestRecalled(me, sourceId, "커밋된 데이터만 읽고 팬텀 리드가 생길 수 있어요");
+
+        assertThat(suggested).containsExactly(1, 3);
+        assertThat(assistant.calls).isEqualTo(llmCallsBefore);
+        assertThat(practice.records(me)).isEmpty();
+    }
+
+    @Test
     @DisplayName("빈 페이지 체크 번호에 null이 섞이면 잘못된 항목으로 거절한다")
     void recallRejectsNullIndex() {
         Long sourceId = sources.create(me, "격리 수준", CONTENT);

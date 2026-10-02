@@ -329,23 +329,35 @@ function actRecall(s){
     <div class="row" style="margin-top:.6rem"><button class="btn primary" id="compare">핵심 항목과 대조</button></div>
     <div id="kp" hidden>
       <div class="label" style="margin-top:1rem">핵심 항목 · 내가 떠올린 것에 직접 체크</div>
+      <p class="muted" style="margin:.2rem 0 0">'언급한 것 같아요'는 글자가 겹치는 항목을 미리 고른 제안이에요. 직접 보고 고쳐 주세요.</p>
       <div class="keypoints">${s.keyPoints.map((p, i) => `<label><input type="checkbox" value="${i}"><span>${esc(p)}</span></label>`).join('')}</div>
       <button class="btn primary" id="saveRecall">기록하기</button>
       <div id="recallResult"></div>
     </div></section>`;
-  $('#compare').onclick = () => {
-    if (!$('#recallText').value.trim()) { toast('먼저 기억나는 것을 적어 주세요'); return; }
+  $('#compare').onclick = async () => {
+    const text = $('#recallText').value;
+    if (!text.trim()) { toast('먼저 기억나는 것을 적어 주세요'); return; }
+    $('#compare').disabled = true;
+    let mentioned = [];
+    try { mentioned = (await post(`/api/study/sources/${s.id}/recalls/suggestions`, { text })).mentionedIndexes; } catch(e){}
+    el.querySelectorAll('.keypoints input').forEach(c => {
+      c.checked = mentioned.includes(+c.value);
+      if (c.checked) c.closest('label').insertAdjacentHTML('beforeend', '<span class="badge cat">언급한 것 같아요</span>');
+    });
     $('#kp').hidden = false; $('#compare').hidden = true; $('#recallText').readOnly = true;
   };
   $('#saveRecall').onclick = async () => {
+    const btn = $('#saveRecall');
+    if (btn.disabled) return;
+    btn.disabled = true;
     const recalledIndexes = [...el.querySelectorAll('.keypoints input:checked')].map(c => +c.value);
     try {
       const r = await post(`/api/study/sources/${s.id}/recalls`, { text: $('#recallText').value, recalledIndexes });
-      $('#saveRecall').hidden = true;
+      btn.hidden = true;
       $('#recallResult').innerHTML = `<p><b>${r.total}개 중 ${r.recalled}개</b>를 떠올렸어요.</p>` + (r.missed.length
         ? `<div class="label">다시 볼 것</div><ul>${r.missed.map(m => `<li>${esc(m)}</li>`).join('')}</ul>`
         : '<p>전부 떠올렸어요.</p>');
-    } catch(e){ toast(e.message); }
+    } catch(e){ toast(e.message); btn.disabled = false; }
   };
 }
 function actTeach(s){

@@ -23,6 +23,14 @@ class GapFinderTest {
     }
 
     @Test
+    @DisplayName("빈 페이지 글에 대부분 나온 핵심 항목의 번호를 '언급한 것 같아요' 후보로 돌려준다")
+    void returnsIndexesOfMostlyMentionedPoints() {
+        String recall = "팬텀 리드가 생길 수도 있고, 커밋된 데이터만 읽어요.";
+
+        assertThat(GapFinder.mentionedIndexes(KEY_POINTS, recall)).containsExactly(1, 2);
+    }
+
+    @Test
     @DisplayName("빈 설명이면 모든 핵심 항목이 빠진 것이다")
     void emptyExplanationMissesEverything() {
         assertThat(GapFinder.missing(KEY_POINTS, "")).isEqualTo(KEY_POINTS);

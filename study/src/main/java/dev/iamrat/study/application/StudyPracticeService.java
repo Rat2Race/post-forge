@@ -102,6 +102,13 @@ public class StudyPracticeService {
         return new RecallResult(recalled.size(), keyPoints.size(), missed);
     }
 
+    /** 빈 페이지 글에서 언급한 것 같은 핵심 항목 번호를 제안한다. LLM을 쓰지 않고 기록도 남기지 않는다. */
+    @Transactional(readOnly = true)
+    public List<Integer> suggestRecalled(Long ownerAccountId, Long sourceId, String text) {
+        StudySource source = sourceRepository.getOwned(sourceId, ownerAccountId);
+        return GapFinder.mentionedIndexes(KeyPointExtractor.extract(source.getContent()), text);
+    }
+
     /** LLM을 기다리는 동안 트랜잭션을 열어 두지 않는다. */
     public List<String> teach(Long ownerAccountId, Long sourceId, String explanation) {
         StudySource source = sourceRepository.getOwned(sourceId, ownerAccountId);
