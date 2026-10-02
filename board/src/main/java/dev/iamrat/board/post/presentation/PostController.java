@@ -3,7 +3,6 @@ package dev.iamrat.board.post.presentation;
 import dev.iamrat.board.post.application.PostSummary;
 import dev.iamrat.board.post.application.PostDetail;
 import dev.iamrat.board.like.application.LikeResult;
-import dev.iamrat.board.like.presentation.LikeResponse;
 import dev.iamrat.board.post.application.PostCommandService;
 import dev.iamrat.board.post.application.PostInteractionService;
 import dev.iamrat.board.post.application.PostQueryService;
@@ -100,24 +99,24 @@ public class PostController {
 
     @PostMapping("/{postId:\\d+}/like")
     @PreAuthorize("hasRole('USER')")
-    public ResponseEntity<LikeResponse> likePost(
+    public ResponseEntity<LikeResult> likePost(
         @PathVariable("postId") Long postId,
         @AuthenticationPrincipal UserPrincipal user
     ) {
         LikeResult likeStatus = postInteractionService.likePost(postId, accountId(user));
 
-        return ResponseEntity.ok(LikeResponse.from(likeStatus));
+        return ResponseEntity.ok(likeStatus);
     }
 
     @DeleteMapping("/{postId:\\d+}/like")
     @PreAuthorize("hasRole('USER')")
-    public ResponseEntity<LikeResponse> unlikePost(
+    public ResponseEntity<LikeResult> unlikePost(
         @PathVariable("postId") Long postId,
         @AuthenticationPrincipal UserPrincipal user
     ) {
         LikeResult likeStatus = postInteractionService.unlikePost(postId, accountId(user));
 
-        return ResponseEntity.ok(LikeResponse.from(likeStatus));
+        return ResponseEntity.ok(likeStatus);
     }
 
     private static Long optionalAccountId(UserPrincipal user) {
