@@ -2,6 +2,10 @@
 
 상태: **Accepted** (2026-09-30). ADR-005의 "뉴스를 수집해 LLM으로 가공한 초안을 자동 게시"하는 현재 구현을 중단한다. 후속 수집원은 별도 ADR로 정한다.
 
+## 변경 기록
+
+- **2026-10-02**: 후속 결정은 [ADR-008](./adr-008-switch-to-learning-platform.md)이다. 다른 뉴스 수집원은 찾지 않는다. Google News RSS는 피드 고지(개인 피드 리더 외 사용 금지)와 robots.txt(`/rss/` 봇 불허)를 다시 확인해 배포 소스에서 뺀다.
+
 ## 배경
 
 PostForge는 Naver API HUB 뉴스 검색으로 제목·요약 스니펫을 모아 pgvector에 적재하고, LLM으로 본문을 만들어 `PRODUCT_LAUNCH_NEWS`로 게시했다. 세 가지 문제가 있었다.

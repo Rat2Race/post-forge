@@ -4,6 +4,8 @@
 
 현재 자동 게시 대상은 신제품 출시뉴스다. 분야는 수집 키워드 또는 수동 요청에서 정하고, LLM은 본문·요약·태그 초안을 만든다. 스케줄과 활성화 조건은 [API 명세](docs/api/README.md#자동-게시-스케줄), 제품 범위와 메일 구독 계획은 [ADR-005](docs/decisions/adr-005-subscription-information-service.md)를 따른다.
 
+2026-10-02 [ADR-008](docs/decisions/adr-008-switch-to-learning-platform.md)로 사용자 자료 기반 학습 플랫폼 전환을 결정했다. 뉴스 코드는 뉴스 퇴역 작업 전까지 그대로 동작한다.
+
 ## 모듈 경계
 
 Gradle modular monolith. 의존성 허용 표와 새 코드 배치 기준은 [module-dependencies.md](docs/architecture/module-dependencies.md)가 단일 기준이고, `app/src/test/.../ModuleBoundaryTest.java`가 강제한다.
