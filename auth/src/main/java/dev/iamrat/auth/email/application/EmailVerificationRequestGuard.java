@@ -35,7 +35,7 @@ public class EmailVerificationRequestGuard {
         } catch (CustomException e) {
             throw e;
         } catch (Exception e) {
-            log.warn("이메일 인증 요청 가드 저장소 장애: email={}", email, e);
+            log.warn("이메일 인증 요청 가드 저장소 장애: {}", e.getClass().getSimpleName());
             throw new CustomException(CommonErrorCode.TOO_MANY_REQUESTS);
         }
     }

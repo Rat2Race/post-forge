@@ -36,7 +36,7 @@ public class LoginAttemptGuard {
         } catch (CustomException e) {
             throw e;
         } catch (Exception e) {
-            throw failClosed("로그인 요청 가드 저장소 장애", username, clientIp, e);
+            throw failClosed("로그인 요청 가드 저장소 장애", e);
         }
     }
 
@@ -60,7 +60,7 @@ public class LoginAttemptGuard {
         } catch (CustomException e) {
             throw e;
         } catch (Exception e) {
-            throw failClosed("로그인 실패 기록 저장소 장애", username, null, e);
+            throw failClosed("로그인 실패 기록 저장소 장애", e);
         }
     }
 
@@ -73,12 +73,13 @@ public class LoginAttemptGuard {
             String normalizedUsername = normalize(username);
             loginAttemptLimiter.clearFailure(normalizedUsername);
         } catch (Exception e) {
-            log.warn("로그인 성공 후 실패 기록 초기화 실패: username={}", username, e);
+            log.warn("로그인 성공 후 실패 기록 초기화 실패: {}", e.getClass().getSimpleName());
         }
     }
 
-    private CustomException failClosed(String message, String username, String clientIp, Exception cause) {
-        log.warn("{}: username={} clientIp={}", message, username, clientIp, cause);
+    // 로그에는 아이디·IP를 남기지 않는다(docs/policy.md). 장애 종류는 예외 클래스로 구분한다.
+    private CustomException failClosed(String message, Exception cause) {
+        log.warn("{}: {}", message, cause.getClass().getSimpleName());
         return new CustomException(CommonErrorCode.TOO_MANY_REQUESTS);
     }
 
