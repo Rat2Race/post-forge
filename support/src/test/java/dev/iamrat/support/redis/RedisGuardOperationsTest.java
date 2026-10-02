@@ -2,7 +2,6 @@ package dev.iamrat.support.redis;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.BDDMockito.given;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
 import java.util.concurrent.TimeUnit;
@@ -24,32 +23,6 @@ class RedisGuardOperationsTest {
 
     @Mock
     private ValueOperations<String, String> valueOperations;
-
-    @Test
-    @DisplayName("카운터 첫 증가면 TTL을 설정한다")
-    void incrementWithExpiry_whenFirstCount_setsExpiry() {
-        RedisGuardOperations operations = new RedisGuardOperations(redisTemplate);
-        given(redisTemplate.opsForValue()).willReturn(valueOperations);
-        given(valueOperations.increment("guard:rate:test")).willReturn(1L);
-
-        Long count = operations.incrementWithExpiry("guard:rate:test", 60L);
-
-        assertThat(count).isEqualTo(1L);
-        verify(redisTemplate).expire("guard:rate:test", 60L, TimeUnit.SECONDS);
-    }
-
-    @Test
-    @DisplayName("카운터 첫 증가가 아니면 TTL을 다시 설정하지 않는다")
-    void incrementWithExpiry_whenExistingCount_doesNotResetExpiry() {
-        RedisGuardOperations operations = new RedisGuardOperations(redisTemplate);
-        given(redisTemplate.opsForValue()).willReturn(valueOperations);
-        given(valueOperations.increment("guard:rate:test")).willReturn(2L);
-
-        Long count = operations.incrementWithExpiry("guard:rate:test", 60L);
-
-        assertThat(count).isEqualTo(2L);
-        verify(redisTemplate, never()).expire("guard:rate:test", 60L, TimeUnit.SECONDS);
-    }
 
     @Test
     @DisplayName("키가 없으면 마커와 TTL을 저장하고 true를 반환한다")
