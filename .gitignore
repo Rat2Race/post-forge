@@ -22,9 +22,6 @@ Thumbs.db
 node_modules/
 dist/
 
-# Module generated docs
-*/src/main/resources/docs/
-
 # env — 값이 든 env 파일은 전부 제외한다. 변수명만 있는 예제만 커밋한다.
 .env
 .env.*
@@ -43,7 +40,6 @@ docker-compose.prod.yml
 graphify-out/
 
 docker
-!docs/docker
 
 # agent/tool local state
 .omc/
