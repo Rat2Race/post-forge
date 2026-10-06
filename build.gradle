@@ -1,12 +1,12 @@
 plugins {
-    id 'org.springframework.boot' version '3.5.14' apply false
+    id 'org.springframework.boot' version '4.1.1' apply false
 }
 
 ext {
-    springBootVersion = '3.5.14'
+    springBootVersion = '4.1.1'
     lombokVersion = '1.18.46'
     springdocOpenapiVersion = '2.8.17'
-    springAiVersion = '1.0.7'
+    springAiVersion = '2.0.1'
     awsSdkVersion = '2.42.41'
     jjwtVersion = '0.12.7'
     archunitVersion = '1.4.1'
