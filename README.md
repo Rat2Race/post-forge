@@ -11,7 +11,6 @@ PostForge는 회원가입·로그인과 게시글·댓글·좋아요·조회수�
 | --- | --- |
 | 인증 | JWT, Redis refresh token rotation, OAuth2, 이메일 인증, 로그인 보호 |
 | 게시판 | 게시글, 댓글/대댓글, 좋아요, 조회수, 작성자 소유권 검증 |
-| AI | Spring AI, OpenAI-compatible LLM 호출 경로(`TextGenerationClient`). 아직 이를 쓰는 기능은 없다 |
 | 운영 기반 | Flyway baseline, Docker layered jar, requestId 로그, Prometheus/Grafana |
 
 ## Architecture
@@ -20,12 +19,12 @@ PostForge는 회원가입·로그인과 게시글·댓글·좋아요·조회수�
 
 다이어그램 원본은 [PostForge_Architecture_v4.svg](./docs/images/PostForge_Architecture_v4.svg)다. 그림은 뉴스 자동 게시 시절의 구조다.
 
-6개 Gradle 모듈로 구성된 DDD-lite 모듈러 모놀리스입니다.
+5개 Gradle 모듈로 구성된 DDD-lite 모듈러 모놀리스입니다.
 
 - `app`: 실행 조립과 route/security/OpenAPI 정책
 - `core`: 모듈 간 port, DTO, 오류 및 principal 계약
 - `support`: Redis, JPA auditing, 요청 로깅, 공통 MVC 예외 응답
-- `auth`, `board`, `ai`: 기능별 소유권
+- `auth`, `board`: 기능별 소유권
 
 기능 모듈은 서로의 구현 대신 port 또는 공개 application API를 사용하고, 의존성 방향은
 각 모듈 `build.gradle`의 프로젝트 의존으로 정합니다.
@@ -39,7 +38,6 @@ PostForge는 회원가입·로그인과 게시글·댓글·좋아요·조회수�
 | Runtime | Java 21, Spring Boot 4.1.1, Gradle 8.14.3 |
 | Data | PostgreSQL, Redis, Spring Data JPA, Flyway |
 | Security | Spring Security, JWT, OAuth2, Gmail SMTP |
-| AI | Spring AI 2.0.1(OpenAI Java SDK), OpenAI-compatible API |
 | API | Spring MVC, SpringDoc OpenAPI |
 | Test | JUnit 5, Spring Boot Test, Testcontainers |
 | Operations | Docker Compose, GitHub Actions, Prometheus, Grafana, MDC requestId logging |
@@ -63,7 +61,7 @@ Endpoint, DTO, status, 인증 조건의 정본은 [API 명세](./docs/api/README
 필수 도구는 Java 21+, Docker Compose입니다.
 
 설정은 세 층입니다. `application.yml`은 공통이고, `application-local.yml`·`application-prod.yml`에는 환경마다 값이
-달라야 하는 항목(DB·Redis 호스트, LLM 주소·모델 기본값, 메일 서버, 프록시 헤더)만 둡니다. 프로필을 지정하지 않으면
+달라야 하는 항목(DB·Redis 호스트, 메일 서버, 프록시 헤더)만 둡니다. 프로필을 지정하지 않으면
 `local`이며, 운영은 `SPRING_PROFILES_ACTIVE=prod`로 바꿉니다.
 
 | | local | prod |
@@ -73,9 +71,8 @@ Endpoint, DTO, status, 인증 조건의 정본은 [API 명세](./docs/api/README
 | compose | `docker-compose.local.yml` (커밋) | `docker-compose.prod.yml` (커밋 안 함) |
 
 [`.env.example`](./.env.example)은 두 환경에서 쓰는 변수명만 값 없이 나열합니다. 로컬은 주소·DB 계정·JWT·소셜 로그인·
-모니터링 값만 채우면 됩니다. LLM 주소·모델, Redis 호스트·포트, CORS 허용 origin은 설정 기본값(Ollama `localhost:11434`의
-`qwen3:8b`, Redis `localhost:6379`, CORS는 `APP_FRONTEND_BASE_URL` 값)을 쓰므로 복사한 `.env.local`에서 `LLM_GATEWAY_BASE_URL`·
-`LLM_CHAT_MODEL`·`REDIS_HOST`·`REDIS_PORT`·`APP_CORS_ALLOWED_ORIGINS` 줄을 지웁니다. `KEY=`처럼 값 없이 남기면 빈 문자열이
+모니터링 값만 채우면 됩니다. Redis 호스트·포트, CORS 허용 origin은 설정 기본값(Redis `localhost:6379`, CORS는
+`APP_FRONTEND_BASE_URL` 값)을 쓰므로 복사한 `.env.local`에서 `REDIS_HOST`·`REDIS_PORT`·`APP_CORS_ALLOWED_ORIGINS` 줄을 지웁니다. `KEY=`처럼 값 없이 남기면 빈 문자열이
 기본값을 덮어 기동에 실패합니다. 메일 서버는 `application-local.yml`에 Mailpit `localhost:1025`로 고정돼 있어 `GMAIL_*`은
 비워 둬도 됩니다.
 
@@ -88,15 +85,6 @@ docker compose --env-file .env.local -f docker-compose.local.yml up -d   # Postg
 첫 부팅 시 Flyway가 `db/migration`의 baseline(V0000)부터 적용해 스키마를 만들고, Hibernate는 `validate`로
 엔티티와 스키마가 일치하는지만 검사합니다. 부팅 확인은 `curl localhost:8080/actuator/health`.
 인증 메일은 실제로 발송되지 않고 [Mailpit](http://localhost:8025)에 쌓입니다.
-
-LLM 호출 경로는 로컬에서 Ollama를 직접 부르고 운영에서는 OpenAI-compatible gateway를 거치도록 설정돼 있습니다. 지금은 이를 쓰는 기능이 없어 로컬에서 Ollama를 띄우지 않아도 기동합니다. 두 환경 모두 공용 주소
-`LLM_GATEWAY_BASE_URL`/`LLM_GATEWAY_TOKEN`과, 그보다 우선하는 개별 주소 `LLM_CHAT_BASE_URL`/`LLM_CHAT_API_KEY`로
-덮어쓸 수 있습니다. 주소에는 호스트만 넣고, OpenAI SDK가 쓰는 `/v1` 경로는 설정이 붙입니다. 운영은 기본값이 없어 `LLM_GATEWAY_BASE_URL`, `LLM_CHAT_MODEL`이 빠지면 기동에 실패합니다.
-
-```text
-local: PostForge app -> Ollama(localhost:11434) -> qwen3:8b
-prod:  PostForge app -> OpenAI-compatible LLM gateway -> Ollama -> qwen3:8b
-```
 
 운영 배포 호스트에는 `docker-compose.prod.yml`, `.env`, `application-prod.yml`을 같은 디렉터리에 둡니다. compose가
 `application-prod.yml`을 `/app/config/`에 마운트하므로 이미지를 다시 만들지 않고 설정을 바꿀 수 있습니다.

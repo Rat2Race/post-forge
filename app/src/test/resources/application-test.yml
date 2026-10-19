@@ -14,8 +14,6 @@ spring:
 
 APP_FRONTEND_BASE_URL: http://localhost:3000
 APP_API_BASE_URL: http://localhost:8080
-LLM_GATEWAY_BASE_URL: http://localhost:8088
-LLM_CHAT_MODEL: qwen3:8b
 GOOGLE_CLIENT_ID: dummy-google-client-id
 GOOGLE_CLIENT_SECRET: dummy-google-secret
 NAVER_CLIENT_ID: dummy-naver-client-id

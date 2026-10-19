@@ -114,8 +114,6 @@ hikaricp_connections_active
 hikaricp_connections_pending
 http_server_requests_seconds_count
 http_server_requests_seconds_sum
-gen_ai_client_operation_seconds_count
-gen_ai_client_token_usage_total
 ```
 
 진지한 baseline run 전에는 PostgreSQL, Redis 설정 snapshot도 함께 수집한다.

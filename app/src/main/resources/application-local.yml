@@ -16,11 +16,3 @@ spring:
     host: localhost
     port: 1025
     username: postforge@localhost   # 발신 주소로만 쓰인다 (JavaMailEmailSender)
-
-  # 게이트웨이 없이 호스트의 Ollama 를 직접 호출한다: ollama pull qwen3:8b
-  ai:
-    openai:
-      base-url: ${LLM_CHAT_BASE_URL:${LLM_GATEWAY_BASE_URL:http://localhost:11434}}/v1
-      chat:
-        model: ${LLM_CHAT_MODEL:qwen3:8b}
-        reasoning-effort: ${LLM_REASONING_EFFORT:none}   # qwen3 생각 단계를 끈다

@@ -15,7 +15,6 @@ Gradle modular monolith. 모듈 사이 의존은 각 모듈 `build.gradle`의 `i
 | `app` | 조립 + 실행 |
 | `auth` | 로그인, refresh token rotation |
 | `board` | 게시글·댓글·좋아요·조회수 |
-| `ai` | LLM 호출 경로(`TextGenerationClient`). 연결은 Spring AI 자동 구성(`spring.ai.openai.*`)이 만든다. 아직 이를 쓰는 기능은 없다 |
 
 새 작업의 범위는 현재 제품 정의와 실제 코드에서 판단한다.
 

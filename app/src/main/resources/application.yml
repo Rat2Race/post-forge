@@ -1,4 +1,4 @@
-# 공통 설정. 환경마다 값이 달라야 하는 항목(DB·Redis 호스트, LLM 기본값, 메일 서버, 프록시 헤더)은
+# 공통 설정. 환경마다 값이 달라야 하는 항목(DB·Redis 호스트, 메일 서버, 프록시 헤더)은
 # application-local.yml / application-prod.yml 에만 둔다. 프로필을 지정하지 않으면 local 이다.
 app:
   # 도메인만 환경변수로 받고 경로는 여기서 조립한다.
@@ -55,19 +55,6 @@ spring:
       hibernate:
         format_sql: true
         default_batch_fetch_size: 1000
-
-  ai:
-    openai:
-      # 주소·모델에 기본값이 없다. 운영은 환경변수가 빠지면 기동에 실패하고, local 프로필만 Ollama 기본값을 덧댄다.
-      # 환경변수에는 호스트만 넣는다. OpenAI SDK는 base-url 뒤에 /chat/completions만 붙이므로 /v1은 여기서 붙인다.
-      base-url: ${LLM_CHAT_BASE_URL:${LLM_GATEWAY_BASE_URL}}/v1
-      # 비워 두면 Authorization 헤더 없이 부른다(게이트웨이·Ollama).
-      api-key: ${LLM_CHAT_API_KEY:${LLM_GATEWAY_TOKEN:}}
-      timeout: ${LLM_CHAT_READ_TIMEOUT:60s}
-      # 생성 한 번이 수십 초라 SDK 기본 재시도가 쌓이면 프록시 제한(524)을 넘는다. 실패 처리는 호출자가 정한다.
-      max-retries: 0
-      chat:
-        model: ${LLM_CHAT_MODEL}
 
   mail:
     properties:

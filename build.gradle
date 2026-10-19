@@ -6,7 +6,6 @@ ext {
     springBootVersion = '4.1.1'
     lombokVersion = '1.18.46'
     springdocOpenapiVersion = '3.1.1'
-    springAiVersion = '2.0.1'
     jjwtVersion = '0.12.7'
 }
 
