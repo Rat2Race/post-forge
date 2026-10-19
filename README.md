@@ -36,10 +36,10 @@ PostForge는 회원가입·로그인과 게시글·댓글·좋아요·조회수�
 
 | 영역 | 기술 |
 | --- | --- |
-| Runtime | Java 21, Spring Boot 3.5.14, Gradle 8.14.3 |
+| Runtime | Java 21, Spring Boot 3.5.16, Gradle 8.14.3 |
 | Data | PostgreSQL, Redis, Spring Data JPA, Flyway |
 | Security | Spring Security, JWT, OAuth2, Gmail SMTP |
-| AI | Spring AI 1.0.7, OpenAI-compatible API |
+| AI | Spring AI 1.1.8, OpenAI-compatible API |
 | API | Spring MVC, SpringDoc OpenAPI |
 | Test | JUnit 5, Spring Boot Test, Testcontainers |
 | Operations | Docker Compose, GitHub Actions, Prometheus, Grafana, MDC requestId logging |
