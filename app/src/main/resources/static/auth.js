@@ -1,5 +1,5 @@
 'use strict';
-// study.html·index.html이 함께 쓰는 인증. 두 화면은 refresh cookie(경로 /api/auth)와 localStorage(pf.token·pf.name·pf.session)를
+// index.html이 쓰는 인증. 열린 탭들은 refresh cookie(경로 /api/auth)와 localStorage(pf.token·pf.name·pf.session)를
 // 함께 쓰므로 로그인·로그아웃·재발급 규칙도 하나다. 인증 상태가 바뀌면 window에 'pf-auth' 이벤트를 보낸다.
 const token  = () => localStorage.getItem('pf.token');
 const meName = () => localStorage.getItem('pf.name');

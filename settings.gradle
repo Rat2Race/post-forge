@@ -8,6 +8,5 @@ include(
         ":support",
         ":core",
         ":auth",
-        ":board",
-        ":study"
+        ":board"
 )

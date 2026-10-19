@@ -1,6 +1,6 @@
 # ADR-008 뉴스 자동 게시를 종료하고 사용자 자료 기반 학습 플랫폼으로 전환
 
-상태: **Accepted** (2026-10-02). [ADR-005](./adr-005-subscription-information-service.md)의 제품 정의를 대체한다. [ADR-007](./adr-007-remove-naver-news-source.md)이 미뤄 둔 "후속 수집원"에 대한 결정이기도 하다. 다른 뉴스 수집원은 찾지 않는다.
+상태: **Accepted** (2026-10-02). [ADR-005](./adr-005-subscription-information-service.md)의 제품 정의를 대체한다. [ADR-007](./adr-007-remove-naver-news-source.md)이 미뤄 둔 "후속 수집원"에 대한 결정이기도 하다. 다른 뉴스 수집원은 찾지 않는다. `release/postforge`에서는 학습 기능을 [ADR-009](./adr-009-split-study-from-board.md)로 떼어 냈고, 학습 플랫폼은 `release/postforge-study`에서 이어 간다.
 
 ## 배경
 

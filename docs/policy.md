@@ -2,14 +2,14 @@
 
 권한·계정·삭제·AI 비용의 invariant를 이 문서가 소유한다. Endpoint/DTO/status는 [API 명세](./api/README.md), schema column ownership은 [DB Schema Ownership](./database/schema-ownership.md), 모듈 경계와 요청 흐름은 [architecture](./architecture/module-dependencies.md)·[요청 흐름](./architecture/flows.md)을 따른다.
 
-현재 PostForge는 사용자가 올린 자료로 학습하는 서비스다([ADR-008](./decisions/adr-008-switch-to-learning-platform.md)). 게시판과 로그인은 유지하고, 뉴스 수집·자동 게시·데일리 종합은 지웠다.
+현재 PostForge는 게시판 서비스다. 뉴스 수집·자동 게시·데일리 종합은 지웠고([ADR-008](./decisions/adr-008-switch-to-learning-platform.md)), 학습 기능은 이 브랜치에서 뗐다([ADR-009](./decisions/adr-009-split-study-from-board.md)).
 
 ## Access
 
-> Current: 공개 게시판의 Guest/Member/Admin 권한, 좋아요/댓글, 회원 본인의 학습 자료.
+> Current: 공개 게시판의 Guest/Member/Admin 권한, 좋아요/댓글.
 > Target: 회원 탈퇴 API.
 
-PostForge 접근 정책은 공개 게시판 조회, 회원의 게시판 참여·학습, 운영자의 관리 작업을 구분한다.
+PostForge 접근 정책은 공개 게시판 조회, 회원의 게시판 참여, 운영자의 관리 작업을 구분한다.
 권한 판단은 닉네임이나 로그인 `username`이 아니라 인증된 `account_id`를 기준으로 한다.
 
 ### Current Invariants
@@ -21,14 +21,13 @@ PostForge 접근 정책은 공개 게시판 조회, 회원의 게시판 참여·
 
 - 회원가입과 로그인을 할 수 있다.
 - 공개 게시글 목록·상세·댓글을 조회할 수 있다.
-- 좋아요, 댓글, 게시글 작성, 학습 기능은 사용할 수 없다.
+- 좋아요, 댓글, 게시글 작성은 사용할 수 없다.
 
 ### Member
 
 - 공개 게시글을 작성하고 본인 게시글을 수정·삭제할 수 있다.
 - 댓글과 좋아요를 사용할 수 있다.
 - 본인 계정을 조회하고 닉네임·비밀번호를 변경할 수 있다.
-- 본인 자료로 학습 기능(`/api/study/**`)을 쓸 수 있다. 다른 회원의 자료·기록은 볼 수 없다.
 
 ### Admin
 
@@ -145,21 +144,11 @@ PostForge 삭제 정책은 일반 사용자에게 리소스를 더 이상 노출
 
 ## AI Cost
 
-> Current: 학습 문제 생성·가르치기·꼬리질문, public read path AI 호출 금지, LLM 결과의 근거 검증(문제·꼬리질문)과 규칙 대체(LLM 없이 결정적으로 처리), shared `TextGenerationClient` metric/log.
+> Current: AI를 호출하는 기능이 없다. `ai` 모듈은 LLM 호출 경로(`TextGenerationClient`)와 그 metric/log만 둔다.
 
 PostForge의 AI 정책은 기능보다 비용 통제를 우선한다. AI는 모든 요청의 기본 동작이 아니라 명시적으로 실행되는 작업이다.
 
 ### Current Invariants
 
 - 게시글 목록·상세·댓글 조회는 AI를 호출하지 않는다.
-- 사용자 AI 기능은 인증된 사용자가 명시적으로 요청할 때만 실행한다: 학습 자료 업로드(문제 초안 생성 1회), 가르치기 버튼(AI 학생 질문 1회), 꼬리질문 버튼(1회).
-- 학습의 매일 반복 루프(오늘 할 것, 채점, 빈 페이지 대조와 제안, 간격 계산, 기록)는 AI를 호출하지 않는다. LLM을 부르는 study 경로는 `StudyAiService`와 문제 생성뿐이고, 매일 루프 서비스는 `StudyAssistant`를 갖지 않는다.
-- 학습 AI의 결과는 채점에 쓰지 않는다. 문제는 근거 문장이 자료에 그대로 있어야 저장된다(ADR-008).
-- 현재 호출은 shared `TextGenerationClient`의 metric/log 대상이다.
-
-### Current AI Boundary
-
-AI를 사용하지 않는 검색과 모델 생성 요청을 구분한다.
-
-- DB 조회와 빈 페이지 언급 제안(두 글자 조각 겹침)은 AI 호출이 아니다.
-- 학습 문제·AI 학생 질문·꼬리질문 생성은 AI 호출이다.
+- AI를 부르는 기능을 더하면 인증된 사용자가 명시적으로 요청할 때만 실행하고, shared `TextGenerationClient`의 metric/log 대상으로 둔다.

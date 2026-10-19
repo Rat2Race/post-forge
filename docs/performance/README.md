@@ -9,7 +9,7 @@ Gradle `:app:smoke` task와 `app/src/smoke` source set은 2026-06-11 기준 제�
 예전 `tests/k6/**`, `tests/bruno/**`, `setup/**`, 앱 repo의 부하 테스트 runner는 더 이상 실행 표면이 아니지만, 과거 k6/Grafana/manual run/raw 리포트는 정량 근거로 계속 보관한다.
 
 운영 host의 2026-06-17 관측값은 [서버 환경 기록](./prod-environment-spec.md)에 있다. 과거 Oracle ARM 실행과 2026-08-21 로컬 실행은 환경이 달라 현재 운영 수용량으로 해석하지 않는다.
-보관된 측정은 주로 게시판·인증 API를 대상으로 한다. 현재 제품인 학습 서비스의 처리 성능을 입증하는 자료는 아니다.
+보관된 측정은 주로 게시판·인증 API를 대상으로 한다. 지금 코드의 처리 성능을 입증하는 자료는 아니다.
 현재 수용량을 판단하려면 같은 commit과 환경에서 k6/Bruno, Prometheus, 컨테이너 지표를 같은 시간 구간에 수집해야 한다.
 
 ## 문서와 저장 위치

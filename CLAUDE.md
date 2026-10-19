@@ -1,8 +1,8 @@
 # PostForge
 
-사용자가 올린 자료로 학습하는 서비스. 자료에서 근거 문장이 그대로 있는 복습 문제를 만들고, 간격 반복·빈 페이지 정리·가르치기·꼬리질문으로 기억을 다진다. 채점은 학습자가 하고, LLM은 버튼을 누를 때만 부른다. 전환 근거·원칙·게이트 기준은 [ADR-008](docs/decisions/adr-008-switch-to-learning-platform.md), 학습 API와 규칙은 [API 명세](docs/api/README.md#study)를 따른다.
+게시판 서비스 백엔드. 회원가입·로그인과 게시글·댓글·좋아요·조회수를 다루고, 구현·측정·트러블슈팅 과정을 기술 블로그 글로 남긴다. API는 [API 명세](docs/api/README.md)를 따른다.
 
-뉴스 수집·자동 게시·데일리 종합과 그 시절의 초안 생성기·RAG 채팅·문서 적재·첨부파일은 ADR-008에 따라 지웠다. 게시판과 로그인은 유지한다.
+학습 플랫폼은 `release/postforge-study` 브랜치에서 따로 진행한다. 이 브랜치에서 study 모듈을 뗀 근거는 [ADR-009](docs/decisions/adr-009-split-study-from-board.md)에 있다. 뉴스 수집·자동 게시·데일리 종합과 그 시절의 초안 생성기·RAG 채팅·문서 적재·첨부파일은 ADR-008에 따라 지웠다.
 
 ## 모듈 경계
 
@@ -15,8 +15,7 @@ Gradle modular monolith. 의존성 허용 표와 새 코드 배치 기준은 [mo
 | `app` | 조립 + 실행 |
 | `auth` | 로그인, refresh token rotation |
 | `board` | 게시글·댓글·좋아요·조회수 |
-| `ai` | LLM 호출(`TextGenerationClient`, 프롬프트)과 `study`(학습 문제 초안·AI 학생 질문·꼬리질문) |
-| `study` | 사용자 자료 학습: 근거가 검증된 복습 문제·간격 반복·빈 페이지 정리·가르치기·꼬리질문·잔디·게이트 지표 (`/study.html`) |
+| `ai` | LLM 호출 경로(`TextGenerationClient`)와 설정. 아직 이를 쓰는 기능은 없다 |
 
 이전 제품 기능을 제거한 배경은 [ADR-004](docs/decisions/adr-004-scope-reduction.md)에 이력으로 보존한다. 새 작업의 범위는 현재 제품 정의와 실제 코드에서 판단한다.
 

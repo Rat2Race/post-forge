@@ -15,11 +15,8 @@ final class PostForgeOpenApiRoutes {
             "/api/user/profile",
             "/api/user/profile/**"
     };
-    static final String[] STUDY = {
-            "/api/study/**"
-    };
     // 그룹을 더할 때 all에서 빠뜨리지 않도록 모듈 그룹을 합쳐 만든다.
-    static final String[] ALL = Stream.of(AUTH, BOARD, STUDY)
+    static final String[] ALL = Stream.of(AUTH, BOARD)
             .flatMap(Arrays::stream)
             .toArray(String[]::new);
 

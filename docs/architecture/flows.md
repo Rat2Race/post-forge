@@ -1,6 +1,6 @@
 # 요청 흐름
 
-PostForge는 사용자가 올린 자료로 학습하는 서비스다. 학습 흐름은 [Study](#study)에 있다. 뉴스 수집·자동 게시·데일리 종합은 [ADR-008](../decisions/adr-008-switch-to-learning-platform.md)에 따라 지웠다.
+PostForge는 게시판 서비스다. 뉴스 수집·자동 게시·데일리 종합은 [ADR-008](../decisions/adr-008-switch-to-learning-platform.md)에 따라 지웠고, 학습 기능은 [ADR-009](../decisions/adr-009-split-study-from-board.md)에 따라 이 브랜치에서 뗐다.
 
 Endpoint, DTO, status의 정본은 [API 문서](../api/README.md)다. 이 문서는 모듈 경계, 실패 처리, 일관성 보장만 설명한다.
 
@@ -20,9 +20,7 @@ presentation -> application -> domain
 
 ## AI
 
-LLM은 `core`의 `StudyAssistant` port 뒤에서 실행하며 provider와 model은 실행 설정으로 선택한다. 호출 지점은 학습 문제 초안·AI 학생 질문·꼬리질문뿐이다.
-
-LLM adapter는 장애 시 null을 반환하고 metric을 남긴다. 학습은 규칙 문제와 빠진 핵심 항목을 되묻는 질문으로 대신한다. LLM 출력은 문제 초안과 질문으로만 쓰고, 근거 문장이 자료에 그대로 있어야 저장한다([Study](#study)).
+`ai` 모듈은 LLM 호출 경로(`TextGenerationClient`)만 둔다. provider와 model은 실행 설정으로 선택하고, adapter는 장애 시 null을 반환하고 metric을 남긴다. 지금은 이 경로를 부르는 기능이 없다.
 
 ## Auth
 
@@ -45,21 +43,3 @@ Redis key 소유권은 [DB Schema Ownership](../database/schema-ownership.md#non
 - 좋아요는 Redis cooldown/rate guard를 거치고 DB unique constraint로 동일 관계의 중복 row 생성을 막는다. DB가 source of truth이며 Redis 장애 시 쓰기를 fail-closed한다.
 
 댓글, 게시글 endpoint의 세부 단계와 응답 상태는 [API 문서](../api/README.md)를 따른다.
-
-## Study
-
-`study`는 사용자가 올린 자료로 문제 풀기·간격 반복·빈 페이지 정리·가르치기를 하는 학습 루프를 소유한다. LLM은 `core`의 `StudyAssistant` port 뒤에 있고 `ai`가 구현한다. 원칙과 게이트는 [ADR-008](../decisions/adr-008-switch-to-learning-platform.md), endpoint와 규칙은 [API 문서](../api/README.md#study)를 따른다.
-
-```text
-자료 업로드(커밋) -> 메모리 실행기: LLM 문제 초안 -> 근거 검증 -> 문제 저장 + READY
-                                    (실패·전부 버림) -> 규칙 문제
-오늘 할 것 -> 답하기 -> 근거 확인 -> 자가 평가 -> 상자 이동                    (LLM 없음)
-          -> 빈 페이지 정리 -> 핵심 항목 대조(겹침 제안) -> 직접 체크 -> 자료별 일정  (LLM 없음)
-버튼: 가르치기 · 꼬리질문 -> StudyAiService -> LLM 1회
-```
-
-- LLM 경로는 문제 생성과 `StudyAiService`(가르치기·꼬리질문)뿐이다. 매일 반복 루프의 `StudyPracticeService`는 `StudyAssistant`를 갖지 않아 LLM을 부를 수 없다. LLM 호출은 트랜잭션 밖에서 하고 결과 저장만 짧은 트랜잭션으로 묶는다.
-- 채점은 학습자가 한다. LLM 출력은 문제 초안과 질문으로만 쓰고, 문제는 근거 문장이 자료에 그대로 있어야 저장된다. LLM이 실패하거나 초안이 모두 버려지면 핵심 항목(마크다운 제목·목록, 없으면 문단마다 첫 문장)으로 규칙 문제를 만든다. 꼬리질문은 같은 자료에 이미 있는 문제도 버리고, 남는 초안이 없으면 앞 근거로 예를 묻는 규칙 문제를, 그것도 있으면 이유를 묻는 규칙 문제를 만든다. 둘 다 있으면 만들지 않고 `409 NO_NEW_FOLLOW_UP`을 돌려준다.
-- 문제 생성은 자료 저장을 커밋한 뒤 메모리 실행기에서 돈다. 재시작으로 잃은 생성은 기동 직후(`ApplicationReadyEvent`) `GENERATING` 자료를 다시 맡겨 잇는다. 인스턴스 하나를 전제하며, 여럿이면 DB 작업 큐로 옮긴다.
-- 복습은 `StudyQuestion`의 `@Version`과 예정 전 제출 거절(`409 NOT_DUE_YET`)로 동시·중복 제출을 한 번만 반영한다. 빈 페이지 일정도 `StudySource`의 `@Version`으로 겹친 갱신을 막는다.
-- 학습 현황(잔디·연속 학습일·게이트 수치)은 기록 테이블에서 그때그때 집계하고 따로 저장하지 않는다.

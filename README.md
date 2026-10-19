@@ -1,21 +1,20 @@
 # PostForge
 
-> 사용자가 올린 자료로 학습하는 서비스 — 근거가 검증된 복습 문제, 간격 반복, 빈 페이지 정리, 가르치기
+> 게시판 서비스 백엔드 — 구현·측정·트러블슈팅을 기술 블로그 글로 남기는 프로젝트
 
-PostForge는 사용자가 올린 자료(마크다운·텍스트)에서 근거 문장이 그대로 있는 복습 문제를 만들고, 간격 반복으로 다시 풀게 하는 학습 서비스의 백엔드입니다.
-채점은 학습자가 직접 하고, LLM은 문제 초안·AI 학생 질문·꼬리질문처럼 버튼을 누를 때만 부릅니다. 전환 근거와 원칙은 [ADR-008](./docs/decisions/adr-008-switch-to-learning-platform.md)에 있습니다.
+PostForge는 회원가입·로그인과 게시글·댓글·좋아요·조회수를 갖춘 게시판 서비스의 백엔드입니다.
+구현하면서 겪은 문제와 부하 측정 결과를 기술 블로그 글로 남깁니다. 학습 플랫폼은 `release/postforge-study` 브랜치에서 따로 진행하며, 이 브랜치에서 떼어 낸 근거는 [ADR-009](./docs/decisions/adr-009-split-study-from-board.md)에 있습니다.
 
 ## 핵심 기능
 
 | 영역 | 현재 구현 |
 | --- | --- |
-| 학습 | 근거 문장 검증 문제(LLM 초안, 실패하면 규칙 문제), 간격 반복(10분·1·3·7·14·30일), 빈 페이지 정리(자료별 일정·언급 제안), 가르치기, 꼬리질문, 잔디·게이트 지표 (`/study.html`) |
 | 인증 | JWT, Redis refresh token rotation, OAuth2, 이메일 인증, 로그인 보호 |
 | 게시판 | 게시글, 댓글/대댓글, 좋아요, 조회수, 작성자 소유권 검증 |
-| AI | Spring AI, OpenAI-compatible LLM(로컬은 Ollama `qwen3:8b`). 문제 초안·AI 학생 질문·꼬리질문만 만들고 채점하지 않는다 |
+| AI | Spring AI, OpenAI-compatible LLM 호출 경로(`TextGenerationClient`). 아직 이를 쓰는 기능은 없다 |
 | 운영 기반 | Flyway baseline, Docker layered jar, requestId 로그, Prometheus/Grafana |
 
-뉴스 수집·자동 게시·데일리 종합, 그 시절의 초안 생성기·RAG 채팅·문서 적재·첨부파일은 ADR-008에 따라 지웠습니다.
+뉴스 수집·자동 게시·데일리 종합, 그 시절의 초안 생성기·RAG 채팅·문서 적재·첨부파일은 ADR-008에 따라 지웠습니다. 학습 기능은 ADR-009에 따라 이 브랜치에서 뗐습니다.
 
 ## Architecture
 
@@ -23,12 +22,12 @@ PostForge는 사용자가 올린 자료(마크다운·텍스트)에서 근거 �
 
 다이어그램 원본은 [PostForge_Architecture_v4.svg](./docs/images/PostForge_Architecture_v4.svg)다. 그림은 ADR-008 전환 전 뉴스 자동 게시 시절의 구조다.
 
-7개 Gradle 모듈로 구성된 DDD-lite 모듈러 모놀리스입니다.
+6개 Gradle 모듈로 구성된 DDD-lite 모듈러 모놀리스입니다.
 
 - `app`: 실행 조립과 route/security/OpenAPI 정책
 - `core`: 모듈 간 port, DTO, 오류 및 principal 계약
 - `support`: Redis, JPA auditing, 요청 로깅, 공통 MVC 예외 응답
-- `auth`, `board`, `ai`, `study`: 기능별 소유권
+- `auth`, `board`, `ai`: 기능별 소유권
 
 기능 모듈은 서로의 구현 대신 port 또는 공개 application API를 사용하고, 의존성 방향은
 `ModuleBoundaryTest`로 검증합니다.
@@ -55,7 +54,7 @@ PostForge는 사용자가 올린 자료(마크다운·텍스트)에서 근거 �
 테이블·Redis key 소유권은 [DB Schema Ownership](./docs/database/schema-ownership.md)이 정본입니다.
 관계 시각화는 [MVP ERD](./docs/database/postforge-mvp-erd.md)를 봅니다.
 
-신규 DB는 Flyway `V0000__baseline_schema.sql` 하나로 만듭니다. 2026-09-30 이력을 리셋했고([ADR-007](./docs/decisions/adr-007-remove-naver-news-source.md)), 2026-10-02 뉴스 퇴역 끝에 학습 표를 합쳐 동결했습니다([ADR-008](./docs/decisions/adr-008-switch-to-learning-platform.md)). 이후 변경은 `V0001`부터 쌓습니다.
+신규 DB는 Flyway `V0000__baseline_schema.sql`부터 차례로 적용해 만듭니다. 2026-09-30 이력을 리셋했고([ADR-007](./docs/decisions/adr-007-remove-naver-news-source.md)), 2026-10-02 뉴스 퇴역 끝에 학습 표를 합쳐 동결했고([ADR-008](./docs/decisions/adr-008-switch-to-learning-platform.md)), 2026-10-19 `V0001`로 그 학습 표를 지웠습니다([ADR-009](./docs/decisions/adr-009-split-study-from-board.md)). 이후 변경은 `V0002`부터 쌓습니다.
 옛 이력이 적용된 DB는 고쳐 쓰지 않고 DB를 지우고 다시 만듭니다. 로컬은 `docker exec postforge-db sh -c 'psql -U "$POSTGRES_USER" -d postgres -c "drop database postforge" -c "create database postforge"'` 뒤 재기동, 계정·게시글은 `scripts/local-demo-seed.sql`로 다시 넣습니다.
 모든 프로필은 `ddl-auto=validate`로 entity와 schema의 일치만 검증합니다.
 
@@ -66,7 +65,7 @@ Endpoint, DTO, status, 인증 조건의 정본은 [API 명세](./docs/api/README
 
 ## Local Run
 
-필수 도구는 Java 21+, Docker Compose, [Ollama](https://ollama.com)입니다.
+필수 도구는 Java 21+, Docker Compose입니다.
 
 설정은 세 층입니다. `application.yml`은 공통이고, `application-local.yml`·`application-prod.yml`에는 환경마다 값이
 달라야 하는 항목(DB·Redis 호스트, LLM 주소·모델 기본값, 메일 서버, 프록시 헤더)만 둡니다. 프로필을 지정하지 않으면
@@ -87,7 +86,6 @@ Endpoint, DTO, status, 인증 조건의 정본은 [API 명세](./docs/api/README
 
 ```bash
 cp .env.example .env.local                                               # 값 채우기
-ollama pull qwen3:8b
 docker compose --env-file .env.local -f docker-compose.local.yml up -d   # PostgreSQL, Redis, Mailpit
 ./gradlew :app:bootRun                                                   # 프로필 local, 루트의 .env.local 을 읽음
 ```
@@ -96,7 +94,7 @@ docker compose --env-file .env.local -f docker-compose.local.yml up -d   # Postg
 엔티티와 스키마가 일치하는지만 검사합니다. 부팅 확인은 `curl localhost:8080/actuator/health`.
 인증 메일은 실제로 발송되지 않고 [Mailpit](http://localhost:8025)에 쌓입니다. 데모 계정과 게시글은 `scripts/local-demo-seed.sql`로 넣습니다.
 
-LLM은 로컬에서 Ollama를 직접 호출하고 운영에서는 OpenAI-compatible gateway를 거칩니다. 두 환경 모두 공용 주소
+LLM 호출 경로는 로컬에서 Ollama를 직접 부르고 운영에서는 OpenAI-compatible gateway를 거치도록 설정돼 있습니다. 지금은 이를 쓰는 기능이 없어 로컬에서 Ollama를 띄우지 않아도 기동합니다. 두 환경 모두 공용 주소
 `LLM_GATEWAY_BASE_URL`/`LLM_GATEWAY_TOKEN`과, 그보다 우선하는 개별 주소 `LLM_CHAT_BASE_URL`/`LLM_CHAT_API_KEY`로
 덮어쓸 수 있습니다. 운영은 기본값이 없어 `LLM_GATEWAY_BASE_URL`, `LLM_CHAT_MODEL`이 빠지면 기동에 실패합니다.
 
@@ -123,7 +121,7 @@ prod:  PostForge app -> OpenAI-compatible LLM gateway -> Ollama -> qwen3:8b
 ./gradlew :app:bootJar -PexcludeTags=integration
 ```
 
-테스트는 Testcontainers로 운영과 같은 PostgreSQL 이미지(`pgvector/pgvector:0.8.2-pg18-trixie`)를 띄워 Flyway `V0000`을 적용하고 `ddl-auto=validate`로 엔티티와 대조하므로 Docker가 필요합니다. 2026-10-02 로컬 기준 전체 테스트 426개가 H2일 때 37초, PostgreSQL 컨테이너로 51초 걸렸습니다.
+테스트는 Testcontainers로 운영과 같은 PostgreSQL 이미지(`pgvector/pgvector:0.8.2-pg18-trixie`)를 띄워 Flyway 이력을 적용하고 `ddl-auto=validate`로 엔티티와 대조하므로 Docker가 필요합니다. 2026-10-02 로컬 기준 전체 테스트 426개가 H2일 때 37초, PostgreSQL 컨테이너로 51초 걸렸습니다.
 
 이 저장소에는 현재 전용 부하 테스트 runner가 없습니다. 과거 k6/Bruno/Grafana/API smoke 산출물은
 [성능 리포트](./docs/performance/README.md)에 historical evidence로 보관합니다.

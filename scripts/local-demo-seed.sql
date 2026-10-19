@@ -1,4 +1,4 @@
--- 로컬 데모 시드 — 외부 키 없이 학습 화면(/study.html)과 게시판(/index.html)을 눈으로 확인하기 위한 데이터.
+-- 로컬 데모 시드 — 외부 키 없이 게시판(/index.html)을 눈으로 확인하기 위한 데이터.
 -- 사용법:  docker exec -i postforge-db sh -c 'psql -X -U "$POSTGRES_USER" -d "$POSTGRES_DB"' < scripts/local-demo-seed.sql
 -- 계정:    demouser / Demo1234  (USER + ADMIN — 관리자 API까지 확인 가능)
 -- 재실행 안전: ON CONFLICT DO NOTHING. prod에는 절대 넣지 말 것.

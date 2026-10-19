@@ -71,7 +71,7 @@ class ReadEndpointSmokeTest {
     private ObjectMapper objectMapper;
 
     @Test
-    @DisplayName("OSIV를 꺼도 게시글·댓글·계정·학습 읽기 API가 모두 200이다")
+    @DisplayName("OSIV를 꺼도 게시글·댓글·계정 읽기 API가 모두 200이다")
     void readEndpointsWorkWithoutOpenInView() throws Exception {
         assertThat(context.getBeansOfType(OpenEntityManagerInViewInterceptor.class)).isEmpty();
         Account account = accountCommandService.createGeneralAccount("smokeuser", "Smoke1234!", "smoke@test.local", "스모크");
@@ -85,14 +85,11 @@ class ReadEndpointSmokeTest {
             {"parentId":%d,"content":"답글입니다"}""".formatted(commentId));
         mockMvc.perform(post("/api/posts/{postId}/like", postId).header(AUTHORIZATION, bearer));
         mockMvc.perform(post("/api/posts/{postId}/comments/{commentId}/like", postId, commentId).header(AUTHORIZATION, bearer));
-        long sourceId = createdId(post("/api/study/sources"), bearer, """
-            {"title":"격리 수준","content":"READ COMMITTED는 문장마다 새 스냅샷을 쓰고, REPEATABLE READ는 트랜잭션을 시작할 때 만든 스냅샷을 끝까지 쓴다."}""");
 
         Map<String, Integer> failures = new LinkedHashMap<>();
         for (String path : List.of(
             "/api/posts", "/api/posts/" + postId, "/api/posts/" + postId + "/comments",
-            "/api/user/account", "/api/user/profile",
-            "/api/study/sources", "/api/study/sources/" + sourceId, "/api/study/today", "/api/study/stats", "/api/study/records")) {
+            "/api/user/account", "/api/user/profile")) {
             record(failures, path + " (로그인)", mockMvc.perform(get(path).header(AUTHORIZATION, bearer)).andReturn().getResponse().getStatus());
         }
         for (String path : List.of("/api/posts", "/api/posts/" + postId, "/api/posts/" + postId + "/comments")) {

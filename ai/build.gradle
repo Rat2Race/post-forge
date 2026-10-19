@@ -3,8 +3,6 @@ plugins {
 }
 
 dependencies {
-    implementation project(':core')
-
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation platform("org.springframework.ai:spring-ai-bom:${springAiVersion}")
     implementation 'org.springframework.ai:spring-ai-openai'

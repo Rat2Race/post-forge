@@ -1,6 +1,6 @@
 # PostForge 문서 안내
 
-PostForge는 사용자가 올린 자료로 학습하는 서비스입니다. 근거가 검증된 복습 문제, 간격 반복, 빈 페이지 정리, 가르치기를 제공합니다([ADR-008](./decisions/adr-008-switch-to-learning-platform.md)).
+PostForge는 게시판 서비스입니다. 구현·측정·트러블슈팅 과정을 기술 블로그 글로 남깁니다. 학습 플랫폼은 `release/postforge-study` 브랜치에서 진행합니다([ADR-009](./decisions/adr-009-split-study-from-board.md)).
 
 이 문서는 문서의 진입점이자 정본(canonical source) 경계를 정의합니다.
 같은 표나 규칙을 여러 문서에 복사하지 않고, 소유 문서에 상세를 두고 나머지는 링크합니다.
@@ -9,8 +9,7 @@ PostForge는 사용자가 올린 자료로 학습하는 서비스입니다. 근�
 
 | 목적 | 읽는 순서 |
 | --- | --- |
-| 프로젝트 전체 파악 | [루트 README](../README.md) → [제품 방향 전환](./decisions/adr-008-switch-to-learning-platform.md) |
-| 학습 루프 | [처리 흐름](./architecture/flows.md#study) → [API와 규칙](./api/README.md#study) |
+| 프로젝트 전체 파악 | [루트 README](../README.md) → [학습 기능 분리](./decisions/adr-009-split-study-from-board.md) |
 | API 사용 | [API 명세](./api/README.md) → 실행 중 Swagger UI |
 | 요청 내부 흐름 | [요청 흐름](./architecture/flows.md) |
 | 모듈 경계 검토 | [Module Dependency Policy](./architecture/module-dependencies.md) → [ADR-003](./decisions/adr-003-modular-monolith.md) |

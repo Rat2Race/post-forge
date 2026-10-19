@@ -51,13 +51,6 @@ class PostForgeOpenApiGroupsTest {
     }
 
     @Test
-    @DisplayName("학습 API는 study 그룹과 all 그룹에 문서화된다")
-    void studyRoutesAreDocumented() {
-        assertThat(groups.studyApi().getPathsToMatch()).containsExactly("/api/study/**");
-        assertThat(groups.allApi().getPathsToMatch()).contains("/api/study/**");
-    }
-
-    @Test
     @DisplayName("관리자 권한 부여 API는 auth 그룹에 문서화된다")
     void adminAccountRoutesAreDocumented() {
         assertThat(groups.authApi().getPathsToMatch()).contains("/api/admin/accounts/**");
