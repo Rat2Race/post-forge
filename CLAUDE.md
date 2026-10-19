@@ -6,7 +6,7 @@
 
 ## 모듈 경계
 
-Gradle modular monolith. 의존성 허용 표와 새 코드 배치 기준은 [module-dependencies.md](docs/architecture/module-dependencies.md)가 단일 기준이고, `app/src/test/.../ModuleBoundaryTest.java`가 강제한다.
+Gradle modular monolith. 모듈 사이 의존은 각 모듈 `build.gradle`의 `implementation project(...)`가 정한다.
 
 | 모듈 | 책임 |
 |------|------|

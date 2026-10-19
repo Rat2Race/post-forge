@@ -30,7 +30,7 @@ PostForge는 회원가입·로그인과 게시글·댓글·좋아요·조회수�
 - `auth`, `board`, `ai`: 기능별 소유권
 
 기능 모듈은 서로의 구현 대신 port 또는 공개 application API를 사용하고, 의존성 방향은
-`ModuleBoundaryTest`로 검증합니다.
+각 모듈 `build.gradle`의 프로젝트 의존으로 정합니다.
 
 - [모듈 책임과 의존 방향](./docs/architecture/module-dependencies.md)
 - [모듈별 요청 처리 흐름](./docs/architecture/flows.md)
@@ -46,7 +46,7 @@ PostForge는 회원가입·로그인과 게시글·댓글·좋아요·조회수�
 | Security | Spring Security, JWT, OAuth2, Gmail SMTP |
 | AI | Spring AI 1.0.7, OpenAI-compatible API |
 | API | Spring MVC, SpringDoc OpenAPI |
-| Test | JUnit 5, Spring Boot Test, ArchUnit |
+| Test | JUnit 5, Spring Boot Test, Testcontainers |
 | Operations | Docker Compose, GitHub Actions, Prometheus, Grafana, MDC requestId logging |
 
 ## Data And API
@@ -111,17 +111,13 @@ prod:  PostForge app -> OpenAI-compatible LLM gateway -> Ollama -> qwen3:8b
 ## Test
 
 ```bash
-# 전체 테스트
-./gradlew test
-
-# 태그 제외(쉼표로 여러 개). CI는 eval만 빼지만 지금 eval 태그 테스트는 없어 integration·persistence까지 모두 돈다
-./gradlew test -PexcludeTags=integration,persistence
-
-# 실행 jar 생성
-./gradlew :app:bootJar -PexcludeTags=integration
+./gradlew test            # 스모크 테스트
+./gradlew :app:bootJar    # 실행 jar 생성
 ```
 
-테스트는 Testcontainers로 운영과 같은 PostgreSQL 이미지(`pgvector/pgvector:0.8.2-pg18-trixie`)를 띄워 Flyway 이력을 적용하고 `ddl-auto=validate`로 엔티티와 대조하므로 Docker가 필요합니다. 2026-10-02 로컬 기준 전체 테스트 426개가 H2일 때 37초, PostgreSQL 컨테이너로 51초 걸렸습니다.
+테스트는 스모크 테스트 하나(`ReadEndpointSmokeTest`)입니다. 계정·게시글·댓글·좋아요를 만든 뒤 OSIV를 끈 상태에서
+게시글·댓글·계정 읽기 API가 모두 200인지 봅니다. Testcontainers로 운영과 같은 PostgreSQL 이미지(`pgvector/pgvector:0.8.2-pg18-trixie`)와
+Redis를 띄워 Flyway 이력을 적용하고 `ddl-auto=validate`로 엔티티와 대조하므로 Docker가 필요합니다.
 
 이 저장소에는 현재 전용 부하 테스트 runner가 없습니다. 과거 k6/Bruno/Grafana/API smoke 산출물은
 [성능 리포트](./docs/performance/README.md)에 historical evidence로 보관합니다.

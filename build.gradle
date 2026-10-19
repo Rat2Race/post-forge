@@ -8,7 +8,6 @@ ext {
     springdocOpenapiVersion = '2.8.17'
     springAiVersion = '1.0.7'
     jjwtVersion = '0.12.7'
-    archunitVersion = '1.4.1'
 }
 
 allprojects {
@@ -34,8 +33,6 @@ subprojects {
 
             compileOnly "org.projectlombok:lombok:${lombokVersion}"
             annotationProcessor "org.projectlombok:lombok:${lombokVersion}"
-            testCompileOnly "org.projectlombok:lombok:${lombokVersion}"
-            testAnnotationProcessor "org.projectlombok:lombok:${lombokVersion}"
         }
 
         tasks.withType(JavaCompile).configureEach {

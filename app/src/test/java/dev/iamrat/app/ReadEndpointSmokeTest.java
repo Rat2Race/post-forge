@@ -37,11 +37,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
  */
 @Tag("integration")
 @Testcontainers
-@SpringBootTest(properties = {
-    "spring.config.import=optional:classpath:application-monitoring.yml",
-    // 자료 등록 뒤 비동기 문제 생성이 로컬 LLM 게이트웨이에 닿지 않게 닫힌 포트를 준다.
-    "LLM_CHAT_BASE_URL=http://127.0.0.1:9"
-})
+@SpringBootTest(properties = "spring.config.import=optional:classpath:application-monitoring.yml")
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
 class ReadEndpointSmokeTest {
