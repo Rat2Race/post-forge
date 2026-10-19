@@ -13,17 +13,6 @@ app:
     redirect-url: ${app.url.frontend}/oauth2/callback
   email:
     verification-base-url: ${app.url.frontend}/email/verify
-  llm:
-    # 주소·모델에 기본값이 없다. 운영은 환경변수가 빠지면 기동에 실패하고, local 프로필만 Ollama 기본값을 덧댄다.
-    provider: ${LLM_PROVIDER:ollama}
-    api-key: ${OPENAI_API_KEY:}
-    chat:
-      base-url: ${LLM_CHAT_BASE_URL:${LLM_GATEWAY_BASE_URL}}
-      api-key: ${LLM_CHAT_API_KEY:${LLM_GATEWAY_TOKEN:}}
-      connect-timeout: ${LLM_CHAT_CONNECT_TIMEOUT:3s}
-      read-timeout: ${LLM_CHAT_READ_TIMEOUT:60s}
-      options:
-        model: ${LLM_CHAT_MODEL}
 
 server:
   shutdown: graceful
@@ -58,7 +47,6 @@ spring:
       connect-timeout: 1s
 
   jpa:
-    database-platform: org.hibernate.dialect.PostgreSQLDialect
     # 요청이 끝날 때까지 커넥션을 잡지 않는다. 지연 로딩은 서비스 트랜잭션 안에서 끝낸다(ReadEndpointSmokeTest).
     open-in-view: false
     hibernate:
@@ -67,6 +55,19 @@ spring:
       hibernate:
         format_sql: true
         default_batch_fetch_size: 1000
+
+  ai:
+    openai:
+      # 주소·모델에 기본값이 없다. 운영은 환경변수가 빠지면 기동에 실패하고, local 프로필만 Ollama 기본값을 덧댄다.
+      # 환경변수에는 호스트만 넣는다. OpenAI SDK는 base-url 뒤에 /chat/completions만 붙이므로 /v1은 여기서 붙인다.
+      base-url: ${LLM_CHAT_BASE_URL:${LLM_GATEWAY_BASE_URL}}/v1
+      # 비워 두면 Authorization 헤더 없이 부른다(게이트웨이·Ollama).
+      api-key: ${LLM_CHAT_API_KEY:${LLM_GATEWAY_TOKEN:}}
+      timeout: ${LLM_CHAT_READ_TIMEOUT:60s}
+      # 생성 한 번이 수십 초라 SDK 기본 재시도가 쌓이면 프록시 제한(524)을 넘는다. 실패 처리는 호출자가 정한다.
+      max-retries: 0
+      chat:
+        model: ${LLM_CHAT_MODEL}
 
   mail:
     properties:

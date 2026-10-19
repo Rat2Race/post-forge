@@ -6,7 +6,7 @@ import dev.iamrat.auth.token.application.TokenLifetimeSettings;
 import dev.iamrat.core.global.exception.CustomException;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
-import java.util.concurrent.TimeUnit;
+import java.time.Duration;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Repository;
@@ -36,8 +36,7 @@ public class RefreshTokenRepository implements RefreshTokenStore {
         redisTemplate.opsForValue().set(
             RefreshTokenRedisKeys.refreshTokenKey(accountId),
             refreshToken,
-            tokenLifetimeSettings.refreshTokenValidityDays(),
-            TimeUnit.DAYS
+            Duration.ofDays(tokenLifetimeSettings.refreshTokenValidityDays())
         );
     }
 

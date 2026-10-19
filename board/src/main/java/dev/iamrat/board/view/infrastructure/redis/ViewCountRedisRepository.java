@@ -2,13 +2,13 @@ package dev.iamrat.board.view.infrastructure.redis;
 
 import dev.iamrat.board.view.application.ViewCountStore;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.RedisCallback;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -31,7 +31,7 @@ public class ViewCountRedisRepository implements ViewCountStore {
     @Override
     public boolean markViewedIfAbsent(Long postId, Long accountId) {
         Boolean isNew = redisTemplate.opsForValue()
-            .setIfAbsent(viewGuardKey(postId, accountId), "Viewed", VIEW_GUARD_TTL_HOURS, TimeUnit.HOURS);
+            .setIfAbsent(viewGuardKey(postId, accountId), "Viewed", Duration.ofHours(VIEW_GUARD_TTL_HOURS));
         return Boolean.TRUE.equals(isNew);
     }
 
@@ -74,8 +74,7 @@ public class ViewCountRedisRepository implements ViewCountStore {
         redisTemplate.opsForValue().setIfAbsent(
             viewCountKey(postId),
             String.valueOf(views),
-            CACHE_TTL_SECONDS,
-            TimeUnit.SECONDS
+            Duration.ofSeconds(CACHE_TTL_SECONDS)
         );
     }
 
@@ -151,7 +150,7 @@ public class ViewCountRedisRepository implements ViewCountStore {
     }
 
     private void refreshViewCountTtl(Long postId) {
-        redisTemplate.expire(viewCountKey(postId), CACHE_TTL_SECONDS, TimeUnit.SECONDS);
+        redisTemplate.expire(viewCountKey(postId), Duration.ofSeconds(CACHE_TTL_SECONDS));
     }
 
     private Optional<Long> parseCount(String value) {

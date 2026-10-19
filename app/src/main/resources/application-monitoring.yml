@@ -12,10 +12,10 @@ management:
     distribution:
       percentiles-histogram:
         http.server.requests: true
-        ai_text_generation: true
+        gen_ai.client.operation: true
       slo:
         http.server.requests: 100ms,300ms,500ms,1s,2s
-        ai_text_generation: 500ms,1s,2s,5s,10s,30s
+        gen_ai.client.operation: 500ms,1s,2s,5s,10s,30s
 
 monitoring:
   username: ${MONITORING_USERNAME}

@@ -73,19 +73,20 @@ docs/performance/runs/YYYYMMDD-HHMMSS-<target>-<scenario>/
 - checks, request count, failure rate, RPS
 - latency avg/med/p90/p95/p99/max
 - 가능하면 CPU, memory, network, disk I/O 관측값
-- LLM generation timer(`ai_text_generation_seconds`)와 token summary
+- LLM 호출 timer(`gen_ai_client_operation_seconds`)와 token 수(`gen_ai_client_token_usage_total`)
 - Grafana screenshot, k6 summary JSON 같은 artifact 링크
 - 다음 조치
 
 ## LLM 계측
 
-LLM 처리 비용은 HTTP latency만으로 판단하지 않는다. 앱 내부 metric으로 LLM 생성 호출 시간과 토큰을 남긴다.
+LLM 처리 비용은 HTTP latency만으로 판단하지 않는다. Spring AI가 ChatModel 호출마다 남기는 관측 지표로 호출 시간과 토큰을 본다(2026-10-19 Spring AI 2.0 전환 전에는 직접 만든 `ai_text_generation_*` 지표였다).
 
 | Metric | 용도 |
 |---|---|
-| `ai_text_generation_seconds` | LLM 생성 호출 시간 |
-| `ai_text_generation_prompt_tokens` | LLM input token 처리량 계산 |
-| `ai_text_generation_completion_tokens` | LLM output TPS 계산 |
+| `gen_ai_client_operation_seconds` | LLM 호출 시간. 실패하면 `error` 태그에 예외 종류가 붙는다 |
+| `gen_ai_client_token_usage_total{gen_ai_token_type="input"}` | LLM input token 처리량 계산 |
+| `gen_ai_client_token_usage_total{gen_ai_token_type="output"}` | LLM output TPS 계산 |
+| `okhttp_requests_seconds` | OpenAI SDK의 HTTP 호출 시간과 상태 코드 |
 
 위 표는 계측 항목이며 실측 수치가 아니다. LLM을 호출하지 않는 테스트와 LLM 실호출 성능 측정을 구분한다.
 

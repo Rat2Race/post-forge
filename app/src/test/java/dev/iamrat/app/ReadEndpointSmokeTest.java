@@ -6,7 +6,6 @@ import static org.springframework.http.MediaType.APPLICATION_JSON;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.iamrat.auth.account.application.AccountCommandService;
 import dev.iamrat.auth.account.domain.Account;
 import dev.iamrat.auth.security.infrastructure.principal.AccountAuthorityMapper;
@@ -18,8 +17,8 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.context.ApplicationContext;
 import org.springframework.orm.jpa.support.OpenEntityManagerInViewInterceptor;
 import org.springframework.test.context.ActiveProfiles;
@@ -30,6 +29,7 @@ import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilde
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
+import tools.jackson.databind.ObjectMapper;
 
 /**
  * OSIV(요청이 끝날 때까지 영속성 컨텍스트를 여는 것)를 끈 채 읽기 API가 모두 200인지 본다.

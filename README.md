@@ -36,10 +36,10 @@ PostForge는 회원가입·로그인과 게시글·댓글·좋아요·조회수�
 
 | 영역 | 기술 |
 | --- | --- |
-| Runtime | Java 21, Spring Boot 3.5.16, Gradle 8.14.3 |
+| Runtime | Java 21, Spring Boot 4.1.1, Gradle 8.14.3 |
 | Data | PostgreSQL, Redis, Spring Data JPA, Flyway |
 | Security | Spring Security, JWT, OAuth2, Gmail SMTP |
-| AI | Spring AI 1.1.8, OpenAI-compatible API |
+| AI | Spring AI 2.0.1(OpenAI Java SDK), OpenAI-compatible API |
 | API | Spring MVC, SpringDoc OpenAPI |
 | Test | JUnit 5, Spring Boot Test, Testcontainers |
 | Operations | Docker Compose, GitHub Actions, Prometheus, Grafana, MDC requestId logging |
@@ -91,7 +91,7 @@ docker compose --env-file .env.local -f docker-compose.local.yml up -d   # Postg
 
 LLM 호출 경로는 로컬에서 Ollama를 직접 부르고 운영에서는 OpenAI-compatible gateway를 거치도록 설정돼 있습니다. 지금은 이를 쓰는 기능이 없어 로컬에서 Ollama를 띄우지 않아도 기동합니다. 두 환경 모두 공용 주소
 `LLM_GATEWAY_BASE_URL`/`LLM_GATEWAY_TOKEN`과, 그보다 우선하는 개별 주소 `LLM_CHAT_BASE_URL`/`LLM_CHAT_API_KEY`로
-덮어쓸 수 있습니다. 운영은 기본값이 없어 `LLM_GATEWAY_BASE_URL`, `LLM_CHAT_MODEL`이 빠지면 기동에 실패합니다.
+덮어쓸 수 있습니다. 주소에는 호스트만 넣고, OpenAI SDK가 쓰는 `/v1` 경로는 설정이 붙입니다. 운영은 기본값이 없어 `LLM_GATEWAY_BASE_URL`, `LLM_CHAT_MODEL`이 빠지면 기동에 실패합니다.
 
 ```text
 local: PostForge app -> Ollama(localhost:11434) -> qwen3:8b

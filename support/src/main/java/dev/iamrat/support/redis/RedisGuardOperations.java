@@ -1,8 +1,8 @@
 package dev.iamrat.support.redis;
 
+import java.time.Duration;
 import java.util.Collection;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.script.DefaultRedisScript;
@@ -28,12 +28,12 @@ public class RedisGuardOperations {
 
     public boolean markIfAbsent(String key, long ttlSeconds) {
         Boolean marked = redisTemplate.opsForValue()
-            .setIfAbsent(key, MARKER_VALUE, ttlSeconds, TimeUnit.SECONDS);
+            .setIfAbsent(key, MARKER_VALUE, Duration.ofSeconds(ttlSeconds));
         return Boolean.TRUE.equals(marked);
     }
 
     public void mark(String key, long ttlSeconds) {
-        redisTemplate.opsForValue().set(key, MARKER_VALUE, ttlSeconds, TimeUnit.SECONDS);
+        redisTemplate.opsForValue().set(key, MARKER_VALUE, Duration.ofSeconds(ttlSeconds));
     }
 
     public boolean hasKey(String key) {

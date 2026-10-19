@@ -1,10 +1,10 @@
 package dev.iamrat.auth.email.infrastructure.redis;
 
 import dev.iamrat.auth.email.application.EmailVerificationStore;
-import java.util.concurrent.TimeUnit;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Repository;
+import java.time.Duration;
 
 @Repository
 @RequiredArgsConstructor
@@ -19,8 +19,7 @@ public class RedisEmailVerificationStore implements EmailVerificationStore {
         redisTemplate.opsForValue().set(
             RedisEmailVerificationKeys.tokenToEmailKey(token),
             email,
-            TOKEN_TTL_MINUTES,
-            TimeUnit.MINUTES
+            Duration.ofMinutes(TOKEN_TTL_MINUTES)
         );
     }
 
@@ -34,8 +33,7 @@ public class RedisEmailVerificationStore implements EmailVerificationStore {
         redisTemplate.opsForValue().set(
             RedisEmailVerificationKeys.emailVerifiedKey(email),
             Boolean.TRUE.toString(),
-            VERIFIED_TTL_HOURS,
-            TimeUnit.HOURS
+            Duration.ofHours(VERIFIED_TTL_HOURS)
         );
     }
 

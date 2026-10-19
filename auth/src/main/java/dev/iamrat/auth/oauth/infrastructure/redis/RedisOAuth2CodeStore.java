@@ -1,10 +1,10 @@
 package dev.iamrat.auth.oauth.infrastructure.redis;
 
 import dev.iamrat.auth.oauth.application.OAuth2CodeStore;
-import java.util.concurrent.TimeUnit;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Repository;
+import java.time.Duration;
 
 @Repository
 @RequiredArgsConstructor
@@ -18,8 +18,7 @@ public class RedisOAuth2CodeStore implements OAuth2CodeStore {
         redisTemplate.opsForValue().set(
             RedisOAuth2CodeKeys.exchangeCodeKey(code),
             String.valueOf(accountId),
-            CODE_TTL_SECONDS,
-            TimeUnit.SECONDS
+            Duration.ofSeconds(CODE_TTL_SECONDS)
         );
     }
 
