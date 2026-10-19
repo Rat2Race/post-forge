@@ -1,0 +1,2 @@
+Started ApplicationServer in 6.729 seconds
+RSS after load: 455 MB

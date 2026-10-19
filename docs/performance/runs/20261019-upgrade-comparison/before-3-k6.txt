@@ -1,0 +1,60 @@
+
+
+  █ THRESHOLDS 
+
+    http_req_duration{phase:measure,name:comments}
+    ✓ 'max>=0' max=116.79ms
+
+    http_req_duration{phase:measure,name:detail-anon}
+    ✓ 'max>=0' max=113.04ms
+
+    http_req_duration{phase:measure,name:detail-auth}
+    ✓ 'max>=0' max=144.81ms
+
+    http_req_duration{phase:measure,name:list}
+    ✓ 'max>=0' max=124.04ms
+
+    http_req_duration{phase:measure}
+    ✓ 'max>=0' max=144.81ms
+
+    http_req_failed{phase:measure}
+    ✓ 'rate>=0' rate=0.00%
+
+    http_reqs{phase:measure}
+    ✓ 'count>=0' count=108123
+
+
+  █ TOTAL RESULTS 
+
+    checks_total.......: 153516  1611.128359/s
+    checks_succeeded...: 100.00% 153516 out of 153516
+    checks_failed......: 0.00%   0 out of 153516
+
+    ✓ login 200
+    ✓ status 200
+
+    HTTP
+    http_req_duration......................: avg=23.4ms  min=2.08ms med=25.2ms  p(90)=32.1ms  p(95)=35.91ms p(99)=50.59ms max=255.82ms
+      { expected_response:true }...........: avg=23.4ms  min=2.08ms med=25.2ms  p(90)=32.1ms  p(95)=35.91ms p(99)=50.59ms max=255.82ms
+      { phase:measure,name:comments }......: avg=25.71ms min=2.08ms med=24.92ms p(90)=30.7ms  p(95)=34.73ms p(99)=48.82ms max=116.79ms
+      { phase:measure,name:detail-anon }...: avg=26.85ms min=2.81ms med=25.99ms p(90)=31.96ms p(95)=36.4ms  p(99)=50.24ms max=113.04ms
+      { phase:measure,name:detail-auth }...: avg=29.55ms min=3.91ms med=28.73ms p(90)=35.33ms p(95)=40.03ms p(99)=54.39ms max=144.81ms
+      { phase:measure,name:list }..........: avg=28.67ms min=3.95ms med=27.84ms p(90)=33.98ms p(95)=38.25ms p(99)=51.8ms  max=124.04ms
+      { phase:measure }....................: avg=27.69ms min=2.08ms med=26.91ms p(90)=33.32ms p(95)=37.54ms p(99)=51.36ms max=144.81ms
+    http_req_failed........................: 0.00%  0 out of 153516
+      { phase:measure }....................: 0.00%  0 out of 108123
+    http_reqs..............................: 153516 1611.128359/s
+      { phase:measure }....................: 108123 1134.735347/s
+
+    EXECUTION
+    iteration_duration.....................: avg=23.44ms min=2.13ms med=25.25ms p(90)=32.15ms p(95)=35.97ms p(99)=50.66ms max=144.89ms
+    iterations.............................: 153515 1611.117865/s
+    vus....................................: 50     min=0           max=50
+    vus_max................................: 70     min=70          max=70
+
+    NETWORK
+    data_received..........................: 1.8 GB 19 MB/s
+    data_sent..............................: 21 MB  216 kB/s
+
+
+

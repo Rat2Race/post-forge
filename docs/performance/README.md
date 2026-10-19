@@ -33,6 +33,7 @@ Gradle `:app:smoke` task와 `app/src/smoke` source set은 2026-06-11 기준 제�
 | [2026-05-04 prod smoke](./runs/20260504-160737-prod-smoke/) | 자동 생성 k6 리포트 | commit·리소스 관측이 빠진 당시 실행 기록 |
 | [2026-05-12 local smoke](./runs/20260512-140100-smoke/run-summary.md) | k6·Bruno public/auth | 로컬 기능·응답 확인 |
 | [2026-08-21 local baseline](./runs/20260821-004500-local-baseline/run-summary.md) | 분야 필터·데일리 도입 후 조회 측정 | M-series 로컬 환경, LLM은 mock |
+| [2026-10-19 업그레이드 전후](./runs/20261019-upgrade-comparison/run-summary.md) | Spring Boot 3.5.14·Spring AI 1.0.7 → 4.1.1·2.0.1 읽기 혼합 비교 | M4 로컬 한 장비, 전후를 번갈아 측정 |
 
 `runs/`의 endpoint·스크립트·migration 이름은 실행 당시 값이다. 현재 형식에 맞춰 측정 원문을 다시 쓰지 않고, 현재 해석은 `results.md`와 실행 요약에 남긴다.
 파일 형식이 같거나 다르다는 이유만으로 원본을 삭제하지 않는다. 중복 산출물을 정리할 때는 결과와 실행 메타데이터가 남는지 먼저 확인한다.
