@@ -8,7 +8,7 @@
 ## 결정
 
 조회수는 Redis를 write buffer로 사용하고 account 단위 24시간 중복 조회를 막는다.
-변경된 post만 scheduler가 RDB로 반영한다. 정확한 key와 상태 전이는 [Redis 캐시 전략](../architecture/redis-cache-strategy.md)에 둔다.
+변경된 post만 scheduler가 RDB로 반영한다.
 
 좋아요는 Redis write-behind로 처리하지 않는다.
 좋아요의 source of truth는 `post_like`, `comment_like` table과 DB count이며, Redis는 짧은 cooldown/rate limit 같은 보호 장치에만 쓴다.
@@ -30,4 +30,3 @@
 
 ## 관련 문서
 
-- [Redis 캐시 전략](../architecture/redis-cache-strategy.md)

@@ -3,7 +3,7 @@
 > 게시판 서비스 백엔드 — 구현·측정·트러블슈팅을 기술 블로그 글로 남기는 프로젝트
 
 PostForge는 회원가입·로그인과 게시글·댓글·좋아요·조회수를 갖춘 게시판 서비스의 백엔드입니다.
-구현하면서 겪은 문제와 부하 측정 결과를 기술 블로그 글로 남깁니다. 학습 플랫폼은 `release/postforge-study` 브랜치에서 따로 진행하며, 이 브랜치에서 떼어 낸 근거는 [ADR-009](./docs/decisions/adr-009-split-study-from-board.md)에 있습니다.
+구현하면서 겪은 문제와 부하 측정 결과를 기술 블로그 글로 남깁니다. 학습 플랫폼은 `release/postforge-study` 브랜치에서 따로 진행합니다.
 
 ## 핵심 기능
 
@@ -14,13 +14,11 @@ PostForge는 회원가입·로그인과 게시글·댓글·좋아요·조회수�
 | AI | Spring AI, OpenAI-compatible LLM 호출 경로(`TextGenerationClient`). 아직 이를 쓰는 기능은 없다 |
 | 운영 기반 | Flyway baseline, Docker layered jar, requestId 로그, Prometheus/Grafana |
 
-뉴스 수집·자동 게시·데일리 종합, 그 시절의 초안 생성기·RAG 채팅·문서 적재·첨부파일은 ADR-008에 따라 지웠습니다. 학습 기능은 ADR-009에 따라 이 브랜치에서 뗐습니다.
-
 ## Architecture
 
 ![PostForge Architecture](./docs/images/PostForge_Architecture_v4.png)
 
-다이어그램 원본은 [PostForge_Architecture_v4.svg](./docs/images/PostForge_Architecture_v4.svg)다. 그림은 ADR-008 전환 전 뉴스 자동 게시 시절의 구조다.
+다이어그램 원본은 [PostForge_Architecture_v4.svg](./docs/images/PostForge_Architecture_v4.svg)다. 그림은 뉴스 자동 게시 시절의 구조다.
 
 6개 Gradle 모듈로 구성된 DDD-lite 모듈러 모놀리스입니다.
 
@@ -32,10 +30,7 @@ PostForge는 회원가입·로그인과 게시글·댓글·좋아요·조회수�
 기능 모듈은 서로의 구현 대신 port 또는 공개 application API를 사용하고, 의존성 방향은
 각 모듈 `build.gradle`의 프로젝트 의존으로 정합니다.
 
-- [모듈 책임과 의존 방향](./docs/architecture/module-dependencies.md)
-- [모듈별 요청 처리 흐름](./docs/architecture/flows.md)
 - [모듈러 모놀리스 선택과 MSA 전환 경로](./docs/decisions/adr-003-modular-monolith.md)
-- [관측 스택 선택과 대안 비교](./docs/decisions/adr-006-observability-stack.md)
 
 ## Tech Stack
 
@@ -54,8 +49,8 @@ PostForge는 회원가입·로그인과 게시글·댓글·좋아요·조회수�
 테이블·Redis key 소유권은 [DB Schema Ownership](./docs/database/schema-ownership.md)이 정본입니다.
 관계 시각화는 [MVP ERD](./docs/database/postforge-mvp-erd.md)를 봅니다.
 
-신규 DB는 Flyway `V0000__baseline_schema.sql`부터 차례로 적용해 만듭니다. 2026-09-30 이력을 리셋했고([ADR-007](./docs/decisions/adr-007-remove-naver-news-source.md)), 2026-10-02 뉴스 퇴역 끝에 학습 표를 합쳐 동결했고([ADR-008](./docs/decisions/adr-008-switch-to-learning-platform.md)), 2026-10-19 `V0001`로 그 학습 표를 지웠습니다([ADR-009](./docs/decisions/adr-009-split-study-from-board.md)). 이후 변경은 `V0002`부터 쌓습니다.
-옛 이력이 적용된 DB는 고쳐 쓰지 않고 DB를 지우고 다시 만듭니다. 로컬은 `docker exec postforge-db sh -c 'psql -U "$POSTGRES_USER" -d postgres -c "drop database postforge" -c "create database postforge"'` 뒤 재기동, 계정·게시글은 `scripts/local-demo-seed.sql`로 다시 넣습니다.
+신규 DB는 Flyway `V0000__baseline_schema.sql`부터 차례로 적용해 만듭니다. 이후 변경은 `V0002`부터 쌓습니다.
+옛 이력이 적용된 DB는 고쳐 쓰지 않고 DB를 지우고 다시 만듭니다. 로컬은 `docker exec postforge-db sh -c 'psql -U "$POSTGRES_USER" -d postgres -c "drop database postforge" -c "create database postforge"'` 뒤 재기동합니다.
 모든 프로필은 `ddl-auto=validate`로 entity와 schema의 일치만 검증합니다.
 
 Endpoint, DTO, status, 인증 조건의 정본은 [API 명세](./docs/api/README.md)입니다.
@@ -92,7 +87,7 @@ docker compose --env-file .env.local -f docker-compose.local.yml up -d   # Postg
 
 첫 부팅 시 Flyway가 `db/migration`의 baseline(V0000)부터 적용해 스키마를 만들고, Hibernate는 `validate`로
 엔티티와 스키마가 일치하는지만 검사합니다. 부팅 확인은 `curl localhost:8080/actuator/health`.
-인증 메일은 실제로 발송되지 않고 [Mailpit](http://localhost:8025)에 쌓입니다. 데모 계정과 게시글은 `scripts/local-demo-seed.sql`로 넣습니다.
+인증 메일은 실제로 발송되지 않고 [Mailpit](http://localhost:8025)에 쌓입니다.
 
 LLM 호출 경로는 로컬에서 Ollama를 직접 부르고 운영에서는 OpenAI-compatible gateway를 거치도록 설정돼 있습니다. 지금은 이를 쓰는 기능이 없어 로컬에서 Ollama를 띄우지 않아도 기동합니다. 두 환경 모두 공용 주소
 `LLM_GATEWAY_BASE_URL`/`LLM_GATEWAY_TOKEN`과, 그보다 우선하는 개별 주소 `LLM_CHAT_BASE_URL`/`LLM_CHAT_API_KEY`로
@@ -143,7 +138,6 @@ workflow_dispatch (release/postforge)
 | --- | --- |
 | [전체 문서 안내](./docs/README.md) | 정본 경계, 읽는 순서, 전체 분류 |
 | [API 명세](./docs/api/README.md) | 모듈별 endpoint, DTO, status, 인증 조건 |
-| [모듈 의존성](./docs/architecture/module-dependencies.md) | 모듈 책임과 dependency policy |
 | [DB Schema Ownership](./docs/database/schema-ownership.md) | DB/Redis 소유권과 migration 규칙 |
 | [성능 리포트](./docs/performance/README.md) | 현재 검증 표면과 historical evidence 구분 |
 

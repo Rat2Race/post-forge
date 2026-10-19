@@ -1,7 +1,6 @@
 # DB Schema Ownership
 
 이 문서는 PostForge modular monolith에서 DB와 준영속 저장소를 어느 모듈이 소유하는지 선언한다.
-모듈 그래프와 기능 책임은 [Module Dependency Policy](../architecture/module-dependencies.md)에 둔다.
 
 ## Source Of Truth Hierarchy
 
@@ -48,7 +47,7 @@
 ## 마이그레이션 규칙
 
 런타임 마이그레이션은 `app/src/main/resources/db/migration/`의 `VNNNN__description.sql`에 둔다.
-현재 이력은 `V0000`(2026-09-30 재베이스라인, ADR-007. 2026-10-02 뉴스 퇴역 끝에 학습 표를 합쳐 동결)과 `V0001`(2026-10-19 학습 표 삭제, ADR-009)이다. 이후 스키마 변경은 `V0002`부터 순번으로 쌓는다. 단독 개발이라 브랜치 사이 번호 충돌을 따로 막지 않는다. 신규 빈 DB는 `V0000` baseline부터 실행하고, production-like 환경은 Flyway 적용 후 Hibernate `validate`로 mapping 불일치를 잡는다.
+현재 이력은 `V0000`(baseline)과 `V0001`(학습 표 삭제)이다. 이후 스키마 변경은 `V0002`부터 순번으로 쌓는다. 단독 개발이라 브랜치 사이 번호 충돌을 따로 막지 않는다. 신규 빈 DB는 `V0000` baseline부터 실행하고, production-like 환경은 Flyway 적용 후 Hibernate `validate`로 mapping 불일치를 잡는다.
 로컬 개발도 `application.yml` 기준으로 Flyway가 기본 활성화되고 Hibernate는 `validate`를 사용한다. 테스트도 Testcontainers로 compose·운영과 같은 PostgreSQL 이미지를 띄워 Flyway 이력을 적용하고 `validate`로 대조한다. 기존 non-empty DB 편입만 아래의 1회성 baseline 절차를 따른다.
 
 각 migration은 primary owner 하나를 갖고 다음 header에 호환성, rollback, 검증 방법을 남긴다.

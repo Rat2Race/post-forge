@@ -1,6 +1,6 @@
 # Authentication Architecture
 
-이 문서는 인증/인가 흐름과 운영 경계를 설명한다. HTTP endpoint, request/response DTO, validation 상세는 [통합 API 명세의 Auth](../api/README.md#auth)를 canonical source로 둔다. 단계별 요청 흐름은 [요청 흐름](./flows.md#auth)에 있다.
+이 문서는 인증/인가 흐름과 운영 경계를 설명한다. HTTP endpoint, request/response DTO, validation 상세는 [통합 API 명세의 Auth](../api/README.md#auth)를 canonical source로 둔다.
 
 ## Runtime Ownership
 

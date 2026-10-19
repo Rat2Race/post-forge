@@ -77,7 +77,7 @@ public class LoginAttemptGuard {
         }
     }
 
-    // 로그에는 아이디·IP를 남기지 않는다(docs/policy.md). 장애 종류는 예외 클래스로 구분한다.
+    // 로그에는 아이디·IP를 남기지 않는다. 장애 종류는 예외 클래스로 구분한다.
     private CustomException failClosed(String message, Exception cause) {
         log.warn("{}: {}", message, cause.getClass().getSimpleName());
         return new CustomException(CommonErrorCode.TOO_MANY_REQUESTS);

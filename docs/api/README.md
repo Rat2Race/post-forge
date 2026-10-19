@@ -2,7 +2,7 @@
 
 현재 `@RestController`, 요청·응답 DTO, `PostForgeAuthorizationRules`, 전역 예외 처리기를 기준으로 한 단일 명세다. Spring Security가 소유하는 `/oauth2/**`, `/login/oauth2/**`와 Swagger/static 경로는 제외한다.
 
-제품은 게시판 서비스다. 뉴스 수집·자동 게시·데일리 종합 API는 지웠고([ADR-008](../decisions/adr-008-switch-to-learning-platform.md)), 학습 API는 이 브랜치에서 뗐다([ADR-009](../decisions/adr-009-split-study-from-board.md)).
+제품은 게시판 서비스다.
 
 ## 공통 계약
 

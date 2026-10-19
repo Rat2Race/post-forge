@@ -79,7 +79,7 @@ docs/performance/runs/YYYYMMDD-HHMMSS-<target>-<scenario>/
 
 ## LLM 계측
 
-LLM 처리 비용은 HTTP latency만으로 판단하지 않는다. 앱 내부 metric으로 LLM 생성 호출 시간과 토큰을 남긴다. 스택 선택 근거와 대안 비교는 [ADR-006](../decisions/adr-006-observability-stack.md)에 둔다.
+LLM 처리 비용은 HTTP latency만으로 판단하지 않는다. 앱 내부 metric으로 LLM 생성 호출 시간과 토큰을 남긴다.
 
 | Metric | 용도 |
 |---|---|

@@ -24,4 +24,3 @@ refresh token은 계정별 Redis key `refresh_token:{accountId}`에 저장하고
 ## 관련 문서
 
 - [Authentication Architecture](../architecture/authentication.md)
-- [Auth API 흐름](../architecture/flows.md#auth)
