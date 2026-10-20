@@ -31,11 +31,11 @@ Gradle modular monolith. 모듈 사이 의존은 각 모듈 `build.gradle`의 `i
 ### 플러그인
 
 ```bash
-claude plugin marketplace add anthropics/claude-plugins-official && claude plugin marketplace add upstash/context7 && claude plugin marketplace add obra/superpowers-marketplace && claude plugin marketplace add Egonex-AI/Understand-Anything && claude plugin marketplace add DietrichGebert/ponytail && claude plugin marketplace add Yeachan-Heo/oh-my-claudecode && claude plugin marketplace add anthropics/claude-plugins-community
+claude plugin marketplace add anthropics/claude-plugins-official && claude plugin marketplace add upstash/context7 && claude plugin marketplace add obra/superpowers-marketplace && claude plugin marketplace add Egonex-AI/Understand-Anything && claude plugin marketplace add DietrichGebert/ponytail && claude plugin marketplace add Yeachan-Heo/oh-my-claudecode && claude plugin marketplace add anthropics/claude-plugins-community && claude plugin marketplace add Leonxlnx/taste-skill
 ```
 
 ```bash
-claude plugin install learning-output-style@claude-plugins-official && claude plugin install context7@context7-marketplace && claude plugin install superpowers@superpowers-marketplace && claude plugin install understand-anything@understand-anything && claude plugin install ponytail@ponytail && claude plugin install oh-my-claudecode@omc && claude plugin install eli5@claude-community
+claude plugin install learning-output-style@claude-plugins-official && claude plugin install context7@context7-marketplace && claude plugin install superpowers@superpowers-marketplace && claude plugin install understand-anything@understand-anything && claude plugin install ponytail@ponytail && claude plugin install oh-my-claudecode@omc && claude plugin install eli5@claude-community && claude plugin install taste-skill@taste-skill
 ```
 
 | 플러그인 | 마켓플레이스 repo | 역할 |
@@ -47,6 +47,7 @@ claude plugin install learning-output-style@claude-plugins-official && claude pl
 | `context7` | `upstash/context7` | 라이브러리 최신 문서 조회 |
 | `learning-output-style` | `anthropics/claude-plugins-official` | 학습형 출력 스타일 |
 | `eli5` | `anthropics/claude-plugins-community` | `/eli5 <주제>` — 그림 위주 HTML 설명서 생성 |
+| `taste-skill` | `Leonxlnx/taste-skill` | 프론트엔드 화면 디자인 기준과 실제 브라우저 검사(`design-taste-frontend`). 검사 스크립트는 Node 22+·Chrome 필요. Chrome 앱이 없으면 `~/.claude/settings.json`의 `env.CHROME_PATH`에 Playwright `chrome-headless-shell` 경로를 넣는다(Chrome for Testing은 기동이 멈춤) |
 
 ### 개인 스킬 (`~/.claude/skills/`)
 
