@@ -78,7 +78,7 @@ Endpoint, DTO, status, 인증 조건의 정본은 [API 명세](./docs/api/README
 
 | | local | prod |
 | --- | --- | --- |
-| 프로필 설정 | `application-local.yml` (커밋) | `application-prod.yml` (커밋 안 함, 배포 호스트에서 컨테이너에 마운트) |
+| 프로필 설정 | `application-local.yml` (커밋) | `application-prod.yml` (커밋, 값은 `.env`에서 받음) |
 | 환경변수 | `.env.local` (커밋 안 함) | `.env` (커밋 안 함, compose `env_file`) |
 | compose | `docker-compose.local.yml` (커밋) | `docker-compose.prod.yml` (커밋 안 함) |
 
@@ -107,10 +107,10 @@ local: PostForge app -> Ollama(localhost:11434) -> qwen3:8b (chat) / bge-m3 (emb
 prod:  PostForge app -> OpenAI-compatible LLM gateway -> Ollama -> qwen3:8b / bge-m3
 ```
 
-운영 배포 호스트에는 `docker-compose.prod.yml`, `.env`, `application-prod.yml`을 같은 디렉터리에 둡니다. compose가
-`application-prod.yml`을 `/app/config/`에 마운트하므로 이미지를 다시 만들지 않고 설정을 바꿀 수 있습니다.
+운영 배포 호스트에는 `docker-compose.prod.yml`과 `.env`를 같은 디렉터리에 둡니다. `application-prod.yml`은 이미지에
+들어 있고 값은 `.env`에서 받으므로, 이 파일을 바꾸면 이미지를 다시 빌드합니다.
 `.env`는 예제가 바뀌어도 자동 갱신되지 않으므로 배포 시 새 항목만 병합하고 기존 비밀키는 유지합니다.
-두 파일을 바꾼 뒤에는 앱 컨테이너를 재생성해야 반영됩니다.
+`.env`를 바꾼 뒤에는 앱 컨테이너를 재생성해야 반영됩니다.
 
 ## Test
 

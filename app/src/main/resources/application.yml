@@ -1,9 +1,4 @@
-# 공통 설정. 환경마다 값이 달라야 하는 항목(DB·Redis 호스트, LLM 기본값, 메일 서버, 프록시 헤더)은
-# application-local.yml / application-prod.yml 에만 둔다. 프로필을 지정하지 않으면 local 이다.
 app:
-  # 도메인만 환경변수로 받고 경로는 여기서 조립한다.
-  # 기본값을 두지 않는 이유: 배포 서버에서 환경변수를 빠뜨려도 앱이 그냥 떠버리면
-  # localhost로 리다이렉트하는 걸 아무도 모른다. 누락 시 기동 실패가 맞다(AppUrlProperties).
   url:
     frontend: ${APP_FRONTEND_BASE_URL}
     api: ${APP_API_BASE_URL}
@@ -14,7 +9,6 @@ app:
   email:
     verification-base-url: ${app.url.frontend}/email/verify
   llm:
-    # 주소·모델에 기본값이 없다. 운영은 환경변수가 빠지면 기동에 실패하고, local 프로필만 Ollama 기본값을 덧댄다.
     provider: ${LLM_PROVIDER:ollama}
     api-key: ${OPENAI_API_KEY:}
     chat:
