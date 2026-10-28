@@ -30,7 +30,6 @@ dist/
 
 # prod 전용 — 레포에 두지 않는다. 배포 호스트가 관리한다.
 docker-compose.prod.yml
-**/application-prod.yml
 
 # Gemini CLI internal files
 .omx/

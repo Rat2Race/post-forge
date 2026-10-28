@@ -20,9 +20,8 @@ logs/
 # Docker
 Dockerfile*
 
-# prod 전용 — 이미지에 넣지 않는다. 배포 호스트가 컨테이너에 마운트한다.
+# prod compose — 이미지에 넣지 않는다. 배포 호스트가 관리한다.
 docker-compose.prod.yml
-**/application-prod.yml
 
 # env — 값이 든 env 파일은 전부 제외한다.
 .env
